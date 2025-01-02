@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.Api", "PhotonPiano.Api\PhotonPiano.Api.csproj", "{4A00201C-C330-4A63-82C8-A4262A652989}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.BusinessLogic", "PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj", "{C32B6704-1D8C-4D33-A809-477A38768863}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.DataAccess", "PhotonPiano.DataAccess\PhotonPiano.DataAccess.csproj", "{4BB8ECCB-0AF7-4967-817C-FF8358D4B1D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.Shared", "PhotonPiano.Shared\PhotonPiano.Shared.csproj", "{9E275899-50DB-4531-B28F-D04EA2DA5C6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.API.AppHost", "PhotonPiano.API.AppHost\PhotonPiano.API.AppHost.csproj", "{CA5C2654-EB15-4754-8373-34329118DEA8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.API.ServiceDefaults", "PhotonPiano.API.ServiceDefaults\PhotonPiano.API.ServiceDefaults.csproj", "{9702C7A9-CAF6-4915-B7E2-78174040D761}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.Test", "PhotonPiano.Test\PhotonPiano.Test.csproj", "{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4A00201C-C330-4A63-82C8-A4262A652989}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A00201C-C330-4A63-82C8-A4262A652989}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A00201C-C330-4A63-82C8-A4262A652989}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A00201C-C330-4A63-82C8-A4262A652989}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C32B6704-1D8C-4D33-A809-477A38768863}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C32B6704-1D8C-4D33-A809-477A38768863}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C32B6704-1D8C-4D33-A809-477A38768863}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C32B6704-1D8C-4D33-A809-477A38768863}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BB8ECCB-0AF7-4967-817C-FF8358D4B1D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BB8ECCB-0AF7-4967-817C-FF8358D4B1D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BB8ECCB-0AF7-4967-817C-FF8358D4B1D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BB8ECCB-0AF7-4967-817C-FF8358D4B1D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E275899-50DB-4531-B28F-D04EA2DA5C6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E275899-50DB-4531-B28F-D04EA2DA5C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E275899-50DB-4531-B28F-D04EA2DA5C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E275899-50DB-4531-B28F-D04EA2DA5C6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA5C2654-EB15-4754-8373-34329118DEA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA5C2654-EB15-4754-8373-34329118DEA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA5C2654-EB15-4754-8373-34329118DEA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA5C2654-EB15-4754-8373-34329118DEA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

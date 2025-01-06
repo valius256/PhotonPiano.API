@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using PhotonPiano.DataAccess.EntityTypeConfiguration;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -17,10 +18,22 @@ namespace PhotonPiano.DataAccess.Models
         }
 
         public DbSet<Account> Accounts { get; set; }
+        public DbSet<Criteria> Criteria { get; set; }
+        public DbSet<EntranceTest> EntranceTests { get; set; }
+        public DbSet<EntranceTestResult> EntranceTestResults { get; set; }
+        public DbSet<EntranceTestStudent> EntranceTestStudents { get; set; }
+        public DbSet<Room> Rooms { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            
             modelBuilder.ApplyConfiguration(new AccountConfiguration());
+            modelBuilder.ApplyConfiguration(new CriteriaConfiguration());
+            modelBuilder.ApplyConfiguration(new EntranceTestConfiguration());
+            modelBuilder.ApplyConfiguration(new EntranceTestResultConfiguration());
+            modelBuilder.ApplyConfiguration(new EntranceTestStudentConfiguration());
+            modelBuilder.ApplyConfiguration(new RoomConfiguration());
 
 
 
@@ -34,6 +47,8 @@ namespace PhotonPiano.DataAccess.Models
             base.OnModelCreating(modelBuilder);
 
         }
+        
+   
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

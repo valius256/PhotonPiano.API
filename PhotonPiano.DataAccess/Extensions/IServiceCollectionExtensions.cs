@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using PhotonPiano.DataAccess.Abtractions;
+using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Repositories;
 
 namespace PhotonPiano.DataAccess.Extensions
@@ -10,7 +10,11 @@ namespace PhotonPiano.DataAccess.Extensions
         {
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-
+            services.AddScoped<IEntranceTestStudentRepository, EntranceTestStudentRepository>();
+            services.AddScoped<IAccountRepository, AccountRepository>();
+            
+            
+            
             return services;
         }
     }

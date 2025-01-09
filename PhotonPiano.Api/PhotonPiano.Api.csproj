@@ -26,7 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\PhotonPiano.API.ServiceDefaults\PhotonPiano.API.ServiceDefaults.csproj" />
+		<ProjectReference Include="..\PhotonPiano.ServiceDefaults\PhotonPiano.ServiceDefaults.csproj" />
 		<ProjectReference Include="..\PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj" />
 		<ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj" />
 	</ItemGroup>

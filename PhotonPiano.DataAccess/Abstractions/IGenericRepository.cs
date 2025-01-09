@@ -1,9 +1,9 @@
-﻿using PhotonPiano.DataAccess.Models;
+﻿using System.Linq.Expressions;
+using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
-using System.Linq.Expressions;
 
-namespace PhotonPiano.DataAccess.Abtractions
+namespace PhotonPiano.DataAccess.Abstractions
 {
     public interface IGenericRepository<T> where T : BaseEntity
     {

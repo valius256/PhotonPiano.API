@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
+using PhotonPiano.Api;
 
 namespace PhotonPiano.Test.Extensions
 {
@@ -24,7 +24,7 @@ namespace PhotonPiano.Test.Extensions
             };
             var builder = DistributedApplication.CreateBuilder(options);
 
-            _postgres = builder.AddPostgres("postgres");
+            _postgres = builder.AddPostgres("postgresDb");
             _app = builder.Build();
         }
 

@@ -1,20 +1,31 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
-using PhotonPiano.DataAccess.Abtractions;
+using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
+using PhotonPiano.DataAccess.Repositories;
 
 namespace PhotonPiano.DataAccess
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext _context;
+        
 
+        private readonly Lazy<IEntranceTestStudentRepository> _entranceTestStudentRepository;
+        private readonly Lazy<IAccountRepository> _accountRepository;
+        
+        private IDbContextTransaction? _currentTransaction;
+        
         public UnitOfWork(ApplicationDbContext context)
         {
             _context = context;
+            _accountRepository =  new Lazy<IAccountRepository>(() => new AccountRepository(context));
+            _entranceTestStudentRepository = new Lazy<IEntranceTestStudentRepository>(() => new EntranceTestStudentRepository(context));
+            
         }
+        
+        public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
+        public IAccountRepository AccountRepository => _accountRepository.Value;
 
-
-        private IDbContextTransaction? _currentTransaction;
 
         public async Task<int> SaveChangesAsync()
         {

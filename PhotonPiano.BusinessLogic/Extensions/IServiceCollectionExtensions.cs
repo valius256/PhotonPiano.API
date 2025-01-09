@@ -11,10 +11,12 @@ namespace PhotonPiano.BusinessLogic.Extensions
             services.AddScoped<IServiceFactory, ServiceFactory>();
 
             services.AddScoped<IRedisCacheService, RedisCacheService>();
+            services.AddScoped<IEntranceTestStudentService, EntranceTestStudentService>();
+            services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IAuthService, AuthService>();
             services.AddHttpClient();
 
             services.AddMapsterConfig();
-
             return services;
         }
 

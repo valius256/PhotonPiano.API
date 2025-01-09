@@ -2,7 +2,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 
 var database = builder.AddPostgres("postgresDb")
-                       .WithDataVolume("data-volume")
+                       // .WithDataVolume("data-volume")
                        .WithPgAdmin()
                         // .WithLifetime(ContainerLifetime.Persistent)
                         // .WithOtlpExporter()

@@ -103,7 +103,7 @@ namespace PhotonPiano.Api.Extensions
             var rs = configuration.GetValue<bool>("EnableMigration")
                 ? configuration.GetConnectionString("photonpiano")
                 : configuration.GetConnectionString("PostgresLocal");
-
+            
             return rs;
         }
 
@@ -112,11 +112,12 @@ namespace PhotonPiano.Api.Extensions
         {
             services.AddDbContext<ApplicationDbContext>(options =>
             {
+               
                 options.UseNpgsql(GetConnectionString(configuration));
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
-
             });
+
             return services;
         }
 

@@ -31,6 +31,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("text");
 
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("BankAccount")
                         .HasColumnType("text");
 
@@ -44,19 +47,16 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int?>("Gender")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("JoinedDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Level")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
                     b.Property<string>("Phone")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PictureUrl")
                         .HasColumnType("text");
 
                     b.Property<int>("RecordStatus")
@@ -74,6 +74,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Username")
+                        .HasColumnType("text");
+
                     b.HasKey("AccountFirebaseId");
 
                     b.ToTable("Account");
@@ -83,12 +86,13 @@ namespace PhotonPiano.DataAccess.Migrations
                         {
                             AccountFirebaseId = "admin001",
                             Address = "",
+                            AvatarUrl = "",
                             BankAccount = "",
                             Email = "admin001@gmail.com",
-                            JoinedDate = new DateTime(2025, 1, 6, 13, 32, 35, 205, DateTimeKind.Utc).AddTicks(3335),
+                            IsEmailVerified = false,
+                            JoinedDate = new DateTime(2025, 1, 9, 13, 46, 55, 498, DateTimeKind.Utc).AddTicks(200),
                             Level = 0,
                             Phone = "",
-                            PictureUrl = "",
                             RecordStatus = 1,
                             Role = 3,
                             ShortDescription = "",
@@ -98,12 +102,13 @@ namespace PhotonPiano.DataAccess.Migrations
                         {
                             AccountFirebaseId = "teacher002",
                             Address = "",
+                            AvatarUrl = "",
                             BankAccount = "",
                             Email = "teacher002@gmail.com",
-                            JoinedDate = new DateTime(2025, 1, 6, 13, 32, 35, 205, DateTimeKind.Utc).AddTicks(5208),
+                            IsEmailVerified = false,
+                            JoinedDate = new DateTime(2025, 1, 9, 13, 46, 55, 498, DateTimeKind.Utc).AddTicks(1387),
                             Level = 0,
                             Phone = "",
-                            PictureUrl = "",
                             RecordStatus = 1,
                             Role = 2,
                             ShortDescription = "",
@@ -113,12 +118,13 @@ namespace PhotonPiano.DataAccess.Migrations
                         {
                             AccountFirebaseId = "learner003",
                             Address = "",
+                            AvatarUrl = "",
                             BankAccount = "",
                             Email = "learner003@gmail.com",
-                            JoinedDate = new DateTime(2025, 1, 6, 13, 32, 35, 205, DateTimeKind.Utc).AddTicks(5222),
+                            IsEmailVerified = false,
+                            JoinedDate = new DateTime(2025, 1, 9, 13, 46, 55, 498, DateTimeKind.Utc).AddTicks(1397),
                             Level = 0,
                             Phone = "",
-                            PictureUrl = "",
                             RecordStatus = 1,
                             Role = 1,
                             ShortDescription = "",
@@ -135,8 +141,15 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedById")
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -148,6 +161,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UpdateById")
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -156,15 +172,22 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
                     b.HasIndex("Id");
+
+                    b.HasIndex("UpdateById");
 
                     b.ToTable("Criteria");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("2a24d7a1-38ad-4343-a7ca-142ab797399f"),
-                            CreatedAt = new DateTime(2025, 1, 6, 13, 32, 35, 206, DateTimeKind.Utc).AddTicks(7000),
+                            Id = new Guid("f1009878-ac37-424b-a9cf-8ce235755cc5"),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(385),
+                            CreatedById = "admin001",
                             Description = "criterialTest Description",
                             Name = "",
                             RecordStatus = 1,
@@ -184,8 +207,15 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedById")
+                        .HasColumnType("character varying(30)");
 
                     b.Property<bool>("IsAnnouncedScore")
                         .HasColumnType("boolean");
@@ -196,8 +226,14 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("RoomCapacity")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("RoomName")
+                        .HasColumnType("text");
 
                     b.Property<int>("Shift")
                         .HasColumnType("integer");
@@ -206,7 +242,12 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TeacherFirebaseId")
-                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("TeacherName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UpdateById")
                         .HasColumnType("character varying(30)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -214,24 +255,60 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
                     b.HasIndex("RoomId");
 
                     b.HasIndex("TeacherFirebaseId");
+
+                    b.HasIndex("UpdateById");
 
                     b.ToTable("EntranceTest");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("e9cbd11f-4b6e-4600-b87f-a18db219155b"),
-                            AnnouncedTime = new DateTime(2025, 1, 6, 7, 32, 35, 207, DateTimeKind.Utc).AddTicks(1659),
-                            CreatedAt = new DateTime(2025, 1, 6, 13, 32, 35, 207, DateTimeKind.Utc).AddTicks(1168),
+                            Id = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
+                            AnnouncedTime = new DateTime(2025, 1, 9, 7, 46, 55, 500, DateTimeKind.Utc).AddTicks(3008),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(2764),
+                            CreatedById = "admin001",
                             IsAnnouncedScore = false,
                             IsAnnouncedTime = false,
                             RecordStatus = 1,
-                            RoomId = new Guid("f6b6cf55-5fac-4951-9fa7-f29ea8a375ce"),
+                            RoomId = new Guid("80100937-dca8-486d-bbde-5b24887dc82b"),
+                            RoomName = "Room 1",
                             Shift = 0,
-                            StartTime = new DateTime(2025, 1, 6, 10, 32, 35, 207, DateTimeKind.Utc).AddTicks(2343),
+                            StartTime = new DateTime(2025, 1, 9, 10, 46, 55, 500, DateTimeKind.Utc).AddTicks(3422),
+                            TeacherFirebaseId = "teacher002"
+                        },
+                        new
+                        {
+                            Id = new Guid("45316ded-caa7-4f95-aad1-3c7c25f5fb56"),
+                            AnnouncedTime = new DateTime(2025, 1, 9, 7, 46, 55, 500, DateTimeKind.Utc).AddTicks(4021),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(4019),
+                            CreatedById = "admin001",
+                            IsAnnouncedScore = false,
+                            IsAnnouncedTime = false,
+                            RecordStatus = 1,
+                            RoomId = new Guid("7bb2d750-e271-4bb3-bdc2-07e8fc98704c"),
+                            RoomName = "Room 2",
+                            Shift = 2,
+                            StartTime = new DateTime(2025, 1, 9, 10, 46, 55, 500, DateTimeKind.Utc).AddTicks(4022)
+                        },
+                        new
+                        {
+                            Id = new Guid("f724fb51-b58e-460c-b96e-6675650d3824"),
+                            AnnouncedTime = new DateTime(2025, 1, 9, 7, 46, 55, 500, DateTimeKind.Utc).AddTicks(4024),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(4023),
+                            CreatedById = "admin001",
+                            IsAnnouncedScore = false,
+                            IsAnnouncedTime = false,
+                            RecordStatus = 1,
+                            RoomId = new Guid("a3980a5d-0446-4296-b483-52c0248a324b"),
+                            Shift = 4,
+                            StartTime = new DateTime(2025, 1, 9, 10, 46, 55, 500, DateTimeKind.Utc).AddTicks(4024),
                             TeacherFirebaseId = "teacher002"
                         });
                 });
@@ -245,11 +322,21 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
                     b.Property<Guid>("CriteriaId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CriteriaName")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedById")
+                        .HasColumnType("character varying(30)");
 
                     b.Property<Guid>("EntranceTestStudentId")
                         .HasColumnType("uuid");
@@ -260,24 +347,34 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<decimal?>("Score")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("UpdateById")
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("CriteriaId");
 
+                    b.HasIndex("DeletedById");
+
                     b.HasIndex("EntranceTestStudentId");
+
+                    b.HasIndex("UpdateById");
 
                     b.ToTable("EntranceTestResult");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("b2b9b6d5-f7ab-4042-a06c-ffc05675ba6b"),
-                            CreatedAt = new DateTime(2025, 1, 6, 13, 32, 35, 207, DateTimeKind.Utc).AddTicks(8684),
-                            CriteriaId = new Guid("2a24d7a1-38ad-4343-a7ca-142ab797399f"),
-                            EntranceTestStudentId = new Guid("36cbcf00-883d-493d-8bc4-ecedeba7be9a"),
+                            Id = new Guid("334b3a34-fa74-4cfc-aac8-93f5facbba16"),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(7091),
+                            CreatedById = "admin001",
+                            CriteriaId = new Guid("f1009878-ac37-424b-a9cf-8ce235755cc5"),
+                            EntranceTestStudentId = new Guid("c89b9cb0-7504-4489-ab66-a26268bcf291"),
                             RecordStatus = 1
                         });
                 });
@@ -294,24 +391,37 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedById")
+                        .HasColumnType("character varying(30)");
 
                     b.Property<Guid>("EntranceTestId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("InstructorComment")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsScoreAnnounced")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("LearnerFirebaseId")
-                        .IsRequired()
-                        .HasColumnType("character varying(30)");
 
                     b.Property<int?>("Rank")
                         .HasColumnType("integer");
 
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
+
+                    b.Property<string>("StudentFirebaseId")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("UpdateById")
+                        .HasColumnType("character varying(30)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -321,23 +431,56 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
                     b.HasIndex("EntranceTestId");
 
-                    b.HasIndex("LearnerFirebaseId");
+                    b.HasIndex("StudentFirebaseId");
+
+                    b.HasIndex("UpdateById");
 
                     b.ToTable("EntranceTestStudent");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("36cbcf00-883d-493d-8bc4-ecedeba7be9a"),
-                            BandScore = 6m,
-                            CreatedAt = new DateTime(2025, 1, 6, 13, 32, 35, 207, DateTimeKind.Utc).AddTicks(3825),
-                            EntranceTestId = new Guid("e9cbd11f-4b6e-4600-b87f-a18db219155b"),
+                            Id = new Guid("c89b9cb0-7504-4489-ab66-a26268bcf291"),
+                            BandScore = 9m,
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(4579),
+                            CreatedById = "admin001",
+                            EntranceTestId = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
                             IsScoreAnnounced = true,
-                            LearnerFirebaseId = "learner003",
                             Rank = 1,
                             RecordStatus = 1,
+                            StudentFirebaseId = "learner003",
+                            Year = 2024
+                        },
+                        new
+                        {
+                            Id = new Guid("02d9b1a6-bbe0-42b9-b49d-83ffe43b9312"),
+                            BandScore = 8m,
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(6671),
+                            CreatedById = "admin001",
+                            EntranceTestId = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
+                            IsScoreAnnounced = true,
+                            Rank = 2,
+                            RecordStatus = 1,
+                            StudentFirebaseId = "learner003",
+                            Year = 2024
+                        },
+                        new
+                        {
+                            Id = new Guid("7d34346a-f861-455a-8fc7-097806cab95c"),
+                            BandScore = 8m,
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(6681),
+                            CreatedById = "admin001",
+                            EntranceTestId = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
+                            IsScoreAnnounced = true,
+                            Rank = 3,
+                            RecordStatus = 1,
+                            StudentFirebaseId = "learner003",
                             Year = 2024
                         });
                 });
@@ -354,8 +497,15 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedById")
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Name")
                         .HasColumnType("text");
@@ -366,86 +516,259 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UpdateById")
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
+                    b.HasIndex("UpdateById");
 
                     b.ToTable("Room");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f6b6cf55-5fac-4951-9fa7-f29ea8a375ce"),
-                            CreatedAt = new DateTime(2025, 1, 6, 13, 32, 35, 206, DateTimeKind.Utc).AddTicks(9483),
+                            Id = new Guid("80100937-dca8-486d-bbde-5b24887dc82b"),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(1588),
+                            CreatedById = "admin001",
                             Name = "Room 1",
+                            RecordStatus = 1,
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("7bb2d750-e271-4bb3-bdc2-07e8fc98704c"),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(2157),
+                            CreatedById = "admin001",
+                            Name = "Room 2",
+                            RecordStatus = 1,
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("a3980a5d-0446-4296-b483-52c0248a324b"),
+                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(2159),
+                            CreatedById = "admin001",
+                            Name = "Room 3",
                             RecordStatus = 1,
                             Status = 0
                         });
                 });
 
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Criteria", b =>
+                {
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
+                        .WithMany("CreatedCriteria")
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "DeletedBy")
+                        .WithMany("DeletedCriteria")
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
+                        .WithMany("UpdatedCriteria")
+                        .HasForeignKey("UpdateById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeletedBy");
+
+                    b.Navigation("UpdateBy");
+                });
+
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTest", b =>
                 {
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
+                        .WithMany("CreatedEntrancesTest")
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "DeletedBy")
+                        .WithMany("DeletedEntrancesTest")
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Room", "Room")
                         .WithMany("EntranceTests")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "TeacherAccount")
-                        .WithMany("EntranceTests")
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Instructor")
+                        .WithMany("TeacherEntranceTests")
                         .HasForeignKey("TeacherFirebaseId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
+                        .WithMany("UpdatedEntrancesTest")
+                        .HasForeignKey("UpdateById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeletedBy");
+
+                    b.Navigation("Instructor");
 
                     b.Navigation("Room");
 
-                    b.Navigation("TeacherAccount");
+                    b.Navigation("UpdateBy");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTestResult", b =>
                 {
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
+                        .WithMany("CreatedEntranceTestResult")
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Criteria", "Criteria")
                         .WithMany("EntranceTestResults")
                         .HasForeignKey("CriteriaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "DeletedBy")
+                        .WithMany("DeletedEntranceTestResult")
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.EntranceTestStudent", "EntranceTestStudent")
-                        .WithMany()
+                        .WithMany("EntranceTestResults")
                         .HasForeignKey("EntranceTestStudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
+                        .WithMany("UpdatedEntranceTestResult")
+                        .HasForeignKey("UpdateById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CreatedBy");
+
                     b.Navigation("Criteria");
 
+                    b.Navigation("DeletedBy");
+
                     b.Navigation("EntranceTestStudent");
+
+                    b.Navigation("UpdateBy");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTestStudent", b =>
                 {
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.EntranceTest", "EntranceTest")
-                        .WithMany("EntranceTestStudents")
-                        .HasForeignKey("EntranceTestId")
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreateBy")
+                        .WithMany("CreatedEntranceTestStudent")
+                        .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "LearnerAccount")
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "DeletedBy")
+                        .WithMany("DeletedEntranceTestStudent")
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.EntranceTest", "EntranceTest")
                         .WithMany("EntranceTestStudents")
-                        .HasForeignKey("LearnerFirebaseId")
+                        .HasForeignKey("EntranceTestId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Student")
+                        .WithMany("EntranceTestStudents")
+                        .HasForeignKey("StudentFirebaseId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
+                        .WithMany("UpdatedEntranceTestStudent")
+                        .HasForeignKey("UpdateById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CreateBy");
+
+                    b.Navigation("DeletedBy");
+
                     b.Navigation("EntranceTest");
 
-                    b.Navigation("LearnerAccount");
+                    b.Navigation("Student");
+
+                    b.Navigation("UpdateBy");
+                });
+
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Room", b =>
+                {
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
+                        .WithMany("CreatedRoom")
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "DeletedBy")
+                        .WithMany("DeletedRoom")
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
+                        .WithMany("UpdatedRoom")
+                        .HasForeignKey("UpdateById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeletedBy");
+
+                    b.Navigation("UpdateBy");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Account", b =>
                 {
+                    b.Navigation("CreatedCriteria");
+
+                    b.Navigation("CreatedEntranceTestResult");
+
+                    b.Navigation("CreatedEntranceTestStudent");
+
+                    b.Navigation("CreatedEntrancesTest");
+
+                    b.Navigation("CreatedRoom");
+
+                    b.Navigation("DeletedCriteria");
+
+                    b.Navigation("DeletedEntranceTestResult");
+
+                    b.Navigation("DeletedEntranceTestStudent");
+
+                    b.Navigation("DeletedEntrancesTest");
+
+                    b.Navigation("DeletedRoom");
+
                     b.Navigation("EntranceTestStudents");
 
-                    b.Navigation("EntranceTests");
+                    b.Navigation("TeacherEntranceTests");
+
+                    b.Navigation("UpdatedCriteria");
+
+                    b.Navigation("UpdatedEntranceTestResult");
+
+                    b.Navigation("UpdatedEntranceTestStudent");
+
+                    b.Navigation("UpdatedEntrancesTest");
+
+                    b.Navigation("UpdatedRoom");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Criteria", b =>
@@ -456,6 +779,11 @@ namespace PhotonPiano.DataAccess.Migrations
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTest", b =>
                 {
                     b.Navigation("EntranceTestStudents");
+                });
+
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTestStudent", b =>
+                {
+                    b.Navigation("EntranceTestResults");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Room", b =>

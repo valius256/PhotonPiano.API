@@ -20,13 +20,13 @@ namespace PhotonPiano.DataAccess.SeedData
                 {
                     AccountFirebaseId = "teacher002",
                     Email = "teacher002@gmail.com",
-                    Role  = Role.Teacher
+                    Role  = Role.Instructor
                 },
                 new Account()
                 {
                     AccountFirebaseId = "learner003",
                     Email = "learner003@gmail.com",
-                    Role = Role.Learner
+                    Role = Role.Student
                 }
             );
             #endregion
@@ -39,6 +39,7 @@ namespace PhotonPiano.DataAccess.SeedData
                     {
                         Id = criterialTestId,
                         Description = "criterialTest Description",
+                        CreatedById = "admin001",
                     }
                 );
 
@@ -54,6 +55,19 @@ namespace PhotonPiano.DataAccess.SeedData
                     {
                         Id = roomGuid1,
                         Name = "Room 1",
+                        CreatedById = "admin001",
+                    },
+                    new Room()
+                    {
+                        Id = roomGuid2,
+                        Name = "Room 2",
+                        CreatedById = "admin001",
+                    },
+                    new Room()
+                    {
+                        Id = roomGuid3,
+                        Name = "Room 3",
+                        CreatedById = "admin001",
                     }
 
                 );
@@ -62,6 +76,9 @@ namespace PhotonPiano.DataAccess.SeedData
             
             #region EntranceTest Model
             var entranceTestGuid1 = Guid.NewGuid();
+            var entranceTestGuid2 = Guid.NewGuid();
+            var entranceTestGuid3 = Guid.NewGuid();
+            
             modelBuilder.Entity<EntranceTest>().HasData(
                 new EntranceTest()
                 {
@@ -71,6 +88,30 @@ namespace PhotonPiano.DataAccess.SeedData
                     Shift = Shift.Shift1_7h_8h30,
                     StartTime = DateTime.UtcNow.AddHours(4),
                     TeacherFirebaseId = "teacher002",
+                    RoomName = "Room 1",
+                    CreatedById = "admin001",
+
+                },
+                new EntranceTest()
+                {
+                    Id = entranceTestGuid2,
+                    RoomId = roomGuid2,
+                    AnnouncedTime = DateTime.UtcNow.AddHours(1),
+                    Shift = Shift.Shift3_10h45_12h,
+                    StartTime = DateTime.UtcNow.AddHours(4),
+                    RoomName = "Room 2",
+                    CreatedById = "admin001",
+
+                },
+                new EntranceTest()
+                {
+                    Id = entranceTestGuid3,
+                    RoomId = roomGuid3,
+                    AnnouncedTime = DateTime.UtcNow.AddHours(1),
+                    Shift = Shift.Shift5_14h15_15h45,
+                    StartTime = DateTime.UtcNow.AddHours(4),
+                    TeacherFirebaseId = "teacher002",
+                    CreatedById = "admin001",
                 }
             );
 
@@ -78,18 +119,46 @@ namespace PhotonPiano.DataAccess.SeedData
 
             #region EntranceTestStudent Model
                 var entranceTestStudentGuid1 = Guid.NewGuid();
-
+                var entranceTestStudentGuid2 = Guid.NewGuid();
+                var entranceTestStudentGuid3 = Guid.NewGuid();
                 modelBuilder.Entity<EntranceTestStudent>().HasData(
                     new EntranceTestStudent()
                     {
                         Id = entranceTestStudentGuid1,
                         BandScore = (decimal)Random.Shared.NextInt64(3, 10),
                         EntranceTestId = entranceTestGuid1,
-                        LearnerFirebaseId = "learner003",
+                        StudentFirebaseId = "learner003",
                         Rank = 1,
                         Year = 2024,
                         IsScoreAnnounced = true,
+                        CreatedById = "admin001",
+                        
+                    },
+                    new EntranceTestStudent()
+                    {
+                        Id = entranceTestStudentGuid2,
+                        BandScore = (decimal)Random.Shared.NextInt64(3, 10),
+                        EntranceTestId = entranceTestGuid1,
+                        StudentFirebaseId = "learner003",
+                        Rank = 2,
+                        Year = 2024,
+                        IsScoreAnnounced = true,
+                        CreatedById = "admin001",
+
+                    },
+                    new EntranceTestStudent()
+                    {
+                        Id = entranceTestStudentGuid3,
+                        BandScore = (decimal)Random.Shared.NextInt64(3, 10),
+                        EntranceTestId = entranceTestGuid1,
+                        StudentFirebaseId = "learner003",
+                        Rank = 3,
+                        Year = 2024,
+                        IsScoreAnnounced = true,
+                        CreatedById = "admin001",
+
                     }
+                    
 
 
                 );
@@ -104,6 +173,7 @@ namespace PhotonPiano.DataAccess.SeedData
                         Id = entranceTestResultGuid,
                          CriteriaId = criterialTestId,
                          EntranceTestStudentId = entranceTestStudentGuid1,
+                         CreatedById = "admin001",
                          
                     }
 

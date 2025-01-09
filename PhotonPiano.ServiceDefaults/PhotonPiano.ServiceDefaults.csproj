@@ -5,6 +5,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsAspireSharedProject>true</IsAspireSharedProject>
+		<RootNamespace>PhotonPiano.API.ServiceDefaults</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>

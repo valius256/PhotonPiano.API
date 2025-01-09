@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 
-namespace PhotonPiano.DataAccess.Abtractions
+namespace PhotonPiano.DataAccess.Abstractions
 {
     public interface IUnitOfWork
     {
         // repositories here 
+        IEntranceTestStudentRepository  EntranceTestStudentRepository { get; }
+        IAccountRepository  AccountRepository { get; }
 
         Task<int> SaveChangesAsync();
 

@@ -8,10 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PhotonPiano.DataAccess\PhotonPiano.DataAccess.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="BusinessModel\" />
+    <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

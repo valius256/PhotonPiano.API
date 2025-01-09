@@ -4,6 +4,7 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using Serilog;
+using StackExchange.Redis;
 using System.Reflection;
 
 
@@ -16,7 +17,18 @@ builder.Services.AddHostedService<DbMigrationJob>();
 
 var configuration = builder.Configuration;
 
-builder.AddRedisClient("redis-cache");
+if (configuration.GetValue<bool>("EnableMigration") == true)
+{
+    builder.AddRedisClient("redis-cache");
+}
+else
+{
+    var redisConnectionString = configuration.GetSection("Redis")["ConnectionString"];
+    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+        ConnectionMultiplexer.Connect(redisConnectionString));
+
+}
+
 
 
 // Add services to the container.
@@ -73,4 +85,4 @@ app.Run();
 
 
 //This Startup endpoint for Unit Tests
-namespace L2Drive.API { public class Program; }
+namespace PhotonPiano.Api { public class Program; }

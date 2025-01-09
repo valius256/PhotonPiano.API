@@ -5,16 +5,26 @@ namespace PhotonPiano.DataAccess.Models.Entity;
 public class EntranceTest : BaseEntityWithId
 {
     public required Guid RoomId { get; set; }   
+    public string?  RoomName { get; set; }
+    public int? RoomCapacity { get; set; }
     public required Shift Shift { get; set; }
     public required DateTime StartTime { get; set; }
     public bool IsAnnouncedTime { get; set; } = false;
     public required DateTime AnnouncedTime { get; set; }  
     public bool IsAnnouncedScore { get; set; } = false;
-    public required string TeacherFirebaseId { get; set; }
+    public string? TeacherFirebaseId { get; set; }
+    public string? TeacherName { get; set; }
     
+    public required string CreatedById { get; set; }
+    public string? UpdateById { get; set; }
+    public string? DeletedById { get; set; }
     
     // reference
     public virtual Room Room { get; set; } 
-    public virtual Account TeacherAccount { get; set; } 
+    public virtual Account Instructor { get; set; } 
+    public virtual Account CreatedBy { get; set; }
+    public virtual Account UpdateBy { get; set; } 
+    public virtual Account DeletedBy { get; set; }
+    
     public virtual ICollection<EntranceTestStudent> EntranceTestStudents { get; set; } = new List<EntranceTestStudent>();
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration;
 
@@ -9,19 +10,21 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
     public void Configure(EntityTypeBuilder<Account> builder)
     {
         builder.HasKey(x => x.AccountFirebaseId);
+
         
+        builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
         
         // reference
         builder.HasMany(x => x.EntranceTestStudents)
-            .WithOne(x => x.LearnerAccount)
-            .HasForeignKey(x => x.LearnerFirebaseId)
+            .WithOne(x => x.Student)
+            .HasForeignKey(x => x.StudentFirebaseId)
             .OnDelete(DeleteBehavior.NoAction); 
         
-        builder.HasMany(x => x.EntranceTests)
-            .WithOne(x => x.TeacherAccount)
+        builder.HasMany(x => x.TeacherEntranceTests)
+            .WithOne(x => x.Instructor)
             .HasForeignKey(x => x.TeacherFirebaseId)
             .OnDelete(DeleteBehavior.NoAction);
         
-   
+        
     }
 }

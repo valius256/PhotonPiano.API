@@ -4,7 +4,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 
-public record EntranceTestStudentWithEntranceTestAndStudentAccountModel : EntranceTestStudentModel
+public record EntranceTestStudentDetail : EntranceTestStudentModel
 {
     public EntranceTestModel? EntranceTest { get; init; }
     public AccountSimpleModel? Student { get; init; }

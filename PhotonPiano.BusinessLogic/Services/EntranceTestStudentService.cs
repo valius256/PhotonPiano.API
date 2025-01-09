@@ -20,14 +20,14 @@ public class EntranceTestStudentService : IEntranceTestStudentService
     }
 
 
-    public async Task<PagedResult<EntranceTestStudentWithEntranceTestAndStudentAccountModel>> GetPagedEntranceTest(QueryEntranceTestStudentModel query)
+    public async Task<PagedResult<EntranceTestStudentDetail>> GetPagedEntranceTest(QueryEntranceTestStudentModel query)
     {
-        var (page, pageSize, sortColumn, orderByDesc, 
-            userFirebaseIds, bandScores , entranceTestIds)
+        var (page, pageSize, sortColumn, orderByDesc,
+            userFirebaseIds, bandScores, entranceTestIds)
             = query;
-        
+
         var result = await _unitOfWork.EntranceTestStudentRepository
-            .GetPaginatedWithProjectionAsync<EntranceTestStudentWithEntranceTestAndStudentAccountModel>(
+            .GetPaginatedWithProjectionAsync<EntranceTestStudentDetail>(
                 page, pageSize, sortColumn, orderByDesc,
                 expressions:
                 [
@@ -36,39 +36,39 @@ public class EntranceTestStudentService : IEntranceTestStudentService
                     e => bandScores != null && (bandScores.Count == 0 || bandScores.Contains(e.BandScore!.Value))
 
                 ]);
-        
+
         return result;
     }
 
-    public async Task<EntranceTestStudentWithEntranceTestAndStudentAccountModel> GetEntranceTestStudentDetailById(Guid id)
+    public async Task<EntranceTestStudentDetail> GetEntranceTestStudentDetailById(Guid id)
     {
-        var entranceTestStudent = await _unitOfWork.EntranceTestStudentRepository.FindSingleProjectedAsync<EntranceTestStudentWithEntranceTestAndStudentAccountModel>(
+        var entranceTestStudent = await _unitOfWork.EntranceTestStudentRepository.FindSingleProjectedAsync<EntranceTestStudentDetail>(
             q => q.Id == id,
             hasTrackings: false);
         if (entranceTestStudent is null)
         {
             throw new NotFoundException("entranceTestStudent not found.");
         }
-        
+
         return entranceTestStudent;
     }
 
-    public async Task<EntranceTestStudentWithEntranceTestAndStudentAccountModel> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent, string currentUserFirebaseId)
+    public async Task<EntranceTestStudentDetail> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent, string? currentUserFirebaseId = default)
     {
         var etsModel = entranceTestStudent.Adapt<EntranceTestStudent>();
-        etsModel.CreatedById = currentUserFirebaseId;
-       
+        etsModel.CreatedById = currentUserFirebaseId!;
+
         // waiting for implementt EntranceTestService to check is model Exist
         // var currentEntranceTestModel = _serviceFactory.EntranceTestService.GetEntranceTestById(etsModel.EntranceTestId);
         // if (etsModel.EntranceTestId is null)
         // {
         //     throw new BadRequestException("EntranceTest is not exist please try again");
         // }
-        
+
         var createdEntranceTestStudentId = Guid.Empty;
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var createdModel =  await _unitOfWork.EntranceTestStudentRepository.AddAsync(etsModel);
+            var createdModel = await _unitOfWork.EntranceTestStudentRepository.AddAsync(etsModel);
             await _unitOfWork.SaveChangesAsync();
 
             createdEntranceTestStudentId = createdModel.Id;
@@ -101,7 +101,7 @@ public class EntranceTestStudentService : IEntranceTestStudentService
         {
             throw new NotFoundException($"EntranceTestStudentEntity with id: {id} not found.");
         }
-        
+
         entranceTestStudent.Adapt(updatedEntranceTestStudentEntity);
         updatedEntranceTestStudentEntity.UpdateById = currentUserFirebaseId;
         updatedEntranceTestStudentEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);

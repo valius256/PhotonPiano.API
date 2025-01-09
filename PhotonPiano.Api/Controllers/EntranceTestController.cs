@@ -22,7 +22,7 @@ public class EntranceTestController : BaseController
 
     [HttpGet]
     [EndpointDescription("Get EntranceTestStudent with Paging")]
-    public async Task<ActionResult<List<EntranceTestStudentWithEntranceTestAndStudentAccountModel>>> GetQuizzes(
+    public async Task<ActionResult<List<EntranceTestStudentDetail>>> GetQuizzes(
         [FromQuery] QueryPagedEntranceTestStudentRequest request)
     {
         var pagedResult =
@@ -35,14 +35,14 @@ public class EntranceTestController : BaseController
 
     [HttpGet("{id}")]
     [EndpointDescription("Get EntranceTestStudent by id")]
-    public async Task<ActionResult<EntranceTestStudentWithEntranceTestAndStudentAccountModel>> GetEntranceTestById([FromRoute] Guid id)
+    public async Task<ActionResult<EntranceTestStudentDetail>> GetEntranceTestById([FromRoute] Guid id)
     {
         return Ok(await _serviceFactory.EntranceTestStudentService.GetEntranceTestStudentDetailById(id));
     }
 
     [HttpPost]
     [EndpointDescription("Create EntranceTestStudent")]
-    public async Task<ActionResult<EntranceTestStudentWithEntranceTestAndStudentAccountModel>> CreateEntranceTestStudent(
+    public async Task<ActionResult<EntranceTestStudentDetail>> CreateEntranceTestStudent(
         [FromBody] CreateEntranceTestStudentRequest request)
     {
         var result =

@@ -5,11 +5,11 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IEntranceTestStudentService
 {
-    Task<PagedResult<EntranceTestStudentWithEntranceTestAndStudentAccountModel>> GetPagedEntranceTest(QueryEntranceTestStudentModel query);
+    Task<PagedResult<EntranceTestStudentDetail>> GetPagedEntranceTest(QueryEntranceTestStudentModel query);
 
-    Task<EntranceTestStudentWithEntranceTestAndStudentAccountModel> GetEntranceTestStudentDetailById(Guid id);
+    Task<EntranceTestStudentDetail> GetEntranceTestStudentDetailById(Guid id);
     
-    Task<EntranceTestStudentWithEntranceTestAndStudentAccountModel> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent, string? currentUserFirebaseId = default);
+    Task<EntranceTestStudentDetail> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent, string? currentUserFirebaseId = default);
     
     Task DeleteEntranceTestStudent(Guid id, string? currentUserFirebaseId = default);
     

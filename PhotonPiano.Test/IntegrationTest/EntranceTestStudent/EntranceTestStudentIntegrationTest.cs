@@ -19,7 +19,7 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
         // Act
         var response = await _client.GetAsync("/api/entranceTest");
         var content = await response.Content.ReadAsStringAsync();
-        var quizzes = JsonConvert.DeserializeObject<List<EntranceTestStudentWithEntranceTestAndStudentAccountModel>>(content, new JsonSerializerSettings());
+        var quizzes = JsonConvert.DeserializeObject<List<EntranceTestStudentDetail>>(content, new JsonSerializerSettings());
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

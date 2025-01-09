@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -33,10 +32,10 @@ public class AccountsController : BaseController
         return Created(nameof(CreateAccount), result);
     }
 
-    [HttpGet("{account-id}/attempt-stats")]
-    [FirebaseAuthorize]
-    public async Task<ActionResult> GetAttemptsStats([FromRoute(Name = "account-id")] string accountId)
-    {
-        return Ok();
-    }
+    //[HttpGet("{account-id}/attempt-stats")]
+    //[FirebaseAuthorize]
+    //public async Task<ActionResult> GetAttemptsStats([FromRoute(Name = "account-id")] string accountId)
+    //{
+    //    return Ok();
+    //}
 }

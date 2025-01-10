@@ -5,9 +5,11 @@
         IRedisCacheService RedisCacheService { get; }
 
         IAuthService AuthService { get; }
+        
+        IAccountService AccountService { get; }
 
         IEntranceTestStudentService EntranceTestStudentService { get; }
 
-        IAccountService AccountService { get; }
+        IEntranceTestService EntranceTestService { get; }
     }
 }

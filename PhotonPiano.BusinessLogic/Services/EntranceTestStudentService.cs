@@ -58,8 +58,8 @@ public class EntranceTestStudentService : IEntranceTestStudentService
         var etsModel = entranceTestStudent.Adapt<EntranceTestStudent>();
         etsModel.CreatedById = currentUserFirebaseId!;
 
-        // waiting for implementt EntranceTestService to check is model Exist
-        // var currentEntranceTestModel = _serviceFactory.EntranceTestService.GetEntranceTestById(etsModel.EntranceTestId);
+        // waiting for implementt IEntranceTestService to check is model Exist
+        // var currentEntranceTestModel = _serviceFactory.IEntranceTestService.GetEntranceTestById(etsModel.EntranceTestId);
         // if (etsModel.EntranceTestId is null)
         // {
         //     throw new BadRequestException("EntranceTest is not exist please try again");

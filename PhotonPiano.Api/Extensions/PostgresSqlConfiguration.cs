@@ -1,4 +1,6 @@
-﻿namespace PhotonPiano.Api.Extensions
+﻿using PhotonPiano.DataAccess.Models;
+
+namespace PhotonPiano.Api.Extensions
 {
     public class PostgresSqlConfiguration
     {
@@ -13,9 +15,9 @@
         {
             using (var scope = _serviceScopeFactory.CreateScope())
             {
-                //var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                //// Execute SQL after DbContext is fully configured
-                //context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS unaccent;");
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                // Execute SQL after DbContext is fully configured
+                context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS unaccent;");
             }
 
 

@@ -27,7 +27,7 @@ namespace PhotonPiano.DataAccess.Models.Entity
         
         // reference 
         // EntranceTest
-        public virtual ICollection<EntranceTest> TeacherEntranceTests { get; set; } = new List<EntranceTest>();
+        public virtual ICollection<EntranceTest> InstructorEntranceTests { get; set; } = new List<EntranceTest>();
         public virtual ICollection<EntranceTest> CreatedEntrancesTest { get; set; } = new List<EntranceTest>();
         public virtual ICollection<EntranceTest> UpdatedEntrancesTest { get; set; } = new List<EntranceTest>();
         public virtual ICollection<EntranceTest> DeletedEntrancesTest { get; set; } = new List<EntranceTest>();

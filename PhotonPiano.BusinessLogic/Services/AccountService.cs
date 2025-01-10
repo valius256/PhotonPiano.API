@@ -5,6 +5,7 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -42,6 +43,12 @@ public class AccountService : IAccountService
         return newAccount.Adapt<AccountModel>();
     }
 
+    public async Task<AccountModel> GetAccountById(string firebaseId)
+    {
+        var result = await _unitOfWork.AccountRepository.FindFirstAsync(x => x.AccountFirebaseId == firebaseId);
+        if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
+        return result.Adapt<AccountModel>();
+    }
 
     public async Task<List<AccountModel>> GetAccounts()
     {

@@ -5,8 +5,9 @@ namespace PhotonPiano.DataAccess.Abstractions
     public interface IUnitOfWork
     {
         // repositories here 
-        IEntranceTestStudentRepository  EntranceTestStudentRepository { get; }
-        IAccountRepository  AccountRepository { get; }
+        IEntranceTestStudentRepository EntranceTestStudentRepository { get; }
+        IAccountRepository AccountRepository { get; }
+        IEntranceTestRepository EntranceTestRepository { get; }
 
         Task<int> SaveChangesAsync();
 

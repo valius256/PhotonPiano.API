@@ -20,9 +20,9 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
             .HasForeignKey(x => x.StudentFirebaseId)
             .OnDelete(DeleteBehavior.NoAction); 
         
-        builder.HasMany(x => x.TeacherEntranceTests)
+        builder.HasMany(x => x.InstructorEntranceTests)
             .WithOne(x => x.Instructor)
-            .HasForeignKey(x => x.TeacherFirebaseId)
+            .HasForeignKey(x => x.InstructorId)
             .OnDelete(DeleteBehavior.NoAction);
         
         

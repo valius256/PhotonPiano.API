@@ -15,8 +15,8 @@ public class EntranceTestConfiguration : IEntityTypeConfiguration<EntranceTest>
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
         
         builder.HasOne(x => x.Instructor)
-            .WithMany(x => x.TeacherEntranceTests)
-            .HasForeignKey(x => x.TeacherFirebaseId)
+            .WithMany(x => x.InstructorEntranceTests)
+            .HasForeignKey(x => x.InstructorId)
             .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasOne(x => x.CreatedBy)

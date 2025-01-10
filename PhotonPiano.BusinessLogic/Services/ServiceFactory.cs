@@ -15,6 +15,8 @@ namespace PhotonPiano.BusinessLogic.Services
         
         private readonly Lazy<IEntranceTestStudentService> _entranceTestStudentService;
 
+        private readonly Lazy<IEntranceTestService> _entranceTestService;
+            
         public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration, IConnectionMultiplexer redis)
         {
             _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork));
@@ -22,6 +24,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 new Lazy<IAuthService>(() => new AuthService(httpClientFactory, unitOfWork, this, configuration));
             _redisCacheService = new Lazy<IRedisCacheService>(() => new RedisCacheService(redis));
             _entranceTestStudentService = new Lazy<IEntranceTestStudentService>(() => new EntranceTestStudentService(unitOfWork, this));
+            _entranceTestService = new Lazy<IEntranceTestService>(() => new EntranceTestService(unitOfWork, this));
         }
 
         public IAccountService AccountService => _accountService.Value;
@@ -29,5 +32,7 @@ namespace PhotonPiano.BusinessLogic.Services
         public IAuthService AuthService => _authService.Value;
         public IRedisCacheService RedisCacheService => _redisCacheService.Value;
         public IEntranceTestStudentService EntranceTestStudentService => _entranceTestStudentService.Value;
+        
+        public IEntranceTestService EntranceTestService => _entranceTestService.Value;
     }
 }

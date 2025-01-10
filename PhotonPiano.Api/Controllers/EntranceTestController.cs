@@ -3,7 +3,9 @@ using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
+using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.EntranceTestStudent;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
 
@@ -22,12 +24,12 @@ public class EntranceTestController : BaseController
 
     [HttpGet]
     [EndpointDescription("Get EntranceTestStudent with Paging")]
-    public async Task<ActionResult<List<EntranceTestStudentDetail>>> GetQuizzes(
-        [FromQuery] QueryPagedEntranceTestStudentRequest request)
+    public async Task<ActionResult<List<EntranceTestDetailModel>>> GetEntranceTest(
+        [FromQuery] QueryEntranceTestRequest request)
     {
         var pagedResult =
-            await _serviceFactory.EntranceTestStudentService.GetPagedEntranceTest(
-                request.Adapt<QueryEntranceTestStudentModel>());
+            await _serviceFactory.EntranceTestService.GetPagedEntranceTest(
+                request.Adapt<QueryEntranceTestModel>());
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
         return pagedResult.Items;
@@ -35,19 +37,19 @@ public class EntranceTestController : BaseController
 
     [HttpGet("{id}")]
     [EndpointDescription("Get EntranceTestStudent by id")]
-    public async Task<ActionResult<EntranceTestStudentDetail>> GetEntranceTestById([FromRoute] Guid id)
+    public async Task<ActionResult<EntranceTestDetailModel>> GetEntranceTestById([FromRoute] Guid id)
     {
-        return Ok(await _serviceFactory.EntranceTestStudentService.GetEntranceTestStudentDetailById(id));
+        return Ok(await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id));
     }
 
     [HttpPost]
     [EndpointDescription("Create EntranceTestStudent")]
-    public async Task<ActionResult<EntranceTestStudentDetail>> CreateEntranceTestStudent(
-        [FromBody] CreateEntranceTestStudentRequest request)
+    public async Task<ActionResult<EntranceTestDetailModel>> CreateEntranceTestStudent(
+        [FromBody] CreateEntranceTestRequest request)
     {
         var result =
-            await _serviceFactory.EntranceTestStudentService.CreateEntranceTestStudent(
-                request.Adapt<EntranceTestStudentModel>(), CurrentUserFirebaseId);
+            await _serviceFactory.EntranceTestService.CreateEntranceTest(
+                request.Adapt<EntranceTestModel>(), CurrentUserFirebaseId);
         return Created(nameof(CreateEntranceTestStudent), result);
     }
 
@@ -55,16 +57,16 @@ public class EntranceTestController : BaseController
     [EndpointDescription("Delete EntranceTestStudent")]
     public async Task<ActionResult> DeleteEntranceTestStudent([FromRoute] Guid id)
     {
-        await _serviceFactory.EntranceTestStudentService.DeleteEntranceTestStudent(id, CurrentUserFirebaseId);
+        await _serviceFactory.EntranceTestService.DeleteEntranceTest(id, CurrentUserFirebaseId);
         return Ok();
     }
 
     [HttpPut("{id}")]
     [FirebaseAuthorize]
     [EndpointDescription("Update EntranceTestStudent")]
-    public async Task<ActionResult> UpdateQuiz([FromRoute] Guid id, [FromBody] UpdateEntranceTestStudentRequest request)
+    public async Task<ActionResult> UpdateEntranceTest([FromRoute] Guid id, [FromBody] UpdateEntranceTestRequest request)
     {
-        await _serviceFactory.EntranceTestStudentService.UpdateEntranceTestStudent(id, request.Adapt<UpdateEntranceTestStudentModel>(), CurrentUserFirebaseId);
+        await _serviceFactory.EntranceTestService.UpdateEntranceTest(id, request.Adapt<UpdateEntranceTestModel>(), CurrentUserFirebaseId);
 
         return NoContent();
     }

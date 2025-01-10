@@ -8,23 +8,27 @@ namespace PhotonPiano.DataAccess
     public class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext _context;
-        
+
 
         private readonly Lazy<IEntranceTestStudentRepository> _entranceTestStudentRepository;
         private readonly Lazy<IAccountRepository> _accountRepository;
-        
+        private readonly Lazy<IEntranceTestRepository> _entranceTestRepository;
+
+
         private IDbContextTransaction? _currentTransaction;
-        
+
         public UnitOfWork(ApplicationDbContext context)
         {
             _context = context;
-            _accountRepository =  new Lazy<IAccountRepository>(() => new AccountRepository(context));
+            _accountRepository = new Lazy<IAccountRepository>(() => new AccountRepository(context));
             _entranceTestStudentRepository = new Lazy<IEntranceTestStudentRepository>(() => new EntranceTestStudentRepository(context));
-            
+            _entranceTestRepository = new Lazy<IEntranceTestRepository>(() => new EntranceTestRepository(context));
+
         }
-        
+
         public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
         public IAccountRepository AccountRepository => _accountRepository.Value;
+        public IEntranceTestRepository EntranceTestRepository => _entranceTestRepository.Value;
 
 
         public async Task<int> SaveChangesAsync()

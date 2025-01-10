@@ -10,4 +10,6 @@ public interface IAccountService
         bool isEmailVerified = false,
         bool requireCheckingFirebaseId = true);
     Task<AccountModel> CreateAccount(string firebaseUId, string email);
+    
+    Task<AccountModel> GetAccountById(string firebaseId);
 }

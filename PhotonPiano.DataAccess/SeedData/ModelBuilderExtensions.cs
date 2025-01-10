@@ -87,7 +87,7 @@ namespace PhotonPiano.DataAccess.SeedData
                     AnnouncedTime = DateTime.UtcNow.AddHours(1),
                     Shift = Shift.Shift1_7h_8h30,
                     StartTime = DateTime.UtcNow.AddHours(4),
-                    TeacherFirebaseId = "teacher002",
+                    InstructorId = "teacher002",
                     RoomName = "Room 1",
                     CreatedById = "admin001",
 
@@ -110,7 +110,7 @@ namespace PhotonPiano.DataAccess.SeedData
                     AnnouncedTime = DateTime.UtcNow.AddHours(1),
                     Shift = Shift.Shift5_14h15_15h45,
                     StartTime = DateTime.UtcNow.AddHours(4),
-                    TeacherFirebaseId = "teacher002",
+                    InstructorId = "teacher002",
                     CreatedById = "admin001",
                 }
             );

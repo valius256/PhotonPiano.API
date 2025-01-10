@@ -12,7 +12,7 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250109064656_Initial")]
+    [Migration("20250110010123_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -93,7 +93,7 @@ namespace PhotonPiano.DataAccess.Migrations
                             BankAccount = "",
                             Email = "admin001@gmail.com",
                             IsEmailVerified = false,
-                            JoinedDate = new DateTime(2025, 1, 9, 13, 46, 55, 498, DateTimeKind.Utc).AddTicks(200),
+                            JoinedDate = new DateTime(2025, 1, 10, 8, 1, 19, 496, DateTimeKind.Utc).AddTicks(8413),
                             Level = 0,
                             Phone = "",
                             RecordStatus = 1,
@@ -109,7 +109,7 @@ namespace PhotonPiano.DataAccess.Migrations
                             BankAccount = "",
                             Email = "teacher002@gmail.com",
                             IsEmailVerified = false,
-                            JoinedDate = new DateTime(2025, 1, 9, 13, 46, 55, 498, DateTimeKind.Utc).AddTicks(1387),
+                            JoinedDate = new DateTime(2025, 1, 10, 8, 1, 19, 497, DateTimeKind.Utc).AddTicks(3014),
                             Level = 0,
                             Phone = "",
                             RecordStatus = 1,
@@ -125,7 +125,7 @@ namespace PhotonPiano.DataAccess.Migrations
                             BankAccount = "",
                             Email = "learner003@gmail.com",
                             IsEmailVerified = false,
-                            JoinedDate = new DateTime(2025, 1, 9, 13, 46, 55, 498, DateTimeKind.Utc).AddTicks(1397),
+                            JoinedDate = new DateTime(2025, 1, 10, 8, 1, 19, 497, DateTimeKind.Utc).AddTicks(3055),
                             Level = 0,
                             Phone = "",
                             RecordStatus = 1,
@@ -188,8 +188,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f1009878-ac37-424b-a9cf-8ce235755cc5"),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(385),
+                            Id = new Guid("46595568-5f0a-4cf8-b8aa-8d8f962288ce"),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 501, DateTimeKind.Utc).AddTicks(1742),
                             CreatedById = "admin001",
                             Description = "criterialTest Description",
                             Name = "",
@@ -220,6 +220,12 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<string>("DeletedById")
                         .HasColumnType("character varying(30)");
 
+                    b.Property<string>("InstructorId")
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("InstructorName")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsAnnouncedScore")
                         .HasColumnType("boolean");
 
@@ -244,12 +250,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("TeacherFirebaseId")
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("TeacherName")
-                        .HasColumnType("text");
-
                     b.Property<string>("UpdateById")
                         .HasColumnType("character varying(30)");
 
@@ -262,9 +262,9 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("DeletedById");
 
-                    b.HasIndex("RoomId");
+                    b.HasIndex("InstructorId");
 
-                    b.HasIndex("TeacherFirebaseId");
+                    b.HasIndex("RoomId");
 
                     b.HasIndex("UpdateById");
 
@@ -273,46 +273,46 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
-                            AnnouncedTime = new DateTime(2025, 1, 9, 7, 46, 55, 500, DateTimeKind.Utc).AddTicks(3008),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(2764),
+                            Id = new Guid("0e579113-45f9-4a72-b2de-efd185b41efa"),
+                            AnnouncedTime = new DateTime(2025, 1, 10, 2, 1, 19, 501, DateTimeKind.Utc).AddTicks(8288),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 501, DateTimeKind.Utc).AddTicks(7611),
                             CreatedById = "admin001",
+                            InstructorId = "teacher002",
                             IsAnnouncedScore = false,
                             IsAnnouncedTime = false,
                             RecordStatus = 1,
-                            RoomId = new Guid("80100937-dca8-486d-bbde-5b24887dc82b"),
+                            RoomId = new Guid("b797b3cf-6f5b-4cb3-ada2-c4d6f185e7f4"),
                             RoomName = "Room 1",
                             Shift = 0,
-                            StartTime = new DateTime(2025, 1, 9, 10, 46, 55, 500, DateTimeKind.Utc).AddTicks(3422),
-                            TeacherFirebaseId = "teacher002"
+                            StartTime = new DateTime(2025, 1, 10, 5, 1, 19, 501, DateTimeKind.Utc).AddTicks(9322)
                         },
                         new
                         {
-                            Id = new Guid("45316ded-caa7-4f95-aad1-3c7c25f5fb56"),
-                            AnnouncedTime = new DateTime(2025, 1, 9, 7, 46, 55, 500, DateTimeKind.Utc).AddTicks(4021),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(4019),
+                            Id = new Guid("2eb3d0d2-7b4f-4cc1-b994-cbfb8a74fd05"),
+                            AnnouncedTime = new DateTime(2025, 1, 10, 2, 1, 19, 502, DateTimeKind.Utc).AddTicks(1898),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 502, DateTimeKind.Utc).AddTicks(1883),
                             CreatedById = "admin001",
                             IsAnnouncedScore = false,
                             IsAnnouncedTime = false,
                             RecordStatus = 1,
-                            RoomId = new Guid("7bb2d750-e271-4bb3-bdc2-07e8fc98704c"),
+                            RoomId = new Guid("aae5dc17-d2d3-4ff2-9486-2e0eec88ec43"),
                             RoomName = "Room 2",
                             Shift = 2,
-                            StartTime = new DateTime(2025, 1, 9, 10, 46, 55, 500, DateTimeKind.Utc).AddTicks(4022)
+                            StartTime = new DateTime(2025, 1, 10, 5, 1, 19, 502, DateTimeKind.Utc).AddTicks(1899)
                         },
                         new
                         {
-                            Id = new Guid("f724fb51-b58e-460c-b96e-6675650d3824"),
-                            AnnouncedTime = new DateTime(2025, 1, 9, 7, 46, 55, 500, DateTimeKind.Utc).AddTicks(4024),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(4023),
+                            Id = new Guid("3e2819a1-f9a1-463c-a431-7b3ddeb39dfe"),
+                            AnnouncedTime = new DateTime(2025, 1, 10, 2, 1, 19, 502, DateTimeKind.Utc).AddTicks(1903),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 502, DateTimeKind.Utc).AddTicks(1902),
                             CreatedById = "admin001",
+                            InstructorId = "teacher002",
                             IsAnnouncedScore = false,
                             IsAnnouncedTime = false,
                             RecordStatus = 1,
-                            RoomId = new Guid("a3980a5d-0446-4296-b483-52c0248a324b"),
+                            RoomId = new Guid("49072912-e233-49a4-bd52-967acb7e8fab"),
                             Shift = 4,
-                            StartTime = new DateTime(2025, 1, 9, 10, 46, 55, 500, DateTimeKind.Utc).AddTicks(4024),
-                            TeacherFirebaseId = "teacher002"
+                            StartTime = new DateTime(2025, 1, 10, 5, 1, 19, 502, DateTimeKind.Utc).AddTicks(1904)
                         });
                 });
 
@@ -373,11 +373,11 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("334b3a34-fa74-4cfc-aac8-93f5facbba16"),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(7091),
+                            Id = new Guid("4863e0d3-9367-4c06-bb1b-2983303df3c1"),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 503, DateTimeKind.Utc).AddTicks(6354),
                             CreatedById = "admin001",
-                            CriteriaId = new Guid("f1009878-ac37-424b-a9cf-8ce235755cc5"),
-                            EntranceTestStudentId = new Guid("c89b9cb0-7504-4489-ab66-a26268bcf291"),
+                            CriteriaId = new Guid("46595568-5f0a-4cf8-b8aa-8d8f962288ce"),
+                            EntranceTestStudentId = new Guid("e57a8e2c-b801-481c-b597-ef81dc155f50"),
                             RecordStatus = 1
                         });
                 });
@@ -449,11 +449,11 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("c89b9cb0-7504-4489-ab66-a26268bcf291"),
-                            BandScore = 9m,
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(4579),
+                            Id = new Guid("e57a8e2c-b801-481c-b597-ef81dc155f50"),
+                            BandScore = 6m,
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 502, DateTimeKind.Utc).AddTicks(6516),
                             CreatedById = "admin001",
-                            EntranceTestId = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
+                            EntranceTestId = new Guid("0e579113-45f9-4a72-b2de-efd185b41efa"),
                             IsScoreAnnounced = true,
                             Rank = 1,
                             RecordStatus = 1,
@@ -462,11 +462,11 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("02d9b1a6-bbe0-42b9-b49d-83ffe43b9312"),
-                            BandScore = 8m,
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(6671),
+                            Id = new Guid("3a809fc0-a28e-4aaa-b350-3257cf0f4d83"),
+                            BandScore = 6m,
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 503, DateTimeKind.Utc).AddTicks(2926),
                             CreatedById = "admin001",
-                            EntranceTestId = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
+                            EntranceTestId = new Guid("0e579113-45f9-4a72-b2de-efd185b41efa"),
                             IsScoreAnnounced = true,
                             Rank = 2,
                             RecordStatus = 1,
@@ -475,11 +475,11 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("7d34346a-f861-455a-8fc7-097806cab95c"),
-                            BandScore = 8m,
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(6681),
+                            Id = new Guid("fad7e402-2b64-43b3-956f-aef7e702e7ef"),
+                            BandScore = 4m,
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 503, DateTimeKind.Utc).AddTicks(2975),
                             CreatedById = "admin001",
-                            EntranceTestId = new Guid("bb3cd729-8096-461e-a0bc-809495426a2a"),
+                            EntranceTestId = new Guid("0e579113-45f9-4a72-b2de-efd185b41efa"),
                             IsScoreAnnounced = true,
                             Rank = 3,
                             RecordStatus = 1,
@@ -538,8 +538,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("80100937-dca8-486d-bbde-5b24887dc82b"),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(1588),
+                            Id = new Guid("b797b3cf-6f5b-4cb3-ada2-c4d6f185e7f4"),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 501, DateTimeKind.Utc).AddTicks(5206),
                             CreatedById = "admin001",
                             Name = "Room 1",
                             RecordStatus = 1,
@@ -547,8 +547,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("7bb2d750-e271-4bb3-bdc2-07e8fc98704c"),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(2157),
+                            Id = new Guid("aae5dc17-d2d3-4ff2-9486-2e0eec88ec43"),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 501, DateTimeKind.Utc).AddTicks(6003),
                             CreatedById = "admin001",
                             Name = "Room 2",
                             RecordStatus = 1,
@@ -556,8 +556,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("a3980a5d-0446-4296-b483-52c0248a324b"),
-                            CreatedAt = new DateTime(2025, 1, 9, 13, 46, 55, 500, DateTimeKind.Utc).AddTicks(2159),
+                            Id = new Guid("49072912-e233-49a4-bd52-967acb7e8fab"),
+                            CreatedAt = new DateTime(2025, 1, 10, 8, 1, 19, 501, DateTimeKind.Utc).AddTicks(6006),
                             CreatedById = "admin001",
                             Name = "Room 3",
                             RecordStatus = 1,
@@ -603,16 +603,16 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasForeignKey("DeletedById")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Instructor")
+                        .WithMany("InstructorEntranceTests")
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Room", "Room")
                         .WithMany("EntranceTests")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Instructor")
-                        .WithMany("TeacherEntranceTests")
-                        .HasForeignKey("TeacherFirebaseId")
-                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
                         .WithMany("UpdatedEntrancesTest")
@@ -761,7 +761,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Navigation("EntranceTestStudents");
 
-                    b.Navigation("TeacherEntranceTests");
+                    b.Navigation("InstructorEntranceTests");
 
                     b.Navigation("UpdatedCriteria");
 

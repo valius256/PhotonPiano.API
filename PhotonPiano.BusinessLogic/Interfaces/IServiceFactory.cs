@@ -13,5 +13,7 @@
         IEntranceTestService EntranceTestService { get; }
         
         IRoomService RoomService { get; }
+        
+        ICriteriaService CriteriaService { get; }
     }
 }

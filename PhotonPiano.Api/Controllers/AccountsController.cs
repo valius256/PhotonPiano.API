@@ -31,6 +31,15 @@ public class AccountsController : BaseController
 
         return Created(nameof(CreateAccount), result);
     }
+    
+    [HttpGet("{accountFirebaseId}")]
+    [EndpointDescription("Get Account details by id")]
+    public async Task<ActionResult<AccountModel>> GetAccountById([FromRoute] string accountFirebaseId)
+    {
+        var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
+
+        return Ok(result);
+    }
 
     //[HttpGet("{account-id}/attempt-stats")]
     //[FirebaseAuthorize]

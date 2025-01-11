@@ -19,6 +19,7 @@ namespace PhotonPiano.BusinessLogic.Services
         
         private readonly Lazy<IRoomService> _roomService;
         
+        private readonly Lazy<ICriteriaService> _criteriaService;
             
         public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration, IConnectionMultiplexer redis)
         {
@@ -29,6 +30,8 @@ namespace PhotonPiano.BusinessLogic.Services
             _entranceTestStudentService = new Lazy<IEntranceTestStudentService>(() => new EntranceTestStudentService(unitOfWork, this));
             _entranceTestService = new Lazy<IEntranceTestService>(() => new EntranceTestService(unitOfWork, this));
             _roomService = new Lazy<IRoomService>(() => new RoomService(unitOfWork));
+            _criteriaService = new Lazy<ICriteriaService>(() => new CriteriaService(unitOfWork));
+
         }
 
         public IAccountService AccountService => _accountService.Value;
@@ -42,5 +45,7 @@ namespace PhotonPiano.BusinessLogic.Services
         public IEntranceTestService EntranceTestService => _entranceTestService.Value;
         
         public IRoomService RoomService => _roomService.Value;  
+        
+        public ICriteriaService CriteriaService => _criteriaService.Value;
     }
 }

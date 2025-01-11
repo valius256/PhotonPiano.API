@@ -14,7 +14,7 @@ namespace PhotonPiano.DataAccess
         private readonly Lazy<IAccountRepository> _accountRepository;
         private readonly Lazy<IEntranceTestRepository> _entranceTestRepository;
         private readonly Lazy<IRoomRepository> _roomRepository;
-
+        private readonly Lazy<ICriteriaRepository> _criteriaRepository;
 
         private IDbContextTransaction? _currentTransaction;
 
@@ -25,14 +25,18 @@ namespace PhotonPiano.DataAccess
             _entranceTestStudentRepository = new Lazy<IEntranceTestStudentRepository>(() => new EntranceTestStudentRepository(context));
             _entranceTestRepository = new Lazy<IEntranceTestRepository>(() => new EntranceTestRepository(context));
             _roomRepository = new Lazy<IRoomRepository>(() => new RoomRepository(context));
-            
+            _criteriaRepository = new Lazy<ICriteriaRepository>(() => new CriteriaRepository(context));
         }
 
         public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
+        
         public IAccountRepository AccountRepository => _accountRepository.Value;
+        
         public IEntranceTestRepository EntranceTestRepository => _entranceTestRepository.Value;
+        
         public IRoomRepository RoomRepository => _roomRepository.Value;
         
+       public ICriteriaRepository CriteriaRepository => _criteriaRepository.Value;
 
 
         public async Task<int> SaveChangesAsync()

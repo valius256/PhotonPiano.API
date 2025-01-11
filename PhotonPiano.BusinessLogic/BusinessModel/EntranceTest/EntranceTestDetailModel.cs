@@ -12,6 +12,5 @@ public record EntranceTestDetailModel : EntranceTestModel
     public AccountModel CreatedBy { get; init; }
     
     public AccountModel Instructor { get; init; }
-    
-    List<EntranceTestStudentModel> EntranceTestStudents { get; set; } = [];
+    public List<EntranceTestStudentModel> EntranceTestStudents { get; init; } = [];
 }

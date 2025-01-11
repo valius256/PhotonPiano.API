@@ -8,12 +8,12 @@ using PhotonPiano.BusinessLogic.Interfaces;
 namespace PhotonPiano.Api.Controllers;
 
 [ApiController]
-[Route("api/criteria")]
-public class CriteriaController : BaseController
+[Route("api/criterias")]
+public class CriteriasController : BaseController
 {
     private readonly IServiceFactory _serviceFactory;
 
-    public CriteriaController(IServiceFactory serviceFactory)
+    public CriteriasController(IServiceFactory serviceFactory)
     {
         _serviceFactory = serviceFactory;
     }

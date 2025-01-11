@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Middlewares;
+using PhotonPiano.Api.Responses.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.DataAccess.Models;
 
 namespace PhotonPiano.Api.Extensions
@@ -59,7 +62,10 @@ namespace PhotonPiano.Api.Extensions
 
         private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
         {
-
+            TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()
+                .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
+                .Map(dest => dest.Status, src => src.RecordStatus);
+            
             return services;
         }
 

@@ -3,27 +3,26 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.EntranceTest;
-using PhotonPiano.Api.Requests.EntranceTestStudent;
+using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
-using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
 
 namespace PhotonPiano.Api.Controllers;
 
 [ApiController]
-[Route("api/entranceTest")]
-public class EntranceTestController : BaseController
+[Route("api/entrance-tests")]
+public class EntranceTestsController : BaseController
 {
     private readonly IServiceFactory _serviceFactory;
 
-    public EntranceTestController(IServiceFactory serviceFactory)
+    public EntranceTestsController(IServiceFactory serviceFactory)
     {
         _serviceFactory = serviceFactory;
     }
 
     [HttpGet]
     [EndpointDescription("Get EntranceTestStudent with Paging")]
-    public async Task<ActionResult<List<EntranceTestDetailModel>>> GetEntranceTest(
+    public async Task<ActionResult<List<EntranceTestResponse>>> GetEntranceTest(
         [FromQuery] QueryEntranceTestRequest request)
     {
         var pagedResult =
@@ -31,7 +30,7 @@ public class EntranceTestController : BaseController
                 request.Adapt<QueryEntranceTestModel>());
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
-        return pagedResult.Items;
+        return pagedResult.Items.Adapt<List<EntranceTestResponse>>();
     }
 
     [HttpGet("{id}")]

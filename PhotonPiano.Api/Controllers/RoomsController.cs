@@ -9,12 +9,12 @@ using PhotonPiano.BusinessLogic.Interfaces;
 namespace PhotonPiano.Api.Controllers;
 
 [ApiController]
-[Route("api/room")]
-public class RoomController : BaseController
+[Route("api/rooms")]
+public class RoomsController : BaseController
 {
     private readonly IServiceFactory _serviceFactory;
 
-    public RoomController(IServiceFactory serviceFactory)
+    public RoomsController(IServiceFactory serviceFactory)
     {
         _serviceFactory = serviceFactory;
     }

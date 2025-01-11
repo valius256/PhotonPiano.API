@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
-namespace L2Drive.API.Requests.Query;
+namespace PhotonPiano.Api.Requests.Query;
 
 public record QueryPagedRequest
 {

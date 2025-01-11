@@ -1,5 +1,5 @@
-using L2Drive.API.Requests.Query;
 using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.Api.Requests.Query;
 
 namespace PhotonPiano.Api.Requests.EntranceTestStudent;
 

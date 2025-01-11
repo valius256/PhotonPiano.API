@@ -12,6 +12,8 @@ namespace PhotonPiano.DataAccess.Abstractions
         IEntranceTestRepository EntranceTestRepository { get; }
         
         IRoomRepository RoomRepository { get; }
+        
+        ICriteriaRepository CriteriaRepository { get; }
 
         Task<int> SaveChangesAsync();
 

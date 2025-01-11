@@ -4,7 +4,7 @@ using PhotonPiano.DataAccess.Repositories;
 
 namespace PhotonPiano.DataAccess.Extensions
 {
-    public static class IServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddDataAccessDependencies(this IServiceCollection services)
         {
@@ -12,7 +12,8 @@ namespace PhotonPiano.DataAccess.Extensions
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IEntranceTestStudentRepository, EntranceTestStudentRepository>();
             services.AddScoped<IAccountRepository, AccountRepository>();
-            
+            services.AddScoped<IRoomRepository, RoomRepository>();
+            services.AddScoped<IEntranceTestRepository, EntranceTestRepository>();
             
             
             return services;

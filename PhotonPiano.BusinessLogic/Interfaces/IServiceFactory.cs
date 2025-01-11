@@ -11,5 +11,7 @@
         IEntranceTestStudentService EntranceTestStudentService { get; }
 
         IEntranceTestService EntranceTestService { get; }
+        
+        IRoomService RoomService { get; }
     }
 }

@@ -68,11 +68,13 @@ namespace PhotonPiano.BusinessLogic.Services
             entranceTestModel.CreatedById = currentUserFirebaseId!;
 
             // check room is exist 
+            var roomEntity = await _serviceFactory.RoomService.GetRoomDetailById(entranceTestModel.RoomId!);
+             if (roomEntity is null) throw new BadRequestException("Room is not exist please enter a valid room");
 
             // check Instructor is Exist in db
             var instructorEntity =
                 await _serviceFactory.AccountService.GetAccountById(entranceTestModel.InstructorId!);
-            if (instructorEntity is null) throw new BadRequestException("Instructor is not exist please try again");
+             if (instructorEntity is null) throw new BadRequestException("Instructor is not exist please enter a valid instructor ");
 
 
             var createdEntranceTestId = Guid.Empty;

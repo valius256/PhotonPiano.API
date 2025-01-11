@@ -4,7 +4,7 @@ using PhotonPiano.BusinessLogic.Services;
 
 namespace PhotonPiano.BusinessLogic.Extensions
 {
-    public static class IServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddBusinessLogicDependencies(this IServiceCollection services)
         {
@@ -14,6 +14,8 @@ namespace PhotonPiano.BusinessLogic.Extensions
             services.AddScoped<IEntranceTestStudentService, EntranceTestStudentService>();
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IEntranceTestService, EntranceTestService>();
+            
             services.AddHttpClient();
 
             services.AddMapsterConfig();

@@ -4,7 +4,7 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Requests.EntranceTest;
 
-public class QueryEntranceTestRequest : QueryPagedRequest
+public record QueryEntranceTestRequest : QueryPagedRequest
 {
     [FromQuery(Name = "room-ids")]
     public List<Guid>? RoomIds { get; init; } = [];

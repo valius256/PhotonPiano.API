@@ -1,4 +1,3 @@
-using L2Drive.API.Requests.EntranceTestStudent;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
@@ -43,6 +42,7 @@ public class EntranceTestController : BaseController
     }
 
     [HttpPost]
+    [FirebaseAuthorize]
     [EndpointDescription("Create EntranceTestStudent")]
     public async Task<ActionResult<EntranceTestDetailModel>> CreateEntranceTestStudent(
         [FromBody] CreateEntranceTestRequest request)
@@ -53,7 +53,8 @@ public class EntranceTestController : BaseController
         return Created(nameof(CreateEntranceTestStudent), result);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id}")] 
+    [FirebaseAuthorize]
     [EndpointDescription("Delete EntranceTestStudent")]
     public async Task<ActionResult> DeleteEntranceTestStudent([FromRoute] Guid id)
     {

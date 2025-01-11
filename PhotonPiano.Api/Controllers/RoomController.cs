@@ -1,0 +1,71 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Extensions;
+using PhotonPiano.Api.Requests.Room;
+using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.BusinessLogic.Interfaces;
+
+namespace PhotonPiano.Api.Controllers;
+
+[ApiController]
+[Route("api/room")]
+public class RoomController : BaseController
+{
+    private readonly IServiceFactory _serviceFactory;
+
+    public RoomController(IServiceFactory serviceFactory)
+    {
+        _serviceFactory = serviceFactory;
+    }
+
+    [HttpGet]
+    [EndpointDescription("Get Rooms with paging")]
+    public async Task<ActionResult<List<RoomDetailModel>>> GetRooms(
+        [FromQuery] QueryRoomRequest request)
+    {
+        var pagedResult = await _serviceFactory.RoomService.GetPagedEntranceTest(request.Adapt<QueryRoomModel>());
+        
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+        return pagedResult.Items;
+    }
+    
+    [HttpGet("{id}")]
+    [EndpointDescription("Get Rooms by id")]
+    public async Task<ActionResult<RoomDetailModel>> GetEntranceTestById([FromRoute] Guid id)
+    {
+        return Ok(await _serviceFactory.RoomService.GetRoomDetailById(id));
+    }
+
+    [HttpPost]
+    [FirebaseAuthorize]
+    [EndpointDescription("Create Room")]
+    public async Task<ActionResult<RoomDetailModel>> CreateRoom(
+        [FromBody] CreateRoomRequest request)
+    {
+        var result =
+            await _serviceFactory.RoomService.CreateRoom(
+                request.Adapt<RoomModel>(), CurrentUserFirebaseId);
+        return Created(nameof(CreateRoom), result);
+    }
+
+    [HttpDelete("{id}")]
+    [FirebaseAuthorize]
+    [EndpointDescription("Delete Room")]
+    public async Task<ActionResult> DeleteRoom([FromRoute] Guid id)
+    {
+        await _serviceFactory.RoomService.DeleteRoom(id, CurrentUserFirebaseId);
+        return Ok();
+    }
+
+    [HttpPut("{id}")]
+    [FirebaseAuthorize]
+    [EndpointDescription("Update Room")]
+    public async Task<ActionResult> UpdateRoom([FromRoute] Guid id, [FromBody] UpdateRoomRequest request)
+    {
+        await _serviceFactory.RoomService.UpdateRoom(id, request.Adapt<UpdateRoomModel>(), CurrentUserFirebaseId);
+
+        return NoContent();
+    }
+    
+}

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace L2Drive.API.Requests.Query;
 
-public class QueryPagedRequest
+public record QueryPagedRequest
 {
     [FromQuery(Name = "page")]
     [Range(1, int.MaxValue, ErrorMessage = "Page must be greater than zero.")]

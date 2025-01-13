@@ -20,18 +20,18 @@ public class RoomsController : BaseController
     }
 
     [HttpGet]
-    [EndpointDescription("Get Rooms with paging")]
+    [EndpointDescription("Get rooms with paging")]
     public async Task<ActionResult<List<RoomDetailModel>>> GetRooms(
         [FromQuery] QueryRoomRequest request)
     {
-        var pagedResult = await _serviceFactory.RoomService.GetPagedEntranceTest(request.Adapt<QueryRoomModel>());
+        var pagedResult = await _serviceFactory.RoomService.GetPagedRooms(request.Adapt<QueryRoomModel>());
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
         return pagedResult.Items;
     }
 
     [HttpGet("{id}")]
-    [EndpointDescription("Get Rooms by id")]
+    [EndpointDescription("Get room by id")]
     public async Task<ActionResult<RoomDetailModel>> GetEntranceTestById([FromRoute] Guid id)
     {
         return Ok(await _serviceFactory.RoomService.GetRoomDetailById(id));
@@ -39,7 +39,7 @@ public class RoomsController : BaseController
 
     [HttpPost]
     [FirebaseAuthorize]
-    [EndpointDescription("Create Room")]
+    [EndpointDescription("Create a room")]
     public async Task<ActionResult<RoomDetailModel>> CreateRoom(
         [FromBody] CreateRoomRequest request)
     {
@@ -51,7 +51,7 @@ public class RoomsController : BaseController
 
     [HttpDelete("{id}")]
     [FirebaseAuthorize]
-    [EndpointDescription("Delete Room")]
+    [EndpointDescription("Delete a room")]
     public async Task<ActionResult> DeleteRoom([FromRoute] Guid id)
     {
         await _serviceFactory.RoomService.DeleteRoom(id, CurrentUserFirebaseId);
@@ -60,7 +60,7 @@ public class RoomsController : BaseController
 
     [HttpPut("{id}")]
     [FirebaseAuthorize]
-    [EndpointDescription("Update Room")]
+    [EndpointDescription("Update a room")]
     public async Task<ActionResult> UpdateRoom([FromRoute] Guid id, [FromBody] UpdateRoomRequest request)
     {
         await _serviceFactory.RoomService.UpdateRoom(id, request.Adapt<UpdateRoomModel>(), CurrentUserFirebaseId);

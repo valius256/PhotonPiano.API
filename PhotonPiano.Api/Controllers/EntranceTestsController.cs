@@ -21,7 +21,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet]
-    [EndpointDescription("Get EntranceTestStudent with Paging")]
+    [EndpointDescription("Get entrance tests with paging")]
     public async Task<ActionResult<List<EntranceTestResponse>>> GetEntranceTest(
         [FromQuery] QueryEntranceTestRequest request)
     {
@@ -34,7 +34,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet("{id}")]
-    [EndpointDescription("Get EntranceTestStudent by id")]
+    [EndpointDescription("Get an entrance test")]
     public async Task<ActionResult<EntranceTestResponse>> GetEntranceTestById([FromRoute] Guid id)
     {
         var result = await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id);
@@ -43,7 +43,7 @@ public class EntranceTestsController : BaseController
 
     [HttpPost]
     [FirebaseAuthorize]
-    [EndpointDescription("Create EntranceTestStudent")]
+    [EndpointDescription("Create an entrance test")]
     public async Task<ActionResult<EntranceTestResponse>> CreateEntranceTest(
         [FromBody] CreateEntranceTestRequest request)
     {
@@ -55,7 +55,7 @@ public class EntranceTestsController : BaseController
 
     [HttpDelete("{id}")]
     [FirebaseAuthorize]
-    [EndpointDescription("Delete EntranceTest")]
+    [EndpointDescription("Delete an entrance test")]
     public async Task<ActionResult> DeleteEntranceTest([FromRoute] Guid id)
     {
         await _serviceFactory.EntranceTestService.DeleteEntranceTest(id, CurrentUserFirebaseId);
@@ -64,7 +64,7 @@ public class EntranceTestsController : BaseController
 
     [HttpPut("{id}")]
     [FirebaseAuthorize]
-    [EndpointDescription("Update EntranceTest")]
+    [EndpointDescription("Update an entrance test")]
     public async Task<ActionResult> UpdateEntranceTest([FromRoute] Guid id,
         [FromBody] UpdateEntranceTestRequest request)
     {

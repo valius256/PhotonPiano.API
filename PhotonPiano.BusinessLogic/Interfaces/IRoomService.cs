@@ -5,7 +5,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IRoomService
 {
-    Task<PagedResult<RoomDetailModel>> GetPagedEntranceTest(QueryRoomModel query);
+    Task<PagedResult<RoomDetailModel>> GetPagedRooms(QueryRoomModel query);
 
     Task<RoomDetailModel> GetRoomDetailById(Guid id);
 

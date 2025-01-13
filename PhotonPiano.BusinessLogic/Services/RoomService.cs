@@ -19,7 +19,7 @@ public class RoomService : IRoomService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<PagedResult<RoomDetailModel>> GetPagedEntranceTest(QueryRoomModel query)
+    public async Task<PagedResult<RoomDetailModel>> GetPagedRooms(QueryRoomModel query)
     {
         var (page, pageSize, sortColumn, orderByDesc, keyword, roomStatuses)
             = query;

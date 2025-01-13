@@ -1,8 +1,7 @@
 ﻿using PhotonPiano.DataAccess.Models.Entity;
 
-namespace PhotonPiano.DataAccess.Abstractions
+namespace PhotonPiano.DataAccess.Abstractions;
+
+public interface IEntranceTestRepository : IGenericRepository<EntranceTest>
 {
-    public interface IEntranceTestRepository : IGenericRepository<EntranceTest>
-    {
-    }
 }

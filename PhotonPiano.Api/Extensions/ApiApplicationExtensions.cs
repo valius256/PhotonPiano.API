@@ -1,25 +1,24 @@
-﻿namespace PhotonPiano.Api.Extensions
+﻿namespace PhotonPiano.Api.Extensions;
+
+public static class ApiApplicationExtensions
 {
-    public static class ApiApplicationExtensions
+    public static WebApplication UseScalarConfig(this WebApplication app)
     {
-        public static WebApplication UseScalarConfig(this WebApplication app)
+        app.MapOpenApi();
+        app.MapScalarApiReference(options =>
         {
-            app.MapOpenApi();
-            app.MapScalarApiReference(options =>
-            {
-                options.WithTitle("PhotonPiano API");
+            options.WithTitle("PhotonPiano API");
 
-                options.Authentication =
-                    new ScalarAuthenticationOptions
-                    {
-                        PreferredSecurityScheme = "Bearer"
-                    };
+            options.Authentication =
+                new ScalarAuthenticationOptions
+                {
+                    PreferredSecurityScheme = "Bearer"
+                };
 
-                options.DefaultHttpClient =
-                    new KeyValuePair<ScalarTarget, ScalarClient>(ScalarTarget.JavaScript, ScalarClient.Axios);
-            });
+            options.DefaultHttpClient =
+                new KeyValuePair<ScalarTarget, ScalarClient>(ScalarTarget.JavaScript, ScalarClient.Axios);
+        });
 
-            return app;
-        }
+        return app;
     }
 }

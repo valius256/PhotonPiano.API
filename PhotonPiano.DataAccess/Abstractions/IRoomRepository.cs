@@ -4,5 +4,4 @@ namespace PhotonPiano.DataAccess.Abstractions;
 
 public interface IRoomRepository : IGenericRepository<Room>
 {
-    
 }

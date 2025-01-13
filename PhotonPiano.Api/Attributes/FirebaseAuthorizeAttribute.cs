@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -19,35 +20,27 @@ public class FirebaseAuthorizeAttribute : AuthorizeAttribute, IAsyncAuthorizatio
 
         if (string.IsNullOrEmpty(firebaseId))
         {
-            context.Result = new Microsoft.AspNetCore.Mvc.UnauthorizedResult();
+            context.Result = new UnauthorizedResult();
 
             throw new ForbiddenMethodException("You don't have permission to access this resource");
         }
 
         var email = user.FindFirst(ClaimTypes.Email)?.Value;
 
-        if (string.IsNullOrEmpty(email))
-        {
-            throw new UnauthorizedException("Invalid email in claims");
-        }
+        if (string.IsNullOrEmpty(email)) throw new UnauthorizedException("Invalid email in claims");
 
-        bool isEmailVerified = user.FindFirst(c => c.Type == "email_verified")?.Value == "true";
+        var isEmailVerified = user.FindFirst(c => c.Type == "email_verified")?.Value == "true";
 
         var accountService = context.HttpContext.RequestServices.GetRequiredService<IAccountService>();
 
-        var account = await accountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email, isEmailVerified);
+        var account =
+            await accountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email, isEmailVerified);
 
         context.HttpContext.Items["Account"] = account;
 
-        if (Roles is [])
-        {
-            return;
-        }
+        if (Roles is []) return;
 
-        if (!Roles.Contains<Role>(account.Role))
-        {
+        if (!Roles.Contains(account.Role))
             throw new ForbiddenMethodException("You don't have permission to access this resource");
-        }
-
     }
 }

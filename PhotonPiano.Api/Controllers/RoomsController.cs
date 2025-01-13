@@ -25,11 +25,11 @@ public class RoomsController : BaseController
         [FromQuery] QueryRoomRequest request)
     {
         var pagedResult = await _serviceFactory.RoomService.GetPagedEntranceTest(request.Adapt<QueryRoomModel>());
-        
+
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
         return pagedResult.Items;
     }
-    
+
     [HttpGet("{id}")]
     [EndpointDescription("Get Rooms by id")]
     public async Task<ActionResult<RoomDetailModel>> GetEntranceTestById([FromRoute] Guid id)
@@ -67,5 +67,4 @@ public class RoomsController : BaseController
 
         return NoContent();
     }
-    
 }

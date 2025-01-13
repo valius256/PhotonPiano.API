@@ -35,38 +35,41 @@ public class EntranceTestsController : BaseController
 
     [HttpGet("{id}")]
     [EndpointDescription("Get EntranceTestStudent by id")]
-    public async Task<ActionResult<EntranceTestDetailModel>> GetEntranceTestById([FromRoute] Guid id)
+    public async Task<ActionResult<EntranceTestResponse>> GetEntranceTestById([FromRoute] Guid id)
     {
-        return Ok(await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id));
+        var result = await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id);
+        return result.Adapt<EntranceTestResponse>();
     }
 
     [HttpPost]
     [FirebaseAuthorize]
     [EndpointDescription("Create EntranceTestStudent")]
-    public async Task<ActionResult<EntranceTestDetailModel>> CreateEntranceTestStudent(
+    public async Task<ActionResult<EntranceTestResponse>> CreateEntranceTest(
         [FromBody] CreateEntranceTestRequest request)
     {
         var result =
             await _serviceFactory.EntranceTestService.CreateEntranceTest(
                 request.Adapt<EntranceTestModel>(), CurrentUserFirebaseId);
-        return Created(nameof(CreateEntranceTestStudent), result);
+        return Created(nameof(CreateEntranceTest), result.Adapt<EntranceTestResponse>());
     }
 
-    [HttpDelete("{id}")] 
+    [HttpDelete("{id}")]
     [FirebaseAuthorize]
-    [EndpointDescription("Delete EntranceTestStudent")]
-    public async Task<ActionResult> DeleteEntranceTestStudent([FromRoute] Guid id)
+    [EndpointDescription("Delete EntranceTest")]
+    public async Task<ActionResult> DeleteEntranceTest([FromRoute] Guid id)
     {
         await _serviceFactory.EntranceTestService.DeleteEntranceTest(id, CurrentUserFirebaseId);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPut("{id}")]
     [FirebaseAuthorize]
-    [EndpointDescription("Update EntranceTestStudent")]
-    public async Task<ActionResult> UpdateEntranceTest([FromRoute] Guid id, [FromBody] UpdateEntranceTestRequest request)
+    [EndpointDescription("Update EntranceTest")]
+    public async Task<ActionResult> UpdateEntranceTest([FromRoute] Guid id,
+        [FromBody] UpdateEntranceTestRequest request)
     {
-        await _serviceFactory.EntranceTestService.UpdateEntranceTest(id, request.Adapt<UpdateEntranceTestModel>(), CurrentUserFirebaseId);
+        await _serviceFactory.EntranceTestService.UpdateEntranceTest(id, request.Adapt<UpdateEntranceTestModel>(),
+            CurrentUserFirebaseId);
 
         return NoContent();
     }

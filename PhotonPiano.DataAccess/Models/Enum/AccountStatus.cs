@@ -1,7 +1,7 @@
 namespace PhotonPiano.DataAccess.Models.Enum;
 
-public  enum AccountStatus
+public enum AccountStatus
 {
     Active,
-    Inactive,
+    Inactive
 }

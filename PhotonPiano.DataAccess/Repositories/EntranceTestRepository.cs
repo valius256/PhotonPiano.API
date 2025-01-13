@@ -2,14 +2,14 @@
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Entity;
 
-namespace PhotonPiano.DataAccess.Repositories
+namespace PhotonPiano.DataAccess.Repositories;
+
+public class EntranceTestRepository : GenericRepository<EntranceTest>, IEntranceTestRepository
 {
-    public class EntranceTestRepository : GenericRepository<EntranceTest>, IEntranceTestRepository
+    private readonly ApplicationDbContext _context;
+
+    public EntranceTestRepository(ApplicationDbContext context) : base(context)
     {
-        private readonly ApplicationDbContext _context;
-        public EntranceTestRepository(ApplicationDbContext context) : base(context)
-        {
-            _context = context;
-        }
+        _context = context;
     }
 }

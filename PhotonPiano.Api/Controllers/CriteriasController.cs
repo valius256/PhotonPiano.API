@@ -2,6 +2,7 @@ using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Criteria;
+using PhotonPiano.Api.Responses.Criteria;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.Interfaces;
 
@@ -17,10 +18,10 @@ public class CriteriasController : BaseController
     {
         _serviceFactory = serviceFactory;
     }
-    
+
     [HttpGet]
     [EndpointDescription("Get Criteria with Paging")]
-    public async Task<ActionResult<List<CriteriaDetailModel>>> GetCriteria(
+    public async Task<ActionResult<List<CriteriaResponse>>> GetCriteria(
         [FromQuery] QueryCriteriaRequest request)
     {
         var pagedResult =
@@ -28,7 +29,7 @@ public class CriteriasController : BaseController
                 request.Adapt<QueryCriteriaModel>());
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
-        return pagedResult.Items;
+        return pagedResult.Items.Adapt<List<CriteriaResponse>>();
     }
 
     [HttpGet("{id}")]
@@ -37,5 +38,4 @@ public class CriteriasController : BaseController
     {
         return Ok(await _serviceFactory.CriteriaService.GetCriteriaDetailById(id));
     }
-
 }

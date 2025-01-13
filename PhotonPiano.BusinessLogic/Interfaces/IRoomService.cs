@@ -14,4 +14,6 @@ public interface IRoomService
     Task DeleteRoom(Guid id, string? currentUserFirebaseId = default);
 
     Task UpdateRoom(Guid id, UpdateRoomModel roomModel, string? currentUserFirebaseId = default);
+
+    Task<bool> IsRoomExist(Guid id);
 }

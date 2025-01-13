@@ -1,12 +1,11 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
-using System.Security.Claims;
 
 namespace PhotonPiano.Api.Controllers;
 
 public class BaseController : Controller
 {
-
     // protected readonly ILogger<T> _logger;
     //
     // public BaseController(ILogger<T> logger)
@@ -21,10 +20,7 @@ public class BaseController : Controller
         {
             var firebaseId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (!string.IsNullOrEmpty(firebaseId))
-            {
-                return firebaseId;
-            }
+            if (!string.IsNullOrEmpty(firebaseId)) return firebaseId;
 
             // _logger.LogInformation("Can't get user firebaseId from HttpContext");
 
@@ -36,7 +32,7 @@ public class BaseController : Controller
     {
         get
         {
-            HttpContext.Items.TryGetValue(key: "Account", value: out var account);
+            HttpContext.Items.TryGetValue("Account", out var account);
 
             return account as AccountModel;
         }
@@ -47,10 +43,7 @@ public class BaseController : Controller
         get
         {
             var firebaseId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "userEntityId")?.Value;
-            if (firebaseId is not null)
-            {
-                return firebaseId;
-            }
+            if (firebaseId is not null) return firebaseId;
 
             // _logger.LogInformation("Can't get userEntityId from HttpContext");
             return string.Empty;

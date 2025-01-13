@@ -4,5 +4,4 @@ namespace PhotonPiano.DataAccess.Abstractions;
 
 public interface IAccountRepository : IGenericRepository<Account>
 {
-    
 }

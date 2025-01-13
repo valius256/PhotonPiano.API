@@ -11,20 +11,18 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
     {
         builder.HasKey(x => x.AccountFirebaseId);
 
-        
+
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
-        
+
         // reference
         builder.HasMany(x => x.EntranceTestStudents)
             .WithOne(x => x.Student)
             .HasForeignKey(x => x.StudentFirebaseId)
-            .OnDelete(DeleteBehavior.NoAction); 
-        
+            .OnDelete(DeleteBehavior.NoAction);
+
         builder.HasMany(x => x.InstructorEntranceTests)
             .WithOne(x => x.Instructor)
             .HasForeignKey(x => x.InstructorId)
             .OnDelete(DeleteBehavior.NoAction);
-        
-        
     }
 }

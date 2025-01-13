@@ -1,12 +1,11 @@
-﻿namespace PhotonPiano.Shared.Exceptions
-{
-    public class CustomException : ApplicationException
-    {
-        public CustomException(string message, int code) : base(message)
-        {
-            this.Code = code;
-        }
+﻿namespace PhotonPiano.Shared.Exceptions;
 
-        public int Code { get; init; }
+public class CustomException : ApplicationException
+{
+    public CustomException(string message, int code) : base(message)
+    {
+        Code = code;
     }
+
+    public int Code { get; init; }
 }

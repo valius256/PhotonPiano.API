@@ -1,54 +1,62 @@
 ﻿using PhotonPiano.DataAccess.Models;
 
-namespace PhotonPiano.Api.Configurations
+namespace PhotonPiano.Api.Configurations;
+
+public class DbMigrationJob : IHostedService
 {
-    public class DbMigrationJob : IHostedService
+    private readonly ILogger<DbMigrationJob> _logger;
+    private readonly IServiceProvider _serviceProvider;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="DbMigrationJob" /> class.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider used to create and manage services.</param>
+    /// <param name="logger">The logger used to log information and errors.</param>
+    public DbMigrationJob(IServiceProvider serviceProvider, ILogger<DbMigrationJob> logger)
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<DbMigrationJob> _logger;
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DbMigrationJob"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider used to create and manage services.</param>
-        /// <param name="logger">The logger used to log information and errors.</param>
-        public DbMigrationJob(IServiceProvider serviceProvider, ILogger<DbMigrationJob> logger)
+    /// <summary>
+    ///     Starts the database migration process.
+    /// </summary>
+    /// <param name="cancellationToken">
+    ///     A cancellation token used to propagate notification that the operation should be
+    ///     canceled.
+    /// </param>
+    /// <returns>A task that represents the asynchronous start operation.</returns>
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        // Create a scope to manage the lifecycle of the services.
+        await using var scope = _serviceProvider.CreateAsyncScope();
+
+        // Get the application database context from the service provider.
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        try
         {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            // Apply any pending migrations to the database.
+            // Note: For demo purposes, EnsureCreatedAsync is used. In production, MigrateAsync should be used instead.
+            await db.Database.EnsureCreatedAsync(cancellationToken);
+            _logger.LogInformation("Database migration has been run successfully.");
         }
-
-        /// <summary>
-        /// Starts the database migration process.
-        /// </summary>
-        /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
-        /// <returns>A task that represents the asynchronous start operation.</returns>
-        public async Task StartAsync(CancellationToken cancellationToken)
+        catch (Exception ex)
         {
-            // Create a scope to manage the lifecycle of the services.
-            await using var scope = _serviceProvider.CreateAsyncScope();
-
-            // Get the application database context from the service provider.
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-            try
-            {
-                // Apply any pending migrations to the database.
-                // Note: For demo purposes, EnsureCreatedAsync is used. In production, MigrateAsync should be used instead.
-                await db.Database.EnsureCreatedAsync(cancellationToken: cancellationToken);
-                _logger.LogInformation("Database migration has been run successfully.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while running the database migration.");
-            }
+            _logger.LogError(ex, "An error occurred while running the database migration.");
         }
+    }
 
-        /// <summary>
-        /// Stops the database migration process.
-        /// </summary>
-        /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
-        /// <returns>A task that represents the asynchronous stop operation.</returns>
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    /// <summary>
+    ///     Stops the database migration process.
+    /// </summary>
+    /// <param name="cancellationToken">
+    ///     A cancellation token used to propagate notification that the operation should be
+    ///     canceled.
+    /// </param>
+    /// <returns>A task that represents the asynchronous stop operation.</returns>
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
     }
 }

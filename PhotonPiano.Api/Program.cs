@@ -1,10 +1,10 @@
-using System.Reflection;
 using Mapster;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using Serilog;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +15,10 @@ builder.Services.AddHostedService<DbMigrationJob>();
 
 var configuration = builder.Configuration;
 
-// if (configuration.GetValue<bool>("EnableMigration"))
-// {
-//     builder.AddRedisClient("redis-cache");
-// }
+if (configuration.GetValue<bool>("IsAspireHost"))
+{
+    builder.AddRedisClient("redis-cache");
+}
 
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)

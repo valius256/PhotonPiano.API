@@ -7,5 +7,4 @@ public record CriteriaDetailModel : CriteriaModel
 {
     public AccountSimpleModel CreatedBy { get; init; }
     public List<EntranceTestResultModel> EntranceTestResults { get; set; } = [];
-    
 }

@@ -9,7 +9,10 @@ public interface IAccountService
     Task<AccountModel> GetAndCreateAccountIfNotExistsCredentials(string firebaseId, string email,
         bool isEmailVerified = false,
         bool requireCheckingFirebaseId = true);
+
     Task<AccountModel> CreateAccount(string firebaseUId, string email);
-    
+
     Task<AccountModel> GetAccountById(string firebaseId);
+
+    Task<bool> IsAccountExist(string firebaseId);
 }

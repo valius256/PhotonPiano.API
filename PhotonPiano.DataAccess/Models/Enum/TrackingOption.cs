@@ -1,8 +1,7 @@
-﻿namespace PhotonPiano.DataAccess.Models.Enum
+﻿namespace PhotonPiano.DataAccess.Models.Enum;
+
+public enum TrackingOption
 {
-    public enum TrackingOption
-    {
-        Default,
-        IdentityResolution
-    }
+    Default,
+    IdentityResolution
 }

@@ -1,19 +1,18 @@
-﻿namespace PhotonPiano.BusinessLogic.Interfaces
+﻿namespace PhotonPiano.BusinessLogic.Interfaces;
+
+public interface IServiceFactory
 {
-    public interface IServiceFactory
-    {
-        IRedisCacheService RedisCacheService { get; }
+    IRedisCacheService RedisCacheService { get; }
 
-        IAuthService AuthService { get; }
-        
-        IAccountService AccountService { get; }
+    IAuthService AuthService { get; }
 
-        IEntranceTestStudentService EntranceTestStudentService { get; }
+    IAccountService AccountService { get; }
 
-        IEntranceTestService EntranceTestService { get; }
-        
-        IRoomService RoomService { get; }
-        
-        ICriteriaService CriteriaService { get; }
-    }
+    IEntranceTestStudentService EntranceTestStudentService { get; }
+
+    IEntranceTestService EntranceTestService { get; }
+
+    IRoomService RoomService { get; }
+
+    ICriteriaService CriteriaService { get; }
 }

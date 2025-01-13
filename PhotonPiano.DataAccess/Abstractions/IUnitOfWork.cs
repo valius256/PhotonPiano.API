@@ -1,30 +1,29 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 
-namespace PhotonPiano.DataAccess.Abstractions
+namespace PhotonPiano.DataAccess.Abstractions;
+
+public interface IUnitOfWork
 {
-    public interface IUnitOfWork
-    {
-        // repositories here 
-        IEntranceTestStudentRepository EntranceTestStudentRepository { get; }
-        
-        IAccountRepository AccountRepository { get; }
-        
-        IEntranceTestRepository EntranceTestRepository { get; }
-        
-        IRoomRepository RoomRepository { get; }
-        
-        ICriteriaRepository CriteriaRepository { get; }
+    // repositories here 
+    IEntranceTestStudentRepository EntranceTestStudentRepository { get; }
 
-        Task<int> SaveChangesAsync();
+    IAccountRepository AccountRepository { get; }
 
-        Task<IDbContextTransaction> BeginTransactionAsync();
+    IEntranceTestRepository EntranceTestRepository { get; }
 
-        Task CommitTransactionAsync();
+    IRoomRepository RoomRepository { get; }
 
-        Task RollbackTransactionAsync();
+    ICriteriaRepository CriteriaRepository { get; }
 
-        Task ExecuteInTransactionAsync(Func<Task> action);
+    Task<int> SaveChangesAsync();
 
-        Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action);
-    }
+    Task<IDbContextTransaction> BeginTransactionAsync();
+
+    Task CommitTransactionAsync();
+
+    Task RollbackTransactionAsync();
+
+    Task ExecuteInTransactionAsync(Func<Task> action);
+
+    Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action);
 }

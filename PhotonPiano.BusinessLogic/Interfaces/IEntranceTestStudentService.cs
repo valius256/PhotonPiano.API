@@ -9,9 +9,11 @@ public interface IEntranceTestStudentService
 
     Task<EntranceTestStudentDetail> GetEntranceTestStudentDetailById(Guid id);
 
-    Task<EntranceTestStudentDetail> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent, string? currentUserFirebaseId = default);
+    Task<EntranceTestStudentDetail> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent,
+        string? currentUserFirebaseId = default);
 
     Task DeleteEntranceTestStudent(Guid id, string? currentUserFirebaseId = default);
 
-    Task UpdateEntranceTestStudent(Guid id, UpdateEntranceTestStudentModel entranceTestStudent, string? currentUserFirebaseId = default);
+    Task UpdateEntranceTestStudent(Guid id, UpdateEntranceTestStudentModel entranceTestStudent,
+        string? currentUserFirebaseId = default);
 }

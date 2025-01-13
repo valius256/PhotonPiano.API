@@ -7,6 +7,7 @@ namespace PhotonPiano.DataAccess.Repositories;
 public class RoomRepository : GenericRepository<Room>, IRoomRepository
 {
     private readonly ApplicationDbContext _context;
+
     public RoomRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;

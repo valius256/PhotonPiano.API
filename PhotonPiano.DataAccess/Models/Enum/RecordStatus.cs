@@ -1,8 +1,7 @@
-﻿namespace PhotonPiano.DataAccess.Models.Enum
+﻿namespace PhotonPiano.DataAccess.Models.Enum;
+
+public enum RecordStatus
 {
-    public enum RecordStatus
-    {
-        IsDeleted,
-        IsActive
-    }
+    IsDeleted,
+    IsActive
 }

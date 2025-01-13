@@ -10,8 +10,8 @@ namespace PhotonPiano.BusinessLogic.Services;
 
 public class EntranceTestStudentService : IEntranceTestStudentService
 {
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IServiceFactory _serviceFactory;
+    private readonly IUnitOfWork _unitOfWork;
 
     public EntranceTestStudentService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
@@ -23,7 +23,7 @@ public class EntranceTestStudentService : IEntranceTestStudentService
     public async Task<PagedResult<EntranceTestStudentDetail>> GetPagedEntranceTest(QueryEntranceTestStudentModel query)
     {
         var (page, pageSize, sortColumn, orderByDesc,
-            userFirebaseIds, bandScores, entranceTestIds)
+                userFirebaseIds, bandScores, entranceTestIds)
             = query;
 
         var result = await _unitOfWork.EntranceTestStudentRepository
@@ -31,10 +31,11 @@ public class EntranceTestStudentService : IEntranceTestStudentService
                 page, pageSize, sortColumn, orderByDesc,
                 expressions:
                 [
-                    e => userFirebaseIds != null && (userFirebaseIds.Count == 0 || userFirebaseIds.Contains(e.StudentFirebaseId)),
-                    e => entranceTestIds != null && (entranceTestIds.Count == 0 || entranceTestIds.Contains(e.EntranceTestId)),
+                    e => userFirebaseIds != null &&
+                         (userFirebaseIds.Count == 0 || userFirebaseIds.Contains(e.StudentFirebaseId)),
+                    e => entranceTestIds != null &&
+                         (entranceTestIds.Count == 0 || entranceTestIds.Contains(e.EntranceTestId)),
                     e => bandScores != null && (bandScores.Count == 0 || bandScores.Contains(e.BandScore!.Value))
-
                 ]);
 
         return result;
@@ -42,18 +43,17 @@ public class EntranceTestStudentService : IEntranceTestStudentService
 
     public async Task<EntranceTestStudentDetail> GetEntranceTestStudentDetailById(Guid id)
     {
-        var entranceTestStudent = await _unitOfWork.EntranceTestStudentRepository.FindSingleProjectedAsync<EntranceTestStudentDetail>(
-            q => q.Id == id,
-            hasTrackings: false);
-        if (entranceTestStudent is null)
-        {
-            throw new NotFoundException("entranceTestStudent not found.");
-        }
+        var entranceTestStudent =
+            await _unitOfWork.EntranceTestStudentRepository.FindSingleProjectedAsync<EntranceTestStudentDetail>(
+                q => q.Id == id,
+                false);
+        if (entranceTestStudent is null) throw new NotFoundException("entranceTestStudent not found.");
 
         return entranceTestStudent;
     }
 
-    public async Task<EntranceTestStudentDetail> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent, string? currentUserFirebaseId = default)
+    public async Task<EntranceTestStudentDetail> CreateEntranceTestStudent(EntranceTestStudentModel entranceTestStudent,
+        string? currentUserFirebaseId = default)
     {
         var etsModel = entranceTestStudent.Adapt<EntranceTestStudent>();
         etsModel.CreatedById = currentUserFirebaseId!;
@@ -80,11 +80,9 @@ public class EntranceTestStudentService : IEntranceTestStudentService
 
     public async Task DeleteEntranceTestStudent(Guid id, string? currentUserFirebaseId = default)
     {
-        var entranceTestStudentEntity = await _unitOfWork.EntranceTestStudentRepository.FindSingleAsync(q => q.Id == id);
-        if (entranceTestStudentEntity is null)
-        {
-            throw new NotFoundException("This entranceTestStudent not found.");
-        }
+        var entranceTestStudentEntity =
+            await _unitOfWork.EntranceTestStudentRepository.FindSingleAsync(q => q.Id == id);
+        if (entranceTestStudentEntity is null) throw new NotFoundException("This entranceTestStudent not found.");
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -95,12 +93,11 @@ public class EntranceTestStudentService : IEntranceTestStudentService
     public async Task UpdateEntranceTestStudent(Guid id, UpdateEntranceTestStudentModel entranceTestStudent,
         string? currentUserFirebaseId = default)
     {
-        var updatedEntranceTestStudentEntity = await _unitOfWork.EntranceTestStudentRepository.FindSingleAsync(q => q.Id == id);
+        var updatedEntranceTestStudentEntity =
+            await _unitOfWork.EntranceTestStudentRepository.FindSingleAsync(q => q.Id == id);
 
         if (updatedEntranceTestStudentEntity is null)
-        {
             throw new NotFoundException($"EntranceTestStudentEntity with id: {id} not found.");
-        }
 
         entranceTestStudent.Adapt(updatedEntranceTestStudentEntity);
         updatedEntranceTestStudentEntity.UpdateById = currentUserFirebaseId;

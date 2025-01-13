@@ -23,36 +23,31 @@ public class RoomService : IRoomService
     {
         var (page, pageSize, sortColumn, orderByDesc, keyword, roomStatuses)
             = query;
-        
-        string likeKeyword = query.GetLikeKeyword();
+
+        var likeKeyword = query.GetLikeKeyword();
 
         var result = await _unitOfWork.RoomRepository.GetPaginatedWithProjectionAsync<RoomDetailModel>(page, pageSize,
             sortColumn, orderByDesc,
             expressions:
             [
                 r => roomStatuses != null && (roomStatuses.Count == 0 || roomStatuses.Contains(r.Status)),
-                
+
                 // search 
-                r => (string.IsNullOrEmpty(keyword) ||
-                      EF.Functions.ILike(EF.Functions.Unaccent(r.Name?? string.Empty), likeKeyword))
-
-
+                r => string.IsNullOrEmpty(keyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(r.Name ?? string.Empty), likeKeyword)
             ]);
 
         return result;
-
     }
 
     public async Task<RoomDetailModel> GetRoomDetailById(Guid id)
     {
         var result = await _unitOfWork.RoomRepository
-            .FindSingleProjectedAsync<RoomDetailModel>(e => e.Id == id, hasTrackings: false);
-        if (result is null)
-        {
-            throw new NotFoundException("EntranceTest not found.");
-        }
+            .FindSingleProjectedAsync<RoomDetailModel>(e => e.Id == id, false);
+        if (result is null) throw new NotFoundException("Room not found.");
         return result;
     }
+
 
     public async Task<RoomDetailModel> CreateRoom(RoomModel roomModel, string? currentUserFirebaseId = default)
     {
@@ -60,10 +55,10 @@ public class RoomService : IRoomService
         roomMappedEntity.CreatedById = currentUserFirebaseId!;
 
         var createdRoomId = Guid.Empty;
-        
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var createdRoom =  await _unitOfWork.RoomRepository.AddAsync(roomMappedEntity);    
+            var createdRoom = await _unitOfWork.RoomRepository.AddAsync(roomMappedEntity);
             createdRoomId = createdRoom.Id;
         });
 
@@ -73,10 +68,7 @@ public class RoomService : IRoomService
     public async Task DeleteRoom(Guid id, string? currentUserFirebaseId = default)
     {
         var entranceTestEntity = await _unitOfWork.RoomRepository.FindSingleAsync(q => q.Id == id);
-        if (entranceTestEntity is null)
-        {
-            throw new NotFoundException($"This Room with ID {id} not found.");
-        }
+        if (entranceTestEntity is null) throw new NotFoundException($"This Room with ID {id} not found.");
 
         entranceTestEntity.DeletedById = currentUserFirebaseId;
         entranceTestEntity.DeletedAt = DateTime.UtcNow.AddHours(7);
@@ -89,10 +81,7 @@ public class RoomService : IRoomService
     {
         var roomEntity = await _unitOfWork.RoomRepository.FindSingleAsync(q => q.Id == id);
 
-        if (roomEntity is null)
-        {
-            throw new NotFoundException($"This Room with ID {id} not found.");
-        }
+        if (roomEntity is null) throw new NotFoundException($"This Room with ID {id} not found.");
 
         roomModel.Adapt(roomEntity);
 
@@ -100,5 +89,13 @@ public class RoomService : IRoomService
         roomEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task<bool> IsRoomExist(Guid id)
+    {
+        var result = await _unitOfWork.RoomRepository
+            .FindSingleProjectedAsync<RoomDetailModel>(e => e.Id == id, false);
+        if (result is null) throw new NotFoundException("Room not found.");
+        return true;
     }
 }

@@ -22,10 +22,7 @@ public class AccountService : IAccountService
     {
         var account = await _unitOfWork.AccountRepository.FindFirstAsync(x => x.AccountFirebaseId == firebaseUid);
 
-        if (account is not null)
-        {
-            return account.Adapt<AccountModel>();
-        }
+        if (account is not null) return account.Adapt<AccountModel>();
 
         var newAccount = new Account
         {
@@ -33,7 +30,7 @@ public class AccountService : IAccountService
             AccountFirebaseId = firebaseUid,
             Role = Role.Student,
             RecordStatus = RecordStatus.IsActive,
-            IsEmailVerified = false,
+            IsEmailVerified = false
         };
 
         await _unitOfWork.AccountRepository.AddAsync(newAccount);
@@ -50,6 +47,14 @@ public class AccountService : IAccountService
         return result.Adapt<AccountModel>();
     }
 
+    public async Task<bool> IsAccountExist(string firebaseId)
+    {
+        var result = await _unitOfWork.AccountRepository
+            .FindFirstAsync(e => e.AccountFirebaseId == firebaseId, false);
+        if (result is null) throw new NotFoundException("Account not found.");
+        return true;
+    }
+
     public async Task<List<AccountModel>> GetAccounts()
     {
         return await _unitOfWork.AccountRepository.FindProjectedAsync<AccountModel>(hasTrackings: false);
@@ -64,10 +69,7 @@ public class AccountService : IAccountService
 
         var account = await _unitOfWork.AccountRepository.FindFirstProjectedAsync<AccountModel>(expression);
 
-        if (account is not null)
-        {
-            return account;
-        }
+        if (account is not null) return account;
 
         var newAccount = new Account
         {

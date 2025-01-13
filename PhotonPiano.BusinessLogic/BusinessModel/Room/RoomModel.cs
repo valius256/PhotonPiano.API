@@ -8,6 +8,6 @@ public record RoomModel
     public string? Name { get; set; }
     public RoomStatus Status { get; set; } = RoomStatus.Opened;
     public int? Capacity { get; set; }
-    
+
     public string? CreatedById { get; set; }
 }

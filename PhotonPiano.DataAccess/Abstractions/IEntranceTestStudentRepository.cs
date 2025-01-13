@@ -4,5 +4,4 @@ namespace PhotonPiano.DataAccess.Abstractions;
 
 public interface IEntranceTestStudentRepository : IGenericRepository<EntranceTestStudent>
 {
-    
 }

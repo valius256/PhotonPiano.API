@@ -31,10 +31,11 @@ public class AccountsController : BaseController
 
         return Created(nameof(CreateAccount), result);
     }
-    
+
     [HttpGet("{firebase-id}")]
     [EndpointDescription("Get Account details by id")]
-    public async Task<ActionResult<AccountModel>> GetAccountById([FromRoute(Name = "firebase-id")] string accountFirebaseId)
+    public async Task<ActionResult<AccountModel>> GetAccountById(
+        [FromRoute(Name = "firebase-id")] string accountFirebaseId)
     {
         var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
 

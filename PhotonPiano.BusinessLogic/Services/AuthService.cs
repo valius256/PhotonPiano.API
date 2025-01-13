@@ -12,15 +12,14 @@ namespace PhotonPiano.BusinessLogic.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly string _apiKey;
 
     private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     private readonly IServiceFactory _serviceFactory;
 
-    private readonly string _apiKey;
+    private readonly IUnitOfWork _unitOfWork;
 
     public AuthService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, IServiceFactory serviceFactory,
         IConfiguration configuration)
@@ -36,13 +35,13 @@ public class AuthService : IAuthService
     {
         using var client = _httpClientFactory.CreateClient();
 
-        string url =
+        var url =
             $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={_apiKey}";
 
         var jsonRequest = JsonConvert.SerializeObject(new
         {
-            email = email,
-            password = password,
+            email,
+            password,
             returnSecureToken = true
         });
 
@@ -61,8 +60,8 @@ public class AuthService : IAuthService
         var responseObject = JsonConvert.DeserializeObject<AuthModel>(jsonResponse)!;
 
         var account = await _serviceFactory.AccountService.GetAndCreateAccountIfNotExistsCredentials(
-            firebaseId: responseObject.LocalId,
-            email: email, isEmailVerified: false);
+            responseObject.LocalId,
+            email);
 
         responseObject.Role = account.Role;
 
@@ -72,20 +71,18 @@ public class AuthService : IAuthService
     public async Task<AccountModel> SignUp(string email, string password)
     {
         if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == email))
-        {
             throw new ConflictException("Email already exists");
-        }
 
         var firebaseId = await SignUpOnFirebase(email, password);
 
-        return await _serviceFactory.AccountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email, false);
+        return await _serviceFactory.AccountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email);
     }
 
     public async Task<NewIdTokenModel> RefreshToken(string refreshToken)
     {
         using var client = _httpClientFactory.CreateClient();
 
-        string url = $"https://securetoken.googleapis.com/v1/token?key={_configuration["Firebase:Auth:ApiKey"]}";
+        var url = $"https://securetoken.googleapis.com/v1/token?key={_configuration["Firebase:Auth:ApiKey"]}";
 
         var snakeCaseJsonSerializerSetting = new JsonSerializerSettings
         {
@@ -123,13 +120,12 @@ public class AuthService : IAuthService
     {
         using var client = _httpClientFactory.CreateClient();
 
-        string url =
+        var url =
             $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_configuration["Firebase:Auth:ApiKey"]}";
 
         var jsonRequest = JsonConvert.SerializeObject(new
         {
-            requestType = "PASSWORD_RESET",
-            email = email
+            requestType = "PASSWORD_RESET", email
         });
 
         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
@@ -158,11 +154,11 @@ public class AuthService : IAuthService
             }
         };
 
-        string url = "https://oauth2.googleapis.com/token";
+        var url = "https://oauth2.googleapis.com/token";
 
         var request = JsonConvert.SerializeObject(new
         {
-            code = code,
+            code,
             client_id = _configuration["Google:ClientId"],
             client_secret = _configuration["Google:ClientSecret"],
             redirect_uri = redirectUrl,
@@ -187,7 +183,7 @@ public class AuthService : IAuthService
         var responseObject =
             JsonConvert.DeserializeObject<GoogleAuthModel>(jsonResponse, snakeCaseJsonSerializerSetting)!;
 
-        string idToken = responseObject.IdToken;
+        var idToken = responseObject.IdToken;
 
         var credentials = await LinkWithFirebaseOAuthCredentials(code, idToken);
 
@@ -198,7 +194,7 @@ public class AuthService : IAuthService
     {
         using var client = _httpClientFactory.CreateClient();
 
-        string requestUri =
+        var requestUri =
             $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={_configuration["Firebase:Auth:ApiKey"]}";
 
         var requestData =
@@ -207,10 +203,7 @@ public class AuthService : IAuthService
                 Encoding.UTF8, "application/json");
         var response = await client.PostAsync(requestUri, requestData);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new UnauthorizedException("Unauthorized");
-        }
+        if (!response.IsSuccessStatusCode) throw new UnauthorizedException("Unauthorized");
 
         var jsonResponse = await response.Content.ReadAsStringAsync();
 
@@ -230,16 +223,16 @@ public class AuthService : IAuthService
     {
         using var client = _httpClientFactory.CreateClient();
 
-        string userId = string.Empty;
+        var userId = string.Empty;
 
         var jsonRequest = JsonConvert.SerializeObject(new
         {
-            email = email,
-            password = password,
+            email,
+            password,
             returnSecureToken = true
         });
 
-        string url =
+        var url =
             $"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={_apiKey}";
 
         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
@@ -258,7 +251,7 @@ public class AuthService : IAuthService
         var responseObject = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
 
         // Extract the localId field from the response
-        userId = (responseObject is not null) ? responseObject.localId : string.Empty;
+        userId = responseObject is not null ? responseObject.localId : string.Empty;
         return userId;
     }
 }

@@ -2,21 +2,20 @@
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Repositories;
 
-namespace PhotonPiano.DataAccess.Extensions
+namespace PhotonPiano.DataAccess.Extensions;
+
+public static class ServiceCollectionExtensions
 {
-    public static class ServiceCollectionExtensions
+    public static IServiceCollection AddDataAccessDependencies(this IServiceCollection services)
     {
-        public static IServiceCollection AddDataAccessDependencies(this IServiceCollection services)
-        {
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            services.AddScoped<IEntranceTestStudentRepository, EntranceTestStudentRepository>();
-            services.AddScoped<IAccountRepository, AccountRepository>();
-            services.AddScoped<IRoomRepository, RoomRepository>();
-            services.AddScoped<IEntranceTestRepository, EntranceTestRepository>();
-            
-            
-            return services;
-        }
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddScoped<IEntranceTestStudentRepository, EntranceTestStudentRepository>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<IRoomRepository, RoomRepository>();
+        services.AddScoped<IEntranceTestRepository, EntranceTestRepository>();
+
+
+        return services;
     }
 }

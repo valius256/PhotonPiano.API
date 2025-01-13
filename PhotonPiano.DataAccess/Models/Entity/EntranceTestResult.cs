@@ -10,11 +10,11 @@ public class EntranceTestResult : BaseEntityWithId
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
 
-    
+
     // reference 
-    
+
     public virtual Account CreatedBy { get; set; }
-    public virtual Account UpdateBy { get; set; } 
+    public virtual Account UpdateBy { get; set; }
     public virtual Account DeletedBy { get; set; }
     public virtual Criteria Criteria { get; set; }
     public virtual EntranceTestStudent EntranceTestStudent { get; set; }

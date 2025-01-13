@@ -110,9 +110,13 @@ public static class IServiceCollectionExtensions
 
     private static string? GetConnectionString(this IConfiguration configuration)
     {
-        var rs = configuration.GetValue<bool>("EnableMigration")
+        var rs = configuration.GetValue<bool>("IsDeploy")
             ? configuration.GetConnectionString("PostgresDeployDb")
             : configuration.GetConnectionString("PostgresLocal");
+
+        if (configuration.GetValue<bool>("IsAspireHost"))
+            rs = configuration.GetConnectionString("photonpiano");
+
         if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
             Console.WriteLine("This running is using connection string: " + rs);
 
@@ -170,9 +174,13 @@ public static class IServiceCollectionExtensions
 
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
-        var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
-        services.AddSingleton<IConnectionMultiplexer>(cf =>
-            ConnectionMultiplexer.Connect(redisConnectionString!));
+        if (!configuration.GetValue<bool>("IsAspireHost"))
+        {
+            var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
+            services.AddSingleton<IConnectionMultiplexer>(cf =>
+                ConnectionMultiplexer.Connect(redisConnectionString!));
+        }
+
         return services;
     }
 

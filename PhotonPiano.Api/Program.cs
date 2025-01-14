@@ -1,24 +1,17 @@
+using System.Reflection;
 using Mapster;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
+using PhotonPiano.ServiceDefaults;
 using Serilog;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.AddServiceDefaults();
-
 builder.Services.AddHostedService<DbMigrationJob>();
-
-
 var configuration = builder.Configuration;
 
-if (configuration.GetValue<bool>("IsAspireHost"))
-{
-    builder.AddRedisClient("redis-cache");
-}
+// if (configuration.GetValue<bool  >("IsAspireHost")) builder.AddRedisClient("redis-cache");
 
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)
@@ -27,7 +20,7 @@ builder.Services.AddApiDependencies(configuration)
 
 //Add serilog
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
-
+builder.AddServiceDefaults();
 // add mapster 
 TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
@@ -53,8 +46,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
-
+await app.RunAsync();
 
 //This Startup endpoint for Unit Tests
 namespace PhotonPiano.Api

@@ -8,7 +8,7 @@ public record UpdateEntranceTestRequest
     public string? RoomName { get; init; }
     public int? RoomCapacity { get; init; }
     public Shift? Shift { get; init; }
-    public DateTime? StartTime { get; init; }
+    public DateOnly? StartTime { get; init; }
     public bool? IsAnnouncedTime { get; init; } = false;
     public DateTime? AnnouncedTime { get; init; }
     public bool? IsAnnouncedScore { get; init; } = false;

@@ -61,6 +61,10 @@ public class EntranceTestService : IEntranceTestService
 
     public async Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id)
     {
+        var cache =
+            await _serviceFactory.RedisCacheService.GetAsync<EntranceTestDetailModel>($"entranceTest_{id}");
+        if (cache is not null) return cache;
+
         var result = await _unitOfWork.EntranceTestRepository
             .FindSingleProjectedAsync<EntranceTestDetailModel>(e => e.Id == id, false);
         if (result is null) throw new NotFoundException("EntranceTest not found.");
@@ -74,19 +78,29 @@ public class EntranceTestService : IEntranceTestService
         entranceTestModel.CreatedById = currentUserFirebaseId!;
 
         // check room is exist 
-        var isRoomExisted = await _serviceFactory.RoomService.IsRoomExist(entranceTestModel.RoomId!);
+        var roomDetailModel = await _serviceFactory.RoomService.GetRoomDetailById(entranceTestModel.RoomId);
         // check Instructor is Exist in db
-        var isInstructorExisted = await _serviceFactory.AccountService.IsAccountExist(entranceTestModel.InstructorId!);
+        var instructorDetailModel =
+            await _serviceFactory.AccountService.GetAccountById(entranceTestModel.InstructorId!);
+        if (instructorDetailModel.Role != Role.Instructor)
+            throw new BadRequestException("This is not Instructor, please try again");
 
-        var createdEntranceTestId = Guid.Empty;
-        if (isRoomExisted && isInstructorExisted)
-            await _unitOfWork.ExecuteInTransactionAsync(async () =>
-            {
-                var createdEntranceTestEntity = await _unitOfWork.EntranceTestRepository.AddAsync(entranceTestModel);
-                createdEntranceTestId = createdEntranceTestEntity.Id;
-            });
+        EntranceTest createdEntranceTest = null;
+        entranceTestModel.RoomName = roomDetailModel.Name;
+        entranceTestModel.InstructorName = instructorDetailModel.Name;
 
-        return await GetEntranceTestDetailById(createdEntranceTestId);
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var createdEntranceTestEntity = await _unitOfWork.EntranceTestRepository.AddAsync(entranceTestModel);
+            createdEntranceTest = createdEntranceTestEntity;
+        });
+
+        await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
+        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{createdEntranceTest!.Id}",
+            createdEntranceTest.Adapt<EntranceTestDetailModel>(),
+            TimeSpan.FromHours(5));
+
+        return await GetEntranceTestDetailById(createdEntranceTest.Id);
     }
 
     public async Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default)
@@ -99,6 +113,8 @@ public class EntranceTestService : IEntranceTestService
         entranceTestEntity.RecordStatus = RecordStatus.IsDeleted;
 
         await _unitOfWork.SaveChangesAsync();
+
+        await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
     }
 
     public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel entranceTestStudentModel,
@@ -114,5 +130,7 @@ public class EntranceTestService : IEntranceTestService
         entranceTestEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.SaveChangesAsync();
+
+        await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
     }
 }

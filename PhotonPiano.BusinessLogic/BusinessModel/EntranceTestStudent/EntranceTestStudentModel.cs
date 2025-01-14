@@ -8,5 +8,5 @@ public record EntranceTestStudentModel
     public decimal? BandScore { get; init; }
     public int? Rank { get; init; }
     public int? Year { get; init; }
-    public bool IsScoreAnnounced { get; init; } = false;
+    public bool IsScoreAnnounced { get; init; }
 }

@@ -10,21 +10,31 @@ using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared;
 using PhotonPiano.Test.Extensions;
 using Xunit.Abstractions;
+using static PhotonPiano.Test.Extensions.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.EntranceTestStudent;
 
-public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutputHelper testOutputHelper)
+public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutputHelper output)
     : IClassFixture<BaseApiConfig>
 {
-    private readonly HttpClient _client = fixture.CreateClient();
+    private readonly HttpClient _client = baseApiConfig.CreateClient();
 
     #region Test Get EntranceTest
 
     [Fact]
-    public async Task GetEntranceTests_ReturnsListEntranceTests_ReturnValidEntranceTest()
+    public async Task GetEntranceTests_ReturnsValidList()
     {
-        // Arrange
+        var response = await _client.GetAsync("/api/entrance-tests");
+        var entranceTests = await DeserializeResponse<List<EntranceTestResponse>>(response);
 
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(entranceTests);
+        Assert.NotEmpty(entranceTests);
+    }
+
+    [Fact]
+    public async Task GetEntranceTests_ReturnsListEntranceTests_ReturnValidEntranceTest1()
+    {
         // Act
         var response = await _client.GetAsync("/api/entrance-tests");
         var content = await response.Content.ReadAsStringAsync();
@@ -42,8 +52,8 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     {
         // Arrange
         var roomResponse = await _client.GetAsync("/api/rooms");
-        var rooms =
-            JsonConvert.DeserializeObject<List<RoomDetailModel>>(await roomResponse.Content.ReadAsStringAsync());
+        var rooms = await DeserializeResponse<List<RoomDetailModel>>(roomResponse);
+
         if (rooms == null) throw new Exception("No rooms found in database.");
 
         var query = new QueryEntranceTestRequest
@@ -58,9 +68,8 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
         var requestUrl = $"/api/entrance-tests{queryString}";
 
         var response = await _client.GetAsync(requestUrl);
-        var content = await response.Content.ReadAsStringAsync();
-        var entranceTests =
-            JsonConvert.DeserializeObject<List<EntranceTestResponse>>(content, new JsonSerializerSettings());
+        var entranceTests = await DeserializeResponse<List<EntranceTestResponse>>(response);
+
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -73,8 +82,8 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     {
         // Arrange
         var roomResponse = await _client.GetAsync("/api/rooms");
-        var rooms =
-            JsonConvert.DeserializeObject<List<RoomDetailModel>>(await roomResponse.Content.ReadAsStringAsync());
+        var rooms = await DeserializeResponse<List<RoomDetailModel>>(roomResponse);
+
         if (rooms == null) throw new Exception("No rooms found in database.");
 
         var query = new QueryEntranceTestRequest
@@ -89,9 +98,9 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
         var requestUrl = $"/api/entrance-tests{queryString}";
 
         var response = await _client.GetAsync(requestUrl);
-        var content = await response.Content.ReadAsStringAsync();
-        var entranceTests =
-            JsonConvert.DeserializeObject<List<EntranceTestResponse>>(content, new JsonSerializerSettings());
+
+        var entranceTests = await DeserializeResponse<List<EntranceTestResponse>>(response);
+
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -104,15 +113,16 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     {
         // Arrange
         var entranceResponse = await _client.GetAsync("/api/entrance-tests");
-        var entrances =
-            JsonConvert.DeserializeObject<List<RoomDetailModel>>(await entranceResponse.Content.ReadAsStringAsync());
+
+        var entrances = await DeserializeResponse<List<EntranceTestResponse>>(entranceResponse);
+
         if (entrances == null) throw new Exception("No Entrances found in database.");
 
         // Act
         var requestUrl = $"/api/entrance-tests/{entrances.First().Id}";
         var response = await _client.GetAsync(requestUrl);
-        var content = await response.Content.ReadAsStringAsync();
-        var entranceTest = JsonConvert.DeserializeObject<EntranceTestResponse>(content, new JsonSerializerSettings());
+
+        var entranceTest = DeserializeResponse<List<EntranceTestResponse>>(response);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -128,20 +138,18 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     {
         // Arrange
         var roomResponse = await _client.GetAsync("/api/rooms");
-        var rooms =
-            JsonConvert.DeserializeObject<List<RoomDetailModel>>(await roomResponse.Content.ReadAsStringAsync());
+        var rooms = await DeserializeResponse<List<RoomDetailModel>>(roomResponse);
+
         if (rooms == null) throw new Exception("No rooms found in database.");
 
         var createdEntrance = new CreateEntranceTestRequest
         {
             RoomId = rooms.First().Id,
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateTime.UtcNow.AddHours(7),
+            StartTime = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
-            RoomName = "Room 1",
             IsAnnouncedScore = false,
-            RoomCapacity = 40,
-            InstructorName = "Teacher 2"
+            RoomCapacity = 40
         };
 
         // Act
@@ -162,49 +170,28 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     [Fact]
     public async Task CreateEntranceTests_WithValidValueWithAuthorized_ReturnCreatedEntranceTest()
     {
-        // Arrange
-        var roomResponse = await _client.GetAsync("/api/rooms");
-        var rooms =
-            JsonConvert.DeserializeObject<List<RoomDetailModel>>(await roomResponse.Content.ReadAsStringAsync());
-        if (rooms == null) throw new Exception("No rooms found in database.");
+        var token = await _client.GetAuthToken("quangphat7a1@gmail.com", "Quangphat12a3");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+
+        var rooms = await DeserializeResponse<List<RoomDetailModel>>(await _client.GetAsync("/api/rooms"));
         var createdEntrance = new CreateEntranceTestRequest
         {
             RoomId = rooms.First().Id,
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateTime.UtcNow.AddHours(7),
+            StartTime = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
             InstructorId = "teacher002",
-            RoomName = "Room 1",
             IsAnnouncedScore = false,
             RoomCapacity = 40,
-            IsOpen = true,
-            InstructorName = "Teacher 2"
+            IsOpen = true
         };
 
-        // Act
-        var signInRequest = new SignInRequest("quangphat7a1@gmail.com", "Quangphat12a3");
-        var signInJson = JsonConvert.SerializeObject(signInRequest);
-        var signInContent = new StringContent(signInJson, Encoding.UTF8, "application/json");
-        var responseAuthModel = await _client.PostAsync("/api/auth/sign-in", signInContent);
+        var response = await _client.PostAsync("/api/entrance-tests", SerializeRequest(createdEntrance));
+        var entranceTest = await DeserializeResponse<EntranceTestResponse>(response);
 
-        // deserialize token
-        var authModel = JsonConvert.DeserializeObject<AuthModel>(await responseAuthModel.Content.ReadAsStringAsync(),
-            new JsonSerializerSettings());
-        var token = authModel!.IdToken;
-
-        var createEntranceJson = JsonConvert.SerializeObject(createdEntrance);
-        var requestContent = new StringContent(createEntranceJson, Encoding.UTF8, "application/json");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await _client.PostAsync("/api/entrance-tests", requestContent);
-        var content = await response.Content.ReadAsStringAsync();
-        var entranceTest = JsonConvert.DeserializeObject<EntranceTestResponse>(content, new JsonSerializerSettings());
-
-        // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(entranceTest);
     }
-
 
     [Fact]
     public async Task CreateEntranceTest_WithAuthorizedUserAndInvalidRoomId_ReturnsRoomNotFound()
@@ -214,23 +201,14 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
         {
             RoomId = Guid.NewGuid(), // Invalid RoomId
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateTime.UtcNow.AddHours(7),
+            StartTime = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
-            RoomName = "Invalid Room",
             IsAnnouncedScore = false,
-            RoomCapacity = 40,
-            InstructorName = "Teacher 2"
+            RoomCapacity = 40
         };
 
-        var signInRequest = new SignInRequest("quangphat7a1@gmail.com", "Quangphat12a3");
-        var signInJson = JsonConvert.SerializeObject(signInRequest);
-        var signInContent = new StringContent(signInJson, Encoding.UTF8, "application/json");
-        var responseAuthModel = await _client.PostAsync("/api/auth/sign-in", signInContent);
+        var token = await _client.GetAuthToken("quangphat7a1@gmail.com", "Quangphat12a3");
 
-        // Deserialize token
-        var authModel = JsonConvert.DeserializeObject<AuthModel>(await responseAuthModel.Content.ReadAsStringAsync(),
-            new JsonSerializerSettings());
-        var token = authModel!.IdToken;
 
         var createEntranceJson = JsonConvert.SerializeObject(createdEntrance);
         var requestContent = new StringContent(createEntranceJson, Encoding.UTF8, "application/json");
@@ -250,43 +228,31 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     {
         // Arrange
         var roomResponse = await _client.GetAsync("/api/rooms");
-        var rooms =
-            JsonConvert.DeserializeObject<List<RoomDetailModel>>(await roomResponse.Content.ReadAsStringAsync());
+        var rooms = await DeserializeResponse<List<RoomDetailModel>>(roomResponse);
+        // JsonConvert.DeserializeObject<List<RoomDetailModel>>(await roomResponse.Content.ReadAsStringAsync());
         if (rooms == null) throw new Exception("No rooms found in database.");
 
         var createdEntrance = new CreateEntranceTestRequest
         {
             RoomId = rooms.First().Id,
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateTime.UtcNow.AddHours(7),
+            StartTime = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
             InstructorId = "teacherInvalid",
-            RoomName = "Valid Room",
             IsAnnouncedScore = false,
-            RoomCapacity = 40,
-            InstructorName = "Teacher Invalid"
+            RoomCapacity = 40
         };
 
-        var signInRequest = new SignInRequest("quangphat7a1@gmail.com", "Quangphat12a3");
-        var signInJson = JsonConvert.SerializeObject(signInRequest);
-        var signInContent = new StringContent(signInJson, Encoding.UTF8, "application/json");
-        var responseAuthModel = await _client.PostAsync("/api/auth/sign-in", signInContent);
-
-        // Deserialize token
-        var authModel = JsonConvert.DeserializeObject<AuthModel>(await responseAuthModel.Content.ReadAsStringAsync(),
-            new JsonSerializerSettings());
-        var token = authModel!.IdToken;
-
-        var createEntranceJson = JsonConvert.SerializeObject(createdEntrance);
-        var requestContent = new StringContent(createEntranceJson, Encoding.UTF8, "application/json");
-
+        var requestContent = SerializeRequest(createdEntrance);
+        var token = await _client.GetAuthToken("quangphat7a1@gmail.com", "Quangphat12a3");
         // Act
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
         var response = await _client.PostAsync("/api/entrance-tests", requestContent);
         var content = await response.Content.ReadAsStringAsync();
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Contains("Account not found.", content);
+        Assert.Contains($"Account with ID: {createdEntrance.InstructorId} not found.", content);
     }
 
     #endregion
@@ -322,7 +288,7 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
         {
             RoomId = entranceTestToUpdate.RoomId,
             Shift = Shift.Shift2_8h45_10h15,
-            StartTime = entranceTestToUpdate.StartTime.AddDays(1), // Update some fields
+            StartTime = DateOnly.FromDateTime(DateTime.UtcNow), // Update some fields
             InstructorId = authModel.LocalId,
             RoomName = entranceTestToUpdate.RoomName,
             IsAnnouncedScore = !entranceTestToUpdate.IsAnnouncedScore
@@ -353,14 +319,7 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     public async Task UpdateEntranceTest_WithNonExistentId_ReturnsNotFound()
     {
         // Arrange
-        var signInRequest = new SignInRequest("quangphat7a1@gmail.com", "Quangphat12a3");
-        var signInJson = JsonConvert.SerializeObject(signInRequest);
-        var signInContent = new StringContent(signInJson, Encoding.UTF8, "application/json");
-
-        // Sign in to get authorization token
-        var responseAuthModel = await _client.PostAsync("/api/auth/sign-in", signInContent);
-        var authModel = JsonConvert.DeserializeObject<AuthModel>(await responseAuthModel.Content.ReadAsStringAsync());
-        var token = authModel!.IdToken;
+        var token = await _client.GetAuthToken("quangphat7a1@gmail.com", "Quangphat12a3");
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -370,7 +329,7 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
         {
             RoomId = Guid.NewGuid(),
             Shift = Shift.Shift2_8h45_10h15,
-            StartTime = DateTime.UtcNow,
+            StartTime = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
             InstructorId = "nonExistentTeacher",
             RoomName = "Non Existent Room",
             IsAnnouncedScore = true
@@ -396,22 +355,15 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     public async Task DeleteEntranceTest_WithAuthorizedUserAndValidId_MarksEntranceTestAsDeleted()
     {
         // Arrange
-        var signInRequest = new SignInRequest("quangphat7a1@gmail.com", "Quangphat12a3");
-        var signInJson = JsonConvert.SerializeObject(signInRequest);
-        var signInContent = new StringContent(signInJson, Encoding.UTF8, "application/json");
-
-        var responseAuthModel = await _client.PostAsync("/api/auth/sign-in", signInContent);
-        var authModel = JsonConvert.DeserializeObject<AuthModel>(await responseAuthModel.Content.ReadAsStringAsync());
-        var token = authModel!.IdToken;
+        var token = await _client.GetAuthToken("quangphat7a1@gmail.com", "Quangphat12a3");
 
         // Set token for authorized request
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Add an entrance test to delete (you might need to create it first)
         var createdEntranceTestResponse = await _client.GetAsync("/api/entrance-tests");
-        var entranceTests =
-            JsonConvert.DeserializeObject<List<EntranceTestResponse>>(await createdEntranceTestResponse.Content
-                .ReadAsStringAsync());
+        var entranceTests = await DeserializeResponse<List<EntranceTestResponse>>(createdEntranceTestResponse);
+
 
         // Ensure there is at least one EntranceTest to delete
         if (entranceTests == null || !entranceTests.Any()) throw new Exception("No entrance test found to delete.");
@@ -432,15 +384,7 @@ public class EntranceTestStudentIntegrationTest(BaseApiConfig fixture, ITestOutp
     public async Task DeleteEntranceTest_WithNonExistentId_ReturnsNotFound()
     {
         // Arrange
-        var signInRequest = new SignInRequest("quangphat7a1@gmail.com", "Quangphat12a3");
-        var signInJson = JsonConvert.SerializeObject(signInRequest);
-        var signInContent = new StringContent(signInJson, Encoding.UTF8, "application/json");
-
-        var responseAuthModel = await _client.PostAsync("/api/auth/sign-in", signInContent);
-        var authModel = JsonConvert.DeserializeObject<AuthModel>(await responseAuthModel.Content.ReadAsStringAsync());
-        var token = authModel!.IdToken;
-
-
+        var token = await _client.GetAuthToken("quangphat7a1@gmail.com", "Quangphat12a3");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var nonExistentId = Guid.NewGuid();
 

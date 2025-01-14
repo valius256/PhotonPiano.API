@@ -1,8 +1,8 @@
 using PhotonPiano.DataAccess.Models.Enum;
 
-namespace PhotonPiano.BusinessLogic.BusinessModel.Room;
+namespace PhotonPiano.Api.Responses.Room;
 
-public record RoomModel
+public class RoomResponse
 {
     public Guid Id { get; set; }
     public string? Name { get; set; }

@@ -3,25 +3,19 @@ using Projects;
 var builder = DistributedApplication.CreateBuilder(args);
 
 
-var database = builder.AddPostgres("postgresDb")
-        // .WithDataVolume("data-volume")
-        .WithPgAdmin()
-        // .WithLifetime(ContainerLifetime.Persistent)
-        // .WithOtlpExporter()
-        .AddDatabase("photonpiano")
+var postgres = builder.AddPostgres("postgresDb")
+    // .WithDataVolume("data-volume")
     ;
 
-
-// add caching 
-var cache = builder.AddRedis("redis-cache")
-    .WithRedisInsight();
+var database = postgres
+    // .WithPgAdmin()
+    // .WithLifetime(ContainerLifetime.Persistent)
+    .AddDatabase("photonpiano");
 
 builder.AddProject<PhotonPiano_Api>("photonpiano-api")
-    .WithExternalHttpEndpoints()
+    // .WithExternalHttpEndpoints()
     .WithReference(database)
-    .WithReference(cache)
     .WaitFor(database)
-    .WaitFor(cache)
     ;
 
 

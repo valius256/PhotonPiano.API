@@ -22,7 +22,7 @@ public record EntranceTestResponse
 
     public required Shift Shift { get; init; }
 
-    public required DateTime StartTime { get; init; }
+    public required DateOnly StartTime { get; init; }
 
     public bool IsAnnouncedScore { get; init; }
 

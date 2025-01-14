@@ -9,7 +9,7 @@ public sealed class BaseApiConfig : WebApplicationFactory<Program>, IAsyncLifeti
 {
     private readonly DistributedApplication _app;
     private readonly IResourceBuilder<PostgresServerResource> _postgres;
-    private string? _postgresConnectionString;
+    public string? _postgresConnectionString;
 
     /**
      * Constructor for ApiFixture.
@@ -20,14 +20,35 @@ public sealed class BaseApiConfig : WebApplicationFactory<Program>, IAsyncLifeti
         var options = new DistributedApplicationOptions
         {
             AssemblyName = typeof(BaseApiConfig).Assembly.FullName,
-            DisableDashboard = true,
-            AllowUnsecuredTransport = true
+            DisableDashboard = true
         };
         var builder = DistributedApplication.CreateBuilder(options);
 
-        _postgres = builder.AddPostgres("postgres");
+        _postgres = builder.AddPostgres("postgresDb");
         _app = builder.Build();
     }
+
+    /**
+    * Creates and configures the host for the application.
+    * Adds the PostgreSQL connection string to the host configuration.
+    * Ensures the database is created before returning the host.
+    * 
+    * @param builder The IHostBuilder instance.
+    * @return The configured IHost instance.
+    */
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        builder.ConfigureHostConfiguration(config =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:photonpiano", _postgresConnectionString }
+            });
+        });
+
+        return base.CreateHost(builder);
+    }
+
 
     /**
      * Disposes the resources used by the fixture asynchronously.
@@ -57,24 +78,5 @@ public sealed class BaseApiConfig : WebApplicationFactory<Program>, IAsyncLifeti
         await Task.Delay(TimeSpan.FromSeconds(10));
     }
 
-    /**
-     * Creates and configures the host for the application.
-     * Adds the PostgreSQL connection string to the host configuration.
-     * Ensures the database is created before returning the host.
-     * 
-     * @param builder The IHostBuilder instance.
-     * @return The configured IHost instance.
-     */
-    protected override IHost CreateHost(IHostBuilder builder)
-    {
-        builder.ConfigureHostConfiguration(config =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:photonpiano", _postgresConnectionString }
-            });
-        });
 
-        return base.CreateHost(builder);
-    }
 }

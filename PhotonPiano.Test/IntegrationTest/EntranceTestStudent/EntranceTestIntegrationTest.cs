@@ -146,7 +146,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
         {
             RoomId = rooms.First().Id,
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateOnly.FromDateTime(DateTime.UtcNow),
+            Date = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
             RoomCapacity = 40
@@ -179,7 +179,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
         {
             RoomId = rooms.First().Id,
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
+            Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
             RoomCapacity = 40,
@@ -201,7 +201,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
         {
             RoomId = Guid.NewGuid(), // Invalid RoomId
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateOnly.FromDateTime(DateTime.UtcNow),
+            Date = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
             RoomCapacity = 40
@@ -236,7 +236,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
         {
             RoomId = rooms.First().Id,
             Shift = Shift.Shift1_7h_8h30,
-            StartTime = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
+            Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
             InstructorId = "teacherInvalid",
             IsAnnouncedScore = false,
             RoomCapacity = 40
@@ -311,7 +311,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
 
         Assert.NotNull(updatedEntranceTest);
         Assert.Equal(updatedEntranceTestRequest.Shift, updatedEntranceTest.Shift);
-        Assert.Equal(updatedEntranceTestRequest.StartTime, updatedEntranceTest.StartTime);
+        Assert.Equal(updatedEntranceTestRequest.StartTime, updatedEntranceTest.Date);
         Assert.Equal(updatedEntranceTestRequest.InstructorId, updatedEntranceTest.InstructorId);
     }
 

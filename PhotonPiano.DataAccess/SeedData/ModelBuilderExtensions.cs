@@ -148,7 +148,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestGuid1,
                 RoomId = roomGuid1,
                 Shift = Shift.Shift1_7h_8h30,
-                StartTime = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(DateTime.UtcNow),
                 InstructorId = "teacher002",
                 RoomName = "Room 1",
                 CreatedById = "admin001"
@@ -158,7 +158,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestGuid2,
                 RoomId = roomGuid2,
                 Shift = Shift.Shift3_10h45_12h,
-                StartTime = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)),
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)),
                 RoomName = "Room 2",
                 CreatedById = "admin001"
             },
@@ -167,7 +167,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestGuid3,
                 RoomId = roomGuid3,
                 Shift = Shift.Shift5_14h15_15h45,
-                StartTime = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5)),
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5)),
                 InstructorId = "teacher002",
                 CreatedById = "admin001"
             }

@@ -8,7 +8,7 @@ public class EntranceTest : BaseEntityWithId
     public string? RoomName { get; set; }
     public int? RoomCapacity { get; set; }
     public required Shift Shift { get; set; }
-    public required DateOnly StartTime { get; set; }
+    public required DateOnly Date { get; set; }
     public bool IsAnnouncedScore { get; set; } = false;
     public string? InstructorId { get; set; }
     public string? InstructorName { get; set; }

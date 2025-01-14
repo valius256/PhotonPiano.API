@@ -93,7 +93,7 @@ namespace PhotonPiano.DataAccess.Migrations
                             BankAccount = "",
                             Email = "admin001@gmail.com",
                             IsEmailVerified = false,
-                            JoinedDate = new DateTime(2025, 1, 14, 13, 51, 31, 90, DateTimeKind.Utc).AddTicks(495),
+                            JoinedDate = new DateTime(2025, 1, 14, 14, 17, 22, 273, DateTimeKind.Utc).AddTicks(4756),
                             Level = 0,
                             Phone = "",
                             RecordStatus = 1,
@@ -109,7 +109,7 @@ namespace PhotonPiano.DataAccess.Migrations
                             BankAccount = "",
                             Email = "teacher002@gmail.com",
                             IsEmailVerified = false,
-                            JoinedDate = new DateTime(2025, 1, 14, 13, 51, 31, 90, DateTimeKind.Utc).AddTicks(1811),
+                            JoinedDate = new DateTime(2025, 1, 14, 14, 17, 22, 273, DateTimeKind.Utc).AddTicks(9623),
                             Level = 0,
                             Phone = "",
                             RecordStatus = 1,
@@ -125,7 +125,7 @@ namespace PhotonPiano.DataAccess.Migrations
                             BankAccount = "",
                             Email = "learner003@gmail.com",
                             IsEmailVerified = false,
-                            JoinedDate = new DateTime(2025, 1, 14, 13, 51, 31, 90, DateTimeKind.Utc).AddTicks(1888),
+                            JoinedDate = new DateTime(2025, 1, 14, 14, 17, 22, 273, DateTimeKind.Utc).AddTicks(9676),
                             Level = 0,
                             Phone = "",
                             RecordStatus = 1,
@@ -191,8 +191,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("abe5f0f8-7050-4fc8-b8d9-8d39035af094"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 90, DateTimeKind.Utc).AddTicks(8939),
+                            Id = new Guid("94b2ff90-98e5-4fff-85db-81ad3aea51c3"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 275, DateTimeKind.Utc).AddTicks(9653),
                             CreatedById = "admin001",
                             For = 0,
                             Name = "Nhịp điệu",
@@ -201,8 +201,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("6443cc0d-06aa-47b0-9139-b72dc551f14e"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(270),
+                            Id = new Guid("7b1d8d50-5fd7-4a42-a3b2-56d2f8a22471"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(3963),
                             CreatedById = "admin001",
                             For = 0,
                             Name = "Độ chính xác",
@@ -211,8 +211,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("cbcc26c3-f6c5-45b9-9b33-b146245025c0"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(274),
+                            Id = new Guid("880c74d2-3123-49c9-8849-77c3b6afa7ad"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(3977),
                             CreatedById = "admin001",
                             For = 0,
                             Name = "Âm Sắc",
@@ -221,8 +221,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("0147e763-3ade-499b-a9e4-7f91804915b8"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(280),
+                            Id = new Guid("75cf1df3-4245-4ea1-93ee-01f66610d1f6"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4019),
                             CreatedById = "admin001",
                             For = 0,
                             Name = "Phong thái",
@@ -231,8 +231,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("d100172a-64b8-4bb7-897c-cd7a08761bbb"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(283),
+                            Id = new Guid("78d60c14-bc73-4259-9233-0c9f825a6e39"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4024),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Kiểm tra nhỏ 1",
@@ -241,8 +241,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("7234306e-db3c-4a32-b9dd-a1d5cefc1595"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(285),
+                            Id = new Guid("31c0d07b-8fec-4efa-81e3-482680d7d3ae"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4029),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Kiểm tra nhỏ 2",
@@ -251,8 +251,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("6b4c0c77-3ed1-4c39-ab3c-9db6fe7abd0d"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(287),
+                            Id = new Guid("37c7d950-525b-4141-a90d-2b7841cbcf38"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4035),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Bài thi 1",
@@ -261,8 +261,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("9cee7c2f-93d6-45d8-85c4-2657716053bc"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(309),
+                            Id = new Guid("e21b8580-eb2a-4022-a86b-b4841ac32028"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4040),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Bài thi 2",
@@ -271,8 +271,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("543b586b-a537-43bd-ab1d-1c76904b28b2"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(311),
+                            Id = new Guid("a71538ad-0dc1-476f-a718-588298ec4dad"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4046),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Điểm chuyên cần",
@@ -281,8 +281,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("a3ac854a-51cf-4dc4-8dcc-fb7faf538984"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(314),
+                            Id = new Guid("e059f8b5-5ab2-4ef8-bad4-024faffec328"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4072),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Thi cuối kỳ (Nhịp điệu)",
@@ -291,8 +291,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("21c2f387-5894-4279-8e23-6d7c1b79b16a"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(316),
+                            Id = new Guid("e07419cf-3e26-4f57-a57b-f2ed1097a732"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4077),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Thi cuối kỳ (Độ chính xác)",
@@ -301,8 +301,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("6f516a89-e1f0-4082-b5a8-8c76d7079a15"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(318),
+                            Id = new Guid("5c4d2b35-107f-44bc-837b-18bfd71caf00"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4083),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Thi cuối kỳ (Âm sắc)",
@@ -311,8 +311,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("fc3fcb6f-60af-45b2-ac0d-eeffbcb039aa"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(321),
+                            Id = new Guid("6c9f2798-e2f4-4d7c-8b89-0de936f5fc09"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(4088),
                             CreatedById = "admin001",
                             For = 1,
                             Name = "Thi cuối kỳ (Phong thái)",
@@ -333,6 +333,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<string>("CreatedById")
                         .IsRequired()
                         .HasColumnType("character varying(30)");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -367,9 +370,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("Shift")
                         .HasColumnType("integer");
 
-                    b.Property<DateOnly>("StartTime")
-                        .HasColumnType("date");
-
                     b.Property<string>("UpdateById")
                         .HasColumnType("character varying(30)");
 
@@ -393,43 +393,43 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("e11f7243-dba8-43cf-947d-c66b22b57a35"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(2364),
+                            Id = new Guid("72c2905c-437f-43c9-b812-c059824141f7"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 277, DateTimeKind.Utc).AddTicks(599),
                             CreatedById = "admin001",
+                            Date = new DateOnly(2025, 1, 14),
                             InstructorId = "teacher002",
                             IsAnnouncedScore = false,
                             IsOpen = true,
                             RecordStatus = 1,
-                            RoomId = new Guid("df9c2b9f-6794-46bf-892c-9619096dce15"),
+                            RoomId = new Guid("6d71c5ac-34e4-47ca-a40e-1b531ccd447a"),
                             RoomName = "Room 1",
-                            Shift = 0,
-                            StartTime = new DateOnly(2025, 1, 14)
+                            Shift = 0
                         },
                         new
                         {
-                            Id = new Guid("7fbbd3f9-5944-46c8-8e59-ae6a67cf5a1f"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(3729),
+                            Id = new Guid("1a7abe08-758a-431d-a088-119e27cf0c1d"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 277, DateTimeKind.Utc).AddTicks(5022),
                             CreatedById = "admin001",
+                            Date = new DateOnly(2025, 1, 14),
                             IsAnnouncedScore = false,
                             IsOpen = true,
                             RecordStatus = 1,
-                            RoomId = new Guid("775ba540-1b57-4ca5-ab51-7eb7d4ba63a2"),
+                            RoomId = new Guid("fc5bdcec-ecea-4a45-9bca-8d9303511078"),
                             RoomName = "Room 2",
-                            Shift = 2,
-                            StartTime = new DateOnly(2025, 1, 14)
+                            Shift = 2
                         },
                         new
                         {
-                            Id = new Guid("f385b4f3-2704-4ea4-808e-65150d70bcdf"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(3738),
+                            Id = new Guid("2d0bf0b6-2e3c-454a-bb8d-d1370a58a817"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 277, DateTimeKind.Utc).AddTicks(5055),
                             CreatedById = "admin001",
+                            Date = new DateOnly(2025, 1, 14),
                             InstructorId = "teacher002",
                             IsAnnouncedScore = false,
                             IsOpen = true,
                             RecordStatus = 1,
-                            RoomId = new Guid("c5240e05-76b7-4b02-b262-99b606063ab4"),
-                            Shift = 4,
-                            StartTime = new DateOnly(2025, 1, 14)
+                            RoomId = new Guid("9b49a0f8-f4a2-442b-b92c-e1a7933989b5"),
+                            Shift = 4
                         });
                 });
 
@@ -490,11 +490,11 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("8230cc86-7838-40af-98b2-11f28704c96c"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(7520),
+                            Id = new Guid("5b208b8a-cf91-429d-b6b9-5aaa9614006f"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 278, DateTimeKind.Utc).AddTicks(7242),
                             CreatedById = "admin001",
-                            CriteriaId = new Guid("6443cc0d-06aa-47b0-9139-b72dc551f14e"),
-                            EntranceTestStudentId = new Guid("ceb6cb15-2c40-469d-b188-e218a4134b93"),
+                            CriteriaId = new Guid("7b1d8d50-5fd7-4a42-a3b2-56d2f8a22471"),
+                            EntranceTestStudentId = new Guid("c1ba379f-aa95-4d8b-80e2-10de374668f8"),
                             RecordStatus = 1
                         });
                 });
@@ -566,11 +566,11 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("ceb6cb15-2c40-469d-b188-e218a4134b93"),
-                            BandScore = 8m,
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(4468),
+                            Id = new Guid("c1ba379f-aa95-4d8b-80e2-10de374668f8"),
+                            BandScore = 3m,
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 277, DateTimeKind.Utc).AddTicks(8513),
                             CreatedById = "admin001",
-                            EntranceTestId = new Guid("e11f7243-dba8-43cf-947d-c66b22b57a35"),
+                            EntranceTestId = new Guid("72c2905c-437f-43c9-b812-c059824141f7"),
                             IsScoreAnnounced = true,
                             Rank = 1,
                             RecordStatus = 1,
@@ -579,11 +579,11 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("433d9ebb-4256-42fb-b24d-e695dc7a40da"),
-                            BandScore = 3m,
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(7004),
+                            Id = new Guid("4737f7b3-2f18-4883-a477-e73b4d4b2d84"),
+                            BandScore = 8m,
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 278, DateTimeKind.Utc).AddTicks(5476),
                             CreatedById = "admin001",
-                            EntranceTestId = new Guid("e11f7243-dba8-43cf-947d-c66b22b57a35"),
+                            EntranceTestId = new Guid("72c2905c-437f-43c9-b812-c059824141f7"),
                             IsScoreAnnounced = true,
                             Rank = 2,
                             RecordStatus = 1,
@@ -592,11 +592,11 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("bf511744-d662-4edb-b07b-9c64dde98338"),
-                            BandScore = 5m,
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(7016),
+                            Id = new Guid("9096a950-16df-4a97-a472-fedc87a92308"),
+                            BandScore = 3m,
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 278, DateTimeKind.Utc).AddTicks(5691),
                             CreatedById = "admin001",
-                            EntranceTestId = new Guid("e11f7243-dba8-43cf-947d-c66b22b57a35"),
+                            EntranceTestId = new Guid("72c2905c-437f-43c9-b812-c059824141f7"),
                             IsScoreAnnounced = true,
                             Rank = 3,
                             RecordStatus = 1,
@@ -655,8 +655,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("df9c2b9f-6794-46bf-892c-9619096dce15"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(1086),
+                            Id = new Guid("6d71c5ac-34e4-47ca-a40e-1b531ccd447a"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(6979),
                             CreatedById = "admin001",
                             Name = "Room 1",
                             RecordStatus = 1,
@@ -664,8 +664,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("775ba540-1b57-4ca5-ab51-7eb7d4ba63a2"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(1717),
+                            Id = new Guid("fc5bdcec-ecea-4a45-9bca-8d9303511078"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(8271),
                             CreatedById = "admin001",
                             Name = "Room 2",
                             RecordStatus = 1,
@@ -673,8 +673,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         },
                         new
                         {
-                            Id = new Guid("c5240e05-76b7-4b02-b262-99b606063ab4"),
-                            CreatedAt = new DateTime(2025, 1, 14, 13, 51, 31, 91, DateTimeKind.Utc).AddTicks(1720),
+                            Id = new Guid("9b49a0f8-f4a2-442b-b92c-e1a7933989b5"),
+                            CreatedAt = new DateTime(2025, 1, 14, 14, 17, 22, 276, DateTimeKind.Utc).AddTicks(8277),
                             CreatedById = "admin001",
                             Name = "Room 3",
                             RecordStatus = 1,

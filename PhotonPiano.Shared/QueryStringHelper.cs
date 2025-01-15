@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Globalization;
+using System.Text;
 
 namespace PhotonPiano.Shared;
 
@@ -27,5 +29,12 @@ public class QueryStringHelper
             });
 
         return "?" + string.Join("&", properties);
+    }
+
+    public string NormalizeString(string input)
+    {
+        return string.Concat(input.Normalize(NormalizationForm.FormD)
+                .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark))
+            .ToLowerInvariant();
     }
 }

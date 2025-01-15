@@ -40,11 +40,11 @@ public class AccountService : IAccountService
         return newAccount.Adapt<AccountModel>();
     }
 
-    public async Task<AccountModel> GetAccountById(string firebaseId)
+    public async Task<AccountDetailModel> GetAccountById(string firebaseId)
     {
         var result = await _unitOfWork.AccountRepository.FindFirstAsync(x => x.AccountFirebaseId == firebaseId);
         if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
-        return result.Adapt<AccountModel>();
+        return result.Adapt<AccountDetailModel>();
     }
 
     public async Task<bool> IsAccountExist(string firebaseId)

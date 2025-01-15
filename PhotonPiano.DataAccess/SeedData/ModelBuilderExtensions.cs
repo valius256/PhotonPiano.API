@@ -10,24 +10,31 @@ public static class ModelBuilderExtensions
     {
         #region Account Model
 
+        const string admin001 = "admin001";
+        const string teacher002 = "teacher002";
+        const string learner003 = "learner003";
+
         modelBuilder.Entity<Account>().HasData(
             new Account
             {
-                AccountFirebaseId = "admin001",
+                AccountFirebaseId = admin001,
                 Email = "admin001@gmail.com",
-                Role = Role.Administrator
+                Role = Role.Administrator,
+                UserName = admin001
             },
             new Account
             {
-                AccountFirebaseId = "teacher002",
+                AccountFirebaseId = teacher002,
                 Email = "teacher002@gmail.com",
-                Role = Role.Instructor
+                Role = Role.Instructor,
+                UserName = teacher002
             },
             new Account
             {
-                AccountFirebaseId = "learner003",
+                AccountFirebaseId = learner003,
                 Email = "learner003@gmail.com",
-                Role = Role.Student
+                Role = Role.Student,
+                UserName = learner003
             }
         );
 
@@ -41,34 +48,34 @@ public static class ModelBuilderExtensions
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Nhịp điệu", Weight = 10, For = CriteriaFor.EntranceTest,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = criteriaAccuracy, Name = "Độ chính xác", Weight = 10, For = CriteriaFor.EntranceTest,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Âm Sắc", Weight = 10, For = CriteriaFor.EntranceTest,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Phong thái", Weight = 10, For = CriteriaFor.EntranceTest,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
 
             // For Class
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Kiểm tra nhỏ 1", Weight = 5, For = CriteriaFor.Class,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Kiểm tra nhỏ 2", Weight = 5, For = CriteriaFor.Class,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
@@ -81,27 +88,27 @@ public static class ModelBuilderExtensions
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Điểm chuyên cần", Weight = 5, For = CriteriaFor.Class,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Nhịp điệu)", Weight = 15, For = CriteriaFor.Class,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Độ chính xác)", Weight = 15, For = CriteriaFor.Class,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Âm sắc)", Weight = 15, For = CriteriaFor.Class,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Criteria
             {
                 Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Phong thái)", Weight = 15, For = CriteriaFor.Class,
-                CreatedById = "admin001"
+                CreatedById = admin001
             }
         );
 
@@ -118,19 +125,19 @@ public static class ModelBuilderExtensions
             {
                 Id = roomGuid1,
                 Name = "Room 1",
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Room
             {
                 Id = roomGuid2,
                 Name = "Room 2",
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new Room
             {
                 Id = roomGuid3,
                 Name = "Room 3",
-                CreatedById = "admin001"
+                CreatedById = admin001
             }
         );
 
@@ -149,9 +156,10 @@ public static class ModelBuilderExtensions
                 RoomId = roomGuid1,
                 Shift = Shift.Shift1_7h_8h30,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow),
-                InstructorId = "teacher002",
+                InstructorId = teacher002,
                 RoomName = "Room 1",
-                CreatedById = "admin001"
+                CreatedById = admin001,
+                Name = "EntranceTest 1"
             },
             new EntranceTest
             {
@@ -160,7 +168,8 @@ public static class ModelBuilderExtensions
                 Shift = Shift.Shift3_10h45_12h,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)),
                 RoomName = "Room 2",
-                CreatedById = "admin001"
+                CreatedById = admin001,
+                Name = "EntranceTest 2"
             },
             new EntranceTest
             {
@@ -168,8 +177,9 @@ public static class ModelBuilderExtensions
                 RoomId = roomGuid3,
                 Shift = Shift.Shift5_14h15_15h45,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5)),
-                InstructorId = "teacher002",
-                CreatedById = "admin001"
+                InstructorId = teacher002,
+                CreatedById = admin001,
+                Name = "EntranceTest 3"
             }
         );
 
@@ -186,33 +196,33 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid1,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = "learner003",
+                StudentFirebaseId = learner003,
                 Rank = 1,
                 Year = 2024,
                 IsScoreAnnounced = true,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new EntranceTestStudent
             {
                 Id = entranceTestStudentGuid2,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = "learner003",
+                StudentFirebaseId = learner003,
                 Rank = 2,
                 Year = 2024,
                 IsScoreAnnounced = true,
-                CreatedById = "admin001"
+                CreatedById = admin001
             },
             new EntranceTestStudent
             {
                 Id = entranceTestStudentGuid3,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = "learner003",
+                StudentFirebaseId = learner003,
                 Rank = 3,
                 Year = 2024,
                 IsScoreAnnounced = true,
-                CreatedById = "admin001"
+                CreatedById = admin001
             }
         );
 
@@ -227,7 +237,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestResultGuid,
                 CriteriaId = criteriaAccuracy,
                 EntranceTestStudentId = entranceTestStudentGuid1,
-                CreatedById = "admin001"
+                CreatedById = admin001
             }
         );
 

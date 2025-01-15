@@ -1,5 +1,7 @@
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Requests.Account;
+using PhotonPiano.Api.Responses.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.Interfaces;
 
@@ -34,17 +36,17 @@ public class AccountsController : BaseController
 
     [HttpGet("{firebase-id}")]
     [EndpointDescription("Get Account details by id")]
-    public async Task<ActionResult<AccountModel>> GetAccountById(
+    public async Task<ActionResult<AccountDetailResponse>> GetAccountById(
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)
     {
         var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
 
-        return Ok(result);
+        return Ok(result.Adapt<AccountDetailResponse>());
     }
 
     //[HttpGet("{account-id}/attempt-stats")]
     //[FirebaseAuthorize]
-    //public async Task<ActionResult> GetAttemptsStats([FromRoute(Name = "account-id")] string accountId)
+    //public async Task<ActionResult> GetAttemptsStats([FromRoute(UserName = "account-id")] string accountId)
     //{
     //    return Ok();
     //}

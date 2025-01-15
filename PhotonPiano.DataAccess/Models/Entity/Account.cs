@@ -8,7 +8,7 @@ public class Account : BaseEntity
     [StringLength(30, ErrorMessage = "Account firebaseId cannot be longer than 30 characters.")]
     public required string AccountFirebaseId { get; set; }
 
-    public string? Username { get; set; }
+    public string? UserName { get; set; }
     public string? Phone { get; set; } = string.Empty;
 
     [EmailAddress(ErrorMessage = "Invalid Email Address")]

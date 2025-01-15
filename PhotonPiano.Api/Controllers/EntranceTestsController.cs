@@ -3,9 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.EntranceTest;
+using PhotonPiano.Api.Requests.Query;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
+using PhotonPiano.BusinessLogic.BusinessModel.Query;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -72,5 +76,31 @@ public class EntranceTestsController : BaseController
             CurrentUserFirebaseId);
 
         return NoContent();
+    }
+
+    [HttpGet("{id}/students")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+    [EndpointDescription("Get entrance tests students")]
+    public async Task<ActionResult<List<EntranceTestStudentDetail>>> GetEntranceTestStudents([FromRoute] Guid id,
+        [FromQuery] QueryPagedRequest query)
+    {
+        var pagedResult = await _serviceFactory.EntranceTestService.GetPagedEntranceTestStudent(
+            query.Adapt<QueryPagedModel>(), id,
+            base.CurrentAccount!);
+
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+
+        return pagedResult.Items;
+    }
+
+    [HttpGet("{id}/students/{student-id}")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+    [EndpointDescription("Get entrance test student details")]
+    public async Task<ActionResult<EntranceTestStudentDetail>> GetEntranceTestStudentDetails(
+        [FromRoute(Name = "id")] Guid id,
+        [FromRoute(Name = "student-id")] string studentId)
+    {
+        return await _serviceFactory.EntranceTestService.GetEntranceTestStudentDetail(id, studentId,
+            base.CurrentAccount!);
     }
 }

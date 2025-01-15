@@ -23,7 +23,7 @@ public static class ModelBuilderExtensions
                 Email = "teacher002@gmail.com",
                 Role = Role.Instructor
             },
-            new Account
+            new Account 
             {
                 AccountFirebaseId = "learner003",
                 Email = "learner003@gmail.com",

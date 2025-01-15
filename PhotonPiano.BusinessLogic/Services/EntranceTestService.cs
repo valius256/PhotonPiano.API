@@ -1,6 +1,9 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
+using PhotonPiano.BusinessLogic.BusinessModel.Query;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -132,5 +135,52 @@ public class EntranceTestService : IEntranceTestService
         await _unitOfWork.SaveChangesAsync();
 
         await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
+    }
+
+    public async Task<PagedResult<EntranceTestStudentDetail>> GetPagedEntranceTestStudent(QueryPagedModel query,
+        Guid entranceTestId, AccountModel currentAccount)
+    {
+        if (!await _unitOfWork.EntranceTestRepository.AnyAsync(et => et.Id == entranceTestId))
+        {
+            throw new NotFoundException("Entrance test not found.");
+        }
+
+        var (page, size, column, desc) = query;
+
+        var pagedResult = await _unitOfWork.EntranceTestStudentRepository
+            .GetPaginatedWithProjectionAsync<EntranceTestStudentDetail>(
+                page,
+                size,
+                column,
+                desc,
+                expressions:
+                [
+                    ets => ets.EntranceTestId == entranceTestId,
+                    ets => currentAccount.Role != Role.Student || ets.StudentFirebaseId == currentAccount.AccountFirebaseId
+                ]
+            );
+
+        return pagedResult;
+    }
+
+    public async Task<EntranceTestStudentDetail> GetEntranceTestStudentDetail(Guid entranceTestId, string studentId,
+        AccountModel currentAccount)
+    {
+        var entranceTestStudent =
+            await _unitOfWork.EntranceTestStudentRepository.FindFirstProjectedAsync<EntranceTestStudentDetail>(
+                ets => ets.EntranceTestId == entranceTestId && ets.StudentFirebaseId == studentId);
+
+        if (entranceTestStudent is null)
+        {
+            throw new NotFoundException("Entrance test student not found");
+        }
+
+        if (currentAccount.Role == Role.Student &&
+            entranceTestStudent.StudentFirebaseId != currentAccount.AccountFirebaseId)
+        {
+            throw new ForbiddenMethodException("You are not allowed to access this resource.");
+        }
+
+        return entranceTestStudent;
     }
 }

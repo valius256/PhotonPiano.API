@@ -1,4 +1,7 @@
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
+using PhotonPiano.BusinessLogic.BusinessModel.Query;
 using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
@@ -16,4 +19,10 @@ public interface IEntranceTestService
 
     Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel entranceTestStudentModel,
         string? currentUserFirebaseId = default);
+
+    Task<PagedResult<EntranceTestStudentDetail>>
+        GetPagedEntranceTestStudent(QueryPagedModel query, Guid entranceTestId, AccountModel currentAccount);
+
+    Task<EntranceTestStudentDetail> GetEntranceTestStudentDetail(Guid entranceTestId, string studentId,
+        AccountModel currentAccount);
 }

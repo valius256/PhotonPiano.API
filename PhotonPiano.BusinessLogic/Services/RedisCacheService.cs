@@ -13,6 +13,7 @@ public class RedisCacheService(IConnectionMultiplexer redis) : IRedisCacheServic
         Formatting = Formatting.None
     };
 
+
     private readonly IDatabase _database = redis.GetDatabase();
 
     public async Task<bool> DeleteAsync(string key)
@@ -36,5 +37,21 @@ public class RedisCacheService(IConnectionMultiplexer redis) : IRedisCacheServic
 
         var serializedValue = JsonConvert.SerializeObject(value, JsonSerializerSettings);
         await _database.StringSetAsync(key, serializedValue, adjustedExpiry);
+    }
+
+    public async Task<IEnumerable<string>> GetKeysByPatternAsync(string pattern)
+    {
+        var endpoints = _database.Multiplexer.GetEndPoints();
+        var server = _database.Multiplexer.GetServer(endpoints.First());
+        var keys = server.Keys(pattern: pattern).ToList();
+
+        return keys.Select(k => k.ToString());
+    }
+
+    public async Task DeleteByPatternAsync(string pattern)
+    {
+        var keys = await GetKeysByPatternAsync(pattern);
+        foreach (var key in keys)
+            await _database.KeyDeleteAsync(key);
     }
 }

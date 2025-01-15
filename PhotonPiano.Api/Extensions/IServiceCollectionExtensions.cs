@@ -28,7 +28,6 @@ public static class IServiceCollectionExtensions
             .AddMapsterConfig()
             .AddRedisCache(configuration)
             .AddPostGresSqlConfiguration()
-            .AddNewtonsoftJson()
             ;
 
 
@@ -233,19 +232,6 @@ public static class IServiceCollectionExtensions
         // });
 
 
-        return services;
-    }
-
-    private static IServiceCollection AddNewtonsoftJson(this IServiceCollection services)
-    {
-        services.AddControllers().AddNewtonsoftJson(opt =>
-        {
-            opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-            opt.SerializerSettings.ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy()
-            };
-        });
         return services;
     }
 }

@@ -3,7 +3,6 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Query;
 public record QueryPagedModel
 {
     public int Page { get; init; }
-
     public int PageSize { get; init; }
 
     public required string SortColumn { get; init; }

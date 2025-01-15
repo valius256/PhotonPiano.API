@@ -27,15 +27,43 @@ public class EntranceTestService : IEntranceTestService
 
     public async Task<PagedResult<EntranceTestDetailModel>> GetPagedEntranceTest(QueryEntranceTestModel query)
     {
-        var cache =
-            await _serviceFactory.RedisCacheService.GetAsync<PagedResult<EntranceTestDetailModel>>("entranceTests");
-        if (cache is not null) return cache;
-
         var (page, pageSize, sortColumn, orderByDesc,
                 roomIds, keyword, shifts,
                 entranceTestIds, isAnnouncedScore, isOpen,
                 instructorIds)
             = query;
+
+        // vi khong search neu dung cache dc do EF func k xai voi cache dc 
+        // var cache = await _serviceFactory.RedisCacheService
+        //     .GetAsync<PagedResult<EntranceTestDetailModel>>
+        //         ($"entranceTests_page{page}_pageSize{pageSize}");
+        // ("entranceTests");
+
+        // if (cache is not null )
+        // {
+        //     var cacheResult = QueryExtension.ProcessData(
+        //         cache.Items,
+        //         query.Page,
+        //         query.PageSize,
+        //         query.SortColumn,
+        //         query.OrderByDesc,
+        //         e =>
+        //             (query.RoomIds == null || query.RoomIds.Count == 0 || query.RoomIds.Contains(e.RoomId)) &&
+        //             (query.IsOpen == null || e.IsOpen == query.IsOpen.Value) &&
+        //             (query.IsAnnouncedScore == null || e.IsAnnouncedScore == query.IsAnnouncedScore.Value) &&
+        //             (query.Shifts == null || query.Shifts.Count == 0 || query.Shifts.Contains(e.Shift)) &&
+        //             (query.InstructorIds == null || query.InstructorIds.Count == 0 ||
+        //              query.InstructorIds.Contains(e.InstructorId)) &&
+        //             (query.EntranceTestIds == null || query.EntranceTestIds.Count == 0 ||
+        //              (query.EntranceTestIds.Contains(e.Id) &&
+        //               (string.IsNullOrEmpty(keyword) ||
+        //                (!string.IsNullOrEmpty(e.RoomName) && e.RoomName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+        //                (!string.IsNullOrEmpty(e.InstructorName) && 
+        //                 e.InstructorName.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+        //              )));
+        //
+        //     return cacheResult;
+        // }
 
         var likeKeyword = query.GetLikeKeyword();
 
@@ -49,16 +77,19 @@ public class EntranceTestService : IEntranceTestService
                     e => isAnnouncedScore == null || e.IsAnnouncedScore == isAnnouncedScore.Value,
                     e => shifts != null && (shifts.Count == 0 || shifts.Contains(e.Shift)),
                     e => instructorIds != null &&
-                         (instructorIds.Count == 0 || instructorIds.Contains(e.InstructorId)),
+                         (instructorIds.Count == 0 || instructorIds.Contains(e.InstructorId ?? string.Empty)),
                     e => entranceTestIds != null && (entranceTestIds.Count == 0 || entranceTestIds.Contains(e.Id)),
 
                     // search 
                     e => string.IsNullOrEmpty(keyword) ||
                          EF.Functions.ILike(EF.Functions.Unaccent(e.RoomName ?? string.Empty), likeKeyword) ||
-                         EF.Functions.ILike(EF.Functions.Unaccent(e.InstructorName ?? string.Empty), likeKeyword)
+                         EF.Functions.ILike(EF.Functions.Unaccent(e.InstructorName ?? string.Empty), likeKeyword) ||
+                         EF.Functions.ILike(EF.Functions.Unaccent(e.Name), likeKeyword)
                 ]);
 
-        await _serviceFactory.RedisCacheService.SaveAsync("entranceTests", result, TimeSpan.FromHours(3));
+        // await _serviceFactory.RedisCacheService
+        //     .SaveAsync($"entranceTests_page{query.Page}_pageSize{query.PageSize}_keyword{query.Keyword}",
+        //         result, TimeSpan.FromHours(3));
         return result;
     }
 
@@ -74,7 +105,7 @@ public class EntranceTestService : IEntranceTestService
         return result;
     }
 
-    public async Task<EntranceTestDetailModel> CreateEntranceTest(EntranceTestModel entranceTestStudent,
+    public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudent,
         string? currentUserFirebaseId = default)
     {
         var entranceTestModel = entranceTestStudent.Adapt<EntranceTest>();
@@ -88,9 +119,10 @@ public class EntranceTestService : IEntranceTestService
         if (instructorDetailModel.Role != Role.Instructor)
             throw new BadRequestException("This is not Instructor, please try again");
 
-        EntranceTest createdEntranceTest = null;
+        EntranceTest? createdEntranceTest = null;
         entranceTestModel.RoomName = roomDetailModel.Name;
-        entranceTestModel.InstructorName = instructorDetailModel.Name;
+        entranceTestModel.InstructorName = instructorDetailModel.UserName;
+        entranceTestModel.RoomCapacity = roomDetailModel.Capacity;
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -98,7 +130,7 @@ public class EntranceTestService : IEntranceTestService
             createdEntranceTest = createdEntranceTestEntity;
         });
 
-        await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
+        await InvalidateEntranceTestCache();
         await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{createdEntranceTest!.Id}",
             createdEntranceTest.Adapt<EntranceTestDetailModel>(),
             TimeSpan.FromHours(5));
@@ -117,7 +149,8 @@ public class EntranceTestService : IEntranceTestService
 
         await _unitOfWork.SaveChangesAsync();
 
-        await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
+        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTestEntity,
+            TimeSpan.FromHours(5));
     }
 
     public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel entranceTestStudentModel,
@@ -133,8 +166,19 @@ public class EntranceTestService : IEntranceTestService
         entranceTestEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.SaveChangesAsync();
+        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTestEntity,
+            TimeSpan.FromHours(5));
+        await InvalidateEntranceTestCache(id);
+    }
 
+    private async Task InvalidateEntranceTestCache(Guid? id = null)
+    {
+        // Invalidate general cache
         await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
+
+        if (id.HasValue)
+            // Invalidate specific cache for the entrance test
+            await _serviceFactory.RedisCacheService.DeleteAsync($"entranceTest_{id.Value}");
     }
 
     public async Task<PagedResult<EntranceTestStudentDetail>> GetPagedEntranceTestStudent(QueryPagedModel query,

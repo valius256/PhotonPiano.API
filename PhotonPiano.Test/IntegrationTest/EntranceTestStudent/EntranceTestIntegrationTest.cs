@@ -149,7 +149,8 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
-            RoomCapacity = 40
+            IsOpen = true,
+            Name = "Test Entrance Test"
         };
 
         // Act
@@ -182,8 +183,8 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
-            RoomCapacity = 40,
-            IsOpen = true
+            IsOpen = true,
+            Name = "Test Entrance Test"
         };
 
         var response = await _client.PostAsync("/api/entrance-tests", SerializeRequest(createdEntrance));
@@ -204,7 +205,8 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
-            RoomCapacity = 40
+            IsOpen = true,
+            Name = "Test Entrance Test"
         };
 
         var token = await _client.GetAuthToken("quangphat7a1@gmail.com", "Quangphat12a3");
@@ -239,7 +241,8 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
             InstructorId = "teacherInvalid",
             IsAnnouncedScore = false,
-            RoomCapacity = 40
+            IsOpen = true,
+            Name = "Test Entrance Test"
         };
 
         var requestContent = SerializeRequest(createdEntrance);

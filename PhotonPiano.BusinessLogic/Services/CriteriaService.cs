@@ -37,7 +37,8 @@ public class CriteriaService : ICriteriaService
                      EF.Functions.ILike(EF.Functions.Unaccent(c.Name), likeKeyword) ||
                      EF.Functions.ILike(EF.Functions.Unaccent(c.Description ?? string.Empty), likeKeyword)
             ]);
-        await _serviceFactory.RedisCacheService.SaveAsync("criteria", result, TimeSpan.FromHours(10));
+        var allCriterial = await _unitOfWork.CriteriaRepository.GetAllAsync();
+        await _serviceFactory.RedisCacheService.SaveAsync("criteria", allCriterial, TimeSpan.FromHours(10));
         return result;
     }
 

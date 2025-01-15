@@ -5,7 +5,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Account;
 public record AccountModel
 {
     public required string AccountFirebaseId { get; init; }
-    public string? Name { get; init; }
+    public string? UserName { get; init; }
     public string? Phone { get; init; }
     public required string Email { get; init; }
     public Role Role { get; init; } = Role.Guest;

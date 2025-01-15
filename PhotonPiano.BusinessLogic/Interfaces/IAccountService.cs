@@ -12,7 +12,7 @@ public interface IAccountService
 
     Task<AccountModel> CreateAccount(string firebaseUId, string email);
 
-    Task<AccountModel> GetAccountById(string firebaseId);
+    Task<AccountDetailModel> GetAccountById(string firebaseId);
 
     Task<bool> IsAccountExist(string firebaseId);
 }

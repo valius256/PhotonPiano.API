@@ -25,7 +25,8 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet]
-    [EndpointDescription("Get entrance tests with paging")]
+    [EndpointDescription(
+        "Get entrance tests with paging, field Keyword can search for EntranceTestName, InstructorName, RoomName")]
     public async Task<ActionResult<List<EntranceTestResponse>>> GetEntranceTest(
         [FromQuery] QueryEntranceTestRequest request)
     {
@@ -53,7 +54,7 @@ public class EntranceTestsController : BaseController
     {
         var result =
             await _serviceFactory.EntranceTestService.CreateEntranceTest(
-                request.Adapt<EntranceTestModel>(), CurrentUserFirebaseId);
+                request.Adapt<CreateEntranceTestModel>(), CurrentUserFirebaseId);
         return Created(nameof(CreateEntranceTest), result.Adapt<EntranceTestResponse>());
     }
 

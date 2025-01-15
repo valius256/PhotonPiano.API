@@ -12,7 +12,7 @@ public interface IEntranceTestService
 
     Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id);
 
-    Task<EntranceTestDetailModel> CreateEntranceTest(EntranceTestModel entranceTestStudentModel,
+    Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudentModel,
         string? currentUserFirebaseId = default);
 
     Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default);

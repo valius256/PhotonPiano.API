@@ -4,6 +4,7 @@ namespace PhotonPiano.DataAccess.Models.Entity;
 
 public class EntranceTest : BaseEntityWithId
 {
+    public required string Name { get; set; }
     public required Guid RoomId { get; set; }
     public string? RoomName { get; set; }
     public int? RoomCapacity { get; set; }

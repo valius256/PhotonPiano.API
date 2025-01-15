@@ -4,6 +4,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 
 public record EntranceTestModel
 {
+    public required string Name { get; init; }
     public required Guid Id { get; init; }
     public required Guid RoomId { get; init; }
     public string? RoomName { get; init; }

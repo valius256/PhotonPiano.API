@@ -4,6 +4,7 @@ namespace PhotonPiano.Api.Responses.EntranceTest;
 
 public record EntranceTestResponse
 {
+    public string Name { get; init; }
     public required Guid Id { get; init; }
 
     public DateTime CreatedAt { get; init; }

@@ -5,6 +5,6 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 
 public record CriteriaDetailModel : CriteriaModel
 {
-    public AccountSimpleModel CreatedBy { get; init; }
+    public AccountSimpleModel CreatedBy { get; init; } = default!;
     public List<EntranceTestResultModel> EntranceTestResults { get; set; } = [];
 }

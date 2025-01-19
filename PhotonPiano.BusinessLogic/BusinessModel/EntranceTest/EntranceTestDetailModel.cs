@@ -6,10 +6,10 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 
 public record EntranceTestDetailModel : EntranceTestModel
 {
-    public RoomModel Room { get; init; }
+    public RoomModel Room { get; init; } = default!;
 
-    public AccountModel CreatedBy { get; init; }
+    public AccountModel CreatedBy { get; init; } = default!;
 
-    public AccountModel Instructor { get; init; }
+    public AccountModel Instructor { get; init; } = default!;
     public List<EntranceTestStudentModel> EntranceTestStudents { get; init; } = [];
 }

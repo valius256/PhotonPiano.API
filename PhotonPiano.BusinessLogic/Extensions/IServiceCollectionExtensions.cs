@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IEntranceTestService, EntranceTestService>();
-
+        services.AddScoped<ISlotService, SlotService>();
         services.AddHttpClient();
 
         services.AddMapsterConfig();

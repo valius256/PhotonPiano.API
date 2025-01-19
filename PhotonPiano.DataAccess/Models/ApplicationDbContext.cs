@@ -22,6 +22,17 @@ public class ApplicationDbContext : DbContext
     public DbSet<EntranceTestResult> EntranceTestResults { get; set; }
     public DbSet<EntranceTestStudent> EntranceTestStudents { get; set; }
     public DbSet<Room> Rooms { get; set; }
+    public DbSet<Class> Classes { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<Slot> Slots { get; set; }
+    public DbSet<SlotStudent> SlotStudents { get; set; }
+    public DbSet<StudentClass> StudentClasses { get; set; }
+    public DbSet<StudentClassScore> StudentClassScores { get; set; }
+    public DbSet<SystemConfig> SystemConfigs { get; set; }
+    public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<Tution> Tutions { get; set; }
+    public DbSet<New> News { get; set; }
+    public DbSet<DayOff> DayOffs { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,6 +43,17 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new EntranceTestResultConfiguration());
         modelBuilder.ApplyConfiguration(new EntranceTestStudentConfiguration());
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
+        modelBuilder.ApplyConfiguration(new ClassConfiguration());
+        modelBuilder.ApplyConfiguration(new NotificationConfiguration());
+        modelBuilder.ApplyConfiguration(new SlotConfiguration());
+        modelBuilder.ApplyConfiguration(new SlotStudentConfiguration());
+        modelBuilder.ApplyConfiguration(new StudentClassConfiguration());
+        modelBuilder.ApplyConfiguration(new StudentClassScoreConfiguration());
+        modelBuilder.ApplyConfiguration(new SystemConfigConfiguration());
+        modelBuilder.ApplyConfiguration(new TransactionConfiguration());
+        modelBuilder.ApplyConfiguration(new TutionConfiguration());
+        modelBuilder.ApplyConfiguration(new NewConfiguration());
+        modelBuilder.ApplyConfiguration(new DayOffConfiguration());
 
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());

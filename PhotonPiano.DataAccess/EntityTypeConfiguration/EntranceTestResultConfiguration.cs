@@ -39,5 +39,10 @@ public class EntranceTestResultConfiguration : IEntityTypeConfiguration<Entrance
             .WithMany(x => x.EntranceTestResults)
             .HasForeignKey(x => x.EntranceTestStudentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.Criteria)
+            .WithMany(x => x.EntranceTestResults)
+            .HasForeignKey(x => x.CriteriaId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

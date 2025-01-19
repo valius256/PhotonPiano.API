@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IRoomRepository, RoomRepository>();
         services.AddScoped<IEntranceTestRepository, EntranceTestRepository>();
-
+        services.AddScoped<ISlotRepository, SlotRepository>();
 
         return services;
     }

@@ -18,16 +18,16 @@ public class AccountService : IAccountService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<AccountModel> CreateAccount(string firebaseUid, string email)
+    public async Task<AccountModel> CreateAccount(string firebaseUId, string email)
     {
-        var account = await _unitOfWork.AccountRepository.FindFirstAsync(x => x.AccountFirebaseId == firebaseUid);
+        var account = await _unitOfWork.AccountRepository.FindFirstAsync(x => x.AccountFirebaseId == firebaseUId);
 
         if (account is not null) return account.Adapt<AccountModel>();
 
         var newAccount = new Account
         {
             Email = email,
-            AccountFirebaseId = firebaseUid,
+            AccountFirebaseId = firebaseUId,
             Role = Role.Student,
             RecordStatus = RecordStatus.IsActive,
             IsEmailVerified = false

@@ -87,7 +87,7 @@ public class VnPay
 
     [JsonPropertyName("ReturnUrl")] public string ReturnUrl { get; set; } = default!;
 
-    [JsonPropertyName("TimeZoneId")] public string TimeZoneId { get; set; }
+    [JsonPropertyName("TimeZoneId")] public string TimeZoneId { get; set; } = default!;
 }
 
 public class Logging

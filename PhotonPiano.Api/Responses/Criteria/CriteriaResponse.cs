@@ -6,7 +6,7 @@ public record CriteriaResponse
 {
     public required Guid Id { get; init; }
 
-    public string Name { get; init; }
+    public string Name { get; init; } = default!;
 
     public decimal Weight { get; init; }
 

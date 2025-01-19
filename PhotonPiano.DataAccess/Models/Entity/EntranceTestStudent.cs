@@ -5,7 +5,7 @@ namespace PhotonPiano.DataAccess.Models.Entity;
 public class EntranceTestStudent : BaseEntityWithId
 {
     public required string StudentFirebaseId { get; set; }
-    public required Guid EntranceTestId { get; set; }
+    public Guid? EntranceTestId { get; set; }
     public decimal? BandScore { get; set; }
 
     [Range(1, 5)] public int? Rank { get; set; }
@@ -26,4 +26,5 @@ public class EntranceTestStudent : BaseEntityWithId
     public virtual EntranceTest EntranceTest { get; set; } = default!;
 
     public virtual ICollection<EntranceTestResult> EntranceTestResults { get; set; } = new List<EntranceTestResult>();
+    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 }

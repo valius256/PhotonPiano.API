@@ -34,7 +34,8 @@ public class EntranceTestStudentService : IEntranceTestStudentService
                     e => userFirebaseIds != null &&
                          (userFirebaseIds.Count == 0 || userFirebaseIds.Contains(e.StudentFirebaseId)),
                     e => entranceTestIds != null &&
-                         (entranceTestIds.Count == 0 || entranceTestIds.Contains(e.EntranceTestId)),
+                         e.EntranceTestId != null &&
+                         (entranceTestIds.Count == 0 || entranceTestIds.Contains(e.EntranceTestId.Value)),
                     e => bandScores != null && (bandScores.Count == 0 || bandScores.Contains(e.BandScore!.Value))
                 ]);
 

@@ -9,13 +9,13 @@ public class EntranceTestResult : BaseEntityWithId
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
-
+    
 
     // reference 
 
-    public virtual Account CreatedBy { get; set; }
-    public virtual Account UpdateBy { get; set; }
-    public virtual Account DeletedBy { get; set; }
-    public virtual Criteria Criteria { get; set; }
-    public virtual EntranceTestStudent EntranceTestStudent { get; set; }
+    public virtual Account CreatedBy { get; set; } = default!;
+    public virtual Account UpdateBy { get; set; } = default!;
+    public virtual Account DeletedBy { get; set; } = default!;
+    public virtual Criteria Criteria { get; set; } = default!;
+    public virtual EntranceTestStudent EntranceTestStudent { get; set; } = default!;
 }

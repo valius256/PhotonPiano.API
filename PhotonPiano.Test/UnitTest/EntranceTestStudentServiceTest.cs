@@ -20,8 +20,8 @@ public class EntranceTestStudentServiceTest
             .Returns(_entranceTestStudentRepositoryMock.Object);
     }
 
-    [Fact]
-    public async Task GetEntranceTestById_CorrectId_ReturnValidResult()
-    {
-    }
+    //[Fact]
+    //public async Task GetEntranceTestById_CorrectId_ReturnValidResult()
+    //{
+    //}
 }

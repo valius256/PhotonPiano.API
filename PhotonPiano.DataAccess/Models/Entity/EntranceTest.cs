@@ -17,13 +17,15 @@ public class EntranceTest : BaseEntityWithId
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
+    public decimal Fee { get; set; }
+
 
     // reference
-    public virtual Room Room { get; set; }
-    public virtual Account Instructor { get; set; }
-    public virtual Account CreatedBy { get; set; }
-    public virtual Account UpdateBy { get; set; }
-    public virtual Account DeletedBy { get; set; }
+    public virtual Room Room { get; set; } = default!;
+    public virtual Account Instructor { get; set; } = default!;
+    public virtual Account CreatedBy { get; set; } = default!;
+    public virtual Account UpdateBy { get; set; } = default!;
+    public virtual Account DeletedBy { get; set; } = default!;
 
     public virtual ICollection<EntranceTestStudent> EntranceTestStudents { get; set; } =
         new List<EntranceTestStudent>();

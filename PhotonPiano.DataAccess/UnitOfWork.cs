@@ -12,9 +12,9 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<ICriteriaRepository> _criteriaRepository;
     private readonly Lazy<IEntranceTestRepository> _entranceTestRepository;
 
-
     private readonly Lazy<IEntranceTestStudentRepository> _entranceTestStudentRepository;
     private readonly Lazy<IRoomRepository> _roomRepository;
+    private readonly Lazy<ISlotRepository> _slotRepository;
 
     private IDbContextTransaction? _currentTransaction;
 
@@ -27,6 +27,7 @@ public class UnitOfWork : IUnitOfWork
         _entranceTestRepository = new Lazy<IEntranceTestRepository>(() => new EntranceTestRepository(context));
         _roomRepository = new Lazy<IRoomRepository>(() => new RoomRepository(context));
         _criteriaRepository = new Lazy<ICriteriaRepository>(() => new CriteriaRepository(context));
+        _slotRepository = new Lazy<ISlotRepository>(() => new SlotRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -39,6 +40,7 @@ public class UnitOfWork : IUnitOfWork
 
     public ICriteriaRepository CriteriaRepository => _criteriaRepository.Value;
 
+    public ISlotRepository SlotRepository => _slotRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

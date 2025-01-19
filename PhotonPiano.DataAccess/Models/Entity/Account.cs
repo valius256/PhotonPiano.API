@@ -26,9 +26,12 @@ public class Account : BaseEntity
     public Level Level { get; set; } = Level.Beginner;
     public AccountStatus Status { get; set; } = AccountStatus.Active;
     public DateTime? RegistrationDate { get; set; }
-    public RecordStatus RecordStatus { get; set; } = RecordStatus.IsActive;
     public StudentStatus? StudentStatus { get; set; }
+    public string? DesiredLevel { get; set; }
+    public List<string> DesiredTargets { get; set; } = [];
+    public List<string> FavoriteMusicGenres { get; set; } = [];
 
+    public List<string> PreferredLearningMethods { get; set; } = [];
 
     // reference 
     // EntranceTest
@@ -70,4 +73,40 @@ public class Account : BaseEntity
     public virtual ICollection<Criteria> CreatedCriteria { get; set; } = new List<Criteria>();
     public virtual ICollection<Criteria> UpdatedCriteria { get; set; } = new List<Criteria>();
     public virtual ICollection<Criteria> DeletedCriteria { get; set; } = new List<Criteria>();
+
+    // Transaction 
+    public virtual ICollection<Transaction> CreatedTransaction { get; set; } = new List<Transaction>();
+
+    // Class
+    public virtual ICollection<Class> InstructorClasses { get; set; } = new List<Class>();
+    public virtual ICollection<Class> CreatedClasses { get; set; } = new List<Class>();
+    public virtual ICollection<Class> UpdatedClasses { get; set; } = new List<Class>();
+    public virtual ICollection<Class> DeletedClasses { get; set; } = new List<Class>();
+
+    // SlotStudent
+    public virtual ICollection<SlotStudent> SlotStudents { get; set; } = new List<SlotStudent>();
+    public virtual ICollection<SlotStudent> CreatedSlotStudents { get; set; } = new List<SlotStudent>();
+    public virtual ICollection<SlotStudent> UpdatedSlotStudents { get; set; } = new List<SlotStudent>();
+    public virtual ICollection<SlotStudent> DeletedSlotStudents { get; set; } = new List<SlotStudent>();
+
+
+    // Notification
+    public virtual ICollection<Notification> ReceiverNotifications { get; set; } = new List<Notification>();
+    public virtual ICollection<Notification> SenderNotifications { get; set; } = new List<Notification>();
+
+    // StudentClass 
+    public virtual ICollection<StudentClass> StudentClasses { get; set; } = new List<StudentClass>();
+    public virtual ICollection<StudentClass> CreatedStudentClass { get; set; } = new List<StudentClass>();
+    public virtual ICollection<StudentClass> UpdatedStudentClass { get; set; } = new List<StudentClass>();
+    public virtual ICollection<StudentClass> DeletedStudentClass { get; set; } = new List<StudentClass>();
+
+    // New
+    public virtual ICollection<New> CreatedNews { get; set; } = new List<New>();
+    public virtual ICollection<New> UpdatednNews { get; set; } = new List<New>();
+    public virtual ICollection<New> DeletednNews { get; set; } = new List<New>();
+
+    // DayOff
+    public virtual ICollection<DayOff> CreatedDayOffs { get; set; } = new List<DayOff>();
+    public virtual ICollection<DayOff> UpdatedDayOffs { get; set; } = new List<DayOff>();
+    public virtual ICollection<DayOff> DeletedDayOffs { get; set; } = new List<DayOff>();
 }

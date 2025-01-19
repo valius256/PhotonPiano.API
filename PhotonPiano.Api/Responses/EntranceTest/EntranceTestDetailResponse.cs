@@ -8,7 +8,7 @@ public record EntranceTestDetailResponse : EntranceTestResponse
 {
     public List<EntranceTestStudentResponse> EntranceTestStudents { get; init; } = [];
 
-    public AccountResponse Instructor { get; init; }
+    public AccountResponse Instructor { get; init; } = default!;
 
-    public RoomResponse Room { get; init; }
+    public RoomResponse Room { get; init; } = default!;
 }

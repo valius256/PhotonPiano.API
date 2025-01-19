@@ -21,7 +21,7 @@ public class QueryStringHelper
                 if (value is IEnumerable enumerable && value is not string)
                     return enumerable
                         .Cast<object>()
-                        .Select(item => $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(item.ToString())}");
+                        .Select(item => $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(item.ToString()!)}");
 
                 // Handle other data types
                 return new[]

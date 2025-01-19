@@ -15,4 +15,6 @@ public interface IServiceFactory
     IRoomService RoomService { get; }
 
     ICriteriaService CriteriaService { get; }
+
+    ISlotService SlotService { get; }
 }

@@ -1,0 +1,21 @@
+using PhotonPiano.DataAccess.Models.Enum;
+
+namespace PhotonPiano.DataAccess.Models.Entity;
+
+public class Transaction : BaseEntityWithId
+{
+    public string? Description { get; set; }
+    public TransactionType TransactionType { get; set; }
+    public PaymentMethod PaymentMethod { get; set; }
+    public PaymentStatus PaymentStatus { get; set; }
+    public decimal Amount { get; set; }
+    public required string CreatedById { get; set; }
+    public Guid? TutionId { get; set; }
+
+    public Guid? EntranceTestStudentId { get; set; }
+
+    // Reference
+    public virtual Account CreatedBy { get; set; } = default!;
+    public virtual Tution? Tution { get; set; }
+    public virtual EntranceTestStudent? EntranceTestStudent { get; set; }
+}

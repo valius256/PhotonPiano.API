@@ -8,7 +8,7 @@ public static class QueryExtension
         IEnumerable<T> data,
         int page,
         int pageSize,
-        string sortColumn = null,
+        string? sortColumn = null,
         bool orderByDesc = false,
         Func<T, bool>? filter = null)
     {

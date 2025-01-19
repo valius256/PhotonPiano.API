@@ -15,8 +15,9 @@ public class Room : BaseEntityWithId
 
     // reference 
 
-    public virtual Account CreatedBy { get; set; }
-    public virtual Account UpdateBy { get; set; }
-    public virtual Account DeletedBy { get; set; }
+    public virtual Account CreatedBy { get; set; } = default!;
+    public virtual Account UpdateBy { get; set; } = default!;
+    public virtual Account DeletedBy { get; set; } = default!;
     public virtual ICollection<EntranceTest> EntranceTests { get; set; } = new List<EntranceTest>();
+    public virtual ICollection<Slot> Slots { get; set; } = new List<Slot>();
 }

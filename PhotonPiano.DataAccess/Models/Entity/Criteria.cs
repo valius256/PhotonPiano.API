@@ -14,9 +14,12 @@ public class Criteria : BaseEntityWithId
 
     // reference 
 
-    public virtual Account CreatedBy { get; set; }
-    public virtual Account UpdateBy { get; set; }
-    public virtual Account DeletedBy { get; set; }
+    public virtual Account CreatedBy { get; set; } = default!;
+    public virtual Account UpdateBy { get; set; } = default!;
+    public virtual Account DeletedBy { get; set; } = default!;
 
     public virtual ICollection<EntranceTestResult> EntranceTestResults { get; set; } = new List<EntranceTestResult>();
+
+    public virtual ICollection<StudentClassScore> StudentClassScoreCriterias { get; set; } =
+        new List<StudentClassScore>();
 }

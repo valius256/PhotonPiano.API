@@ -2,7 +2,7 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Responses.Room;
 
-public class RoomResponse
+public record RoomResponse
 {
     public Guid Id { get; set; }
     public string? Name { get; set; }

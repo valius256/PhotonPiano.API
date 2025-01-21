@@ -229,7 +229,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     Content = table.Column<string>(type: "text", nullable: false),
                     ReceiverFirebaseIds = table.Column<List<string>>(type: "text[]", nullable: false),
                     IsViewed = table.Column<bool>(type: "boolean", nullable: false),
-                    SenderFirebaseId = table.Column<string>(type: "character varying(30)", nullable: false),
                     AccountFirebaseId = table.Column<string>(type: "character varying(30)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -242,11 +241,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     table.ForeignKey(
                         name: "FK_Notification_Account_AccountFirebaseId",
                         column: x => x.AccountFirebaseId,
-                        principalTable: "Account",
-                        principalColumn: "AccountFirebaseId");
-                    table.ForeignKey(
-                        name: "FK_Notification_Account_SenderFirebaseId",
-                        column: x => x.SenderFirebaseId,
                         principalTable: "Account",
                         principalColumn: "AccountFirebaseId");
                 });
@@ -345,6 +339,7 @@ namespace PhotonPiano.DataAccess.Migrations
                 {
                     AccountFirebaseId = table.Column<string>(type: "character varying(30)", nullable: false),
                     NotificationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsViewed = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -694,9 +689,18 @@ namespace PhotonPiano.DataAccess.Migrations
                 columns: new[] { "AccountFirebaseId", "Address", "AvatarUrl", "BankAccount", "CreatedAt", "DateOfBirth", "DeletedAt", "DesiredLevel", "DesiredTargets", "Email", "FavoriteMusicGenres", "Gender", "IsEmailVerified", "JoinedDate", "Level", "Phone", "PreferredLearningMethods", "RecordStatus", "RegistrationDate", "Role", "ShortDescription", "Status", "StudentStatus", "UpdatedAt", "UserName" },
                 values: new object[,]
                 {
-                    { "admin001", "", "", "", new DateTime(2025, 1, 20, 14, 19, 18, 371, DateTimeKind.Utc).AddTicks(2595), null, null, null, new List<string>(), "admin001@gmail.com", new List<string>(), null, false, new DateTime(2025, 1, 20, 14, 19, 18, 371, DateTimeKind.Utc).AddTicks(1577), 0, "", new List<string>(), 1, null, 3, "", 0, null, null, "admin001" },
-                    { "learner003", "", "", "", new DateTime(2025, 1, 20, 14, 19, 18, 371, DateTimeKind.Utc).AddTicks(3318), null, null, null, new List<string>(), "learner003@gmail.com", new List<string>(), null, false, new DateTime(2025, 1, 20, 14, 19, 18, 371, DateTimeKind.Utc).AddTicks(3313), 0, "", new List<string>(), 1, null, 1, "", 0, null, null, "learner003" },
-                    { "teacher002", "", "", "", new DateTime(2025, 1, 20, 14, 19, 18, 371, DateTimeKind.Utc).AddTicks(3294), null, null, null, new List<string>(), "teacher002@gmail.com", new List<string>(), null, false, new DateTime(2025, 1, 20, 14, 19, 18, 371, DateTimeKind.Utc).AddTicks(3281), 0, "", new List<string>(), 1, null, 2, "", 0, null, null, "teacher002" }
+                    { "admin001", "", "", "", new DateTime(2025, 1, 21, 8, 43, 26, 646, DateTimeKind.Utc).AddTicks(7927), null, null, null, new List<string>(), "admin001@gmail.com", new List<string>(), null, false, new DateTime(2025, 1, 21, 8, 43, 26, 646, DateTimeKind.Utc).AddTicks(6395), 0, "", new List<string>(), 1, null, 3, "", 0, null, null, "admin001" },
+                    { "learner003", "", "", "", new DateTime(2025, 1, 21, 8, 43, 26, 646, DateTimeKind.Utc).AddTicks(8711), null, null, null, new List<string>(), "learner003@gmail.com", new List<string>(), null, false, new DateTime(2025, 1, 21, 8, 43, 26, 646, DateTimeKind.Utc).AddTicks(8708), 0, "", new List<string>(), 1, null, 1, "", 0, null, null, "learner003" },
+                    { "teacher002", "", "", "", new DateTime(2025, 1, 21, 8, 43, 26, 646, DateTimeKind.Utc).AddTicks(8706), null, null, null, new List<string>(), "teacher002@gmail.com", new List<string>(), null, false, new DateTime(2025, 1, 21, 8, 43, 26, 646, DateTimeKind.Utc).AddTicks(8695), 0, "", new List<string>(), 1, null, 2, "", 0, null, null, "teacher002" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Class",
+                columns: new[] { "Id", "CreatedAt", "CreatedById", "DeletedAt", "DeletedById", "InstructorId", "IsPublic", "Level", "RecordStatus", "Status", "UpdateById", "UpdatedAt" },
+                values: new object[,]
+                {
+                    { new Guid("a41f2855-d4b8-4f53-afbc-22ddb9122d7a"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(7464), "admin001", null, null, "teacher002", true, 2, 1, 1, null, null },
+                    { new Guid("b4c225e8-f7f2-45bd-b307-338c501a2d1e"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(8358), "admin001", null, null, "teacher002", true, 3, 1, 0, null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -704,19 +708,19 @@ namespace PhotonPiano.DataAccess.Migrations
                 columns: new[] { "Id", "CreatedAt", "CreatedById", "DeletedAt", "DeletedById", "Description", "For", "Name", "RecordStatus", "UpdateById", "UpdatedAt", "Weight" },
                 values: new object[,]
                 {
-                    { new Guid("0854ccdf-d8c2-4e0e-838f-6386f8598eb4"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(462), "admin001", null, null, null, 1, "Thi cuối kỳ (Độ chính xác)", 1, null, null, 15m },
-                    { new Guid("0f1bf672-a5fa-4ef0-99fd-79e7b20bc2d7"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(453), "admin001", null, null, null, 1, "Bài thi 1", 1, null, null, 10m },
-                    { new Guid("11402689-2d49-460c-b393-1c9073b8a86a"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(469), "admin001", null, null, null, 1, "Thi cuối kỳ (Phong thái)", 1, null, null, 15m },
-                    { new Guid("2ec2b6d2-e3d8-4a05-9dfd-f060abdad85a"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(422), "admin001", null, null, null, 0, "Độ chính xác", 1, null, null, 10m },
-                    { new Guid("39c54e5e-8a30-4493-b863-78ad34439282"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(451), "admin001", null, null, null, 1, "Kiểm tra nhỏ 2", 1, null, null, 5m },
-                    { new Guid("57f1b293-3edf-4de1-8bd1-43ff0c898da7"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(425), "admin001", null, null, null, 0, "Âm Sắc", 1, null, null, 10m },
-                    { new Guid("59ec8b4a-41d6-40c5-96cd-ad6ad0d1dd8c"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(464), "admin001", null, null, null, 1, "Thi cuối kỳ (Âm sắc)", 1, null, null, 15m },
-                    { new Guid("70b425db-8139-4f32-8663-beb216cafacc"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(429), "admin001", null, null, null, 0, "Phong thái", 1, null, null, 10m },
-                    { new Guid("74128d8c-65ec-4b4f-a85c-b2d83bd1b1b4"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(449), "admin001", null, null, null, 1, "Kiểm tra nhỏ 1", 1, null, null, 5m },
-                    { new Guid("b1a7ec95-714a-4ac3-97b2-4559b3b0f46a"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(460), "admin001", null, null, null, 1, "Thi cuối kỳ (Nhịp điệu)", 1, null, null, 15m },
-                    { new Guid("c3a7ec47-f015-47cb-b865-e5a127423355"), new DateTime(2025, 1, 20, 14, 19, 18, 371, DateTimeKind.Utc).AddTicks(9517), "admin001", null, null, null, 0, "Nhịp điệu", 1, null, null, 10m },
-                    { new Guid("e39b66ae-6fd7-4c3a-a5bc-f812d5364fcf"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(458), "admin001", null, null, null, 1, "Điểm chuyên cần", 1, null, null, 5m },
-                    { new Guid("f2b6554d-e8d1-4d85-b5ac-e864fde45591"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(455), "admin001", null, null, null, 1, "Bài thi 2", 1, null, null, 10m }
+                    { new Guid("1d1e7dae-5607-4a21-9ced-8877fc1ff8d3"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8273), "admin001", null, null, null, 1, "Thi cuối kỳ (Phong thái)", 1, null, null, 15m },
+                    { new Guid("1fd34946-dec7-4f59-861e-cf7fd4098a41"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8175), "admin001", null, null, null, 1, "Bài thi 1", 1, null, null, 10m },
+                    { new Guid("2e1e97ad-01f7-41bc-a594-c999ca7cbd32"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8161), "admin001", null, null, null, 0, "Độ chính xác", 1, null, null, 10m },
+                    { new Guid("34c30fb4-7884-4bd4-9d17-1a560aa2b82a"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8163), "admin001", null, null, null, 0, "Âm Sắc", 1, null, null, 10m },
+                    { new Guid("413bba5c-db57-4b9d-8ce5-4ad0ba3cd723"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8171), "admin001", null, null, null, 1, "Kiểm tra nhỏ 1", 1, null, null, 5m },
+                    { new Guid("5716e187-976e-4bb3-9522-fd4668889914"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8173), "admin001", null, null, null, 1, "Kiểm tra nhỏ 2", 1, null, null, 5m },
+                    { new Guid("64e1139c-bdc4-4e9e-88c7-4768146605c7"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(6823), "admin001", null, null, null, 0, "Nhịp điệu", 1, null, null, 10m },
+                    { new Guid("82f44c07-2d22-4bdd-ad1c-8fc83e36ec3b"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8176), "admin001", null, null, null, 1, "Bài thi 2", 1, null, null, 10m },
+                    { new Guid("8d7c0085-4633-4939-ad91-fc14a515eaae"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8189), "admin001", null, null, null, 1, "Thi cuối kỳ (Độ chính xác)", 1, null, null, 15m },
+                    { new Guid("a7f006d6-e061-4cde-a831-9fecc015e8ad"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8169), "admin001", null, null, null, 0, "Phong thái", 1, null, null, 10m },
+                    { new Guid("c40beb94-0884-4827-88e2-c872cf97d2ea"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8271), "admin001", null, null, null, 1, "Thi cuối kỳ (Âm sắc)", 1, null, null, 15m },
+                    { new Guid("cf0e3e0b-6c7c-4ed1-ad65-7220904977a4"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8178), "admin001", null, null, null, 1, "Điểm chuyên cần", 1, null, null, 5m },
+                    { new Guid("df452323-201d-4482-ada4-1bfff6847127"), new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(8187), "admin001", null, null, null, 1, "Thi cuối kỳ (Nhịp điệu)", 1, null, null, 15m }
                 });
 
             migrationBuilder.InsertData(
@@ -724,9 +728,9 @@ namespace PhotonPiano.DataAccess.Migrations
                 columns: new[] { "Id", "Capacity", "CreatedAt", "CreatedById", "DeletedAt", "DeletedById", "Name", "RecordStatus", "Status", "UpdateById", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { new Guid("936064f5-8c68-4cd3-af7e-3cbe00c1f00a"), null, new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(1998), "admin001", null, null, "Room 2", 1, 0, null, null },
-                    { new Guid("d2879c8f-cc7c-4ac1-bb22-19a3e96a5754"), null, new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(1493), "admin001", null, null, "Room 1", 1, 0, null, null },
-                    { new Guid("dff9511a-0d64-4af5-aae6-435025e28e72"), null, new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(1999), "admin001", null, null, "Room 3", 1, 0, null, null }
+                    { new Guid("9f17d29e-4cbe-4f01-b256-029ea51b3360"), null, new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(9593), "admin001", null, null, "Room 1", 1, 0, null, null },
+                    { new Guid("cebee08e-9eb6-48b0-a03f-033e74423752"), null, new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(9946), "admin001", null, null, "Room 2", 1, 0, null, null },
+                    { new Guid("f7e1b4f6-5cee-4590-8ff1-9c31367dfd32"), null, new DateTime(2025, 1, 21, 8, 43, 26, 647, DateTimeKind.Utc).AddTicks(9991), "admin001", null, null, "Room 3", 1, 0, null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -734,9 +738,20 @@ namespace PhotonPiano.DataAccess.Migrations
                 columns: new[] { "Id", "CreatedAt", "CreatedById", "Date", "DeletedAt", "DeletedById", "Fee", "InstructorId", "InstructorName", "IsAnnouncedScore", "IsOpen", "Name", "RecordStatus", "RoomCapacity", "RoomId", "RoomName", "Shift", "UpdateById", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { new Guid("06adfec1-db13-46c9-bd7a-75b2c25524e4"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(9000), "admin001", new DateOnly(2025, 1, 20), null, null, 0m, "teacher002", null, false, true, "EntranceTest 3", 1, null, new Guid("dff9511a-0d64-4af5-aae6-435025e28e72"), null, 4, null, null },
-                    { new Guid("1b5beb6e-7484-459d-90ca-69427f440b17"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(8992), "admin001", new DateOnly(2025, 1, 20), null, null, 0m, null, null, false, true, "EntranceTest 2", 1, null, new Guid("936064f5-8c68-4cd3-af7e-3cbe00c1f00a"), "Room 2", 2, null, null },
-                    { new Guid("d0ca3c6b-82e5-4018-bbce-dd86508880ee"), new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(2648), "admin001", new DateOnly(2025, 1, 20), null, null, 0m, "teacher002", null, false, true, "EntranceTest 1", 1, null, new Guid("d2879c8f-cc7c-4ac1-bb22-19a3e96a5754"), "Room 1", 0, null, null }
+                    { new Guid("475bd3ea-e2a8-466f-b688-261a4017e4bb"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(672), "admin001", new DateOnly(2025, 1, 21), null, null, 0m, "teacher002", null, false, true, "EntranceTest 1", 1, null, new Guid("9f17d29e-4cbe-4f01-b256-029ea51b3360"), "Room 1", 0, null, null },
+                    { new Guid("b30363e3-c917-4115-b569-6d06da80417e"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(2007), "admin001", new DateOnly(2025, 1, 21), null, null, 0m, "teacher002", null, false, true, "EntranceTest 3", 1, null, new Guid("f7e1b4f6-5cee-4590-8ff1-9c31367dfd32"), null, 4, null, null },
+                    { new Guid("c270fa1b-ce19-4c31-a64d-2244ca5fab6d"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(1996), "admin001", new DateOnly(2025, 1, 21), null, null, 0m, null, null, false, true, "EntranceTest 2", 1, null, new Guid("cebee08e-9eb6-48b0-a03f-033e74423752"), "Room 2", 2, null, null }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Slot",
+                columns: new[] { "Id", "ClassId", "CreatedAt", "Date", "DeletedAt", "RecordStatus", "RoomId", "Shift", "Status", "UpdatedAt" },
+                values: new object[,]
+                {
+                    { new Guid("20474e12-4537-4177-8452-19e75b36b85a"), new Guid("a41f2855-d4b8-4f53-afbc-22ddb9122d7a"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(9727), new DateOnly(2025, 1, 27), null, 1, new Guid("9f17d29e-4cbe-4f01-b256-029ea51b3360"), 0, 1, null },
+                    { new Guid("477e2e93-d6c6-43b0-a26c-ae4808a02125"), new Guid("a41f2855-d4b8-4f53-afbc-22ddb9122d7a"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(8937), new DateOnly(2025, 1, 21), null, 1, new Guid("9f17d29e-4cbe-4f01-b256-029ea51b3360"), 0, 1, null },
+                    { new Guid("818c378a-9796-41e3-9f16-7e1a20af4d5a"), new Guid("a41f2855-d4b8-4f53-afbc-22ddb9122d7a"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(9700), new DateOnly(2025, 1, 23), null, 1, new Guid("9f17d29e-4cbe-4f01-b256-029ea51b3360"), 0, 1, null },
+                    { new Guid("9b8d10b7-5e8a-4e21-b0ad-3c0f35673538"), new Guid("a41f2855-d4b8-4f53-afbc-22ddb9122d7a"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(9725), new DateOnly(2025, 1, 25), null, 1, new Guid("9f17d29e-4cbe-4f01-b256-029ea51b3360"), 0, 1, null }
                 });
 
             migrationBuilder.InsertData(
@@ -744,15 +759,15 @@ namespace PhotonPiano.DataAccess.Migrations
                 columns: new[] { "Id", "BandScore", "CreatedAt", "CreatedById", "DeletedAt", "DeletedById", "EntranceTestId", "InstructorComment", "IsScoreAnnounced", "Rank", "RecordStatus", "StudentFirebaseId", "UpdateById", "UpdatedAt", "Year" },
                 values: new object[,]
                 {
-                    { new Guid("0b489a44-b60f-4d1f-b158-8acc1802df56"), 9m, new DateTime(2025, 1, 20, 14, 19, 18, 372, DateTimeKind.Utc).AddTicks(9939), "admin001", null, null, new Guid("d0ca3c6b-82e5-4018-bbce-dd86508880ee"), null, true, 1, 1, "learner003", null, null, 2024 },
-                    { new Guid("6b1d3d58-9c9c-450b-89c8-395c94b81666"), 4m, new DateTime(2025, 1, 20, 14, 19, 18, 373, DateTimeKind.Utc).AddTicks(2280), "admin001", null, null, new Guid("d0ca3c6b-82e5-4018-bbce-dd86508880ee"), null, true, 3, 1, "learner003", null, null, 2024 },
-                    { new Guid("fcaf579a-a66a-432d-b5e6-2fbf17c67aed"), 6m, new DateTime(2025, 1, 20, 14, 19, 18, 373, DateTimeKind.Utc).AddTicks(2270), "admin001", null, null, new Guid("d0ca3c6b-82e5-4018-bbce-dd86508880ee"), null, true, 2, 1, "learner003", null, null, 2024 }
+                    { new Guid("57041426-1274-4033-9fbb-8cc3ce1d3c3c"), 6m, new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(5682), "admin001", null, null, new Guid("475bd3ea-e2a8-466f-b688-261a4017e4bb"), null, true, 2, 1, "learner003", null, null, 2024 },
+                    { new Guid("62c45e61-118d-411b-8b39-8ed55ebfc752"), 9m, new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(3146), "admin001", null, null, new Guid("475bd3ea-e2a8-466f-b688-261a4017e4bb"), null, true, 1, 1, "learner003", null, null, 2024 },
+                    { new Guid("7d9cb4f3-5fae-4c6c-b65e-a289289d3835"), 9m, new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(5692), "admin001", null, null, new Guid("475bd3ea-e2a8-466f-b688-261a4017e4bb"), null, true, 3, 1, "learner003", null, null, 2024 }
                 });
 
             migrationBuilder.InsertData(
                 table: "EntranceTestResult",
                 columns: new[] { "Id", "CreatedAt", "CreatedById", "CriteriaId", "CriteriaName", "DeletedAt", "DeletedById", "EntranceTestStudentId", "RecordStatus", "Score", "UpdateById", "UpdatedAt" },
-                values: new object[] { new Guid("826dded6-2f34-487f-8a7e-e6a74b859b97"), new DateTime(2025, 1, 20, 14, 19, 18, 373, DateTimeKind.Utc).AddTicks(2803), "admin001", new Guid("2ec2b6d2-e3d8-4a05-9dfd-f060abdad85a"), null, null, null, new Guid("0b489a44-b60f-4d1f-b158-8acc1802df56"), 1, null, null, null });
+                values: new object[] { new Guid("865b1f0c-86af-445f-a328-3477f5382e17"), new DateTime(2025, 1, 21, 8, 43, 26, 648, DateTimeKind.Utc).AddTicks(6349), "admin001", new Guid("2e1e97ad-01f7-41bc-a594-c999ca7cbd32"), null, null, null, new Guid("62c45e61-118d-411b-8b39-8ed55ebfc752"), 1, null, null, null });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AccountNotification_NotificationId",
@@ -923,11 +938,6 @@ namespace PhotonPiano.DataAccess.Migrations
                 name: "IX_Notification_Id",
                 table: "Notification",
                 column: "Id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Notification_SenderFirebaseId",
-                table: "Notification",
-                column: "SenderFirebaseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Room_CreatedById",

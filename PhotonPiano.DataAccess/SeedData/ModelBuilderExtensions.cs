@@ -242,5 +242,82 @@ public static class ModelBuilderExtensions
         );
 
         #endregion
+
+        #region Class Model
+        var classTestGuid1 = Guid.NewGuid(); 
+        var classTestGuid2 = Guid.NewGuid();
+        modelBuilder.Entity<Class>().HasData(
+            new Class()
+            {
+                Id = classTestGuid1,
+                CreatedById = admin001,
+                InstructorId = teacher002,
+                Status = ClassStatus.Ongoing,
+                IsPublic = true,
+                Level = Level.Intermediate
+            },
+            new Class()
+            {
+                Id = classTestGuid2,
+                CreatedById = admin001,
+                InstructorId = teacher002,
+                Status = ClassStatus.NotStarted,
+                IsPublic = true,
+                Level = Level.Advanced
+            }
+    
+        );
+
+
+        #endregion
+
+        #region Slot Model
+        var slotTestGuid1 = Guid.NewGuid();
+        var slotTestGuid2 = Guid.NewGuid();
+        var slotTestGuid3 = Guid.NewGuid();
+        var slotTestGuid4 = Guid.NewGuid();
+
+        modelBuilder.Entity<Slot>().HasData(
+            new Slot
+            {
+                Id = slotTestGuid1,
+                ClassId = classTestGuid1,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                RoomId = roomGuid1,
+                Shift = Shift.Shift1_7h_8h30,
+                Status = SlotStatus.Ongoing,
+            },
+            
+            new Slot
+            {
+                Id = slotTestGuid2,
+                ClassId = classTestGuid1,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)),
+                RoomId = roomGuid1,
+                Shift = Shift.Shift1_7h_8h30,
+                Status = SlotStatus.Ongoing,
+            },
+            new Slot
+            {
+                Id = slotTestGuid3,
+                ClassId = classTestGuid1,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(4)),
+                RoomId = roomGuid1,
+                Shift = Shift.Shift1_7h_8h30,
+                Status = SlotStatus.Ongoing,
+            },
+            new Slot
+            {
+                Id = slotTestGuid4,
+                ClassId = classTestGuid1,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(6)),
+                RoomId = roomGuid1,
+                Shift = Shift.Shift1_7h_8h30,
+                Status = SlotStatus.Ongoing,
+            }
+        );
+
+
+        #endregion
     }
 }

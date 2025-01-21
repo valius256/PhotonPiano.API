@@ -92,7 +92,6 @@ public class Account : BaseEntity
 
     // Notification
     public virtual ICollection<Notification> ReceiverNotifications { get; set; } = new List<Notification>();
-    public virtual ICollection<Notification> SenderNotifications { get; set; } = new List<Notification>();
 
     // StudentClass 
     public virtual ICollection<StudentClass> StudentClasses { get; set; } = new List<StudentClass>();
@@ -109,4 +108,8 @@ public class Account : BaseEntity
     public virtual ICollection<DayOff> CreatedDayOffs { get; set; } = new List<DayOff>();
     public virtual ICollection<DayOff> UpdatedDayOffs { get; set; } = new List<DayOff>();
     public virtual ICollection<DayOff> DeletedDayOffs { get; set; } = new List<DayOff>();
+
+    // AccountNotification 
+    public virtual ICollection<AccountNotification> AccountNotifications { get; set; } =
+        new List<AccountNotification>();
 }

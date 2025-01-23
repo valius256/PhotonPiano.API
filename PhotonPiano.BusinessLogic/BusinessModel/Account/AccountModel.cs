@@ -6,19 +6,43 @@ public record AccountModel
 {
     public required string AccountFirebaseId { get; init; }
     public string? UserName { get; init; }
-    public string? Phone { get; init; }
+    
+    public string? Phone { get; init; } = string.Empty;
+    
     public required string Email { get; init; }
-    public Role Role { get; init; } = Role.Guest;
-    public string? PictureUrl { get; init; }
+    public Role Role { get; init; }
+    
+    public string? AvatarUrl { get; init; } = string.Empty;
+    
     public DateTime? DateOfBirth { get; init; }
-    public string? Address { get; init; }
+    
+    public string? Address { get; init; } = string.Empty;
+    
     public Gender? Gender { get; init; }
-    public string? BankAccount { get; init; }
-
-    public DateTime JoinedDate { get; init; }
-    public string? ShortDescription { get; init; }
-    public Level Level { get; init; }
-    public AccountStatus Status { get; init; }
+    
+    public string? BankAccount { get; init; } = string.Empty;
+    
+    public bool IsEmailVerified { get; init; } = false;
+    
+    public DateTime JoinedDate { get; init; } = DateTime.UtcNow.AddHours(7);
+    
+    public string? ShortDescription { get; init; } = string.Empty;
+    
+    public Level Level { get; init; } = Level.Beginner;
+    
+    public AccountStatus Status { get; init; } = AccountStatus.Active;
+    
     public DateTime? RegistrationDate { get; init; }
+    
+    public StudentStatus? StudentStatus { get; init; }
+    
+    public string? DesiredLevel { get; init; }
+    
+    public List<string> DesiredTargets { get; init; } = [];
+    
+    public List<string> FavoriteMusicGenres { get; init; } = [];
+
+    public List<string> PreferredLearningMethods { get; init; } = [];
+    
     public RecordStatus RecordStatus { get; init; }
 }

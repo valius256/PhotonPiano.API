@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
@@ -6,7 +7,7 @@ public interface IAuthService
 {
     Task<AuthModel> SignIn(string email, string password);
 
-    Task<AccountModel> SignUp(string email, string password);
+    Task<AccountModel> SignUp(SignUpModel model);
 
     Task<NewIdTokenModel> RefreshToken(string refreshToken);
 

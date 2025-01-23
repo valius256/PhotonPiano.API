@@ -1,7 +1,9 @@
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.Interfaces;
 
 namespace PhotonPiano.Api.Controllers;
@@ -26,11 +28,10 @@ public class AuthController : BaseController
     }
 
     [HttpPost("sign-up")]
-    [EndpointDescription("Sign up with email and password")]
-    public async Task<ActionResult> SignUp([FromBody] SignUpRequest request)
+    [EndpointDescription("Sign up student account")]
+    public async Task<ActionResult<AccountModel>> SignUp([FromBody] SignUpRequest request)
     {
-        var (email, password) = request;
-        return Created(nameof(SignUp), await _serviceFactory.AuthService.SignUp(email, password));
+        return Created(nameof(SignUp), await _serviceFactory.AuthService.SignUp(request.Adapt<SignUpModel>()));
     }
 
     [HttpGet("current-info")]

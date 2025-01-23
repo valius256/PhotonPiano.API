@@ -1,4 +1,6 @@
+using System.Net;
 using System.Text;
+using Mapster;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -6,6 +8,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
+using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -68,14 +71,27 @@ public class AuthService : IAuthService
         return responseObject;
     }
 
-    public async Task<AccountModel> SignUp(string email, string password)
+    public async Task<AccountModel> SignUp(SignUpModel model)
     {
+        var (email, password) = model;
+
         if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == email))
+        {
             throw new ConflictException("Email already exists");
+        }
 
         var firebaseId = await SignUpOnFirebase(email, password);
 
-        return await _serviceFactory.AccountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email);
+        var account = model.Adapt<Account>();
+
+        account.AccountFirebaseId = firebaseId;
+        account.RegistrationDate = DateTime.UtcNow;
+
+        await _unitOfWork.AccountRepository.AddAsync(account);
+
+        await _unitOfWork.SaveChangesAsync();
+
+        return account.Adapt<AccountModel>();
     }
 
     public async Task<NewIdTokenModel> RefreshToken(string refreshToken)
@@ -106,7 +122,7 @@ public class AuthService : IAuthService
         {
             var errorResponse = await response.Content.ReadAsStringAsync();
             var errorResponseObject = JsonConvert.DeserializeObject<FirebaseErrorResponseModel>(errorResponse)!;
-            throw new CustomException(errorResponseObject.Message, errorResponseObject.Code);
+            throw new CustomException(errorResponseObject.Message, (int)HttpStatusCode.BadRequest);
         }
 
         var jsonResponse = await response.Content.ReadAsStringAsync();

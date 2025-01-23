@@ -5,7 +5,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Middlewares;
+using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.Api.Responses.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.DataAccess.Models;
 using StackExchange.Redis;
@@ -69,6 +71,9 @@ public static class IServiceCollectionExtensions
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus);
+
+        TypeAdapterConfig<SignUpRequest, SignUpModel>.NewConfig()
+            .Map(dest => dest.DesiredLevel, src => src.Level.ToString());
 
         return services;
     }

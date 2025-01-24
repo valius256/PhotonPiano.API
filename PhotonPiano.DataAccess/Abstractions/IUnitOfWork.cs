@@ -16,6 +16,8 @@ public interface IUnitOfWork
     ICriteriaRepository CriteriaRepository { get; }
 
     ISlotRepository SlotRepository { get; }
+    
+    ITransactionRepository TransactionRepository { get; }
 
     Task<int> SaveChangesAsync();
 

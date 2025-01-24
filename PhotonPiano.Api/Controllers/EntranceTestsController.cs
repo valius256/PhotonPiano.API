@@ -3,10 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.EntranceTest;
+using PhotonPiano.Api.Requests.Payment;
 using PhotonPiano.Api.Requests.Query;
 using PhotonPiano.Api.Responses.EntranceTest;
+using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
+using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -103,5 +106,36 @@ public class EntranceTestsController : BaseController
     {
         return await _serviceFactory.EntranceTestService.GetEntranceTestStudentDetail(id, studentId,
             base.CurrentAccount!);
+    }
+
+    [HttpPost("enrollment-requests")]
+    [FirebaseAuthorize(Roles = [Role.Student])]
+    [EndpointDescription("Enroll student in entrance test")]
+    public async Task<ActionResult<PaymentUrlResponse>> EnrollEntranceTest([FromBody] EnrollmentRequest request)
+    {
+        string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+
+        string apiBaseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.PathBase}";
+
+        return Created(nameof(EnrollEntranceTest),
+            new PaymentUrlResponse
+            {
+                Url = await _serviceFactory.EntranceTestService.EnrollEntranceTest(base.CurrentAccount!,
+                    request.ReturnUrl,
+                    ipAddress, apiBaseUrl)
+            }
+        );
+    }
+
+    [HttpGet("{account-id}/enrollment-payment-callback")]
+    [EndpointDescription("Enrollment payment callback")]
+    public async Task<ActionResult> HandleEnrollmentPaymentCallback([FromQuery] VnPayReturnRequest request,
+        [FromRoute(Name = "account-id")] string accountId,
+        [FromQuery(Name = "url")] string clientRedirectUrl)
+    {
+        await _serviceFactory.EntranceTestService.HandleEnrollmentPaymentCallback(
+            request.Adapt<VnPayCallbackModel>(), accountId);
+
+        return Redirect(clientRedirectUrl);
     }
 }

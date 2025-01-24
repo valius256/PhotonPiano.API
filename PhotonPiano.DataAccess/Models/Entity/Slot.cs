@@ -4,7 +4,7 @@ namespace PhotonPiano.DataAccess.Models.Entity;
 
 public class Slot : BaseEntityWithId
 {
-    public Guid? ClassId { get; set; }
+    public Guid ClassId { get; set; }
     public Guid? RoomId { get; set; }
     public Shift Shift { get; set; }
     public DateOnly Date { get; set; }

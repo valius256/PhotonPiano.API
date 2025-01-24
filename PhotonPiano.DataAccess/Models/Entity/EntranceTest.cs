@@ -13,7 +13,6 @@ public class EntranceTest : BaseEntityWithId
     public bool IsAnnouncedScore { get; set; } = false;
     public string? InstructorId { get; set; }
     public string? InstructorName { get; set; }
-    public bool IsOpen { get; set; } = true;
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }

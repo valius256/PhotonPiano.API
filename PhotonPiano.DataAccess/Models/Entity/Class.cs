@@ -8,8 +8,9 @@ public class Class : BaseEntityWithId
     public ClassStatus Status { get; set; } = ClassStatus.NotStarted;
     public Level? Level { get; set; }
     public bool IsPublic { get; set; }
-
+    public required string Name { get; set; }
     public required string CreatedById { get; set; }
+    public bool IsScorePublished { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
 

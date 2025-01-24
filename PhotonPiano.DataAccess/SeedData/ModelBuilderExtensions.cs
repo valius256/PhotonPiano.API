@@ -29,7 +29,7 @@ public static class ModelBuilderExtensions
                 Role = Role.Instructor,
                 UserName = teacher002
             },
-            new Account 
+            new Account
             {
                 AccountFirebaseId = learner003,
                 Email = "learner003@gmail.com",
@@ -37,6 +37,8 @@ public static class ModelBuilderExtensions
                 UserName = learner003
             }
         );
+
+
 
         #endregion
 
@@ -47,67 +49,108 @@ public static class ModelBuilderExtensions
             // For EntranceTest
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Nhịp điệu", Weight = 10, For = CriteriaFor.EntranceTest,
+                Id = Guid.NewGuid(),
+                Name = "Nhịp điệu",
+                Weight = 10,
+                For = CriteriaFor.EntranceTest,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = criteriaAccuracy, Name = "Độ chính xác", Weight = 10, For = CriteriaFor.EntranceTest,
+                Id = criteriaAccuracy,
+                Name = "Độ chính xác",
+                Weight = 10,
+                For = CriteriaFor.EntranceTest,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Âm Sắc", Weight = 10, For = CriteriaFor.EntranceTest,
+                Id = Guid.NewGuid(),
+                Name = "Âm Sắc",
+                Weight = 10,
+                For = CriteriaFor.EntranceTest,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Phong thái", Weight = 10, For = CriteriaFor.EntranceTest,
+                Id = Guid.NewGuid(),
+                Name = "Phong thái",
+                Weight = 10,
+                For = CriteriaFor.EntranceTest,
                 CreatedById = admin001
             },
 
             // For Class
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Kiểm tra nhỏ 1", Weight = 5, For = CriteriaFor.Class,
+                Id = Guid.NewGuid(),
+                Name = "Kiểm tra nhỏ 1",
+                Weight = 5,
+                For = CriteriaFor.Class,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Kiểm tra nhỏ 2", Weight = 5, For = CriteriaFor.Class,
+                Id = Guid.NewGuid(),
+                Name = "Kiểm tra nhỏ 2",
+                Weight = 5,
+                For = CriteriaFor.Class,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Bài thi 1", Weight = 10, For = CriteriaFor.Class, CreatedById = "admin001"
+                Id = Guid.NewGuid(),
+                Name = "Bài thi 1",
+                Weight = 10,
+                For = CriteriaFor.Class,
+                CreatedById = "admin001"
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Bài thi 2", Weight = 10, For = CriteriaFor.Class, CreatedById = "admin001"
+                Id = Guid.NewGuid(),
+                Name = "Bài thi 2",
+                Weight = 10,
+                For = CriteriaFor.Class,
+                CreatedById = "admin001"
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Điểm chuyên cần", Weight = 5, For = CriteriaFor.Class,
+                Id = Guid.NewGuid(),
+                Name = "Điểm chuyên cần",
+                Weight = 5,
+                For = CriteriaFor.Class,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Nhịp điệu)", Weight = 15, For = CriteriaFor.Class,
+                Id = Guid.NewGuid(),
+                Name = "Thi cuối kỳ (Nhịp điệu)",
+                Weight = 15,
+                For = CriteriaFor.Class,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Độ chính xác)", Weight = 15, For = CriteriaFor.Class,
+                Id = Guid.NewGuid(),
+                Name = "Thi cuối kỳ (Độ chính xác)",
+                Weight = 15,
+                For = CriteriaFor.Class,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Âm sắc)", Weight = 15, For = CriteriaFor.Class,
+                Id = Guid.NewGuid(),
+                Name = "Thi cuối kỳ (Âm sắc)",
+                Weight = 15,
+                For = CriteriaFor.Class,
                 CreatedById = admin001
             },
             new Criteria
             {
-                Id = Guid.NewGuid(), Name = "Thi cuối kỳ (Phong thái)", Weight = 15, For = CriteriaFor.Class,
+                Id = Guid.NewGuid(),
+                Name = "Thi cuối kỳ (Phong thái)",
+                Weight = 15,
+                For = CriteriaFor.Class,
                 CreatedById = admin001
             }
         );
@@ -244,7 +287,7 @@ public static class ModelBuilderExtensions
         #endregion
 
         #region Class Model
-        var classTestGuid1 = Guid.NewGuid(); 
+        var classTestGuid1 = Guid.NewGuid();
         var classTestGuid2 = Guid.NewGuid();
         modelBuilder.Entity<Class>().HasData(
             new Class()
@@ -254,6 +297,7 @@ public static class ModelBuilderExtensions
                 InstructorId = teacher002,
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
+                Name = "Class 1",
                 Level = Level.Intermediate
             },
             new Class()
@@ -263,9 +307,10 @@ public static class ModelBuilderExtensions
                 InstructorId = teacher002,
                 Status = ClassStatus.NotStarted,
                 IsPublic = true,
+                Name = "Class 2",
                 Level = Level.Advanced
             }
-    
+
         );
 
 
@@ -287,7 +332,7 @@ public static class ModelBuilderExtensions
                 Shift = Shift.Shift1_7h_8h30,
                 Status = SlotStatus.Ongoing,
             },
-            
+
             new Slot
             {
                 Id = slotTestGuid2,

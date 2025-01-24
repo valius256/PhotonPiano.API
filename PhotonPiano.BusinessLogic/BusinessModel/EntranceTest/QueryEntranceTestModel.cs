@@ -11,7 +11,6 @@ public record QueryEntranceTestModel : QueryPagedModel
     public List<Guid>? EntranceTestIds { get; init; } = [];
     public bool? IsAnnouncedScore { get; init; }
 
-    public bool? IsOpen { get; init; }
     public List<string>? InstructorIds { get; init; } = [];
 
     public string GetLikeKeyword()
@@ -21,7 +20,7 @@ public record QueryEntranceTestModel : QueryPagedModel
 
     public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc,
         out List<Guid>? roomIds, out string? keyword, out List<Shift>? shifts, out List<Guid>? entranceTestIds,
-        out bool? isAnnouncedScore, out bool? isOpen, out List<string>? instructorIds)
+        out bool? isAnnouncedScore, out List<string>? instructorIds)
     {
         page = Page;
         pageSize = PageSize;
@@ -32,19 +31,17 @@ public record QueryEntranceTestModel : QueryPagedModel
         shifts = Shifts;
         entranceTestIds = EntranceTestIds;
         isAnnouncedScore = IsAnnouncedScore;
-        isOpen = IsOpen;
         instructorIds = InstructorIds;
     }
 
     public void Deconstruct(out List<Guid>? roomIds, out string? keyword, out List<Shift>? shifts,
-        out List<Guid>? entranceTestIds, out bool? isAnnouncedScore, out bool? isOpen, out List<string>? instructorIds)
+        out List<Guid>? entranceTestIds, out bool? isAnnouncedScore, out List<string>? instructorIds)
     {
         roomIds = RoomIds;
         keyword = Keyword;
         shifts = Shifts;
         entranceTestIds = EntranceTestIds;
         isAnnouncedScore = IsAnnouncedScore;
-        isOpen = IsOpen;
         instructorIds = InstructorIds;
     }
 }

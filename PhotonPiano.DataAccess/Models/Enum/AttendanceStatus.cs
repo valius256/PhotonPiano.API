@@ -1,6 +1,6 @@
 namespace PhotonPiano.DataAccess.Models.Enum;
 
-public enum AttemptStatus
+public enum AttendanceStatus
 {
     NotYet,
     Attended,

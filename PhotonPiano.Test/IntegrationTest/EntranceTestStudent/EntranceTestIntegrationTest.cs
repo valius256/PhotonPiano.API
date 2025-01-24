@@ -1,5 +1,3 @@
-using System.Net.Http.Headers;
-using System.Text;
 using Newtonsoft.Json;
 using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.Api.Requests.EntranceTest;
@@ -9,6 +7,8 @@ using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared;
 using PhotonPiano.Test.Extensions;
+using System.Net.Http.Headers;
+using System.Text;
 using Xunit.Abstractions;
 using static PhotonPiano.Test.Extensions.Extensions;
 
@@ -149,7 +149,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
-            IsOpen = true,
+
             Name = "Test Entrance Test"
         };
 
@@ -183,7 +183,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
-            IsOpen = true,
+
             Name = "Test Entrance Test"
         };
 
@@ -205,7 +205,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow),
             InstructorId = "teacher002",
             IsAnnouncedScore = false,
-            IsOpen = true,
+
             Name = "Test Entrance Test"
         };
 
@@ -241,7 +241,7 @@ public class EntranceTestIntegrationTest(BaseApiConfig baseApiConfig, ITestOutpu
             Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(2)),
             InstructorId = "teacherInvalid",
             IsAnnouncedScore = false,
-            IsOpen = true,
+
             Name = "Test Entrance Test"
         };
 

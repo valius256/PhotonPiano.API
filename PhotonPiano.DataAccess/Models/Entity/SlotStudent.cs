@@ -7,7 +7,7 @@ public class SlotStudent : BaseEntity
     public required Guid SlotId { get; set; }
     public required string StudentFirebaseId { get; set; }
 
-    public AttemptStatus AttemptStatus { get; set; } = AttemptStatus.NotYet;
+    public AttendanceStatus AttendanceStatus { get; set; } = AttendanceStatus.NotYet;
 
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }

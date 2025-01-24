@@ -10,5 +10,4 @@ public record CreateEntranceTestRequest
     public DateOnly? Date { get; set; }
     public bool? IsAnnouncedScore { get; set; }
     public string? InstructorId { get; set; }
-    public bool? IsOpen { get; set; }
 }

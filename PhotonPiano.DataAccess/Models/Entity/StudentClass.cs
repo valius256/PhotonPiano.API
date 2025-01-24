@@ -1,18 +1,17 @@
-using PhotonPiano.DataAccess.Models.Enum;
-
 namespace PhotonPiano.DataAccess.Models.Entity;
 
 public class StudentClass : BaseEntityWithId
 {
     public Guid ClassId { get; set; }
     public string? StudentFirebaseId { get; set; }
-    public ClassStatus Status { get; set; } = ClassStatus.NotStarted;
-    public bool IsFinished { get; set; } = false;
-    public bool IsScorePublished { get; set; } = false;
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
     public string? CertificateUrl { get; set; }
+    public bool IsPassed { get; set; }
+    public decimal? GPA { get; set; }
+    public string? InstructorComment { get; set; }
+
 
     // reference
     public virtual Class Class { get; set; } = default!;

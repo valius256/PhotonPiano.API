@@ -19,4 +19,8 @@ public interface IServiceFactory
     ISlotService SlotService { get; }
     
     IPaymentService PaymentService { get; }
+
+    IClassService ClassService { get; }
+
+    ISystemConfigService SystemConfigService { get; }
 }

@@ -33,6 +33,5 @@ public record EntranceTestResponse
 
     public required string CreatedById { get; init; }
 
-    public bool IsOpen { get; set; }
     public int RegisterStudents { get; init; }
 }

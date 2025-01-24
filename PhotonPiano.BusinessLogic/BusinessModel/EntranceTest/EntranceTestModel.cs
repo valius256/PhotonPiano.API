@@ -11,7 +11,6 @@ public record EntranceTestModel
     public int? RoomCapacity { get; init; }
     public required Shift Shift { get; init; }
     public required DateOnly Date { get; init; }
-    public bool IsOpen { get; init; }
     public bool IsAnnouncedScore { get; init; }
     public string? InstructorId { get; init; }
     public string? InstructorName { get; init; }

@@ -17,9 +17,5 @@ public record QueryEntranceTestRequest : QueryPagedRequest
     [FromQuery(Name = "is-announced-score")]
     public bool? IsAnnouncedScore { get; init; }
 
-    [FromQuery(Name = "is-open")
-    ]
-    public bool? IsOpen { get; set; }
-
     [FromQuery(Name = "instructor-ids")] public List<string>? InstructorIds { get; init; } = [];
 }

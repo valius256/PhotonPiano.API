@@ -30,7 +30,7 @@ public class EntranceTestService : IEntranceTestService
     {
         var (page, pageSize, sortColumn, orderByDesc,
                 roomIds, keyword, shifts,
-                entranceTestIds, isAnnouncedScore, isOpen,
+                entranceTestIds, isAnnouncedScore,
                 instructorIds)
             = query;
 
@@ -74,7 +74,6 @@ public class EntranceTestService : IEntranceTestService
                 expressions:
                 [
                     e => roomIds != null && (roomIds.Count == 0 || roomIds.Contains(e.RoomId)),
-                    e => isOpen == null || e.IsOpen == isOpen.Value,
                     e => isAnnouncedScore == null || e.IsAnnouncedScore == isAnnouncedScore.Value,
                     e => shifts != null && (shifts.Count == 0 || shifts.Contains(e.Shift)),
                     e => instructorIds != null &&
@@ -172,23 +171,11 @@ public class EntranceTestService : IEntranceTestService
         await InvalidateEntranceTestCache(id);
     }
 
-    private async Task InvalidateEntranceTestCache(Guid? id = null)
-    {
-        // Invalidate general cache
-        await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
-
-        if (id.HasValue)
-            // Invalidate specific cache for the entrance test
-            await _serviceFactory.RedisCacheService.DeleteAsync($"entranceTest_{id.Value}");
-    }
-
     public async Task<PagedResult<EntranceTestStudentDetail>> GetPagedEntranceTestStudent(QueryPagedModel query,
         Guid entranceTestId, AccountModel currentAccount)
     {
         if (!await _unitOfWork.EntranceTestRepository.AnyAsync(et => et.Id == entranceTestId))
-        {
             throw new NotFoundException("Entrance test not found.");
-        }
 
         var (page, size, column, desc) = query;
 
@@ -216,18 +203,23 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.EntranceTestStudentRepository.FindFirstProjectedAsync<EntranceTestStudentDetail>(
                 ets => ets.EntranceTestId == entranceTestId && ets.StudentFirebaseId == studentId);
 
-        if (entranceTestStudent is null)
-        {
-            throw new NotFoundException("Entrance test student not found");
-        }
+        if (entranceTestStudent is null) throw new NotFoundException("Entrance test student not found");
 
         if (currentAccount.Role == Role.Student &&
             entranceTestStudent.StudentFirebaseId != currentAccount.AccountFirebaseId)
-        {
             throw new ForbiddenMethodException("You are not allowed to access this resource.");
-        }
 
         return entranceTestStudent;
+    }
+
+    private async Task InvalidateEntranceTestCache(Guid? id = null)
+    {
+        // Invalidate general cache
+        await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
+
+        if (id.HasValue)
+            // Invalidate specific cache for the entrance test
+            await _serviceFactory.RedisCacheService.DeleteAsync($"entranceTest_{id.Value}");
     }
 
     public async Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress,
@@ -259,7 +251,7 @@ public class EntranceTestService : IEntranceTestService
             currentAccount.AccountFirebaseId,
             returnUrl);
     }
-    
+
     public async Task HandleEnrollmentPaymentCallback(VnPayCallbackModel callbackModel, string accountId)
     {
         Guid transactionCode = Guid.Parse(callbackModel.VnpTxnRef);
@@ -282,7 +274,7 @@ public class EntranceTestService : IEntranceTestService
 
         try
         {
-            
+
             transaction.PaymentStatus =
                 callbackModel.VnpResponseCode == "00" ? PaymentStatus.Successed : PaymentStatus.Failed;
             transaction.TransactionCode = callbackModel.VnpTransactionNo;

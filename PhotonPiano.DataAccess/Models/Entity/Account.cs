@@ -23,11 +23,10 @@ public class Account : BaseEntity
     public bool IsEmailVerified { get; set; } = false;
     public DateTime JoinedDate { get; set; } = DateTime.UtcNow.AddHours(7);
     public string? ShortDescription { get; set; } = string.Empty;
-    public Level Level { get; set; } = Level.Beginner;
+    public Level? Level { get; set; }
     public AccountStatus Status { get; set; } = AccountStatus.Active;
-    public DateTime? RegistrationDate { get; set; }
     public StudentStatus? StudentStatus { get; set; }
-    public string? DesiredLevel { get; set; }
+    public int? DesiredLevel { get; set; }
     public List<string> DesiredTargets { get; set; } = [];
     public List<string> FavoriteMusicGenres { get; set; } = [];
 

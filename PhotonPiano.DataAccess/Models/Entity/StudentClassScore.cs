@@ -3,7 +3,7 @@ namespace PhotonPiano.DataAccess.Models.Entity;
 public class StudentClassScore : BaseEntityWithId
 {
     public required Guid StudentClassId { get; set; }
-    public decimal Score { get; set; }
+    public decimal? Score { get; set; }
     public Guid CriteriaId { get; set; }
 
 

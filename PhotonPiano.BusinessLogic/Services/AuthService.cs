@@ -77,16 +77,13 @@ public class AuthService : IAuthService
         var (email, password) = model;
 
         if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == email))
-        {
             throw new ConflictException("Email already exists");
-        }
 
         var firebaseId = await SignUpOnFirebase(email, password);
 
         var account = model.Adapt<Account>();
 
         account.AccountFirebaseId = firebaseId;
-        account.RegistrationDate = DateTime.UtcNow;
         account.Role = Role.Student;
         account.StudentStatus = StudentStatus.Unregistered;
 
@@ -144,7 +141,8 @@ public class AuthService : IAuthService
 
         var jsonRequest = JsonConvert.SerializeObject(new
         {
-            requestType = "PASSWORD_RESET", email
+            requestType = "PASSWORD_RESET",
+            email
         });
 
         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");

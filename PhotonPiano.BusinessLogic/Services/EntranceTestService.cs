@@ -247,7 +247,8 @@ public class EntranceTestService : IEntranceTestService
             CreatedAt = DateTime.UtcNow,
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.EntranceTestFee,
-            PaymentStatus = PaymentStatus.Pending
+            PaymentStatus = PaymentStatus.Pending,
+            PaymentMethod = PaymentMethod.VnPay
         };
 
         await _unitOfWork.TransactionRepository.AddAsync(transaction);
@@ -284,6 +285,7 @@ public class EntranceTestService : IEntranceTestService
             
             transaction.PaymentStatus =
                 callbackModel.VnpResponseCode == "00" ? PaymentStatus.Successed : PaymentStatus.Failed;
+            transaction.TransactionCode = callbackModel.VnpTransactionNo;
             transaction.UpdatedAt = DateTime.UtcNow;
 
             switch (transaction.PaymentStatus)

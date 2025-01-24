@@ -19,6 +19,10 @@ public interface IUnitOfWork
     
     ITransactionRepository TransactionRepository { get; }
 
+    IClassRepository ClassRepository { get; }
+
+    ISystemConfigRepository SystemConfigRepository { get; }
+
     Task<int> SaveChangesAsync();
 
     Task<IDbContextTransaction> BeginTransactionAsync();

@@ -364,5 +364,130 @@ public static class ModelBuilderExtensions
 
 
         #endregion
+
+        #region SystemConfig Model
+        modelBuilder.Entity<SystemConfig>().HasData(
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Sĩ số lớp tối thiểu",
+                ConfigValue = "8",  
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Sĩ số lớp tối đa",
+                ConfigValue = "12",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Mức phí theo buổi LEVEL 1",
+                ConfigValue = "200000",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Mức phí theo buổi LEVEL 2",
+                ConfigValue = "250000",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Mức phí theo buổi LEVEL 3",
+                ConfigValue = "300000",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Mức phí theo buổi LEVEL 4",
+                ConfigValue = "350000",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Mức phí theo buổi LEVEL 5",
+                ConfigValue = "400000",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Số buổi học 1 tuần LEVEL 1",
+                ConfigValue = "2",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Số buổi học 1 tuần LEVEL 2",
+                ConfigValue = "2",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Số buổi học 1 tuần LEVEL 3",
+                ConfigValue = "2",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Số buổi học 1 tuần LEVEL 4",
+                ConfigValue = "2",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Số buổi học 1 tuần LEVEL 5",
+                ConfigValue = "2",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Tổng số buổi học LEVEL 1",
+                ConfigValue = "30",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Tổng số buổi học LEVEL 2",
+                ConfigValue = "30",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Tổng số buổi học LEVEL 3",
+                ConfigValue = "30",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Tổng số buổi học LEVEL 4",
+                ConfigValue = "40",
+                Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Tổng số buổi học LEVEL 5",
+                ConfigValue = "50",
+                Role = Role.Administrator
+            }
+
+        );
+        #endregion
     }
 }

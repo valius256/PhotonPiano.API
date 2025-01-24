@@ -22,7 +22,11 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<ISlotRepository> _slotRepository;
     
     private readonly Lazy<ITransactionRepository> _transactionRepository;
-    
+
+    private readonly Lazy<IClassRepository> _classRepository;
+
+    private readonly Lazy<ISystemConfigRepository> _systemConfigRepository;
+
     private IDbContextTransaction? _currentTransaction;
 
     public UnitOfWork(ApplicationDbContext context)
@@ -36,6 +40,8 @@ public class UnitOfWork : IUnitOfWork
         _criteriaRepository = new Lazy<ICriteriaRepository>(() => new CriteriaRepository(context));
         _slotRepository = new Lazy<ISlotRepository>(() => new SlotRepository(context));
         _transactionRepository = new Lazy<ITransactionRepository>(() => new TransactionRepository(context));
+        _classRepository = new Lazy<IClassRepository>(() => new ClassRepository(context));
+        _systemConfigRepository = new Lazy<ISystemConfigRepository>(() => new SystemConfigRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -51,6 +57,10 @@ public class UnitOfWork : IUnitOfWork
     public ISlotRepository SlotRepository => _slotRepository.Value;
     
     public ITransactionRepository TransactionRepository => _transactionRepository.Value;
+
+    public IClassRepository ClassRepository => _classRepository.Value;
+
+    public ISystemConfigRepository SystemConfigRepository => _systemConfigRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

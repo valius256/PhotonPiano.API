@@ -16,6 +16,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEntranceTestRepository, EntranceTestRepository>();
         services.AddScoped<ISlotRepository, SlotRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IClassRepository, ClassRepository>();
+        services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
 
         return services;
     }

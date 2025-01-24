@@ -17,4 +17,6 @@ public interface IServiceFactory
     ICriteriaService CriteriaService { get; }
 
     ISlotService SlotService { get; }
+    
+    IPaymentService PaymentService { get; }
 }

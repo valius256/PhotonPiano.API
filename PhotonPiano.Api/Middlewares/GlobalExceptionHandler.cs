@@ -54,6 +54,10 @@ public class GlobalExceptionHandler : IExceptionHandler
                 details.Status = (int)HttpStatusCode.Conflict;
                 details.Type = "Conflict";
                 break;
+            case PaymentRequiredException _:
+                details.Status = (int)HttpStatusCode.PaymentRequired;
+                details.Type = "PaymentRequired";
+                break;
             case CustomException customException:
                 details.Status = customException.Code;
                 details.Type = "Other";

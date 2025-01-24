@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
+using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -200,7 +201,8 @@ public class EntranceTestService : IEntranceTestService
                 expressions:
                 [
                     ets => ets.EntranceTestId == entranceTestId,
-                    ets => currentAccount.Role != Role.Student || ets.StudentFirebaseId == currentAccount.AccountFirebaseId
+                    ets => currentAccount.Role != Role.Student ||
+                           ets.StudentFirebaseId == currentAccount.AccountFirebaseId
                 ]
             );
 
@@ -226,5 +228,93 @@ public class EntranceTestService : IEntranceTestService
         }
 
         return entranceTestStudent;
+    }
+
+    public async Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress,
+        string apiBaseUrl)
+    {
+        if (currentAccount.StudentStatus != StudentStatus.DropOut &&
+            currentAccount.StudentStatus != StudentStatus.Unregistered)
+        {
+            throw new BadRequestException(
+                "Student is must be in DropOut or Unregistered in order to be accepted to enroll in entrance test.");
+        }
+
+        var transaction = new Transaction
+        {
+            Id = Guid.CreateVersion7(),
+            Amount = 100_000,
+            CreatedAt = DateTime.UtcNow,
+            CreatedById = currentAccount.AccountFirebaseId,
+            TransactionType = TransactionType.EntranceTestFee,
+            PaymentStatus = PaymentStatus.Pending,
+            PaymentMethod = PaymentMethod.VnPay
+        };
+
+        await _unitOfWork.TransactionRepository.AddAsync(transaction);
+
+        await _unitOfWork.SaveChangesAsync();
+
+        return _serviceFactory.PaymentService.CreateVnPayPaymentUrl(transaction, ipAddress, apiBaseUrl,
+            currentAccount.AccountFirebaseId,
+            returnUrl);
+    }
+    
+    public async Task HandleEnrollmentPaymentCallback(VnPayCallbackModel callbackModel, string accountId)
+    {
+        Guid transactionCode = Guid.Parse(callbackModel.VnpTxnRef);
+
+        var transaction = await _unitOfWork.TransactionRepository.FindSingleAsync(t => t.Id == transactionCode);
+
+        if (transaction is null)
+        {
+            throw new PaymentRequiredException("Payment is required");
+        }
+
+        var account = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == accountId);
+
+        if (account is null)
+        {
+            throw new NotFoundException("Account not found");
+        }
+
+        await using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+            
+            transaction.PaymentStatus =
+                callbackModel.VnpResponseCode == "00" ? PaymentStatus.Successed : PaymentStatus.Failed;
+            transaction.TransactionCode = callbackModel.VnpTransactionNo;
+            transaction.UpdatedAt = DateTime.UtcNow;
+
+            switch (transaction.PaymentStatus)
+            {
+                case PaymentStatus.Successed:
+                    await _unitOfWork.EntranceTestStudentRepository.AddAsync(new EntranceTestStudent
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StudentFirebaseId = accountId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = accountId
+                    });
+
+                    account.StudentStatus = StudentStatus.AttemptingEntranceTest;
+                    account.UpdatedAt = DateTime.UtcNow;
+
+                    await _unitOfWork.SaveChangesAsync();
+                    await _unitOfWork.CommitTransactionAsync();
+                    break;
+                case PaymentStatus.Failed:
+                    throw new BadRequestException("Payment has failed.");
+                default:
+                    throw new BadRequestException("Unknown payment status.");
+            }
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
     }
 }

@@ -9,6 +9,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -86,6 +87,8 @@ public class AuthService : IAuthService
 
         account.AccountFirebaseId = firebaseId;
         account.RegistrationDate = DateTime.UtcNow;
+        account.Role = Role.Student;
+        account.StudentStatus = StudentStatus.Unregistered;
 
         await _unitOfWork.AccountRepository.AddAsync(account);
 

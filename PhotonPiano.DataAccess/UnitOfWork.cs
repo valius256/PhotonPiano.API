@@ -8,14 +8,21 @@ namespace PhotonPiano.DataAccess;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly Lazy<IAccountRepository> _accountRepository;
+    
     private readonly ApplicationDbContext _context;
+    
     private readonly Lazy<ICriteriaRepository> _criteriaRepository;
+    
     private readonly Lazy<IEntranceTestRepository> _entranceTestRepository;
 
     private readonly Lazy<IEntranceTestStudentRepository> _entranceTestStudentRepository;
+    
     private readonly Lazy<IRoomRepository> _roomRepository;
+    
     private readonly Lazy<ISlotRepository> _slotRepository;
-
+    
+    private readonly Lazy<ITransactionRepository> _transactionRepository;
+    
     private IDbContextTransaction? _currentTransaction;
 
     public UnitOfWork(ApplicationDbContext context)
@@ -28,6 +35,7 @@ public class UnitOfWork : IUnitOfWork
         _roomRepository = new Lazy<IRoomRepository>(() => new RoomRepository(context));
         _criteriaRepository = new Lazy<ICriteriaRepository>(() => new CriteriaRepository(context));
         _slotRepository = new Lazy<ISlotRepository>(() => new SlotRepository(context));
+        _transactionRepository = new Lazy<ITransactionRepository>(() => new TransactionRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -41,6 +49,8 @@ public class UnitOfWork : IUnitOfWork
     public ICriteriaRepository CriteriaRepository => _criteriaRepository.Value;
 
     public ISlotRepository SlotRepository => _slotRepository.Value;
+    
+    public ITransactionRepository TransactionRepository => _transactionRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

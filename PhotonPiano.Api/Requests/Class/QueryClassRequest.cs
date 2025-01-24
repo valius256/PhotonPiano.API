@@ -6,9 +6,9 @@ namespace PhotonPiano.Api.Requests.Class
 {
     public record QueryClassRequest : QueryPagedRequest
     {
-        [FromQuery(Name = "statuses")] public List<ClassStatus>? ClassStatus { get; init; } = [];
+        [FromQuery(Name = "statuses")] public List<ClassStatus> ClassStatus { get; init; } = [];
 
-        [FromQuery(Name = "levels")] public List<Level>? Level { get; init; } = [];
+        [FromQuery(Name = "levels")] public List<Level> Level { get; init; } = [];
 
         [FromQuery(Name = "keyword")] public string? Keyword { get; init; }
 

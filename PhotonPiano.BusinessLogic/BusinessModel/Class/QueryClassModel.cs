@@ -6,9 +6,9 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 {
     public record QueryClassModel : QueryPagedModel
     {
-        public List<ClassStatus>? ClassStatus { get; init; } = [];
+        public List<ClassStatus> ClassStatus { get; init; } = [];
 
-        public List<Level>? Level { get; init; } = [];
+        public List<Level> Level { get; init; } = [];
 
         public string? Keyword { get; init; }
 
@@ -24,7 +24,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
         }
 
         public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc,
-            out List<ClassStatus>? classStatus, out string? keyword, out List<Level>? level, out bool? isScorePublished,
+            out List<ClassStatus> classStatus, out List<Level> level, out string? keyword,  out bool? isScorePublished,
             out string? teacherId, out string? studentId)
         {
             page = Page;

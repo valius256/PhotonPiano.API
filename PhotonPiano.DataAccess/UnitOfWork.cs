@@ -27,6 +27,8 @@ public class UnitOfWork : IUnitOfWork
 
     private readonly Lazy<ISystemConfigRepository> _systemConfigRepository;
 
+    private readonly Lazy<IStudentClassRepository> _studentClassRepository;
+
     private IDbContextTransaction? _currentTransaction;
 
     public UnitOfWork(ApplicationDbContext context)
@@ -42,6 +44,7 @@ public class UnitOfWork : IUnitOfWork
         _transactionRepository = new Lazy<ITransactionRepository>(() => new TransactionRepository(context));
         _classRepository = new Lazy<IClassRepository>(() => new ClassRepository(context));
         _systemConfigRepository = new Lazy<ISystemConfigRepository>(() => new SystemConfigRepository(context));
+        _studentClassRepository = new Lazy<IStudentClassRepository>(() => new StudentClassRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -61,6 +64,8 @@ public class UnitOfWork : IUnitOfWork
     public IClassRepository ClassRepository => _classRepository.Value;
 
     public ISystemConfigRepository SystemConfigRepository => _systemConfigRepository.Value;
+
+    public IStudentClassRepository StudentClassRepository => _studentClassRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

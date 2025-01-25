@@ -5,6 +5,7 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Paging;
 using Microsoft.EntityFrameworkCore;
+using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services
 {
@@ -17,6 +18,16 @@ namespace PhotonPiano.BusinessLogic.Services
         {
             _unitOfWork = unitOfWork;
             _serviceFactory = serviceFactory;
+        }
+
+        public async Task<ClassDetailModel> GetClassDetailById(Guid id)
+        {
+            var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id);
+            if ( classDetail is null)
+            {
+                throw new NotFoundException("Class not found");
+            }
+            return classDetail;
         }
 
         public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass)
@@ -39,10 +50,20 @@ namespace PhotonPiano.BusinessLogic.Services
                         EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword)
                 ]
             );
-            //foreach (var item in result.Items)
-            //{
-            //    item.Capacity = int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
-            //}
+            int capacity = int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+
+            var updatedItems = await Task.WhenAll(
+                result.Items.Select(async item =>
+                    item with
+                    {
+                        Capacity = capacity,
+                        StudentNumber = await _unitOfWork.StudentClassRepository.CountAsync(sc => sc.ClassId == item.Id)
+                    }
+                )
+            );
+
+            result.Items = [.. updatedItems];
+
             return result;
         }
     }

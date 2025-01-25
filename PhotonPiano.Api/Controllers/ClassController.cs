@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Extensions;
+using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.Criteria;
 using PhotonPiano.Api.Responses.Criteria;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -23,7 +24,7 @@ namespace PhotonPiano.Api.Controllers
         [HttpGet]
         [EndpointDescription("Get Classes with Paging")]
         public async Task<ActionResult<List<ClassModel>>> GetCriteria(
-         [FromQuery] QueryCriteriaRequest request)
+         [FromQuery] QueryClassRequest request)
         {
             var pagedResult =
                 await _serviceFactory.ClassService.GetPagedClasses(
@@ -31,6 +32,14 @@ namespace PhotonPiano.Api.Controllers
 
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
             return pagedResult.Items.Adapt<List<ClassModel>>();
+        }
+
+        [HttpGet("{id}")]
+        [EndpointDescription("Get Class detail by Id")]
+        public async Task<ActionResult<ClassDetailModel>> GetClassDetail(
+         [FromRoute] Guid id)
+        {
+            return await _serviceFactory.ClassService.GetClassDetailById(id);
         }
     }
 }

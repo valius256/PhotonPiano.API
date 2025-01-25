@@ -23,6 +23,8 @@ public interface IUnitOfWork
 
     ISystemConfigRepository SystemConfigRepository { get; }
 
+    IStudentClassRepository StudentClassRepository { get; }
+
     Task<int> SaveChangesAsync();
 
     Task<IDbContextTransaction> BeginTransactionAsync();

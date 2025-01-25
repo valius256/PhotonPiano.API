@@ -7,5 +7,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces
     public interface IClassService
     {
         Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass);
+
+        Task<ClassDetailModel> GetClassDetailById(Guid id);
     }
 }

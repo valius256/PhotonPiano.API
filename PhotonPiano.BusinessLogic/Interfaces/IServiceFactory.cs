@@ -17,10 +17,12 @@ public interface IServiceFactory
     ICriteriaService CriteriaService { get; }
 
     ISlotService SlotService { get; }
-    
+
     IPaymentService PaymentService { get; }
 
     IClassService ClassService { get; }
 
     ISystemConfigService SystemConfigService { get; }
+
+    ISLotStudentService SLotStudentService { get; }
 }

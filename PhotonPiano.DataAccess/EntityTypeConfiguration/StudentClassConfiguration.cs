@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration;
 
@@ -9,6 +10,8 @@ public class StudentClassConfiguration : IEntityTypeConfiguration<StudentClass>
     public void Configure(EntityTypeBuilder<StudentClass> builder)
     {
         builder.HasKey(x => x.Id);
+
+        builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
 
         builder.HasOne(x => x.Student)
             .WithMany(x => x.StudentClasses)

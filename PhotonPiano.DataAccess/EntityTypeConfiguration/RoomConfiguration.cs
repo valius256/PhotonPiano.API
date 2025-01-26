@@ -12,6 +12,7 @@ public class RoomConfiguration : IEntityTypeConfiguration<Room>
         builder.HasKey(r => r.Id);
         builder.Property(r => r.Id).ValueGeneratedOnAdd();
 
+
         builder.HasMany(x => x.EntranceTests)
             .WithOne(r => r.Room)
             .HasForeignKey(r => r.RoomId)

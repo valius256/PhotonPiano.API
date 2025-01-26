@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration;
 
@@ -9,6 +10,10 @@ public class AccountNotificationConfiguration : IEntityTypeConfiguration<Account
     public void Configure(EntityTypeBuilder<AccountNotification> builder)
     {
         builder.HasKey(an => new { an.AccountFirebaseId, an.NotificationId });
+
+        builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
+
+
         builder.HasOne(x => x.Account)
             .WithMany(x => x.AccountNotifications)
             .HasForeignKey(x => x.AccountFirebaseId)

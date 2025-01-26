@@ -4,6 +4,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Slot;
 
 public record SlotModel
 {
+    public Guid Id { get; init; }
     public Guid? ClassId { get; init; }
     public Guid? RoomId { get; init; }
     public Shift Shift { get; init; }

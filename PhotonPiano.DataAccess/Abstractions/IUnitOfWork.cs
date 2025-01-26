@@ -16,7 +16,7 @@ public interface IUnitOfWork
     ICriteriaRepository CriteriaRepository { get; }
 
     ISlotRepository SlotRepository { get; }
-    
+
     ITransactionRepository TransactionRepository { get; }
 
     IClassRepository ClassRepository { get; }
@@ -24,6 +24,8 @@ public interface IUnitOfWork
     ISystemConfigRepository SystemConfigRepository { get; }
 
     IStudentClassRepository StudentClassRepository { get; }
+
+    ISlotStudentRepository SlotStudentRepository { get; }
 
     Task<int> SaveChangesAsync();
 

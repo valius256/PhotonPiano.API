@@ -22,8 +22,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClassService, ClassService>();
         services.AddScoped<ISystemConfigService, SystemConfigService>();
         services.AddScoped<ITutionService, TutionService>();
+        services.AddScoped<ITransactionService, TransactionService>();
         services.AddHttpClient();
-
         services.AddMapsterConfig();
         return services;
     }

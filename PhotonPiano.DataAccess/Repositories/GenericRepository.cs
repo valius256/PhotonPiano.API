@@ -5,6 +5,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
+using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.DataAccess.Repositories;
 
@@ -185,7 +186,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         // Validate the sortColumn
         var property = typeof(T).GetProperty(sortColumn);
         if (property is null)
-            throw new ArgumentException($"Property '{sortColumn}' does not exist on type '{typeof(T).Name}'.");
+            throw new BadRequestException($"Property '{sortColumn}' does not exist on type '{typeof(T).Name}'.");
 
         // Base query with optional tracking and filtering
         var query = hasTrackings
@@ -228,7 +229,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         // Validate the sortColumn
         var property = typeof(T).GetProperty(sortColumn);
         if (property is null)
-            throw new ArgumentException($"Property '{sortColumn}' does not exist on type '{typeof(T).Name}'.");
+            throw new BadRequestException($"Property '{sortColumn}' does not exist on type '{typeof(T).Name}'.");
 
         // Base query with optional tracking and filtering
         var query = hasTrackings

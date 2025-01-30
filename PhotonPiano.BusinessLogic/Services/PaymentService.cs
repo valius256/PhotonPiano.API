@@ -45,9 +45,9 @@ public class PaymentService : IPaymentService
             { "vnp_Command", _vnPay.Command },
             { "vnp_TmnCode", _vnPay.TmnCode },
             {
-                "vnp_Amount", ((long)(transaction.Amount * 100)).ToString()
-            },
-            { "vnp_CurrCode", _vnPay.CurrCode },
+                "vnp_Amount", ((long)(transaction.Amount) * 100).ToString()
+            }, // Amount in VND, multiplied by 100 to eliminate decimals
+            { "vnp_CurrCode", "VND" },
             { "vnp_TxnRef", transaction.Id.ToString() },
             { "vnp_OrderInfo", $"{typeOfTransaction} - PHOTON PIANO_{transaction.Id}" },
             { "vnp_OrderType", "250006" }, // Type of order

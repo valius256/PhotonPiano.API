@@ -27,4 +27,6 @@ public interface IServiceFactory
     ISLotStudentService SLotStudentService { get; }
 
     ITutionService TutionService { get; }
+    
+    ITransactionService TransactionService { get; }
 }

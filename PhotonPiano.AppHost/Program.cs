@@ -4,6 +4,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 
 var postgres = builder.AddPostgres("postgresDb")
+        .WithPgAdmin()
     // .WithDataVolume("data-volume")
     ;
 
@@ -14,10 +15,11 @@ var database = postgres
 
 
 var api = builder.AddProject<PhotonPiano_Api>("photonpiano-api")
-    // .WithExternalHttpEndpoints()
-    .WithReference(database)
-    .WaitFor(database)
+        // .WithExternalHttpEndpoints()
+        .WithReference(database)
+        .WaitFor(database)
     ;
+
 
 //builder.AddNpmApp("frontend", @"D:\Semester9\Capstone\PhotonPiano\Frontend\PhotonPiano_WebApp", "dev")
 //                .WithReference(api)

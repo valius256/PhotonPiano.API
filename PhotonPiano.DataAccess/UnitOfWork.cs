@@ -9,6 +9,8 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly Lazy<IAccountRepository> _accountRepository;
 
+    private readonly Lazy<IClassRepository> _classRepository;
+
     private readonly ApplicationDbContext _context;
 
     private readonly Lazy<ICriteriaRepository> _criteriaRepository;
@@ -21,15 +23,15 @@ public class UnitOfWork : IUnitOfWork
 
     private readonly Lazy<ISlotRepository> _slotRepository;
 
-    private readonly Lazy<ITransactionRepository> _transactionRepository;
-
-    private readonly Lazy<IClassRepository> _classRepository;
-
-    private readonly Lazy<ISystemConfigRepository> _systemConfigRepository;
+    private readonly Lazy<ISlotStudentRepository> _slotStudentRepository;
 
     private readonly Lazy<IStudentClassRepository> _studentClassRepository;
 
-    private readonly Lazy<ISlotStudentRepository> _slotStudentRepository;
+    private readonly Lazy<ISystemConfigRepository> _systemConfigRepository;
+
+    private readonly Lazy<ITransactionRepository> _transactionRepository;
+
+    private readonly Lazy<ITuitionRepository> _tuitionRepository;
 
     private IDbContextTransaction? _currentTransaction;
 
@@ -48,6 +50,7 @@ public class UnitOfWork : IUnitOfWork
         _systemConfigRepository = new Lazy<ISystemConfigRepository>(() => new SystemConfigRepository(context));
         _studentClassRepository = new Lazy<IStudentClassRepository>(() => new StudentClassRepository(context));
         _slotStudentRepository = new Lazy<ISlotStudentRepository>(() => new SlotStudentRepository(context));
+        _tuitionRepository = new Lazy<ITuitionRepository>(() => new TuitionRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -71,6 +74,8 @@ public class UnitOfWork : IUnitOfWork
     public IStudentClassRepository StudentClassRepository => _studentClassRepository.Value;
 
     public ISlotStudentRepository SlotStudentRepository => _slotStudentRepository.Value;
+
+    public ITuitionRepository TuitionRepository => _tuitionRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

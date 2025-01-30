@@ -1,4 +1,6 @@
-﻿using Mapster;
+﻿using Hangfire;
+using Hangfire.PostgreSql;
+using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -7,8 +9,10 @@ using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Middlewares;
 using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.Api.Responses.EntranceTest;
+using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
 using StackExchange.Redis;
 
@@ -88,6 +92,10 @@ public static class IServiceCollectionExtensions
         services.Configure<VnPay>(configuration.GetSection("VnPay"));
 
         services.Configure<PayOsOption>(configuration.GetSection("PayOsOption"));
+
+        services.Configure<AllowedRedirectDomainsConfig>(
+            configuration.GetSection("AllowedRedirectDomains"));
+
 
         return services;
     }
@@ -200,41 +208,36 @@ public static class IServiceCollectionExtensions
     private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
         IConfiguration configuration)
     {
-        //services.AddHangfire((_, config) =>
-        //{
-        //    config.UsePostgreSqlStorage(options =>
-        //    {
-        //        options.UseNpgsqlConnection(GetConnectionString(configuration));
-        //    });
-        //});
+        services.AddHangfire((_, config) =>
+        {
+            config.UsePostgreSqlStorage(options =>
+            {
+                options.UseNpgsqlConnection(GetConnectionString(configuration));
+            });
+        });
 
-        //services.AddHangfireServer();
+        services.AddHangfireServer();
         // Register Hangfire and configure it
-        // services.AddHangfire(config =>
-        //
-        //     config.UsePostgreSqlStorage(configuration.GetConnectionString("PostgresConnectionString"),
-        //         new PostgreSqlStorageOptions
-        //         {
-        //             QueuePollInterval = TimeSpan.FromSeconds(15), // Adjust the poll interval as needed
-        //             PrepareSchemaIfNecessary = true
-        //         })
-        // );
-        //
-        // // Register Hangfire server
-        // services.AddHangfireServer();
-        //
-        // // Register any other required services here
-        // services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
+        services.AddHangfire(config =>
+            config.UsePostgreSqlStorage(GetConnectionString(configuration),
+                new PostgreSqlStorageOptions
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(15),
+                    PrepareSchemaIfNecessary = true
+                })
+        );
 
-        // services.AddHangfireServer(cf =>
-        // {
-        //     RecurringJob.AddOrUpdate<SlotServices>(x =>
-        //         x.CronJobUpdateSlotStatus(), Cron.Hourly());
-        //     RecurringJob.AddOrUpdate<PaymentServices>(x =>
-        //         x.CronForUAutoPurchaseByUserBalance(), Cron.Hour ly());
-        //     RecurringJob.AddOrUpdate<PaymentServices>(x =>
-        //         x.CronChangeSubscriptionStatusWhenOverdue(), Cron.Daily());
-        // });
+        // Register Hangfire server
+        services.AddHangfireServer();
+
+        // Register any other required services here
+        services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
+
+        services.AddHangfireServer(cf =>
+        {
+            RecurringJob.AddOrUpdate<TutionService>(x =>
+                x.CronAutoCreateTution(), Cron.Monthly());
+        });
 
 
         return services;

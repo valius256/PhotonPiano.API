@@ -25,4 +25,6 @@ public interface IServiceFactory
     ISystemConfigService SystemConfigService { get; }
 
     ISLotStudentService SLotStudentService { get; }
+
+    ITutionService TutionService { get; }
 }

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Hangfire;
 using Mapster;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
@@ -17,6 +18,8 @@ var configuration = builder.Configuration;
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
+
+builder.Services.AddSingleton<RedirectUrlValidator>();
 
 //Add serilog
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
@@ -39,6 +42,15 @@ var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
 sqlConfig.Configure(app, app.Environment);
 
 app.UseHttpsRedirection();
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    DashboardTitle = "PhotonPiano Dashboard",
+    DarkModeEnabled = true,
+    IsReadOnlyFunc = context => false,
+    TimeZoneResolver = new DefaultTimeZoneResolver()
+});
+
 
 app.UseExceptionHandler();
 

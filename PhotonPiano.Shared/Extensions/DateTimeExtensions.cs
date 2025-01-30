@@ -6,10 +6,11 @@ public static class DateTimeExtensions
 
     public static DateTime ToVietnamTime(this DateTime utcDateTime)
     {
+        if (utcDateTime.Kind == DateTimeKind.Unspecified)
+            utcDateTime = DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
+
         if (utcDateTime.Kind != DateTimeKind.Utc)
-        {
             throw new ArgumentException("DateTime must be in UTC", nameof(utcDateTime));
-        }
 
         return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, VietnamTimeZone);
     }

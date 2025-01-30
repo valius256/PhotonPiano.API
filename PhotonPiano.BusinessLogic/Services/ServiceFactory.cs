@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
+using PhotonPiano.DataAccess.Models;
 using StackExchange.Redis;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -11,11 +13,15 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IAuthService> _authService;
 
+    private readonly Lazy<IClassService> _classService;
+
     private readonly Lazy<ICriteriaService> _criteriaService;
 
     private readonly Lazy<IEntranceTestService> _entranceTestService;
 
     private readonly Lazy<IEntranceTestStudentService> _entranceTestStudentService;
+
+    private readonly Lazy<IPaymentService> _paymentService;
 
     private readonly Lazy<IRedisCacheService> _redisCacheService;
 
@@ -23,16 +29,15 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ISlotService> _slotService;
 
-    private readonly Lazy<IPaymentService> _paymentService;
-
-    private readonly Lazy<IClassService> _classService;
+    private readonly Lazy<ISLotStudentService> _sLotStudentService;
 
     private readonly Lazy<ISystemConfigService> _systemConfigService;
 
-    private readonly Lazy<ISLotStudentService> _sLotStudentService;
+    private readonly Lazy<ITutionService> _tutionService;
+
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
-        IConnectionMultiplexer redis)
+        IConnectionMultiplexer redis, IOptions<VnPay> vnPay)
     {
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork));
         _authService =
@@ -44,10 +49,11 @@ public class ServiceFactory : IServiceFactory
         _roomService = new Lazy<IRoomService>(() => new RoomService(unitOfWork));
         _criteriaService = new Lazy<ICriteriaService>(() => new CriteriaService(unitOfWork, this));
         _slotService = new Lazy<ISlotService>(() => new SlotService(unitOfWork, this));
-        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration));
+        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
         _sLotStudentService = new Lazy<ISLotStudentService>(() => new SLotStudentService(this, unitOfWork));
+        _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -73,4 +79,6 @@ public class ServiceFactory : IServiceFactory
     public ISystemConfigService SystemConfigService => _systemConfigService.Value;
 
     public ISLotStudentService SLotStudentService => _sLotStudentService.Value;
+
+    public ITutionService TutionService => _tutionService.Value;
 }

@@ -27,6 +27,8 @@ public interface IUnitOfWork
 
     ISlotStudentRepository SlotStudentRepository { get; }
 
+    ITuitionRepository TuitionRepository { get; }
+
     Task<int> SaveChangesAsync();
 
     Task<IDbContextTransaction> BeginTransactionAsync();

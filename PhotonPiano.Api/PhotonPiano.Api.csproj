@@ -1,39 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<UserSecretsId>58f7b829-d62d-4e9e-9a74-5aad9ca32712</UserSecretsId>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>58f7b829-d62d-4e9e-9a74-5aad9ca32712</UserSecretsId>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Aspire.Npgsql" Version="8.2.2" />
-		<PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.2.2" />
-		<PackageReference Include="Aspire.StackExchange.Redis" Version="9.0.0" />
-		<PackageReference Include="FirebaseAdmin" Version="3.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1" />
-		<PackageReference Include="Scalar.AspNetCore" Version="1.2.45" />
-		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
-		<PackageReference Include="StackExchange.Redis" Version="2.8.24" />
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Aspire.Npgsql" Version="8.2.2"/>
+        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.2.2"/>
+        <PackageReference Include="Aspire.StackExchange.Redis" Version="9.0.0"/>
+        <PackageReference Include="FirebaseAdmin" Version="3.1.0"/>
+        <PackageReference Include="Hangfire" Version="1.8.17"/>
+        <PackageReference Include="Hangfire.PostgreSql" Version="1.20.10"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1"/>
+        <PackageReference Include="Scalar.AspNetCore" Version="1.2.45"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
+        <PackageReference Include="StackExchange.Redis" Version="2.8.24"/>
+    </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\PhotonPiano.ServiceDefaults\PhotonPiano.ServiceDefaults.csproj" />
-		<ProjectReference Include="..\PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj" />
-		<ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj" />
-	</ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\PhotonPiano.BackgroundJob\PhotonPiano.BackgroundJob.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.ServiceDefaults\PhotonPiano.ServiceDefaults.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj"/>
+    </ItemGroup>
 
 </Project>

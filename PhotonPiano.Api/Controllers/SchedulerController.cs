@@ -21,7 +21,7 @@ public class SchedulerController : BaseController
         _serviceFactory = serviceFactory;
     }
 
-    [HttpGet("slot")]
+    [HttpGet("slots")]
     [EndpointDescription("Get All Schedulers in this Week")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {

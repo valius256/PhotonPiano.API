@@ -1,9 +1,12 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Account;
 using PhotonPiano.Api.Responses.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -19,10 +22,17 @@ public class AccountsController : BaseController
     }
 
     [HttpGet]
-    [EndpointDescription("Get accounts")]
-    public async Task<ActionResult<List<AccountModel>>> GetAccounts()
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator, Role.Instructor])]
+    [EndpointDescription("Get accounts with paging")]
+    public async Task<ActionResult<List<AccountModel>>> GetAccounts([FromQuery] QueryPagedAccountsRequest request)
     {
-        return await _serviceFactory.AccountService.GetAccounts();
+        var pagedResult =
+            await _serviceFactory.AccountService.GetAccounts(base.CurrentAccount!,
+                request.Adapt<QueryPagedAccountsModel>());
+
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+
+        return pagedResult.Items;
     }
 
     [HttpPost]

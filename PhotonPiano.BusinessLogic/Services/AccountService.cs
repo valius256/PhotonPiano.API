@@ -5,6 +5,7 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -55,9 +56,33 @@ public class AccountService : IAccountService
         return true;
     }
 
-    public async Task<List<AccountModel>> GetAccounts()
+    private static Expression<Func<Account, bool>> GetAccountsFilterExpression(Role role)
+        => role switch
+        {
+            Role.Instructor => a => a.Role == Role.Student,
+            Role.Staff => a => a.Role != Role.Administrator,
+            Role.Administrator => a => true,
+            _ => a => a.Role == role
+        };
+
+    public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {
-        return await _unitOfWork.AccountRepository.FindProjectedAsync<AccountModel>(hasTrackings: false);
+        var (page, size, column, desc, q, roles) = model;
+
+        var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
+            page,
+            size,
+            column,
+            desc,
+            expressions:
+            [
+                GetAccountsFilterExpression(currentAccount.Role),
+                a => roles.Contains(a.Role),
+                a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower())
+            ]
+        );
+
+        return pagedResult;
     }
 
     public async Task<AccountModel> GetAndCreateAccountIfNotExistsCredentials(string firebaseId, string email,

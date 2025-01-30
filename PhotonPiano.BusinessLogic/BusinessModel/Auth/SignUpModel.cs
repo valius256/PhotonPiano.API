@@ -6,8 +6,7 @@ public record SignUpModel
     public required string Password { get; init; }
 
     public required string Phone { get; init; }
-
-    public required string DesiredLevel { get; init; }
+    public required int DesiredLevel { get; init; }
     
     public required List<string> DesiredTargets { get; init; } 
     

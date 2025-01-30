@@ -14,6 +14,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
+using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
 
 namespace PhotonPiano.Api.Extensions;
@@ -77,7 +78,7 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.Status, src => src.RecordStatus);
 
         TypeAdapterConfig<SignUpRequest, SignUpModel>.NewConfig()
-            .Map(dest => dest.DesiredLevel, src => src.Level.ToString());
+            .Map(dest => dest.DesiredLevel, src => src.Level);
 
         return services;
     }

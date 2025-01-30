@@ -13,7 +13,7 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250128013930_Initial")]
+    [Migration("20250130055911_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -50,8 +50,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("DesiredLevel")
-                        .HasColumnType("text");
+                    b.Property<int?>("DesiredLevel")
+                        .HasColumnType("integer");
 
                     b.PrimitiveCollection<List<string>>("DesiredTargets")
                         .IsRequired()
@@ -74,7 +74,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("JoinedDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Level")
+                    b.Property<int?>("Level")
                         .HasColumnType("integer");
 
                     b.Property<string>("Phone")
@@ -86,9 +86,6 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime?>("RegistrationDate")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
@@ -111,6 +108,68 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasKey("AccountFirebaseId");
 
                     b.ToTable("Account");
+
+                    b.HasData(
+                        new
+                        {
+                            AccountFirebaseId = "admin001",
+                            Address = "",
+                            AvatarUrl = "",
+                            BankAccount = "",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 95, DateTimeKind.Utc).AddTicks(9530),
+                            DesiredTargets = new List<string>(),
+                            Email = "admin001@gmail.com",
+                            FavoriteMusicGenres = new List<string>(),
+                            IsEmailVerified = false,
+                            JoinedDate = new DateTime(2025, 1, 30, 12, 59, 10, 95, DateTimeKind.Utc).AddTicks(7556),
+                            Phone = "",
+                            PreferredLearningMethods = new List<string>(),
+                            RecordStatus = 1,
+                            Role = 3,
+                            ShortDescription = "",
+                            Status = 0,
+                            UserName = "admin001"
+                        },
+                        new
+                        {
+                            AccountFirebaseId = "teacher002",
+                            Address = "",
+                            AvatarUrl = "",
+                            BankAccount = "",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 96, DateTimeKind.Utc).AddTicks(786),
+                            DesiredTargets = new List<string>(),
+                            Email = "teacher002@gmail.com",
+                            FavoriteMusicGenres = new List<string>(),
+                            IsEmailVerified = false,
+                            JoinedDate = new DateTime(2025, 1, 30, 12, 59, 10, 96, DateTimeKind.Utc).AddTicks(759),
+                            Phone = "",
+                            PreferredLearningMethods = new List<string>(),
+                            RecordStatus = 1,
+                            Role = 2,
+                            ShortDescription = "",
+                            Status = 0,
+                            UserName = "teacher002"
+                        },
+                        new
+                        {
+                            AccountFirebaseId = "learner003",
+                            Address = "",
+                            AvatarUrl = "",
+                            BankAccount = "",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 96, DateTimeKind.Utc).AddTicks(797),
+                            DesiredTargets = new List<string>(),
+                            Email = "learner003@gmail.com",
+                            FavoriteMusicGenres = new List<string>(),
+                            IsEmailVerified = false,
+                            JoinedDate = new DateTime(2025, 1, 30, 12, 59, 10, 96, DateTimeKind.Utc).AddTicks(790),
+                            Phone = "",
+                            PreferredLearningMethods = new List<string>(),
+                            RecordStatus = 1,
+                            Role = 1,
+                            ShortDescription = "",
+                            Status = 0,
+                            UserName = "learner003"
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.AccountNotification", b =>
@@ -171,8 +230,15 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<bool>("IsPublic")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsScorePublished")
+                        .HasColumnType("boolean");
+
                     b.Property<int?>("Level")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
@@ -199,6 +265,34 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("UpdateById");
 
                     b.ToTable("Class");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("44252e22-d30c-49e0-bab3-d71da7888e42"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 98, DateTimeKind.Utc).AddTicks(7108),
+                            CreatedById = "admin001",
+                            InstructorId = "teacher002",
+                            IsPublic = true,
+                            IsScorePublished = false,
+                            Level = 2,
+                            Name = "Class 1",
+                            RecordStatus = 1,
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c2f05422-4011-4552-866a-4c57c6bc5e6b"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 98, DateTimeKind.Utc).AddTicks(8709),
+                            CreatedById = "admin001",
+                            InstructorId = "teacher002",
+                            IsPublic = true,
+                            IsScorePublished = false,
+                            Level = 3,
+                            Name = "Class 2",
+                            RecordStatus = 1,
+                            Status = 0
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Criteria", b =>
@@ -253,6 +347,138 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("UpdateById");
 
                     b.ToTable("Criteria");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("def5cdb7-6019-42dd-9b5e-3f432fc14572"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(1765),
+                            CreatedById = "admin001",
+                            For = 0,
+                            Name = "Nhịp điệu",
+                            RecordStatus = 1,
+                            Weight = 10m
+                        },
+                        new
+                        {
+                            Id = new Guid("a24e3d85-55d8-423e-b7d1-263c09733d44"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3152),
+                            CreatedById = "admin001",
+                            For = 0,
+                            Name = "Độ chính xác",
+                            RecordStatus = 1,
+                            Weight = 10m
+                        },
+                        new
+                        {
+                            Id = new Guid("30386aa3-a684-4861-b790-92829a861858"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3161),
+                            CreatedById = "admin001",
+                            For = 0,
+                            Name = "Âm Sắc",
+                            RecordStatus = 1,
+                            Weight = 10m
+                        },
+                        new
+                        {
+                            Id = new Guid("b170b08c-cb80-4a94-80d3-2cd93948955f"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3169),
+                            CreatedById = "admin001",
+                            For = 0,
+                            Name = "Phong thái",
+                            RecordStatus = 1,
+                            Weight = 10m
+                        },
+                        new
+                        {
+                            Id = new Guid("95b3bb4b-5085-4b0e-8a56-bbe5368ef341"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3172),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Kiểm tra nhỏ 1",
+                            RecordStatus = 1,
+                            Weight = 5m
+                        },
+                        new
+                        {
+                            Id = new Guid("5b43f584-6ce3-4151-b7c3-b764e17b7311"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3176),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Kiểm tra nhỏ 2",
+                            RecordStatus = 1,
+                            Weight = 5m
+                        },
+                        new
+                        {
+                            Id = new Guid("0099e1c3-cdd3-4512-914d-d4d92b586282"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3201),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Bài thi 1",
+                            RecordStatus = 1,
+                            Weight = 10m
+                        },
+                        new
+                        {
+                            Id = new Guid("715a6221-1406-4365-8572-5d33d9a749c4"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3205),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Bài thi 2",
+                            RecordStatus = 1,
+                            Weight = 10m
+                        },
+                        new
+                        {
+                            Id = new Guid("2e209368-a835-443d-9ae4-be6ada302869"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3209),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Điểm chuyên cần",
+                            RecordStatus = 1,
+                            Weight = 5m
+                        },
+                        new
+                        {
+                            Id = new Guid("ae185c70-de84-4a93-b516-14d4a793caf1"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3214),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Thi cuối kỳ (Nhịp điệu)",
+                            RecordStatus = 1,
+                            Weight = 15m
+                        },
+                        new
+                        {
+                            Id = new Guid("ead79e25-7c2f-47a4-ad30-bc7ec9d21d12"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3217),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Thi cuối kỳ (Độ chính xác)",
+                            RecordStatus = 1,
+                            Weight = 15m
+                        },
+                        new
+                        {
+                            Id = new Guid("529d043d-f2b6-4943-8caf-472a6593babc"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3220),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Thi cuối kỳ (Âm sắc)",
+                            RecordStatus = 1,
+                            Weight = 15m
+                        },
+                        new
+                        {
+                            Id = new Guid("182b7158-82e9-41a0-8f68-03443c87442f"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(3223),
+                            CreatedById = "admin001",
+                            For = 1,
+                            Name = "Thi cuối kỳ (Phong thái)",
+                            RecordStatus = 1,
+                            Weight = 15m
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.DayOff", b =>
@@ -337,9 +563,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<bool>("IsAnnouncedScore")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsOpen")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -378,6 +601,51 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("UpdateById");
 
                     b.ToTable("EntranceTest");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("466ea66b-f04b-4d40-acb5-c8123c73f4c5"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(7140),
+                            CreatedById = "admin001",
+                            Date = new DateOnly(2025, 1, 30),
+                            Fee = 0m,
+                            InstructorId = "teacher002",
+                            IsAnnouncedScore = false,
+                            Name = "EntranceTest 1",
+                            RecordStatus = 1,
+                            RoomId = new Guid("a07832ea-c6b6-4f4e-814f-33ab1ccbaa0f"),
+                            RoomName = "Room 1",
+                            Shift = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("790defe7-8df2-42fe-aca1-b41b78a2ccb8"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(9136),
+                            CreatedById = "admin001",
+                            Date = new DateOnly(2025, 1, 30),
+                            Fee = 0m,
+                            IsAnnouncedScore = false,
+                            Name = "EntranceTest 2",
+                            RecordStatus = 1,
+                            RoomId = new Guid("30bda2b2-0663-4c26-bb0c-ef6f46c9f196"),
+                            RoomName = "Room 2",
+                            Shift = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("0a680cc3-6a0a-469f-98a3-d81b6104ba55"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(9150),
+                            CreatedById = "admin001",
+                            Date = new DateOnly(2025, 1, 30),
+                            Fee = 0m,
+                            InstructorId = "teacher002",
+                            IsAnnouncedScore = false,
+                            Name = "EntranceTest 3",
+                            RecordStatus = 1,
+                            RoomId = new Guid("ef8bc71f-aa3b-40a8-a060-41ffc8310d95"),
+                            Shift = 4
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTestResult", b =>
@@ -433,6 +701,17 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("UpdateById");
 
                     b.ToTable("EntranceTestResult");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("9c5a3274-af29-4d8c-8d23-3572c5c0e33b"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 98, DateTimeKind.Utc).AddTicks(5139),
+                            CreatedById = "admin001",
+                            CriteriaId = new Guid("a24e3d85-55d8-423e-b7d1-263c09733d44"),
+                            EntranceTestStudentId = new Guid("00c77746-4bbe-4fb1-886b-ea457c20eb56"),
+                            RecordStatus = 1
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTestStudent", b =>
@@ -498,6 +777,47 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("UpdateById");
 
                     b.ToTable("EntranceTestStudent");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00c77746-4bbe-4fb1-886b-ea457c20eb56"),
+                            BandScore = 8m,
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 98, DateTimeKind.Utc).AddTicks(393),
+                            CreatedById = "admin001",
+                            EntranceTestId = new Guid("466ea66b-f04b-4d40-acb5-c8123c73f4c5"),
+                            IsScoreAnnounced = true,
+                            Rank = 1,
+                            RecordStatus = 1,
+                            StudentFirebaseId = "learner003",
+                            Year = 2024
+                        },
+                        new
+                        {
+                            Id = new Guid("38265f58-6aa7-469d-98c0-08278d5c2cb8"),
+                            BandScore = 4m,
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 98, DateTimeKind.Utc).AddTicks(4135),
+                            CreatedById = "admin001",
+                            EntranceTestId = new Guid("466ea66b-f04b-4d40-acb5-c8123c73f4c5"),
+                            IsScoreAnnounced = true,
+                            Rank = 2,
+                            RecordStatus = 1,
+                            StudentFirebaseId = "learner003",
+                            Year = 2024
+                        },
+                        new
+                        {
+                            Id = new Guid("2ff97b07-f959-4f57-821c-970c16fd49c1"),
+                            BandScore = 9m,
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 98, DateTimeKind.Utc).AddTicks(4171),
+                            CreatedById = "admin001",
+                            EntranceTestId = new Guid("466ea66b-f04b-4d40-acb5-c8123c73f4c5"),
+                            IsScoreAnnounced = true,
+                            Rank = 3,
+                            RecordStatus = 1,
+                            StudentFirebaseId = "learner003",
+                            Year = 2024
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.New", b =>
@@ -570,15 +890,12 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsViewed")
-                        .HasColumnType("boolean");
-
-                    b.PrimitiveCollection<List<string>>("ReceiverFirebaseIds")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Thumbnail")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -638,6 +955,35 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("UpdateById");
 
                     b.ToTable("Room");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a07832ea-c6b6-4f4e-814f-33ab1ccbaa0f"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(5485),
+                            CreatedById = "admin001",
+                            Name = "Room 1",
+                            RecordStatus = 1,
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("30bda2b2-0663-4c26-bb0c-ef6f46c9f196"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(6028),
+                            CreatedById = "admin001",
+                            Name = "Room 2",
+                            RecordStatus = 1,
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("ef8bc71f-aa3b-40a8-a060-41ffc8310d95"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 97, DateTimeKind.Utc).AddTicks(6054),
+                            CreatedById = "admin001",
+                            Name = "Room 3",
+                            RecordStatus = 1,
+                            Status = 0
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Slot", b =>
@@ -646,7 +992,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ClassId")
+                    b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -680,6 +1026,52 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("RoomId");
 
                     b.ToTable("Slot");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0c54aca9-2c9c-4e95-9fa9-07aa804c785e"),
+                            ClassId = new Guid("44252e22-d30c-49e0-bab3-d71da7888e42"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 98, DateTimeKind.Utc).AddTicks(9848),
+                            Date = new DateOnly(2025, 1, 30),
+                            RecordStatus = 1,
+                            RoomId = new Guid("a07832ea-c6b6-4f4e-814f-33ab1ccbaa0f"),
+                            Shift = 0,
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("463ebc9c-be4a-4725-9e85-164e06be03b2"),
+                            ClassId = new Guid("44252e22-d30c-49e0-bab3-d71da7888e42"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(1031),
+                            Date = new DateOnly(2025, 2, 1),
+                            RecordStatus = 1,
+                            RoomId = new Guid("a07832ea-c6b6-4f4e-814f-33ab1ccbaa0f"),
+                            Shift = 0,
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("88ec7b30-0459-4b58-931c-3952406d8cff"),
+                            ClassId = new Guid("44252e22-d30c-49e0-bab3-d71da7888e42"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(1063),
+                            Date = new DateOnly(2025, 2, 3),
+                            RecordStatus = 1,
+                            RoomId = new Guid("a07832ea-c6b6-4f4e-814f-33ab1ccbaa0f"),
+                            Shift = 0,
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a3a26349-221a-4948-a4cf-254c262b9d85"),
+                            ClassId = new Guid("44252e22-d30c-49e0-bab3-d71da7888e42"),
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(1067),
+                            Date = new DateOnly(2025, 2, 5),
+                            RecordStatus = 1,
+                            RoomId = new Guid("a07832ea-c6b6-4f4e-814f-33ab1ccbaa0f"),
+                            Shift = 0,
+                            Status = 1
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.SlotStudent", b =>
@@ -690,7 +1082,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<string>("StudentFirebaseId")
                         .HasColumnType("character varying(30)");
 
-                    b.Property<int>("AttemptStatus")
+                    b.Property<int>("AttendanceStatus")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
@@ -753,16 +1145,16 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<string>("DeletedById")
                         .HasColumnType("character varying(30)");
 
-                    b.Property<bool>("IsFinished")
-                        .HasColumnType("boolean");
+                    b.Property<decimal?>("GPA")
+                        .HasColumnType("numeric");
 
-                    b.Property<bool>("IsScorePublished")
+                    b.Property<string>("InstructorComment")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsPassed")
                         .HasColumnType("boolean");
 
                     b.Property<int>("RecordStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.Property<string>("StudentFirebaseId")
@@ -807,7 +1199,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("Score")
+                    b.Property<decimal?>("Score")
                         .HasColumnType("numeric");
 
                     b.Property<Guid>("StudentClassId")
@@ -856,6 +1248,161 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SystemConfig");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("91e8bce6-d9fa-41ea-8e5a-89843d32eaa9"),
+                            ConfigName = "Sĩ số lớp tối thiểu",
+                            ConfigValue = "8",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(1656),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("588a9356-a5c7-4abd-baa3-d0217e65aa34"),
+                            ConfigName = "Sĩ số lớp tối đa",
+                            ConfigValue = "12",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2328),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("ab8b8206-7dcf-4274-935a-8ab26d70b4b5"),
+                            ConfigName = "Mức phí theo buổi LEVEL 1",
+                            ConfigValue = "200000",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2333),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("23d55201-72fa-432b-90bd-6e0ab46a434d"),
+                            ConfigName = "Mức phí theo buổi LEVEL 2",
+                            ConfigValue = "250000",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2335),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("401055d2-982b-49b1-9461-9f61e46344ad"),
+                            ConfigName = "Mức phí theo buổi LEVEL 3",
+                            ConfigValue = "300000",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2338),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("34439bc9-1a31-4ac1-9488-80cdbca4c648"),
+                            ConfigName = "Mức phí theo buổi LEVEL 4",
+                            ConfigValue = "350000",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2340),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("0303605d-8a35-488f-8b9d-d234820f6e0d"),
+                            ConfigName = "Mức phí theo buổi LEVEL 5",
+                            ConfigValue = "400000",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2342),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("d933049c-1c30-4485-bda0-498e6fb75f3b"),
+                            ConfigName = "Số buổi học 1 tuần LEVEL 1",
+                            ConfigValue = "2",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2352),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("911bd95d-5bab-4755-9f96-a9f952017d3c"),
+                            ConfigName = "Số buổi học 1 tuần LEVEL 2",
+                            ConfigValue = "2",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2355),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("7bf46634-8ada-4964-b349-243bc5d306f5"),
+                            ConfigName = "Số buổi học 1 tuần LEVEL 3",
+                            ConfigValue = "2",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2357),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("f2aeb834-8cb0-44dc-aa21-aacbe9826b78"),
+                            ConfigName = "Số buổi học 1 tuần LEVEL 4",
+                            ConfigValue = "2",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2360),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("759ac9be-29a6-483b-82ae-43dc76b62aee"),
+                            ConfigName = "Số buổi học 1 tuần LEVEL 5",
+                            ConfigValue = "2",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2362),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("9b92d0dc-f918-4bc6-99d0-f512428784c7"),
+                            ConfigName = "Tổng số buổi học LEVEL 1",
+                            ConfigValue = "30",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2365),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("155910d3-5cab-4834-815f-34c8d74b8685"),
+                            ConfigName = "Tổng số buổi học LEVEL 2",
+                            ConfigValue = "30",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2367),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("f81776c4-191b-40bf-a047-ff11e6e7c341"),
+                            ConfigName = "Tổng số buổi học LEVEL 3",
+                            ConfigValue = "30",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2370),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("b05cdfa9-de7e-48d1-978b-3de7a957f6ea"),
+                            ConfigName = "Tổng số buổi học LEVEL 4",
+                            ConfigValue = "40",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2376),
+                            RecordStatus = 1,
+                            Role = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("f378fab9-9048-47a9-9920-d12ebe2eede5"),
+                            ConfigName = "Tổng số buổi học LEVEL 5",
+                            ConfigValue = "50",
+                            CreatedAt = new DateTime(2025, 1, 30, 12, 59, 10, 99, DateTimeKind.Utc).AddTicks(2378),
+                            RecordStatus = 1,
+                            Role = 3
+                        });
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Transaction", b =>
@@ -1245,7 +1792,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Class", "Class")
                         .WithMany("Slots")
                         .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Room", "Room")
                         .WithMany("Slots")

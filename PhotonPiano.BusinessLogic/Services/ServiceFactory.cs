@@ -20,9 +20,7 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IEntranceTestService> _entranceTestService;
 
     private readonly Lazy<IEntranceTestStudentService> _entranceTestStudentService;
-
-    private readonly Lazy<IPaymentService> _paymentService;
-
+    
     private readonly Lazy<IRedisCacheService> _redisCacheService;
 
     private readonly Lazy<IRoomService> _roomService;
@@ -34,7 +32,10 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ISystemConfigService> _systemConfigService;
 
     private readonly Lazy<ITutionService> _tutionService;
-
+    
+    private readonly Lazy<IPaymentService> _paymentService;
+    
+    private readonly Lazy<ITransactionService> _transactionService;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay)
@@ -54,6 +55,8 @@ public class ServiceFactory : IServiceFactory
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
         _sLotStudentService = new Lazy<ISLotStudentService>(() => new SLotStudentService(this, unitOfWork));
         _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
+        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
+        _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -81,4 +84,6 @@ public class ServiceFactory : IServiceFactory
     public ISLotStudentService SLotStudentService => _sLotStudentService.Value;
 
     public ITutionService TutionService => _tutionService.Value;
+    
+    public ITransactionService TransactionService => _transactionService.Value;
 }

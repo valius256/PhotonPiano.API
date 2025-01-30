@@ -13,4 +13,6 @@ public record NewIdTokenModel
     public required string UserId { get; init; }
 
     public required string ProjectId { get; init; }
+
+    public string Role { get; set; } = string.Empty;
 }

@@ -1,3 +1,4 @@
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -17,14 +18,13 @@ public class TutionService : ITutionService
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
     }
-
-
-    public async Task<string> PayTuition(string userFirebaseId, Guid tutionId, string returnUrl, string ipAddress,
+    
+    public async Task<string> PayTuition(AccountModel currentAccount, Guid tutionId, string returnUrl, string ipAddress,
         string apiBaseUrl)
     {
         var paymentTution = await _unitOfWork.TuitionRepository.FindFirstProjectedAsync<Tution>(x => x.Id == tutionId);
 
-        ValidateTution(paymentTution, userFirebaseId);
+        ValidateTution(paymentTution, currentAccount.AccountFirebaseId);
 
         var transaction = new Transaction
         {
@@ -32,10 +32,11 @@ public class TutionService : ITutionService
             TutionId = tutionId,
             Amount = paymentTution.Amount,
             CreatedAt = DateTime.UtcNow,
-            CreatedById = userFirebaseId,
+            CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.TutionFee,
             PaymentStatus = PaymentStatus.Pending,
-            PaymentMethod = PaymentMethod.VnPay
+            PaymentMethod = PaymentMethod.VnPay,
+            CreatedByEmail = currentAccount.Email
         };
 
         await _unitOfWork.TransactionRepository.AddAsync(transaction);
@@ -43,10 +44,10 @@ public class TutionService : ITutionService
         await _unitOfWork.SaveChangesAsync();
 
         var customReturnUrl =
-            $"{apiBaseUrl}/api/tutions/{userFirebaseId}/tution-payment-callback?url={returnUrl}";
+            $"{apiBaseUrl}/api/tutions/{currentAccount.AccountFirebaseId}/tution-payment-callback?url={returnUrl}";
 
         return _serviceFactory.PaymentService.CreateVnPayPaymentUrl(transaction, ipAddress, apiBaseUrl,
-            userFirebaseId,
+            currentAccount.AccountFirebaseId,
             returnUrl, customReturnUrl);
     }
 

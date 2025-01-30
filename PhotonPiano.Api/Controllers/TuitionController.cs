@@ -37,7 +37,7 @@ public class TuitionController : BaseController
 
         return Ok(new PaymentUrlResponse
             {
-                Url = await _serviceFactory.TutionService.PayTuition(CurrentUserFirebaseId, request.TutionId,
+                Url = await _serviceFactory.TutionService.PayTuition(base.CurrentAccount!, request.TutionId,
                     request.ReturnUrl,
                     ipAddress, apiBaseUrl)
             }

@@ -11,8 +11,8 @@ public class Transaction : BaseEntityWithId
     public string? TransactionCode { get; set; }
     public decimal Amount { get; set; }
     public required string CreatedById { get; set; }
+    public required string CreatedByEmail { get; set; }
     public Guid? TutionId { get; set; }
-
     public Guid? EntranceTestStudentId { get; set; }
 
     // Reference

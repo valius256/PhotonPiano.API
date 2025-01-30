@@ -13,7 +13,7 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250123125715_Initial")]
+    [Migration("20250128013930_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -869,6 +869,10 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByEmail")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("CreatedById")
                         .IsRequired()

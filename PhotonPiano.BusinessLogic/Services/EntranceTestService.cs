@@ -248,7 +248,8 @@ public class EntranceTestService : IEntranceTestService
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.EntranceTestFee,
             PaymentStatus = PaymentStatus.Pending,
-            PaymentMethod = PaymentMethod.VnPay
+            PaymentMethod = PaymentMethod.VnPay,
+            CreatedByEmail = currentAccount.Email
         };
 
         await _unitOfWork.TransactionRepository.AddAsync(transaction);

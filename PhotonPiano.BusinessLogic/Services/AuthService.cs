@@ -125,12 +125,17 @@ public class AuthService : IAuthService
         {
             var errorResponse = await response.Content.ReadAsStringAsync();
             var errorResponseObject = JsonConvert.DeserializeObject<FirebaseErrorResponseModel>(errorResponse)!;
-            throw new CustomException(errorResponseObject.Message, (int)HttpStatusCode.BadRequest);
+            throw new BadRequestException(errorResponseObject.Message);
         }
 
         var jsonResponse = await response.Content.ReadAsStringAsync();
         var responseObject =
-            JsonConvert.DeserializeObject<NewIdTokenModel>(jsonResponse, snakeCaseJsonSerializerSetting);
+            JsonConvert.DeserializeObject<NewIdTokenModel>(jsonResponse, snakeCaseJsonSerializerSetting)!;
+
+        var account =
+            await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == responseObject.UserId);
+
+        responseObject.Role = account!.Role.ToString();
 
         return responseObject!;
     }

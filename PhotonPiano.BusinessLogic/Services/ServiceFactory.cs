@@ -24,6 +24,8 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ISlotService> _slotService;
     
     private readonly Lazy<IPaymentService> _paymentService;
+    
+    private readonly Lazy<ITransactionService> _transactionService;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IConnectionMultiplexer redis)
@@ -39,6 +41,7 @@ public class ServiceFactory : IServiceFactory
         _criteriaService = new Lazy<ICriteriaService>(() => new CriteriaService(unitOfWork, this));
         _slotService = new Lazy<ISlotService>(() => new SlotService(unitOfWork, this));
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration));
+        _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -58,4 +61,6 @@ public class ServiceFactory : IServiceFactory
     public ISlotService SlotService => _slotService.Value;
     
     public IPaymentService PaymentService => _paymentService.Value;
+    
+    public ITransactionService TransactionService => _transactionService.Value;
 }

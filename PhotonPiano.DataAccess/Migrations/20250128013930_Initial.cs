@@ -656,6 +656,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     TransactionCode = table.Column<string>(type: "text", nullable: true),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     CreatedById = table.Column<string>(type: "character varying(30)", nullable: false),
+                    CreatedByEmail = table.Column<string>(type: "text", nullable: false),
                     TutionId = table.Column<Guid>(type: "uuid", nullable: true),
                     EntranceTestStudentId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

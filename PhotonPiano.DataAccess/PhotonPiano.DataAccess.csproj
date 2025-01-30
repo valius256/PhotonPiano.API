@@ -17,4 +17,8 @@
         <Compile Remove="Migrations\ApplicationDbContextModelSnapshot.cs"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj" />
+    </ItemGroup>
+
 </Project>

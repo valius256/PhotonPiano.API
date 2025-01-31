@@ -14,7 +14,6 @@ using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
-using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
 
 namespace PhotonPiano.Api.Extensions;
@@ -35,6 +34,7 @@ public static class IServiceCollectionExtensions
             .AddMapsterConfig()
             .AddRedisCache(configuration)
             .AddPostGresSqlConfiguration()
+            .AddRazorTemplateWithConfigPath()
             ;
 
 
@@ -83,11 +83,12 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
+
     private static IServiceCollection AddSettingsOptions(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<Appsettings>(configuration.GetSection("Appsettings"));
 
-        services.Configure<SmtpAppSetting>(configuration.GetSection("SmtpSettings"));
+        services.Configure<SmtpAppSetting>(configuration.GetSection("SmtpAppSetting"));
         services.Configure<FirebaseUpload>(configuration.GetSection("FirebaseUpload"));
 
         services.Configure<VnPay>(configuration.GetSection("VnPay"));
@@ -96,7 +97,6 @@ public static class IServiceCollectionExtensions
 
         services.Configure<AllowedRedirectDomainsConfig>(
             configuration.GetSection("AllowedRedirectDomains"));
-
 
         return services;
     }
@@ -201,6 +201,13 @@ public static class IServiceCollectionExtensions
     private static IServiceCollection AddPostGresSqlConfiguration(this IServiceCollection services)
     {
         services.AddTransient<PostgresSqlConfiguration>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddRazorTemplateWithConfigPath(this IServiceCollection services)
+    {
+        services.AddRazorTemplating();
 
         return services;
     }

@@ -13,8 +13,6 @@ public class Appsettings
 
     [JsonPropertyName("VnPay")] public VnPay VnPay { get; set; } = default!;
 
-    [JsonPropertyName("SmtpSettings")] public SmtpSettings SmtpSettings { get; set; } = default!;
-
     [JsonPropertyName("AllowedHosts")] public string AllowedHosts { get; set; } = default!;
 
     [JsonPropertyName("Hangfire")] public string Hangfire { get; set; } = default!;
@@ -24,21 +22,6 @@ public class Appsettings
     [JsonPropertyName("FirebaseUpload")] public FirebaseUpload FirebaseUpload { get; set; } = default!;
 
     [JsonPropertyName("PayOs")] public PayOsOption PayOsOption { get; set; } = default!;
-}
-
-public class SmtpAppSetting
-{
-    public string SmtpHost { get; set; } = default!;
-
-    public int SmtpPort { get; set; }
-
-    public string SmtpUserName { get; set; } = default!;
-
-    public string SmtpPassword { get; set; } = default!;
-
-    public bool EnableSsl { get; set; }
-
-    public string AppVerify { get; set; } = default!;
 }
 
 public class FirebaseUpload
@@ -54,11 +37,11 @@ public class FirebaseUpload
     public string SignInPasswordKey { get; set; } = default!;
 }
 
-public class SmtpSettings
+public class SmtpAppSetting
 {
     [JsonPropertyName("SmtpHost")] public string SmtpHost { get; set; } = default!;
 
-    [JsonPropertyName("SmtpPort")] public string SmtpPort { get; set; } = default!;
+    [JsonPropertyName("SmtpPort")] public int SmtpPort { get; set; }
 
     [JsonPropertyName("SmtpUserName")] public string SmtpUserName { get; set; } = default!;
 

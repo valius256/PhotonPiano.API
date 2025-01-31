@@ -35,10 +35,15 @@ public static class ModelBuilderExtensions
                 Email = "learner003@gmail.com",
                 Role = Role.Student,
                 UserName = learner003
+            },
+            new Account
+            {
+                AccountFirebaseId = "gnRssA2sZHWnXB23oUuUxwz95Ln1",
+                Email = "staff123@gmail.com",
+                Role = Role.Staff,
+                UserName = "staff 123",
             }
         );
-
-
 
         #endregion
 

@@ -6,9 +6,11 @@ namespace PhotonPiano.Api.Requests.Account;
 
 public record QueryPagedAccountsRequest : QueryPagedRequest
 {
-    [FromQuery(Name = "q")]
-    public string? Keyword { get; init; }
+    [FromQuery(Name = "q")] public string? Keyword { get; init; }
 
-    [FromQuery(Name = "roles")] 
-    public List<Role> Roles { get; init; } = [];
+    [FromQuery(Name = "levels")] public List<Level> Levels { get; init; } = [];
+
+    [FromQuery(Name = "student-statuses")] public List<StudentStatus> StudentStatuses { get; init; } = [];
+
+    [FromQuery(Name = "roles")] public List<Role> Roles { get; init; } = [];
 }

@@ -67,18 +67,20 @@ public class AccountService : IAccountService
 
     public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {
-        var (page, size, column, desc, q, roles) = model;
+        var (page, size, column, desc, q, roles, levels, studentStatuses) = model;
 
         var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
             page,
             size,
-            column,
+            column == "Id" ? "AccountFirebaseId" : column,
             desc,
             expressions:
             [
                 GetAccountsFilterExpression(currentAccount.Role),
-                a => roles.Contains(a.Role),
-                a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower())
+                a => roles.Count == 0 || roles.Contains(a.Role),
+                a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
+                a => !a.Level.HasValue || levels.Contains(a.Level.Value),
+                a => !a.StudentStatus.HasValue || studentStatuses.Contains(a.StudentStatus.Value),
             ]
         );
 

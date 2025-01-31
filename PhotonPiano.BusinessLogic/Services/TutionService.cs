@@ -1,9 +1,11 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
+using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -18,7 +20,7 @@ public class TutionService : ITutionService
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
     }
-    
+
     public async Task<string> PayTuition(AccountModel currentAccount, Guid tutionId, string returnUrl, string ipAddress,
         string apiBaseUrl)
     {
@@ -86,6 +88,23 @@ public class TutionService : ITutionService
                     await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
                     await _unitOfWork.SaveChangesAsync();
                     await _unitOfWork.CommitTransactionAsync();
+
+                    var userEmail = account.Email;
+                    var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "customerName", $"{userEmail}" },
+                        { "transactionId", $"{transaction.TransactionCode}" },
+                        { "amount", $"{transaction.Amount}" },
+                        { "orderId", $"{tutionEntity.Id}" },
+                        { "paymentMethod", $"{transaction.PaymentMethod}" },
+                        { "transactionDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") },
+                        { "validFromTo", $"{tutionEntity.StartDate:yyyy-MM-dd} to {tutionEntity.EndDate:yyyy-MM-dd}" }
+                    };
+
+                    await _serviceFactory.EmailService.SendAsync("PaymentSuccess", new List<string> { account.Email },
+                        null, emailParam);
+
+
                     break;
                 case PaymentStatus.Failed:
                     throw new BadRequestException("Payment has failed.");
@@ -143,6 +162,39 @@ public class TutionService : ITutionService
             await _unitOfWork.TuitionRepository.AddRangeAsync(tutions);
             await _unitOfWork.SaveChangesAsync();
         });
+
+        // Todo:  send email or not how the fuck i know
+    }
+
+    public async Task<PagedResult<TutionWithStudentClassModel>> GetTutionsPaged(QueryTutionModel queryTutionModel,
+        AccountModel? account = default)
+    {
+        var (page, pageSize, sortColumn, orderByDesc, studentClassIds, startDate, endDate, paymentStatuses) =
+            queryTutionModel;
+
+        var result = await _unitOfWork.TuitionRepository.GetPaginatedWithProjectionAsync<TutionWithStudentClassModel>(
+            page, pageSize, sortColumn, orderByDesc,
+            expressions:
+            [
+                x => studentClassIds == null || studentClassIds.Count == 0 || studentClassIds.Contains(x.StudentClassId),
+                x => paymentStatuses == null || paymentStatuses.Count == 0 || paymentStatuses.Contains(x.PaymentStatus),
+                x => !startDate.HasValue || x.StartDate >= startDate.Value,
+                x => !endDate.HasValue || x.EndDate <= endDate.Value,
+                x => account != null && (account.Role == Role.Staff || x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
+            ]);
+
+
+        return result;
+    }
+
+    public async Task<TutionWithStudentClassModel> GetTutionById(Guid tutionId)
+    {
+        
+        var result = await _unitOfWork.TuitionRepository
+            .FindSingleProjectedAsync<TutionWithStudentClassModel>(e => e.Id == tutionId, false);
+        if (result is null) throw new NotFoundException("Tuition not found.");
+        
+        return result;
     }
 
     private void ValidateTransaction(Transaction transaction)

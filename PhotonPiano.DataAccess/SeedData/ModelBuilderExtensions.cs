@@ -34,7 +34,18 @@ public static class ModelBuilderExtensions
                 AccountFirebaseId = learner003,
                 Email = "learner003@gmail.com",
                 Role = Role.Student,
-                UserName = learner003
+                UserName = learner003,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = "nQhzMDSe8aW5RLerTaHa6yvh8c23",
+                Email = "minh@gmail.com",
+                Role = Role.Student,
+                UserName = "minh@gmail.com",
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
             },
             new Account
             {
@@ -292,6 +303,7 @@ public static class ModelBuilderExtensions
         #endregion
 
         #region Class Model
+
         var classTestGuid1 = Guid.NewGuid();
         var classTestGuid2 = Guid.NewGuid();
         modelBuilder.Entity<Class>().HasData(
@@ -315,13 +327,12 @@ public static class ModelBuilderExtensions
                 Name = "Class 2",
                 Level = Level.Advanced
             }
-
         );
-
 
         #endregion
 
         #region Slot Model
+
         var slotTestGuid1 = Guid.NewGuid();
         var slotTestGuid2 = Guid.NewGuid();
         var slotTestGuid3 = Guid.NewGuid();
@@ -337,7 +348,6 @@ public static class ModelBuilderExtensions
                 Shift = Shift.Shift1_7h_8h30,
                 Status = SlotStatus.Ongoing,
             },
-
             new Slot
             {
                 Id = slotTestGuid2,
@@ -367,16 +377,16 @@ public static class ModelBuilderExtensions
             }
         );
 
-
         #endregion
 
         #region SystemConfig Model
+
         modelBuilder.Entity<SystemConfig>().HasData(
             new SystemConfig
             {
                 Id = Guid.NewGuid(),
                 ConfigName = "Sĩ số lớp tối thiểu",
-                ConfigValue = "8",  
+                ConfigValue = "8",
                 Role = Role.Administrator
             },
             new SystemConfig
@@ -491,8 +501,8 @@ public static class ModelBuilderExtensions
                 ConfigValue = "50",
                 Role = Role.Administrator
             }
-
         );
+
         #endregion
     }
 }

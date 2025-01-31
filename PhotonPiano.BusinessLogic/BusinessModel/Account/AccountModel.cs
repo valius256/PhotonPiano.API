@@ -28,12 +28,11 @@ public record AccountModel
     
     public string? ShortDescription { get; init; } = string.Empty;
     
-    public Level Level { get; init; } = Level.Beginner;
+    public Level? Level { get; init; }
     
-    public AccountStatus Status { get; init; } = AccountStatus.Active;
+    public AccountStatus Status { get; init; } 
     
     public DateTime? RegistrationDate { get; init; }
-    
     public StudentStatus? StudentStatus { get; init; }
     
     public string? DesiredLevel { get; init; }

@@ -36,6 +36,8 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IPaymentService> _paymentService;
     
     private readonly Lazy<ITransactionService> _transactionService;
+    
+    private readonly Lazy<ISchedulerService> _schedulerService;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay)
@@ -57,6 +59,7 @@ public class ServiceFactory : IServiceFactory
         _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
+        _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService());
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -86,4 +89,6 @@ public class ServiceFactory : IServiceFactory
     public ITutionService TutionService => _tutionService.Value;
     
     public ITransactionService TransactionService => _transactionService.Value;
+    
+    public ISchedulerService SchedulerService => _schedulerService.Value;
 }

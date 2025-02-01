@@ -138,4 +138,14 @@ public class EntranceTestsController : BaseController
 
         return Redirect(clientRedirectUrl);
     }
+
+    [HttpPost("auto-arrangement")]
+    [EndpointDescription("Auto arrange entrance tests")]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
+    public async Task<ActionResult> AutoArrangeEntranceTests([FromBody] AutoArrangeEntranceTestsRequest request)
+    {
+        return Created(nameof(AutoArrangeEntranceTests),
+            await _serviceFactory.EntranceTestService.AutoArrangeEntranceTests(
+                request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!));
+    }
 }

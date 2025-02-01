@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISystemConfigService, SystemConfigService>();
         services.AddScoped<ITutionService, TutionService>();
         services.AddScoped<ITransactionService, TransactionService>();
+        services.AddScoped<ISchedulerService, SchedulerService>();
         services.AddHttpClient();
         services.AddMapsterConfig();
         return services;

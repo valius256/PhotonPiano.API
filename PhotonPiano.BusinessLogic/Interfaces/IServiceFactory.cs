@@ -29,4 +29,6 @@ public interface IServiceFactory
     ITutionService TutionService { get; }
     
     ITransactionService TransactionService { get; }
+    
+    ISchedulerService SchedulerService { get; }
 }

@@ -5,10 +5,14 @@ namespace PhotonPiano.Api.Requests.EntranceTest;
 
 public record AutoArrangeEntranceTestsRequest : IValidatableObject
 {
+    [Required(ErrorMessage = "Student ids are required.")]
     public required List<string> StudentIds { get; init; }
+    
+    [Required(ErrorMessage = "Start date is required.")]
     public required DateTime StartDate { get; init; }
+    
+    [Required(ErrorMessage = "End date is required.")]
     public required DateTime EndDate { get; init; }
-
     public List<Shift> ShiftOptions { get; init; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

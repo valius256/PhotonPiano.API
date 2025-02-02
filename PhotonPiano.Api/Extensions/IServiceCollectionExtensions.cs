@@ -8,6 +8,7 @@ using Newtonsoft.Json.Serialization;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Middlewares;
 using PhotonPiano.Api.Requests.Auth;
+using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
@@ -79,6 +80,10 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<SignUpRequest, SignUpModel>.NewConfig()
             .Map(dest => dest.DesiredLevel, src => src.Level);
+
+        TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>
+            .NewConfig()
+            .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
         return services;
     }

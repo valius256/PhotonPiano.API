@@ -337,6 +337,8 @@ public class EntranceTestService : IEntranceTestService
                     Id = entranceTestId,
                     Name = $"THI DAU VAO_{entranceTestId}",
                     RoomId = room.Id,
+                    RoomName = room.Name,
+                    RoomCapacity = room.Capacity,
                     Shift = shiftOptions.Count == 0 ? Shift.Shift1_7h_8h30 : shiftOptions[0],
                     Date = DateOnly.FromDateTime(startDate),
                     CreatedById = staffAccountId,

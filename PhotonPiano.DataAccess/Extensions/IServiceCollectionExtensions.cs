@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IClassRepository, ClassRepository>();
         services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
+        services.AddScoped<IDayOffRepository, DayOffRepository>();
 
         return services;
     }

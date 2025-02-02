@@ -312,13 +312,15 @@ public class EntranceTestService : IEntranceTestService
     }
 
     private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(List<Account> students,
-        string staffAccountId, int maxStudentsPerSlot = 10)
+        DateTime startDate, DateTime endDate,
+        string staffAccountId, int maxStudentsPerSlot = 10, params List<Shift> shiftOptions)
     {
-        var rooms = await _unitOfWork.RoomRepository.GetAllAsync();
         var entranceTests = new List<EntranceTest>();
         var remainingStudents = new List<Account>(students); // Track remaining students globally
 
-        foreach (var room in rooms)
+        await foreach (var room in _unitOfWork.RoomRepository
+                           .FindAsQueryable(r => r.Status == RoomStatus.Opened, hasTrackings: false)
+                           .AsAsyncEnumerable())
         {
             while (remainingStudents.Count > 0)
             {
@@ -335,8 +337,8 @@ public class EntranceTestService : IEntranceTestService
                     Id = entranceTestId,
                     Name = $"THI DAU VAO_{entranceTestId}",
                     RoomId = room.Id,
-                    Shift = Shift.Shift1_7h_8h30, // You can adjust shifts dynamically if needed
-                    Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                    Shift = shiftOptions.Count == 0 ? Shift.Shift1_7h_8h30 : shiftOptions[0],
+                    Date = DateOnly.FromDateTime(startDate),
                     CreatedById = staffAccountId,
                     CreatedAt = DateTime.UtcNow,
                     EntranceTestStudents = studentsToAssign.Select(student =>
@@ -364,7 +366,7 @@ public class EntranceTestService : IEntranceTestService
     public async Task<List<EntranceTest>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
         AccountModel currentAccount)
     {
-        var (studentIds, startDate, endDate) = model;
+        var (studentIds, startDate, endDate, shiftOptions) = model;
 
         var students =
             await _unitOfWork.AccountRepository.FindAsync(a => studentIds.Contains(a.AccountFirebaseId)
@@ -380,21 +382,33 @@ public class EntranceTestService : IEntranceTestService
             throw new BadRequestException("Some students are not valid to be arranged with entrance tests.");
         }
 
-        var entranceTests = await CreateAndAssignStudentsToEntranceTests(students, currentAccount.AccountFirebaseId);
+        var entranceTests = await CreateAndAssignStudentsToEntranceTests(students,
+            startDate, endDate,
+            currentAccount.AccountFirebaseId, 10, shiftOptions);
 
         var conflictGraph = _serviceFactory.SchedulerService.BuildEntranceTestsConflictGraph(entranceTests);
 
+        var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
+
+        List<DateTime> holidays = [];
+
+        foreach (var dayOff in dayOffs)
+        {
+            holidays.AddRange(Enumerable.Range(0, (dayOff.EndTime - dayOff.StartTime).Days + 1)
+                .Select(d => dayOff.StartTime.AddDays(d)));
+        }
+
         var validSlots =
-            _serviceFactory.SchedulerService.GenerateValidTimeSlots(startDate, endDate, Constants.Holidays);
+            _serviceFactory.SchedulerService.GenerateValidTimeSlots(startDate, endDate, holidays, shiftOptions);
 
         entranceTests = _serviceFactory.SchedulerService.AssignTimeSlotsToEntranceTests(entranceTests, conflictGraph,
             validSlots);
-        
+
         // await _unitOfWork.ExecuteInTransactionAsync(async () =>
         // {
         //     await _unitOfWork.EntranceTestRepository.AddRangeAsync(entranceTests);
         // });
-        
+
         return entranceTests;
     }
 }

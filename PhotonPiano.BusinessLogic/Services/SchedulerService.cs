@@ -32,7 +32,7 @@ public class SchedulerService : ISchedulerService
 
                 if (!graph.Edges.ContainsKey(test2))
                 {
-                    graph.Edges[test2] = [];    
+                    graph.Edges[test2] = [];
                 }
 
                 graph.Edges[test1].Add(test2);
@@ -43,17 +43,20 @@ public class SchedulerService : ISchedulerService
         return graph;
     }
 
-    public List<TimeSlot> GenerateValidTimeSlots(DateTime startDate, DateTime endDate, List<DateTime> holidays)
+    public List<TimeSlot> GenerateValidTimeSlots(DateTime startDate, DateTime endDate, List<DateTime> holidays,
+        params List<Shift> shiftOptions)
     {
         List<TimeSlot> validSlots = [];
         DateTime currentDate = startDate;
+
+        var shifts = shiftOptions.Count > 0 ? shiftOptions : Enum.GetValues<Shift>().ToList();
 
         while (currentDate <= endDate)
         {
             if (!holidays.Contains(currentDate))
             {
-                validSlots.AddRange(Enum.GetValues<Shift>()
-                    .Select(shift => new TimeSlot { Date = currentDate, Shift = shift }));
+                validSlots.AddRange(
+                    shifts.Select(shift => new TimeSlot { Date = currentDate, Shift = shift }));
             }
 
             currentDate = currentDate.AddDays(1);
@@ -63,7 +66,8 @@ public class SchedulerService : ISchedulerService
     }
 
 
-    public List<EntranceTest> AssignTimeSlotsToEntranceTests(List<EntranceTest> entranceTests, Graph<EntranceTest> graph,
+    public List<EntranceTest> AssignTimeSlotsToEntranceTests(List<EntranceTest> entranceTests,
+        Graph<EntranceTest> graph,
         List<TimeSlot> validSlots)
     {
         Dictionary<EntranceTest, TimeSlot> testTimeMap = [];

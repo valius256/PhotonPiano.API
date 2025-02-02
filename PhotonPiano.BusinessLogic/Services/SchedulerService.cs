@@ -1,5 +1,6 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Utils;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
@@ -8,6 +9,13 @@ namespace PhotonPiano.BusinessLogic.Services;
 
 public class SchedulerService : ISchedulerService
 {
+    private readonly IUnitOfWork _unitOfWork;
+
+    public SchedulerService(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
     public Graph<EntranceTest> BuildEntranceTestsConflictGraph(List<EntranceTest> entranceTests)
     {
         Graph<EntranceTest> graph = new();
@@ -66,11 +74,17 @@ public class SchedulerService : ISchedulerService
     }
 
 
-    public List<EntranceTest> AssignTimeSlotsToEntranceTests(List<EntranceTest> entranceTests,
+    public async Task<List<EntranceTest>> AssignTimeSlotsToEntranceTests(List<EntranceTest> entranceTests,
         Graph<EntranceTest> graph,
+        DateTime startDate, DateTime endDate,
         List<TimeSlot> validSlots)
     {
         Dictionary<EntranceTest, TimeSlot> testTimeMap = [];
+
+        var existingEntranceTests =
+            await _unitOfWork.EntranceTestRepository.FindAsync(e => e.Date >= DateOnly.FromDateTime(startDate)
+                                                                    && e.Date <= DateOnly.FromDateTime(endDate),
+                hasTrackings: false);
 
         foreach (var entranceTest in entranceTests)
         {
@@ -85,6 +99,15 @@ public class SchedulerService : ISchedulerService
             foreach (var neighbor in value.Where(neighbor => testTimeMap.ContainsKey(neighbor)))
             {
                 usedSlots.Add(testTimeMap[neighbor]);
+            }
+
+            foreach (var existingTest in existingEntranceTests)
+            {
+                if (existingTest.RoomId == entranceTest.RoomId && existingTest.Date == entranceTest.Date)
+                {
+                    usedSlots.Add(new TimeSlot
+                        { Date = existingTest.Date.ToDateTime(TimeOnly.MinValue), Shift = existingTest.Shift });
+                }
             }
 
             var assignedSlot = validSlots.FirstOrDefault(slot => !usedSlots.Contains(slot));

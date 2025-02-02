@@ -142,10 +142,12 @@ public class EntranceTestsController : BaseController
     [HttpPost("auto-arrangement")]
     [EndpointDescription("Auto arrange entrance tests")]
     [FirebaseAuthorize(Roles = [Role.Staff])]
-    public async Task<ActionResult> AutoArrangeEntranceTests([FromBody] AutoArrangeEntranceTestsRequest request)
+    public async Task<ActionResult<List<EntranceTestResponse>>> AutoArrangeEntranceTests([FromBody] AutoArrangeEntranceTestsRequest request)
     {
-        return Created(nameof(AutoArrangeEntranceTests),
+        var result =
             await _serviceFactory.EntranceTestService.AutoArrangeEntranceTests(
-                request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!));
+                request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!);
+        
+        return Created(nameof(AutoArrangeEntranceTests), result.Adapt<List<EntranceTestResponse>>());
     }
 }

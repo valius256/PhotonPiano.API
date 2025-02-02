@@ -3,7 +3,6 @@ using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
-using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
@@ -32,5 +31,5 @@ public interface IEntranceTestService
 
     Task HandleEnrollmentPaymentCallback(VnPayCallbackModel callbackModel, string accountId);
 
-    Task<List<EntranceTest>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model, AccountModel currentAccount);
+    Task<List<EntranceTestModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model, AccountModel currentAccount);
 }

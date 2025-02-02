@@ -59,7 +59,7 @@ public class ServiceFactory : IServiceFactory
         _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
-        _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService());
+        _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;

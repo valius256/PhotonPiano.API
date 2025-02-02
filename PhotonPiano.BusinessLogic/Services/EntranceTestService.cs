@@ -289,7 +289,7 @@ public class EntranceTestService : IEntranceTestService
                         Id = Guid.CreateVersion7(),
                         StudentFirebaseId = accountId,
                         CreatedAt = DateTime.UtcNow,
-                        CreatedById = accountId
+                        CreatedById = accountId,
                     });
 
                     account.StudentStatus = StudentStatus.AttemptingEntranceTest;
@@ -311,12 +311,12 @@ public class EntranceTestService : IEntranceTestService
         }
     }
 
-    private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(List<Account> students,
+    private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(List<AccountDetailModel> students,
         DateTime startDate, DateTime endDate,
         string staffAccountId, int maxStudentsPerSlot = 10, params List<Shift> shiftOptions)
     {
         var entranceTests = new List<EntranceTest>();
-        var remainingStudents = new List<Account>(students); // Track remaining students globally
+        var remainingStudents = new List<AccountDetailModel>(students); // Track remaining students globally
 
         await foreach (var room in _unitOfWork.RoomRepository
                            .FindAsQueryable(r => r.Status == RoomStatus.Opened, hasTrackings: false)
@@ -365,14 +365,15 @@ public class EntranceTestService : IEntranceTestService
     }
 
 
-    public async Task<List<EntranceTest>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
+    public async Task<List<EntranceTestModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
         AccountModel currentAccount)
     {
         var (studentIds, startDate, endDate, shiftOptions) = model;
 
-        var students =
-            await _unitOfWork.AccountRepository.FindAsync(a => studentIds.Contains(a.AccountFirebaseId)
-                                                               && a.Role == Role.Student);
+        var students = await _unitOfWork.AccountRepository.FindProjectedAsync<AccountDetailModel>(a =>
+                studentIds.Contains(a.AccountFirebaseId)
+                && a.Role == Role.Student,
+            hasTrackings: false);
 
         if (students.Count != studentIds.Count)
         {
@@ -382,6 +383,11 @@ public class EntranceTestService : IEntranceTestService
         if (students.Any(s => s.StudentStatus != StudentStatus.AttemptingEntranceTest))
         {
             throw new BadRequestException("Some students are not valid to be arranged with entrance tests.");
+        }
+
+        if (students.Any(s => s.EntranceTestStudents.Any(ets => ets.EntranceTestId != null)))
+        {
+            throw new BadRequestException("Some students are already arranged.");
         }
 
         var entranceTests = await CreateAndAssignStudentsToEntranceTests(students,
@@ -403,14 +409,16 @@ public class EntranceTestService : IEntranceTestService
         var validSlots =
             _serviceFactory.SchedulerService.GenerateValidTimeSlots(startDate, endDate, holidays, shiftOptions);
 
-        entranceTests = _serviceFactory.SchedulerService.AssignTimeSlotsToEntranceTests(entranceTests, conflictGraph,
+        entranceTests = await _serviceFactory.SchedulerService.AssignTimeSlotsToEntranceTests(entranceTests,
+            conflictGraph,
+            startDate, endDate,
             validSlots);
 
-        // await _unitOfWork.ExecuteInTransactionAsync(async () =>
-        // {
-        //     await _unitOfWork.EntranceTestRepository.AddRangeAsync(entranceTests);
-        // });
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.EntranceTestRepository.AddRangeAsync(entranceTests);
+        });
 
-        return entranceTests;
+        return entranceTests.Adapt<List<EntranceTestModel>>();
     }
 }

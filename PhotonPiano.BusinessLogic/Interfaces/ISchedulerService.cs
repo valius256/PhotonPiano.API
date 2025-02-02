@@ -10,6 +10,7 @@ public interface ISchedulerService
 
     List<TimeSlot> GenerateValidTimeSlots(DateTime startDate, DateTime endDate, List<DateTime> holidays, params List<Shift> shiftOptions);
 
-    List<EntranceTest> AssignTimeSlotsToEntranceTests(List<EntranceTest> entranceTests, Graph<EntranceTest> graph,
+    Task<List<EntranceTest>> AssignTimeSlotsToEntranceTests(List<EntranceTest> entranceTests, Graph<EntranceTest> graph,
+        DateTime startDate, DateTime endDate,
         List<TimeSlot> validSlots);
 }

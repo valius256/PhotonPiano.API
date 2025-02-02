@@ -50,20 +50,28 @@ namespace PhotonPiano.BusinessLogic.Services
                         EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword)
                 ]
             );
+            // Fetch the class capacity
             int capacity = int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
 
-            var updatedItems = await Task.WhenAll(
-                result.Items.Select(async item =>
-                    item with
-                    {
-                        Capacity = capacity,
-                        StudentNumber = await _unitOfWork.StudentClassRepository.CountAsync(sc => sc.ClassId == item.Id)
-                    }
-                )
-            );
+            // Fetch students of the classes in one query
+            var classIds = result.Items.Select(c => c.Id).ToList();
+            var studentClasses = await _unitOfWork.StudentClassRepository
+                .FindAsync(sc => classIds.Contains(sc.ClassId));
+                
+            var countDictionary = studentClasses
+                .GroupBy(c => c.ClassId)
+                .Select(g => new {ClassId = g.Key, Count = g.Count() })
+                .ToDictionary(c => c.ClassId, c => c.Count);
 
-            result.Items = [.. updatedItems];
 
+            // Update items efficiently
+            result.Items = result.Items.Select(item => item with
+            {
+                Capacity = capacity,
+                StudentNumber = countDictionary.TryGetValue(item.Id, out var count) ? count : 0
+            }).ToList();
+
+            
             return result;
         }
     }

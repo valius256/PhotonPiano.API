@@ -387,7 +387,10 @@ public class EntranceTestService : IEntranceTestService
 
         if (students.Any(s => s.EntranceTestStudents.Any(ets => ets.EntranceTestId != null)))
         {
-            throw new BadRequestException("Some students are already arranged.");
+            var arrangedStudents = students.Where(s => s.EntranceTestStudents.Any(ets => ets.EntranceTestId != null));
+
+            throw new ConflictException(
+                $"Students: {string.Join(", ", arrangedStudents.Select(s => $"{s.AccountFirebaseId}-{s.Email}"))} are already arranged.");
         }
 
         var entranceTests = await CreateAndAssignStudentsToEntranceTests(students,

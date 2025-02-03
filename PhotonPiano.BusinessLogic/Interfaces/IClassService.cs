@@ -10,4 +10,6 @@ public interface IClassService
     Task<ClassDetailModel> GetClassDetailById(Guid id);
 
     Task<ClassModel> GetClassByUserFirebaseId(string userFirebaseId);
+
+    Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel);
 }

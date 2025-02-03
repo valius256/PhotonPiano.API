@@ -81,4 +81,101 @@ public class ClassService : IClassService
 
         return result;
     }
+
+    public async Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel)
+    {
+        /*===============================
+         * 1. Fill students in a class
+         * 2. Assign a schedule 
+         * 3. Export the results
+        =================================*/
+        //Get awaited students
+        var students = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
+
+        var maxStudents =
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+        var minStudents =
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+
+        var classes = new List<CreateClassAutoModel>();
+
+        //1. FILL IN STUDENTS
+        //With each level, fill the students
+        foreach (var level in Enum.GetValues<Level>())
+        {
+            var studentsOfLevel = students.Where(s => s.Level == level).ToList();
+            //Find out how many classes should be created to avoid having left over students
+            //Using this formular : minStudents <= Number of student need to assign / Number of classes <= maxStudents
+
+            int numberOfStudentEachClass = 0;
+
+            var validNumbersOfClasses = GetNumberOfClasses(minStudents, studentsOfLevel.Count, maxStudents);
+            int numberOfClasses = validNumbersOfClasses.Count == 0 ? 1 : validNumbersOfClasses[0];
+
+            if (validNumbersOfClasses.Any())
+            {
+                numberOfStudentEachClass = (int) Math.Ceiling((studentsOfLevel.Count * 1.0) / numberOfClasses);
+            } else
+            {
+                numberOfStudentEachClass = maxStudents;
+                numberOfClasses = (int)Math.Floor((studentsOfLevel.Count * 1.0) / maxStudents);
+            }
+            //Great! With number of students each class and number of classes, we can easily fill in students
+            for (var i = 0; i < numberOfClasses; i++)
+            {
+                var selectedStudents = PickRandomFromList(ref studentsOfLevel, numberOfStudentEachClass);
+                classes.Add(new CreateClassAutoModel
+                {
+                    Id = Guid.NewGuid(),
+                    Level = level,
+                    Name = $"LEVEL{(int)level + 1}_{i}_{DateTime.Now.Month}{DateTime.Now.Year}", //There is a naming rule, handle later
+                    StudentIds = selectedStudents.Select(s => s.AccountFirebaseId).ToList()
+                });
+            }
+        }
+        //2. IT's SCHEDULE TIME! 
+        //With each class, we will pick a random schedule for it!
+
+
+        throw new NotImplementedException();
+    }
+
+    private List<T> PickRandomFromList<T>(ref List<T> list, int n)
+    {
+        Random rand = new Random();
+        List<T> selected = [];
+
+        if (n > list.Count)
+            n = list.Count; // Ensure we don't remove more elements than available
+
+        for (int i = 0; i < n; i++)
+        {
+            int index = rand.Next(list.Count); // Get random index
+            selected.Add(list[index]); // Add to selected list
+            list.RemoveAt(index); // Remove from original list
+        }
+
+        return selected;
+    }
+
+    private List<int> GetNumberOfClasses(double A, double B, double C)
+    {
+        List<int> validNs = [];
+
+        // Solve for lower and upper bounds of N
+        double minN = B / C; // Derived from B/N <= C -> N >= B/C
+        double maxN = B / A; // Derived from A <= B/N -> N <= B/A
+
+        // Convert bounds to integer range
+        int start = (int)Math.Ceiling(minN); // Smallest integer >= minN
+        int end = (int)Math.Floor(maxN);     // Largest integer <= maxN
+
+        // Collect valid integer values
+        for (int N = start; N <= end; N++)
+        {
+            validNs.Add(N);
+        }
+
+        return validNs;
+    }
 }

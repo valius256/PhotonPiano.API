@@ -41,5 +41,13 @@ namespace PhotonPiano.Api.Controllers
         {
             return await _serviceFactory.ClassService.GetClassDetailById(id);
         }
+
+        [HttpPost("auto-arrangement")]
+        [EndpointDescription("Arrange classes to students who are waiting for a class")]
+        public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
+         [FromBody] ArrangeClassModel arrangeClassModel)
+        {
+            return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel);
+        }
     }
 }

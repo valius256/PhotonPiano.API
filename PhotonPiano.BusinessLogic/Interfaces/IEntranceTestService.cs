@@ -9,12 +9,12 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IEntranceTestService
 {
-    Task<PagedResult<EntranceTestDetailModel>> GetPagedEntranceTest(QueryEntranceTestModel query);
+    Task<PagedResult<EntranceTestDetailModel>> GetPagedEntranceTest(QueryEntranceTestModel query, AccountModel currentAccount);
 
-    Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id);
+    Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id, AccountModel currentAccount);
 
     Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudentModel,
-        string? currentUserFirebaseId = default);
+        AccountModel currentAccount);
 
     Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default);
 

@@ -28,6 +28,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet]
+    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
     [EndpointDescription(
         "Get entrance tests with paging, field Keyword can search for EntranceTestName, InstructorName, RoomName")]
     public async Task<ActionResult<List<EntranceTestResponse>>> GetEntranceTest(
@@ -35,34 +36,36 @@ public class EntranceTestsController : BaseController
     {
         var pagedResult =
             await _serviceFactory.EntranceTestService.GetPagedEntranceTest(
-                request.Adapt<QueryEntranceTestModel>());
+                request.Adapt<QueryEntranceTestModel>(), base.CurrentAccount!);
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+
         return pagedResult.Items.Adapt<List<EntranceTestResponse>>();
     }
 
     [HttpGet("{id}")]
+    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
     [EndpointDescription("Get an entrance test")]
     public async Task<ActionResult<EntranceTestDetailResponse>> GetEntranceTestById([FromRoute] Guid id)
     {
-        var result = await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id);
+        var result = await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id, base.CurrentAccount!);
         return result.Adapt<EntranceTestDetailResponse>();
     }
 
     [HttpPost]
-    [FirebaseAuthorize]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Create an entrance test")]
     public async Task<ActionResult<EntranceTestResponse>> CreateEntranceTest(
         [FromBody] CreateEntranceTestRequest request)
     {
         var result =
             await _serviceFactory.EntranceTestService.CreateEntranceTest(
-                request.Adapt<CreateEntranceTestModel>(), CurrentUserFirebaseId);
+                request.Adapt<CreateEntranceTestModel>(), base.CurrentAccount!);
         return Created(nameof(CreateEntranceTest), result.Adapt<EntranceTestResponse>());
     }
 
     [HttpDelete("{id}")]
-    [FirebaseAuthorize]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Delete an entrance test")]
     public async Task<ActionResult> DeleteEntranceTest([FromRoute] Guid id)
     {
@@ -71,7 +74,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpPut("{id}")]
-    [FirebaseAuthorize]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Update an entrance test")]
     public async Task<ActionResult> UpdateEntranceTest([FromRoute] Guid id,
         [FromBody] UpdateEntranceTestRequest request)
@@ -142,12 +145,13 @@ public class EntranceTestsController : BaseController
     [HttpPost("auto-arrangement")]
     [EndpointDescription("Auto arrange entrance tests")]
     [FirebaseAuthorize(Roles = [Role.Staff])]
-    public async Task<ActionResult<List<EntranceTestResponse>>> AutoArrangeEntranceTests([FromBody] AutoArrangeEntranceTestsRequest request)
+    public async Task<ActionResult<List<EntranceTestResponse>>> AutoArrangeEntranceTests(
+        [FromBody] AutoArrangeEntranceTestsRequest request)
     {
         var result =
             await _serviceFactory.EntranceTestService.AutoArrangeEntranceTests(
                 request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!);
-        
+
         return Created(nameof(AutoArrangeEntranceTests), result.Adapt<List<EntranceTestResponse>>());
     }
 }

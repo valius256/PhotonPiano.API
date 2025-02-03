@@ -27,7 +27,8 @@ public class EntranceTestService : IEntranceTestService
     }
 
 
-    public async Task<PagedResult<EntranceTestDetailModel>> GetPagedEntranceTest(QueryEntranceTestModel query)
+    public async Task<PagedResult<EntranceTestDetailModel>> GetPagedEntranceTest(QueryEntranceTestModel query,
+        AccountModel currentAccount)
     {
         var (page, pageSize, sortColumn, orderByDesc,
                 roomIds, keyword, shifts,
@@ -74,6 +75,8 @@ public class EntranceTestService : IEntranceTestService
                 page, pageSize, sortColumn, orderByDesc,
                 expressions:
                 [
+                    e => currentAccount.Role != Role.Student || e.EntranceTestStudents.Any(ets =>
+                        ets.StudentFirebaseId == currentAccount.AccountFirebaseId),
                     e => roomIds != null && (roomIds.Count == 0 || roomIds.Contains(e.RoomId)),
                     e => isAnnouncedScore == null || e.IsAnnouncedScore == isAnnouncedScore.Value,
                     e => shifts != null && (shifts.Count == 0 || shifts.Contains(e.Shift)),
@@ -94,23 +97,38 @@ public class EntranceTestService : IEntranceTestService
         return result;
     }
 
-    public async Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id)
+    public async Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id, AccountModel currentAccount)
     {
-        var cache =
-            await _serviceFactory.RedisCacheService.GetAsync<EntranceTestDetailModel>($"entranceTest_{id}");
-        if (cache is not null) return cache;
+        var cache = await _serviceFactory.RedisCacheService.GetAsync<EntranceTestDetailModel>($"entranceTest_{id}");
 
-        var result = await _unitOfWork.EntranceTestRepository
-            .FindSingleProjectedAsync<EntranceTestDetailModel>(e => e.Id == id, false);
-        if (result is null) throw new NotFoundException("EntranceTest not found.");
-        return result;
+        if (cache is not null)
+        {
+            return cache;
+        }
+
+        var entranceTest = await _unitOfWork.EntranceTestRepository
+            .FindSingleProjectedAsync<EntranceTestDetailModel>(e => e.Id == id, false,
+                option: TrackingOption.IdentityResolution);
+
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("EntranceTest not found.");
+        }
+
+        if (currentAccount.Role == Role.Student &&
+            entranceTest.EntranceTestStudents.All(ets => ets.StudentFirebaseId != currentAccount.AccountFirebaseId))
+        {
+            throw new ForbiddenMethodException("You are not allowed to view this entrance test information.");
+        }
+
+        return entranceTest;
     }
 
     public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudent,
-        string? currentUserFirebaseId = default)
+        AccountModel currentAccount)
     {
         var entranceTestModel = entranceTestStudent.Adapt<EntranceTest>();
-        entranceTestModel.CreatedById = currentUserFirebaseId!;
+        entranceTestModel.CreatedById = currentAccount.AccountFirebaseId;
 
         // check room is exist 
         var roomDetailModel = await _serviceFactory.RoomService.GetRoomDetailById(entranceTestModel.RoomId);
@@ -136,7 +154,7 @@ public class EntranceTestService : IEntranceTestService
             createdEntranceTest.Adapt<EntranceTestDetailModel>(),
             TimeSpan.FromHours(5));
 
-        return await GetEntranceTestDetailById(createdEntranceTest.Id);
+        return await GetEntranceTestDetailById(createdEntranceTest.Id, currentAccount);
     }
 
     public async Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default)
@@ -219,8 +237,10 @@ public class EntranceTestService : IEntranceTestService
         await _serviceFactory.RedisCacheService.DeleteAsync("entranceTests");
 
         if (id.HasValue)
+        {
             // Invalidate specific cache for the entrance test
             await _serviceFactory.RedisCacheService.DeleteAsync($"entranceTest_{id.Value}");
+        }
     }
 
     public async Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress,

@@ -35,4 +35,6 @@ public interface IServiceFactory
     IDefaultScheduleJob DefaultScheduleJob { get; }
 
     IEmailService EmailService { get; }
+    
+    ISchedulerService SchedulerService { get; }
 }

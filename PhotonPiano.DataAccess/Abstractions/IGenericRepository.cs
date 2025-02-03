@@ -12,6 +12,8 @@ public interface IGenericRepository<T> where T : BaseEntity
     Task<List<T>> FindAsync(Expression<Func<T, bool>> expression, bool hasTrackings = true,
         bool ignoreQueryFilters = false);
 
+    IQueryable<T> FindAsQueryable(Expression<Func<T, bool>> predicate, bool hasTrackings = true);
+
     Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression, bool hasTrackings = true,
         bool ignoreQueryFilters = false);
 

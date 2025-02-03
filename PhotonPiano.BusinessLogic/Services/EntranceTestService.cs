@@ -11,6 +11,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -275,7 +276,6 @@ public class EntranceTestService : IEntranceTestService
 
         try
         {
-
             transaction.PaymentStatus =
                 callbackModel.VnpResponseCode == "00" ? PaymentStatus.Successed : PaymentStatus.Failed;
             transaction.TransactionCode = callbackModel.VnpTransactionNo;
@@ -289,7 +289,7 @@ public class EntranceTestService : IEntranceTestService
                         Id = Guid.CreateVersion7(),
                         StudentFirebaseId = accountId,
                         CreatedAt = DateTime.UtcNow,
-                        CreatedById = accountId
+                        CreatedById = accountId,
                     });
 
                     account.StudentStatus = StudentStatus.AttemptingEntranceTest;
@@ -309,5 +309,119 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.RollbackTransactionAsync();
             throw;
         }
+    }
+
+    private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(List<AccountDetailModel> students,
+        DateTime startDate, DateTime endDate,
+        string staffAccountId, int maxStudentsPerSlot = 10, params List<Shift> shiftOptions)
+    {
+        var entranceTests = new List<EntranceTest>();
+        var remainingStudents = new List<AccountDetailModel>(students); // Track remaining students globally
+
+        await foreach (var room in _unitOfWork.RoomRepository
+                           .FindAsQueryable(r => r.Status == RoomStatus.Opened, hasTrackings: false)
+                           .AsAsyncEnumerable())
+        {
+            while (remainingStudents.Count > 0)
+            {
+                // Create a unique EntranceTest ID
+                var entranceTestId = Guid.CreateVersion7();
+
+                // Determine the number of students to assign to this test
+                var studentsToAssign =
+                    remainingStudents.Take(Math.Min(room.Capacity ?? 10, maxStudentsPerSlot)).ToList();
+
+                // Create the EntranceTest object
+                var entranceTest = new EntranceTest
+                {
+                    Id = entranceTestId,
+                    Name = $"THI DAU VAO_{entranceTestId}",
+                    RoomId = room.Id,
+                    RoomName = room.Name,
+                    RoomCapacity = room.Capacity,
+                    Shift = shiftOptions.Count == 0 ? Shift.Shift1_7h_8h30 : shiftOptions[0],
+                    Date = DateOnly.FromDateTime(startDate),
+                    CreatedById = staffAccountId,
+                    CreatedAt = DateTime.UtcNow,
+                    EntranceTestStudents = studentsToAssign.Select(student =>
+                        new EntranceTestStudent
+                        {
+                            Id = Guid.CreateVersion7(),
+                            StudentFirebaseId = student.AccountFirebaseId,
+                            CreatedById = staffAccountId,
+                            CreatedAt = DateTime.UtcNow,
+                        }).ToList()
+                };
+
+                // Add the entrance test to the list
+                entranceTests.Add(entranceTest);
+
+                // Remove the assigned students from the remaining list
+                remainingStudents = remainingStudents.Skip(studentsToAssign.Count).ToList();
+            }
+        }
+
+        return entranceTests;
+    }
+
+
+    public async Task<List<EntranceTestModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
+        AccountModel currentAccount)
+    {
+        var (studentIds, startDate, endDate, shiftOptions) = model;
+
+        var students = await _unitOfWork.AccountRepository.FindProjectedAsync<AccountDetailModel>(a =>
+                studentIds.Contains(a.AccountFirebaseId)
+                && a.Role == Role.Student,
+            hasTrackings: false);
+
+        if (students.Count != studentIds.Count)
+        {
+            throw new BadRequestException("Some students are not found.");
+        }
+
+        if (students.Any(s => s.StudentStatus != StudentStatus.AttemptingEntranceTest))
+        {
+            throw new BadRequestException("Some students are not valid to be arranged with entrance tests.");
+        }
+
+        if (students.Any(s => s.EntranceTestStudents.Any(ets => ets.EntranceTestId != null)))
+        {
+            var arrangedStudents = students.Where(s => s.EntranceTestStudents.Any(ets => ets.EntranceTestId != null));
+
+            throw new ConflictException(
+                $"Students: {string.Join(", ", arrangedStudents.Select(s => $"{s.AccountFirebaseId}-{s.Email}"))} are already arranged.");
+        }
+
+        var entranceTests = await CreateAndAssignStudentsToEntranceTests(students,
+            startDate, endDate,
+            currentAccount.AccountFirebaseId, 10, shiftOptions);
+
+        var conflictGraph = _serviceFactory.SchedulerService.BuildEntranceTestsConflictGraph(entranceTests);
+
+        var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
+
+        List<DateTime> holidays = [];
+
+        foreach (var dayOff in dayOffs)
+        {
+            holidays.AddRange(Enumerable.Range(0, (dayOff.EndTime - dayOff.StartTime).Days + 1)
+                .Select(d => dayOff.StartTime.AddDays(d)));
+        }
+
+        var validSlots =
+            _serviceFactory.SchedulerService.GenerateValidTimeSlots(startDate, endDate, holidays, shiftOptions);
+
+        entranceTests = await _serviceFactory.SchedulerService.AssignTimeSlotsToEntranceTests(entranceTests,
+            conflictGraph,
+            startDate, endDate,
+            validSlots);
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.EntranceTestRepository.AddRangeAsync(entranceTests);
+        });
+
+        return entranceTests.Adapt<List<EntranceTestModel>>();
     }
 }

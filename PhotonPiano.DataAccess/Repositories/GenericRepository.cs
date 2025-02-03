@@ -60,6 +60,13 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return await query.ToListAsync();
     }
 
+    public IQueryable<T> FindAsQueryable(Expression<Func<T, bool>> predicate, bool hasTrackings = true)
+    {
+        return hasTrackings
+            ? _context.Set<T>().Where(predicate)
+            : _context.Set<T>().AsNoTracking().Where(predicate);
+    }
+
     public async Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression, bool hasTrackings = true,
         bool ignoreQueryFilters = false)
     {

@@ -32,6 +32,8 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<ITransactionRepository> _transactionRepository;
 
     private readonly Lazy<ITuitionRepository> _tuitionRepository;
+    
+    private readonly Lazy<IDayOffRepository> _dayOffRepository;
 
     private IDbContextTransaction? _currentTransaction;
 
@@ -51,6 +53,7 @@ public class UnitOfWork : IUnitOfWork
         _studentClassRepository = new Lazy<IStudentClassRepository>(() => new StudentClassRepository(context));
         _slotStudentRepository = new Lazy<ISlotStudentRepository>(() => new SlotStudentRepository(context));
         _tuitionRepository = new Lazy<ITuitionRepository>(() => new TuitionRepository(context));
+        _dayOffRepository = new Lazy<IDayOffRepository>(() => new DayOffRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -76,6 +79,8 @@ public class UnitOfWork : IUnitOfWork
     public ISlotStudentRepository SlotStudentRepository => _slotStudentRepository.Value;
 
     public ITuitionRepository TuitionRepository => _tuitionRepository.Value;
+    
+    public IDayOffRepository DayOffRepository => _dayOffRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

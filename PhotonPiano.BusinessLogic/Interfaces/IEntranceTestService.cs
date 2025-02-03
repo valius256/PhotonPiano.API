@@ -30,4 +30,6 @@ public interface IEntranceTestService
     Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress, string apiBaseUrl);
 
     Task HandleEnrollmentPaymentCallback(VnPayCallbackModel callbackModel, string accountId);
+
+    Task<List<EntranceTestModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model, AccountModel currentAccount);
 }

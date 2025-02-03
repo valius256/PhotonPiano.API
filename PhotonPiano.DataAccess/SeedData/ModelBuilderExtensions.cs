@@ -11,8 +11,23 @@ public static class ModelBuilderExtensions
         #region Account Model
 
         const string admin001 = "admin001";
-        const string teacher002 = "teacher002";
+
+        const string learner001 = "learner001";
+        const string learner002 = "learner002";
         const string learner003 = "learner003";
+        const string learner004 = "learner004";
+        const string learner005 = "learner005";
+        const string learner006 = "learner006";
+        const string learner007 = "learner007";
+        const string learner008 = "learner008";
+        const string learner009 = "learner009";
+        const string learner010 = "learner010";
+
+        const string teacher001 = "lymytranTest@gmail.com";
+        const string teacher002 = "quachthemyTest@gmail.com";
+        const string teacher003 = "buiducnamTest@gmail.com";
+        const string teacherPhatLord = "teacherphatlord@gmail.com";
+
 
         modelBuilder.Entity<Account>().HasData(
             new Account
@@ -31,15 +46,6 @@ public static class ModelBuilderExtensions
             },
             new Account
             {
-                AccountFirebaseId = learner003,
-                Email = "learner003@gmail.com",
-                Role = Role.Student,
-                UserName = learner003,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
                 AccountFirebaseId = "nQhzMDSe8aW5RLerTaHa6yvh8c23",
                 Email = "minh@gmail.com",
                 Role = Role.Student,
@@ -52,7 +58,119 @@ public static class ModelBuilderExtensions
                 AccountFirebaseId = "gnRssA2sZHWnXB23oUuUxwz95Ln1",
                 Email = "staff123@gmail.com",
                 Role = Role.Staff,
-                UserName = "staff 123",
+                UserName = "staff 123"
+            },
+            new Account
+            {
+                AccountFirebaseId = teacher001,
+                Email = "teacher002@gmail.com",
+                Role = Role.Instructor,
+                UserName = teacher001
+            },
+            new Account
+            {
+                AccountFirebaseId = teacher003,
+                Email = "teacher003@gmail.com",
+                Role = Role.Instructor,
+                UserName = teacher003
+            },
+            new Account
+            {
+                AccountFirebaseId = learner001,
+                Email = "learner001@gmail.com",
+                Role = Role.Student,
+                UserName = learner001,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner002,
+                Email = "learner002@gmail.com",
+                Role = Role.Student,
+                UserName = learner002,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner003,
+                Email = "learner003@gmail.com",
+                Role = Role.Student,
+                UserName = learner003,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner004,
+                Email = "learner004@gmail.com",
+                Role = Role.Student,
+                UserName = learner004,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner005,
+                Email = "learner005@gmail.com",
+                Role = Role.Student,
+                UserName = learner005,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner006,
+                Email = "learner006@gmail.com",
+                Role = Role.Student,
+                UserName = learner006,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner007,
+                Email = "learner007@gmail.com",
+                Role = Role.Student,
+                UserName = learner007,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner008,
+                Email = "learner008@gmail.com",
+                Role = Role.Student,
+                UserName = learner008,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner009,
+                Email = "learner009@gmail.com",
+                Role = Role.Student,
+                UserName = learner009,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = learner010,
+                Email = "learner010@gmail.com",
+                Role = Role.Student,
+                UserName = learner010,
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new Account
+            {
+                AccountFirebaseId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
+                Email = teacherPhatLord,
+                Role = Role.Instructor,
+                UserName = teacherPhatLord,
+                Level = Level.Intermediate
             }
         );
 
@@ -175,30 +293,19 @@ public static class ModelBuilderExtensions
 
         #region Room Model
 
-        var roomGuid1 = Guid.NewGuid();
-        var roomGuid2 = Guid.NewGuid();
-        var roomGuid3 = Guid.NewGuid();
+        var roomGuids = new List<Guid>();
+        for (var i = 0; i < 20; i++) roomGuids.Add(Guid.NewGuid());
 
-        modelBuilder.Entity<Room>().HasData(
-            new Room
+        var rooms = new List<Room>();
+        for (var i = 0; i < 20; i++)
+            rooms.Add(new Room
             {
-                Id = roomGuid1,
-                Name = "Room 1",
+                Id = roomGuids[i],
+                Name = $"Room {i + 1}",
                 CreatedById = admin001
-            },
-            new Room
-            {
-                Id = roomGuid2,
-                Name = "Room 2",
-                CreatedById = admin001
-            },
-            new Room
-            {
-                Id = roomGuid3,
-                Name = "Room 3",
-                CreatedById = admin001
-            }
-        );
+            });
+
+        modelBuilder.Entity<Room>().HasData(rooms);
 
         #endregion
 
@@ -212,7 +319,7 @@ public static class ModelBuilderExtensions
             new EntranceTest
             {
                 Id = entranceTestGuid1,
-                RoomId = roomGuid1,
+                RoomId = roomGuids[0],
                 Shift = Shift.Shift1_7h_8h30,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow),
                 InstructorId = teacher002,
@@ -223,7 +330,7 @@ public static class ModelBuilderExtensions
             new EntranceTest
             {
                 Id = entranceTestGuid2,
-                RoomId = roomGuid2,
+                RoomId = roomGuids[1],
                 Shift = Shift.Shift3_10h45_12h,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)),
                 RoomName = "Room 2",
@@ -233,7 +340,7 @@ public static class ModelBuilderExtensions
             new EntranceTest
             {
                 Id = entranceTestGuid3,
-                RoomId = roomGuid3,
+                RoomId = roomGuids[2],
                 Shift = Shift.Shift5_14h15_15h45,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5)),
                 InstructorId = teacher002,
@@ -255,7 +362,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid1,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = learner003,
+                StudentFirebaseId = learner001,
                 Rank = 1,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -266,7 +373,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid2,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = learner003,
+                StudentFirebaseId = learner001,
                 Rank = 2,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -277,7 +384,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid3,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = learner003,
+                StudentFirebaseId = learner001,
                 Rank = 3,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -306,18 +413,28 @@ public static class ModelBuilderExtensions
 
         var classTestGuid1 = Guid.NewGuid();
         var classTestGuid2 = Guid.NewGuid();
+        var classTestGuid3 = Guid.NewGuid();
+        var classTestGuid4 = Guid.NewGuid();
+        var classTestGuid5 = Guid.NewGuid();
+        var classPhatLord = Guid.NewGuid();
+        var classTestGuid6 = Guid.NewGuid();
+        var classTestGuid7 = Guid.NewGuid();
+        var classTestGuid8 = Guid.NewGuid();
+        var classTestGuid9 = Guid.NewGuid();
+        var classTestGuid10 = Guid.NewGuid();
+
         modelBuilder.Entity<Class>().HasData(
-            new Class()
+            new Class
             {
                 Id = classTestGuid1,
                 CreatedById = admin001,
-                InstructorId = teacher002,
+                InstructorId = teacher001,
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
                 Name = "Class 1",
                 Level = Level.Intermediate
             },
-            new Class()
+            new Class
             {
                 Id = classTestGuid2,
                 CreatedById = admin001,
@@ -326,6 +443,96 @@ public static class ModelBuilderExtensions
                 IsPublic = true,
                 Name = "Class 2",
                 Level = Level.Advanced
+            },
+            new Class
+            {
+                Id = classTestGuid3,
+                CreatedById = admin001,
+                InstructorId = teacher003,
+                Status = ClassStatus.Ongoing,
+                IsPublic = true,
+                Name = "Class 3",
+                Level = Level.Beginner
+            },
+            new Class
+            {
+                Id = classTestGuid4,
+                CreatedById = admin001,
+                InstructorId = teacher002,
+                Status = ClassStatus.Ongoing,
+                IsPublic = true,
+                Name = "Class 4",
+                Level = Level.Intermediate
+            },
+            new Class
+            {
+                Id = classTestGuid5,
+                CreatedById = admin001,
+                InstructorId = teacher003,
+                Status = ClassStatus.NotStarted,
+                IsPublic = true,
+                Name = "Class 5",
+                Level = Level.Advanced
+            },
+            new Class
+            {
+                Id = classPhatLord,
+                CreatedById = admin001,
+                InstructorId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
+                Status = ClassStatus.Ongoing,
+                IsPublic = true,
+                Name = "Class Teacher Phat",
+                Level = Level.Advanced
+            },
+            new Class
+            {
+                Id = classTestGuid6,
+                CreatedById = admin001,
+                InstructorId = teacher001,
+                Status = ClassStatus.Ongoing,
+                IsPublic = true,
+                Name = "Class 6",
+                Level = Level.Intermediate
+            },
+            new Class
+            {
+                Id = classTestGuid7,
+                CreatedById = admin001,
+                InstructorId = teacher002,
+                Status = ClassStatus.NotStarted,
+                IsPublic = true,
+                Name = "Class 7",
+                Level = Level.Advanced
+            },
+            new Class
+            {
+                Id = classTestGuid8,
+                CreatedById = admin001,
+                InstructorId = teacher003,
+                Status = ClassStatus.Ongoing,
+                IsPublic = true,
+                Name = "Class 8",
+                Level = Level.Beginner
+            },
+            new Class
+            {
+                Id = classTestGuid9,
+                CreatedById = admin001,
+                InstructorId = teacher002,
+                Status = ClassStatus.Ongoing,
+                IsPublic = true,
+                Name = "Class 9",
+                Level = Level.Intermediate
+            },
+            new Class
+            {
+                Id = classTestGuid10,
+                CreatedById = admin001,
+                InstructorId = teacher003,
+                Status = ClassStatus.NotStarted,
+                IsPublic = true,
+                Name = "Class 10",
+                Level = Level.Advanced
             }
         );
 
@@ -333,49 +540,84 @@ public static class ModelBuilderExtensions
 
         #region Slot Model
 
-        var slotTestGuid1 = Guid.NewGuid();
-        var slotTestGuid2 = Guid.NewGuid();
-        var slotTestGuid3 = Guid.NewGuid();
-        var slotTestGuid4 = Guid.NewGuid();
+        var slotGuids = new List<Guid>();
+        for (var i = 0; i < 120; i++) slotGuids.Add(Guid.NewGuid());
 
-        modelBuilder.Entity<Slot>().HasData(
-            new Slot
+        var shifts = new[]
+        {
+            Shift.Shift1_7h_8h30, Shift.Shift2_8h45_10h15, Shift.Shift3_10h45_12h, Shift.Shift4_12h30_14h00,
+            Shift.Shift5_14h15_15h45
+        };
+
+        var slots = new List<Slot>();
+        for (var i = 0; i < 20; i++)
+            slots.Add(new Slot
             {
-                Id = slotTestGuid1,
+                Id = slotGuids[i],
                 ClassId = classTestGuid1,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
-                RoomId = roomGuid1,
-                Shift = Shift.Shift1_7h_8h30,
-                Status = SlotStatus.Ongoing,
-            },
-            new Slot
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+
+        for (var i = 20; i < 40; i++)
+            slots.Add(new Slot
             {
-                Id = slotTestGuid2,
-                ClassId = classTestGuid1,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)),
-                RoomId = roomGuid1,
-                Shift = Shift.Shift1_7h_8h30,
-                Status = SlotStatus.Ongoing,
-            },
-            new Slot
+                Id = slotGuids[i],
+                ClassId = classTestGuid2,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 20)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+
+        for (var i = 40; i < 60; i++)
+            slots.Add(new Slot
             {
-                Id = slotTestGuid3,
-                ClassId = classTestGuid1,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(4)),
-                RoomId = roomGuid1,
-                Shift = Shift.Shift1_7h_8h30,
-                Status = SlotStatus.Ongoing,
-            },
-            new Slot
+                Id = slotGuids[i],
+                ClassId = classTestGuid3,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 40)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+
+        for (var i = 60; i < 80; i++)
+            slots.Add(new Slot
             {
-                Id = slotTestGuid4,
-                ClassId = classTestGuid1,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(6)),
-                RoomId = roomGuid1,
-                Shift = Shift.Shift1_7h_8h30,
-                Status = SlotStatus.Ongoing,
-            }
-        );
+                Id = slotGuids[i],
+                ClassId = classTestGuid4,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 60)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+
+        for (var i = 80; i < 100; i++)
+            slots.Add(new Slot
+            {
+                Id = slotGuids[i],
+                ClassId = classTestGuid5,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 80)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+
+        // Slots for Class Phat Lord
+        for (var i = 100; i < 120; i++)
+            slots.Add(new Slot
+            {
+                Id = slotGuids[i],
+                ClassId = classPhatLord,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 100)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+
+        modelBuilder.Entity<Slot>().HasData(slots);
 
         #endregion
 
@@ -502,6 +744,245 @@ public static class ModelBuilderExtensions
                 Role = Role.Administrator
             }
         );
+
+        #endregion
+
+        #region SlotStudent Model
+
+        var slotStudentGuids = new List<Guid>();
+        for (var i = 0; i < 120; i++) slotStudentGuids.Add(Guid.NewGuid());
+
+        var slotStudents = new List<SlotStudent>();
+        var studentFirebaseIds = new[]
+            { learner001, learner002, learner003, learner004, learner005, learner006, learner007, learner008 };
+
+        for (var i = 0; i < 20; i++)
+        for (var j = 0; j < studentFirebaseIds.Length; j++)
+            slotStudents.Add(new SlotStudent
+            {
+                SlotId = slotGuids[i],
+                StudentFirebaseId = studentFirebaseIds[j],
+                CreatedById = admin001
+            });
+
+        for (var i = 20; i < 40; i++)
+        for (var j = 0; j < studentFirebaseIds.Length; j++)
+            slotStudents.Add(new SlotStudent
+            {
+                SlotId = slotGuids[i],
+                StudentFirebaseId = studentFirebaseIds[j],
+                CreatedById = admin001
+            });
+
+        for (var i = 40; i < 60; i++)
+        for (var j = 0; j < studentFirebaseIds.Length; j++)
+            slotStudents.Add(new SlotStudent
+            {
+                SlotId = slotGuids[i],
+                StudentFirebaseId = studentFirebaseIds[j],
+                CreatedById = admin001
+            });
+
+        for (var i = 60; i < 80; i++)
+        for (var j = 0; j < studentFirebaseIds.Length; j++)
+            slotStudents.Add(new SlotStudent
+            {
+                SlotId = slotGuids[i],
+                StudentFirebaseId = studentFirebaseIds[j],
+                CreatedById = admin001
+            });
+
+        for (var i = 80; i < 100; i++)
+        for (var j = 0; j < studentFirebaseIds.Length; j++)
+            slotStudents.Add(new SlotStudent
+            {
+                SlotId = slotGuids[i],
+                StudentFirebaseId = studentFirebaseIds[j],
+                CreatedById = admin001
+            });
+
+        // Adding SlotStudent for Class Phat Lord
+        for (var i = 100; i < 120; i++)
+        for (var j = 0; j < studentFirebaseIds.Length; j++)
+            slotStudents.Add(new SlotStudent
+            {
+                SlotId = slotGuids[i],
+                StudentFirebaseId = studentFirebaseIds[j],
+                CreatedById = admin001
+            });
+
+        modelBuilder.Entity<SlotStudent>().HasData(slotStudents);
+
+        #endregion
+
+        #region StudentClass Model
+
+        var studentClassGuids = new List<Guid>();
+        for (var i = 0; i < 10; i++) studentClassGuids.Add(Guid.NewGuid());
+
+        var studentClasses = new List<StudentClass>
+        {
+            new()
+            {
+                Id = studentClassGuids[0],
+                ClassId = classTestGuid1,
+                StudentFirebaseId = learner001,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[1],
+                ClassId = classTestGuid2,
+                StudentFirebaseId = learner002,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[2],
+                ClassId = classTestGuid3,
+                StudentFirebaseId = learner003,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[3],
+                ClassId = classTestGuid4,
+                StudentFirebaseId = learner004,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[4],
+                ClassId = classTestGuid5,
+                StudentFirebaseId = learner005,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[5],
+                ClassId = classPhatLord,
+                StudentFirebaseId = learner006,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[6],
+                ClassId = classTestGuid6,
+                StudentFirebaseId = learner007,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[7],
+                ClassId = classTestGuid7,
+                StudentFirebaseId = learner008,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[8],
+                ClassId = classTestGuid8,
+                StudentFirebaseId = learner009,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            },
+            new()
+            {
+                Id = studentClassGuids[9],
+                ClassId = classTestGuid9,
+                StudentFirebaseId = learner010,
+                CreatedById = admin001,
+                IsPassed = false,
+                GPA = null,
+                InstructorComment = null
+            }
+        };
+
+        modelBuilder.Entity<StudentClass>().HasData(studentClasses);
+
+        #endregion
+
+        #region DayOff Model
+
+        var dayOffs = new List<DayOff>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Tết Dương Lịch",
+                StartTime = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(DateTime.UtcNow.Year, 1, 1, 23, 59, 59, DateTimeKind.Utc),
+                CreatedById = admin001
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Tết Nguyên Đán",
+                StartTime = new DateTime(DateTime.UtcNow.Year, 2, 10, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(DateTime.UtcNow.Year, 2, 16, 23, 59, 59, DateTimeKind.Utc),
+                CreatedById = admin001
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Giỗ Tổ Hùng Vương",
+                StartTime = new DateTime(DateTime.UtcNow.Year, 4, 21, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(DateTime.UtcNow.Year, 4, 21, 23, 59, 59, DateTimeKind.Utc),
+                CreatedById = admin001
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Ngày Giải Phóng Miền Nam",
+                StartTime = new DateTime(DateTime.UtcNow.Year, 4, 30, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(DateTime.UtcNow.Year, 4, 30, 23, 59, 59, DateTimeKind.Utc),
+                CreatedById = admin001
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Ngày Quốc Tế Lao Động",
+                StartTime = new DateTime(DateTime.UtcNow.Year, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(DateTime.UtcNow.Year, 5, 1, 23, 59, 59, DateTimeKind.Utc),
+                CreatedById = admin001
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Ngày Quốc Khánh",
+                StartTime = new DateTime(DateTime.UtcNow.Year, 9, 2, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime(DateTime.UtcNow.Year, 9, 2, 23, 59, 59, DateTimeKind.Utc),
+                CreatedById = admin001
+            }
+        };
+
+        modelBuilder.Entity<DayOff>().HasData(dayOffs);
 
         #endregion
     }

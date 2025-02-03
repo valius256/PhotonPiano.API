@@ -192,7 +192,11 @@ public static class IServiceCollectionExtensions
         {
             var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
             services.AddSingleton<IConnectionMultiplexer>(cf =>
-                ConnectionMultiplexer.Connect(redisConnectionString!));
+                ConnectionMultiplexer.Connect(redisConnectionString!, options =>
+                {
+                    options.ConnectRetry = 5;
+                    options.ConnectTimeout = 5000;
+                }));
         }
 
         return services;

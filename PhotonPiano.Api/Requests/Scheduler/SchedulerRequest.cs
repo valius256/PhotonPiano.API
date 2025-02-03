@@ -6,10 +6,10 @@ namespace PhotonPiano.Api.Requests.Scheduler;
 public record SchedulerRequest
 {
     [Required(ErrorMessage = "The Start time is required")]
-    public required DateTime StartTime { get; set; }
+    public required DateOnly StartTime { get; set; }
 
     [Required(ErrorMessage = "The End time is required")]
-    public required DateTime EndTime { get; set; }
+    public required DateOnly EndTime { get; set; }
 
     public List<Shift>? Shifts { get; set; }
     public List<SlotStatus>? SlotStatuses { get; set; }

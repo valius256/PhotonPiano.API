@@ -12,37 +12,90 @@ public static class ModelBuilderExtensions
 
         const string admin001 = "admin001";
 
-        const string learner001 = "learner001";
-        const string learner002 = "learner002";
-        const string learner003 = "learner003";
-        const string learner004 = "learner004";
-        const string learner005 = "learner005";
-        const string learner006 = "learner006";
-        const string learner007 = "learner007";
-        const string learner008 = "learner008";
-        const string learner009 = "learner009";
-        const string learner010 = "learner010";
+        var studentFirebaseIds = new[]
+        {
+            "learner001", "learner002", "learner003", "learner004", "learner005", "learner006", "learner007",
+            "learner008",
+            "learner009", "learner010", "learner011", "learner012", "learner013", "learner014", "learner015",
+            "learner016",
+            "learner017", "learner018", "learner019", "learner020", "learner021", "learner022", "learner023",
+            "learner024",
+            "learner025", "learner026", "learner027", "learner028", "learner029", "learner030", "learner031",
+            "learner032",
+            "learner033", "learner034", "learner035", "learner036", "learner037", "learner038", "learner039",
+            "learner040",
+            "learner041", "learner042", "learner043", "learner044", "learner045", "learner046", "learner047",
+            "learner048",
+            "learner049", "learner050"
+        };
 
-        const string teacher001 = "lymytranTest@gmail.com";
-        const string teacher002 = "quachthemyTest@gmail.com";
-        const string teacher003 = "buiducnamTest@gmail.com";
+        const string teacher001 = "lymytrantest@gmail.com";
+        const string teacher002 = "quachthemytest@gmail.com";
+        const string teacher003 = "buiducnamtest@gmail.com";
         const string teacherPhatLord = "teacherphatlord@gmail.com";
+        const string teacherBaga = "teacherbaga@gmail.com";
 
-
-        modelBuilder.Entity<Account>().HasData(
-            new Account
+        var accounts = new List<Account>
+        {
+            new()
             {
                 AccountFirebaseId = admin001,
                 Email = "admin001@gmail.com",
                 Role = Role.Administrator,
                 UserName = admin001
+            }
+        };
+
+        for (var i = 0; i < studentFirebaseIds.Length; i++)
+            accounts.Add(new Account
+            {
+                AccountFirebaseId = studentFirebaseIds[i],
+                Email = $"{studentFirebaseIds[i]}@gmail.com",
+                Role = Role.Student,
+                UserName = studentFirebaseIds[i],
+                Level = Level.Beginner,
+                StudentStatus = StudentStatus.Unregistered
+            });
+
+        modelBuilder.Entity<Account>().HasData(accounts.ToArray());
+
+        modelBuilder.Entity<Account>().HasData(
+            new Account
+            {
+                AccountFirebaseId = teacher001,
+                Email = teacher001,
+                Role = Role.Instructor,
+                UserName = teacher001
             },
             new Account
             {
                 AccountFirebaseId = teacher002,
-                Email = "teacher002@gmail.com",
+                Email = teacher002,
                 Role = Role.Instructor,
                 UserName = teacher002
+            },
+            new Account
+            {
+                AccountFirebaseId = teacher003,
+                Email = teacher003,
+                Role = Role.Instructor,
+                UserName = teacher003
+            },
+            new Account
+            {
+                AccountFirebaseId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
+                Email = teacherPhatLord,
+                Role = Role.Instructor,
+                UserName = teacherPhatLord,
+                Level = Level.Intermediate
+            },
+            new Account
+            {
+                AccountFirebaseId = "5YyhXdDHEiXZx38K5kj2qOrgM0l2",
+                Email = teacherBaga,
+                Role = Role.Instructor,
+                UserName = teacherBaga,
+                Level = Level.Intermediate
             },
             new Account
             {
@@ -59,118 +112,6 @@ public static class ModelBuilderExtensions
                 Email = "staff123@gmail.com",
                 Role = Role.Staff,
                 UserName = "staff 123"
-            },
-            new Account
-            {
-                AccountFirebaseId = teacher001,
-                Email = "teacher002@gmail.com",
-                Role = Role.Instructor,
-                UserName = teacher001
-            },
-            new Account
-            {
-                AccountFirebaseId = teacher003,
-                Email = "teacher003@gmail.com",
-                Role = Role.Instructor,
-                UserName = teacher003
-            },
-            new Account
-            {
-                AccountFirebaseId = learner001,
-                Email = "learner001@gmail.com",
-                Role = Role.Student,
-                UserName = learner001,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner002,
-                Email = "learner002@gmail.com",
-                Role = Role.Student,
-                UserName = learner002,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner003,
-                Email = "learner003@gmail.com",
-                Role = Role.Student,
-                UserName = learner003,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner004,
-                Email = "learner004@gmail.com",
-                Role = Role.Student,
-                UserName = learner004,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner005,
-                Email = "learner005@gmail.com",
-                Role = Role.Student,
-                UserName = learner005,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner006,
-                Email = "learner006@gmail.com",
-                Role = Role.Student,
-                UserName = learner006,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner007,
-                Email = "learner007@gmail.com",
-                Role = Role.Student,
-                UserName = learner007,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner008,
-                Email = "learner008@gmail.com",
-                Role = Role.Student,
-                UserName = learner008,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner009,
-                Email = "learner009@gmail.com",
-                Role = Role.Student,
-                UserName = learner009,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = learner010,
-                Email = "learner010@gmail.com",
-                Role = Role.Student,
-                UserName = learner010,
-                Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
-            },
-            new Account
-            {
-                AccountFirebaseId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
-                Email = teacherPhatLord,
-                Role = Role.Instructor,
-                UserName = teacherPhatLord,
-                Level = Level.Intermediate
             }
         );
 
@@ -362,7 +303,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid1,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = learner001,
+                StudentFirebaseId = studentFirebaseIds[0], // learner001
                 Rank = 1,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -373,7 +314,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid2,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = learner001,
+                StudentFirebaseId = studentFirebaseIds[1], // learner002
                 Rank = 2,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -384,7 +325,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid3,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = learner001,
+                StudentFirebaseId = studentFirebaseIds[2], // learner003
                 Rank = 3,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -416,12 +357,6 @@ public static class ModelBuilderExtensions
         var classTestGuid3 = Guid.NewGuid();
         var classTestGuid4 = Guid.NewGuid();
         var classTestGuid5 = Guid.NewGuid();
-        var classPhatLord = Guid.NewGuid();
-        var classTestGuid6 = Guid.NewGuid();
-        var classTestGuid7 = Guid.NewGuid();
-        var classTestGuid8 = Guid.NewGuid();
-        var classTestGuid9 = Guid.NewGuid();
-        var classTestGuid10 = Guid.NewGuid();
 
         modelBuilder.Entity<Class>().HasData(
             new Class
@@ -431,18 +366,18 @@ public static class ModelBuilderExtensions
                 InstructorId = teacher001,
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
-                Name = "Class 1",
-                Level = Level.Intermediate
+                Name = "Class Level 1",
+                Level = Level.Beginner
             },
             new Class
             {
                 Id = classTestGuid2,
                 CreatedById = admin001,
                 InstructorId = teacher002,
-                Status = ClassStatus.NotStarted,
+                Status = ClassStatus.Ongoing,
                 IsPublic = true,
-                Name = "Class 2",
-                Level = Level.Advanced
+                Name = "Class Level 2",
+                Level = Level.Novice
             },
             new Class
             {
@@ -451,88 +386,28 @@ public static class ModelBuilderExtensions
                 InstructorId = teacher003,
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
-                Name = "Class 3",
-                Level = Level.Beginner
+                Name = "Class Level 3",
+                Level = Level.Intermediate
             },
             new Class
             {
                 Id = classTestGuid4,
                 CreatedById = admin001,
-                InstructorId = teacher002,
+                InstructorId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
-                Name = "Class 4",
-                Level = Level.Intermediate
+                Name = "Class Level 4",
+                Level = Level.Advanced
             },
             new Class
             {
                 Id = classTestGuid5,
                 CreatedById = admin001,
-                InstructorId = teacher003,
-                Status = ClassStatus.NotStarted,
-                IsPublic = true,
-                Name = "Class 5",
-                Level = Level.Advanced
-            },
-            new Class
-            {
-                Id = classPhatLord,
-                CreatedById = admin001,
-                InstructorId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
+                InstructorId = "5YyhXdDHEiXZx38K5kj2qOrgM0l2",
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
-                Name = "Class Teacher Phat",
-                Level = Level.Advanced
-            },
-            new Class
-            {
-                Id = classTestGuid6,
-                CreatedById = admin001,
-                InstructorId = teacher001,
-                Status = ClassStatus.Ongoing,
-                IsPublic = true,
-                Name = "Class 6",
-                Level = Level.Intermediate
-            },
-            new Class
-            {
-                Id = classTestGuid7,
-                CreatedById = admin001,
-                InstructorId = teacher002,
-                Status = ClassStatus.NotStarted,
-                IsPublic = true,
-                Name = "Class 7",
-                Level = Level.Advanced
-            },
-            new Class
-            {
-                Id = classTestGuid8,
-                CreatedById = admin001,
-                InstructorId = teacher003,
-                Status = ClassStatus.Ongoing,
-                IsPublic = true,
-                Name = "Class 8",
-                Level = Level.Beginner
-            },
-            new Class
-            {
-                Id = classTestGuid9,
-                CreatedById = admin001,
-                InstructorId = teacher002,
-                Status = ClassStatus.Ongoing,
-                IsPublic = true,
-                Name = "Class 9",
-                Level = Level.Intermediate
-            },
-            new Class
-            {
-                Id = classTestGuid10,
-                CreatedById = admin001,
-                InstructorId = teacher003,
-                Status = ClassStatus.NotStarted,
-                IsPublic = true,
-                Name = "Class 10",
-                Level = Level.Advanced
+                Name = "Class Level 5",
+                Level = Level.Virtuoso
             }
         );
 
@@ -541,7 +416,7 @@ public static class ModelBuilderExtensions
         #region Slot Model
 
         var slotGuids = new List<Guid>();
-        for (var i = 0; i < 120; i++) slotGuids.Add(Guid.NewGuid());
+        for (var i = 0; i < 200; i++) slotGuids.Add(Guid.NewGuid());
 
         var shifts = new[]
         {
@@ -550,76 +425,131 @@ public static class ModelBuilderExtensions
         };
 
         var slots = new List<Slot>();
-        for (var i = 0; i < 20; i++)
+
+// Level 1: 30 sessions, 2 sessions per week (Monday and Wednesday)
+        for (var i = 0; i < 15; i++)
+        {
+            var date = DateTime.UtcNow.AddDays(i * 7);
             slots.Add(new Slot
             {
-                Id = slotGuids[i],
+                Id = slotGuids[i * 2],
                 ClassId = classTestGuid1,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i)),
+                Date = DateOnly.FromDateTime(date),
                 RoomId = roomGuids[i % 20],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
-
-        for (var i = 20; i < 40; i++)
             slots.Add(new Slot
             {
-                Id = slotGuids[i],
+                Id = slotGuids[i * 2 + 1],
+                ClassId = classTestGuid1,
+                Date = DateOnly.FromDateTime(date.AddDays(2)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+        }
+
+// Level 2: 30 sessions, 2 sessions per week (Tuesday and Thursday)
+        for (var i = 15; i < 30; i++)
+        {
+            var date = DateTime.UtcNow.AddDays((i - 15) * 7 + 1);
+            slots.Add(new Slot
+            {
+                Id = slotGuids[i * 2],
                 ClassId = classTestGuid2,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 20)),
+                Date = DateOnly.FromDateTime(date),
                 RoomId = roomGuids[i % 20],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
-
-        for (var i = 40; i < 60; i++)
             slots.Add(new Slot
             {
-                Id = slotGuids[i],
+                Id = slotGuids[i * 2 + 1],
+                ClassId = classTestGuid2,
+                Date = DateOnly.FromDateTime(date.AddDays(2)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+        }
+
+// Level 3: 30 sessions, 2 sessions per week (Monday and Wednesday)
+        for (var i = 30; i < 45; i++)
+        {
+            var date = DateTime.UtcNow.AddDays((i - 30) * 7);
+            slots.Add(new Slot
+            {
+                Id = slotGuids[i * 2],
                 ClassId = classTestGuid3,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 40)),
+                Date = DateOnly.FromDateTime(date),
                 RoomId = roomGuids[i % 20],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
-
-        for (var i = 60; i < 80; i++)
             slots.Add(new Slot
             {
-                Id = slotGuids[i],
+                Id = slotGuids[i * 2 + 1],
+                ClassId = classTestGuid3,
+                Date = DateOnly.FromDateTime(date.AddDays(2)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+        }
+
+// Level 4: 40 sessions, 2 sessions per week (Tuesday and Thursday)
+        for (var i = 45; i < 65; i++)
+        {
+            var date = DateTime.UtcNow.AddDays((i - 45) * 7 + 1);
+            slots.Add(new Slot
+            {
+                Id = slotGuids[i * 2],
                 ClassId = classTestGuid4,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 60)),
+                Date = DateOnly.FromDateTime(date),
                 RoomId = roomGuids[i % 20],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
-
-        for (var i = 80; i < 100; i++)
             slots.Add(new Slot
             {
-                Id = slotGuids[i],
+                Id = slotGuids[i * 2 + 1],
+                ClassId = classTestGuid4,
+                Date = DateOnly.FromDateTime(date.AddDays(2)),
+                RoomId = roomGuids[i % 20],
+                Shift = shifts[i % shifts.Length],
+                Status = SlotStatus.Ongoing
+            });
+        }
+
+// Level 5: 50 sessions, 2 sessions per week (Monday and Wednesday)
+        for (var i = 65; i < 90; i++)
+        {
+            var date = DateTime.UtcNow.AddDays((i - 65) * 7);
+            slots.Add(new Slot
+            {
+                Id = slotGuids[i * 2],
                 ClassId = classTestGuid5,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 80)),
+                Date = DateOnly.FromDateTime(date),
                 RoomId = roomGuids[i % 20],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
-
-        // Slots for Class Phat Lord
-        for (var i = 100; i < 120; i++)
             slots.Add(new Slot
             {
-                Id = slotGuids[i],
-                ClassId = classPhatLord,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(i - 100)),
+                Id = slotGuids[i * 2 + 1],
+                ClassId = classTestGuid5,
+                Date = DateOnly.FromDateTime(date.AddDays(2)),
                 RoomId = roomGuids[i % 20],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
+        }
 
         modelBuilder.Entity<Slot>().HasData(slots);
 
         #endregion
+
 
         #region SystemConfig Model
 
@@ -750,64 +680,17 @@ public static class ModelBuilderExtensions
         #region SlotStudent Model
 
         var slotStudentGuids = new List<Guid>();
-        for (var i = 0; i < 120; i++) slotStudentGuids.Add(Guid.NewGuid());
+        for (var i = 0; i < 200; i++) slotStudentGuids.Add(Guid.NewGuid());
 
         var slotStudents = new List<SlotStudent>();
-        var studentFirebaseIds = new[]
-            { learner001, learner002, learner003, learner004, learner005, learner006, learner007, learner008 };
 
-        for (var i = 0; i < 20; i++)
-        for (var j = 0; j < studentFirebaseIds.Length; j++)
+        // Assign students to slots ensuring each class has 8-10 students
+        for (var i = 0; i < 180; i++)
+        for (var j = 0; j < 10; j++)
             slotStudents.Add(new SlotStudent
             {
                 SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[j],
-                CreatedById = admin001
-            });
-
-        for (var i = 20; i < 40; i++)
-        for (var j = 0; j < studentFirebaseIds.Length; j++)
-            slotStudents.Add(new SlotStudent
-            {
-                SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[j],
-                CreatedById = admin001
-            });
-
-        for (var i = 40; i < 60; i++)
-        for (var j = 0; j < studentFirebaseIds.Length; j++)
-            slotStudents.Add(new SlotStudent
-            {
-                SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[j],
-                CreatedById = admin001
-            });
-
-        for (var i = 60; i < 80; i++)
-        for (var j = 0; j < studentFirebaseIds.Length; j++)
-            slotStudents.Add(new SlotStudent
-            {
-                SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[j],
-                CreatedById = admin001
-            });
-
-        for (var i = 80; i < 100; i++)
-        for (var j = 0; j < studentFirebaseIds.Length; j++)
-            slotStudents.Add(new SlotStudent
-            {
-                SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[j],
-                CreatedById = admin001
-            });
-
-        // Adding SlotStudent for Class Phat Lord
-        for (var i = 100; i < 120; i++)
-        for (var j = 0; j < studentFirebaseIds.Length; j++)
-            slotStudents.Add(new SlotStudent
-            {
-                SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[j],
+                StudentFirebaseId = studentFirebaseIds[(i * 10 + j) % studentFirebaseIds.Length],
                 CreatedById = admin001
             });
 
@@ -818,111 +701,22 @@ public static class ModelBuilderExtensions
         #region StudentClass Model
 
         var studentClassGuids = new List<Guid>();
-        for (var i = 0; i < 10; i++) studentClassGuids.Add(Guid.NewGuid());
+        for (var i = 0; i < 50; i++) studentClassGuids.Add(Guid.NewGuid());
 
-        var studentClasses = new List<StudentClass>
-        {
-            new()
+        var studentClasses = new List<StudentClass>();
+
+        for (var i = 0; i < 5; i++)
+        for (var j = 0; j < 10; j++)
+            studentClasses.Add(new StudentClass
             {
-                Id = studentClassGuids[0],
-                ClassId = classTestGuid1,
-                StudentFirebaseId = learner001,
+                Id = studentClassGuids[i * 10 + j],
+                ClassId = new[] { classTestGuid1, classTestGuid2, classTestGuid3, classTestGuid4, classTestGuid5 }[i],
+                StudentFirebaseId = studentFirebaseIds[i * 10 + j],
                 CreatedById = admin001,
                 IsPassed = false,
                 GPA = null,
                 InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[1],
-                ClassId = classTestGuid2,
-                StudentFirebaseId = learner002,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[2],
-                ClassId = classTestGuid3,
-                StudentFirebaseId = learner003,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[3],
-                ClassId = classTestGuid4,
-                StudentFirebaseId = learner004,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[4],
-                ClassId = classTestGuid5,
-                StudentFirebaseId = learner005,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[5],
-                ClassId = classPhatLord,
-                StudentFirebaseId = learner006,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[6],
-                ClassId = classTestGuid6,
-                StudentFirebaseId = learner007,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[7],
-                ClassId = classTestGuid7,
-                StudentFirebaseId = learner008,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[8],
-                ClassId = classTestGuid8,
-                StudentFirebaseId = learner009,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            },
-            new()
-            {
-                Id = studentClassGuids[9],
-                ClassId = classTestGuid9,
-                StudentFirebaseId = learner010,
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            }
-        };
+            });
 
         modelBuilder.Entity<StudentClass>().HasData(studentClasses);
 

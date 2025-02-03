@@ -1,4 +1,6 @@
-﻿namespace PhotonPiano.BusinessLogic.Interfaces;
+﻿using PhotonPiano.BackgroundJob;
+
+namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IServiceFactory
 {
@@ -27,8 +29,12 @@ public interface IServiceFactory
     ISLotStudentService SLotStudentService { get; }
 
     ITutionService TutionService { get; }
-    
+
     ITransactionService TransactionService { get; }
+
+    IDefaultScheduleJob DefaultScheduleJob { get; }
+
+    IEmailService EmailService { get; }
     
     ISchedulerService SchedulerService { get; }
 }

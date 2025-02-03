@@ -2,7 +2,6 @@ using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Scheduler;
-using PhotonPiano.Api.Responses.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -22,12 +21,23 @@ public class SchedulerController : BaseController
     }
 
     [HttpGet("slots")]
-    [EndpointDescription("Get All Schedulers in this Week")]
+    [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
+    [EndpointDescription("Get All Slots in this Week")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {
         var result =
-            await _serviceFactory.SlotService.GetSlotsAsync(request.Adapt<GetSlotModel>(), CurrentUserFirebaseId);
-        return Ok(result.Adapt<List<GetSlotResponses>>());
+            await _serviceFactory.SlotService.GetWeeklyScheduleAsync(request.Adapt<GetSlotModel>(),
+                CurrentUserFirebaseId);
+        return Ok(result.Adapt<List<SlotSimpleModel>>());
+    }
+
+    [HttpGet("attendance-status/{slotId}")]
+    [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
+    [EndpointDescription("Get Attendance Status for a Slot")]
+    public async Task<ActionResult> GetAttendanceStatus([FromRoute] Guid slotId)
+    {
+        var result = await _serviceFactory.SlotService.GetAttendanceStatusAsync(slotId);
+        return Ok(result);
     }
 
     [HttpGet("slot/{id}")]

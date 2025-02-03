@@ -5,7 +5,9 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Payment;
 using PhotonPiano.Api.Requests.Tution;
 using PhotonPiano.Api.Responses.Payment;
+using PhotonPiano.Api.Responses.Tution;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
+using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;
 using Role = PhotonPiano.DataAccess.Models.Enum.Role;
 
@@ -37,7 +39,7 @@ public class TuitionController : BaseController
 
         return Ok(new PaymentUrlResponse
             {
-                Url = await _serviceFactory.TutionService.PayTuition(base.CurrentAccount!, request.TutionId,
+                Url = await _serviceFactory.TutionService.PayTuition(CurrentAccount!, request.TutionId,
                     request.ReturnUrl,
                     ipAddress, apiBaseUrl)
             }
@@ -62,5 +64,30 @@ public class TuitionController : BaseController
             request.Adapt<VnPayCallbackModel>(), accountId);
 
         return Redirect(clientRedirectUrl);
+    }
+
+    [HttpGet]
+    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
+    [EndpointDescription("Get Tutions with paging")]
+    public async Task<ActionResult<List<TutionWithStudentClassResponse>>> GetPagedTutions(
+        [FromQuery] QueryTutionRequest request)
+    {
+        var pagedResult =
+            await _serviceFactory.TutionService.GetTutionsPaged(request.Adapt<QueryTutionModel>(),
+                CurrentAccount);
+
+
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+
+        return Ok(pagedResult.Items.Adapt<List<TutionWithStudentClassResponse>>());
+    }
+    
+    [HttpGet("{id}")]
+    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
+    [EndpointDescription("Get Tutions with paging")]
+    public async Task<ActionResult<TutionWithStudentClassResponse>> GetPagedTutions(
+        [FromQuery] Guid id)
+    {
+        return Ok(await _serviceFactory.TutionService.GetTutionById(id));
     }
 }

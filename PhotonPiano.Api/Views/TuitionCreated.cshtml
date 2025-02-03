@@ -1,0 +1,26 @@
+@{
+var studentName = Model.StudentName;
+var className = Model.ClassName;
+var startDate = Model.StartDate.ToString("MMMM dd, yyyy");
+var endDate = Model.EndDate.ToString("MMMM dd, yyyy");
+var amount = Model.Amount.ToString("C");
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Tuition Created</title>
+</head>
+<body>
+<p>Dear @studentName,</p>
+<p>We are pleased to inform you that a new tuition has been created for your class <strong>@className</strong>.</p>
+<p><strong>Start Date:</strong> @startDate</p>
+<p><strong>End Date:</strong> @endDate</p>
+<p><strong>Amount Due:</strong> @amount</p>
+<p>Your payment status is currently marked as <strong>Pending</strong>.</p>
+<p>Thank you for being a part of PhotonPiano. If you have any questions, please do not hesitate to reach out to our
+    support team.</p>
+<p>Best regards,</p>
+<p><strong>PhotonPiano Team</strong></p>
+</body>
+</html>

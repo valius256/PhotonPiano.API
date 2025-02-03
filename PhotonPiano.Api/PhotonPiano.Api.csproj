@@ -16,6 +16,7 @@
         <PackageReference Include="Hangfire.PostgreSql" Version="1.20.10"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.10"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
             <PrivateAssets>all</PrivateAssets>
@@ -25,6 +26,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1"/>
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0"/>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1"/>
         <PackageReference Include="Scalar.AspNetCore" Version="2.0.9" />
@@ -37,6 +39,12 @@
         <ProjectReference Include="..\PhotonPiano.ServiceDefaults\PhotonPiano.ServiceDefaults.csproj"/>
         <ProjectReference Include="..\PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj"/>
         <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="Views\PaymentSuccess.cshtml"/>
+        <None Include="Views\TuitionCreated.cshtml"/>
+        <None Include="Views\TutionFeeNotification.cshtml"/>
     </ItemGroup>
 
 </Project>

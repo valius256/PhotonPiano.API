@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
+using Razor.Templating.Core;
 using StackExchange.Redis;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -17,10 +19,16 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ICriteriaService> _criteriaService;
 
+    private readonly Lazy<IDefaultScheduleJob> _defaultScheduleJob;
+
+    private readonly Lazy<IEmailService> _emailService;
+
     private readonly Lazy<IEntranceTestService> _entranceTestService;
 
     private readonly Lazy<IEntranceTestStudentService> _entranceTestStudentService;
-    
+
+    private readonly Lazy<IPaymentService> _paymentService;
+
     private readonly Lazy<IRedisCacheService> _redisCacheService;
 
     private readonly Lazy<IRoomService> _roomService;
@@ -31,16 +39,17 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ISystemConfigService> _systemConfigService;
 
-    private readonly Lazy<ITutionService> _tutionService;
-    
-    private readonly Lazy<IPaymentService> _paymentService;
-    
     private readonly Lazy<ITransactionService> _transactionService;
     
     private readonly Lazy<ISchedulerService> _schedulerService;
 
+    private readonly Lazy<ITutionService> _tutionService;
+
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
-        IConnectionMultiplexer redis, IOptions<VnPay> vnPay)
+        IOptions<SmtpAppSetting> smtpAppSettings,
+        IConnectionMultiplexer redis, IOptions<VnPay> vnPay,
+        IDefaultScheduleJob defaultScheduleJob,
+        IServiceProvider serviceProvider, IRazorTemplateEngine razorTemplateEngine)
     {
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork));
         _authService =
@@ -59,6 +68,8 @@ public class ServiceFactory : IServiceFactory
         _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
+        _emailService =
+            new Lazy<IEmailService>(() => new EmailService(razorTemplateEngine, defaultScheduleJob, smtpAppSettings));
         _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService(unitOfWork));
     }
 
@@ -87,8 +98,12 @@ public class ServiceFactory : IServiceFactory
     public ISLotStudentService SLotStudentService => _sLotStudentService.Value;
 
     public ITutionService TutionService => _tutionService.Value;
-    
+
     public ITransactionService TransactionService => _transactionService.Value;
+
+    public IDefaultScheduleJob DefaultScheduleJob => _defaultScheduleJob.Value;
+
+    public IEmailService EmailService => _emailService.Value;
     
     public ISchedulerService SchedulerService => _schedulerService.Value;
 }

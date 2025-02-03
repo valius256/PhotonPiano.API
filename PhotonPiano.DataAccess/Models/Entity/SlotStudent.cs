@@ -15,12 +15,12 @@ public class SlotStudent : BaseEntity
     public string? DeletedById { get; set; }
 
     // reference 
-    public virtual required Slot Slot { get; set; } = default!;
-    public virtual required Account StudentAccount { get; set; } = default!;
+    public virtual Slot Slot { get; set; } = default!;
+    public virtual Account StudentAccount { get; set; } = default!;
 
-    public virtual required Account CreateBy { get; set; } = default!;
+    public virtual Account CreateBy { get; set; } = default!;
 
-    public virtual required Account UpdateBy { get; set; } = default!;
+    public virtual Account UpdateBy { get; set; } = default!;
 
-    public virtual required Account DeletedBy { get; set; } = default!;
+    public virtual Account DeletedBy { get; set; } = default!;
 }

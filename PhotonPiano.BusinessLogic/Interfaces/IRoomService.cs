@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
@@ -16,4 +17,6 @@ public interface IRoomService
     Task UpdateRoom(Guid id, UpdateRoomModel roomModel, string? currentUserFirebaseId = default);
 
     Task<bool> IsRoomExist(Guid id);
+
+    Task<List<RoomModel>> GetAvailableRooms(Shift shift, List<DayOfWeek> dayOfTheWeeks, DateOnly startWeek, int totalDays);
 }

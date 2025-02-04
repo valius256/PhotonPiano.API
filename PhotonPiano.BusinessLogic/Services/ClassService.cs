@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -86,8 +88,9 @@ public class ClassService : IClassService
     {
         /*===============================
          * 1. Fill students in a class
-         * 2. Assign a schedule 
-         * 3. Export the results
+         * 2. Assign a schedule, check for available rooms (if not, pick again)
+         * 3. Create slots based on the selected time and places
+         * 4. Export the results
         =================================*/
         //Get awaited students
         var students = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
@@ -112,7 +115,7 @@ public class ClassService : IClassService
             var validNumbersOfClasses = GetNumberOfClasses(minStudents, studentsOfLevel.Count, maxStudents);
             int numberOfClasses = validNumbersOfClasses.Count == 0 ? 1 : validNumbersOfClasses[0];
 
-            if (validNumbersOfClasses.Any())
+            if (validNumbersOfClasses.Count != 0)
             {
                 numberOfStudentEachClass = (int) Math.Ceiling((studentsOfLevel.Count * 1.0) / numberOfClasses);
             } else
@@ -134,12 +137,88 @@ public class ClassService : IClassService
             }
         }
         //2. IT's SCHEDULE TIME! 
+        Random random = new();
+        //Get config values
+        var levelConfigs = new List<GetSystemConfigOnLevelModel>();
+        foreach (var level in Enum.GetValues<Level>())
+        {
+            var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(((int) level) + 1);
+            levelConfigs.Add(config);
+        }
+            
         //With each class, we will pick a random schedule for it!
+        foreach (var classDraft in classes)
+        {
+            var levelConfig = levelConfigs[(int)classDraft.Level];
 
+            //Pick n day(s) of the week based on the config
+            var dayFrames = GetRandomDays(levelConfig.NumOfSlotInWeek);
+
+            //Pick a random shift in the passed shift list
+            var pickedShift = arrangeClassModel.AllowedShifts[random.Next(arrangeClassModel.AllowedShifts.Count - 1)];
+
+            //Check available rooms -- If not, iterate
+            int maxAttempt = 100, attempt = 1;
+            var availableRooms = new List<RoomModel>();
+            while (availableRooms.Count == 0 && attempt < maxAttempt)
+            {
+                availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dayFrames, arrangeClassModel.StartWeek, levelConfig.TotalSlot);
+                attempt++;
+                if (attempt >= maxAttempt)
+                {
+                    throw new ConflictException("Unable to complete arranging classes! No available rooms found! Consider different start week or change the shift range");
+                }
+            }
+            //Pick a room
+            var room = availableRooms[random.Next(availableRooms.Count - 1)];
+
+
+            //3. CREATE THE SLOTS
+            
+        }
 
         throw new NotImplementedException();
     }
+    /// <summary>
+    /// Get random days of the week ensure that each day is at least 1 day apart if possible
+    /// </summary>
+    /// <param name="n"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    private List<DayOfWeek> GetRandomDays(int n)
+    {
+        if (n < 1 || n > 7)
+            throw new ArgumentException("n must be between 1 and 7", nameof(n));
 
+        Random random = new();
+        List<DayOfWeek> allDays = [.. Enum.GetValues<DayOfWeek>()];
+
+        List<DayOfWeek> selectedDays = [];
+
+        while (selectedDays.Count < n)
+        {
+            var availableDays = allDays.Where(d => !selectedDays.Any(s => Math.Abs((int)s - (int)d) == 1)).ToList();
+
+            // If spacing is no longer possible, allow selection from all remaining days
+            if (availableDays.Count == 0)
+                availableDays = allDays.Except(selectedDays).ToList();
+
+            if (availableDays.Count == 0)
+                break; // Safety check
+
+            var chosenDay = availableDays[random.Next(availableDays.Count)];
+            selectedDays.Add(chosenDay);
+        }
+
+        return selectedDays;
+    }
+    /// <summary>
+    /// Pick randomly n elements from a list and remove it from the list
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="list"></param>
+    /// <param name="n"></param>
+    /// <returns></returns>
     private List<T> PickRandomFromList<T>(ref List<T> list, int n)
     {
         Random rand = new Random();

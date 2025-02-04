@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using PhotonPiano.DataAccess.Models.Enum;
+using System;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Room;
 
@@ -10,4 +12,5 @@ public record RoomModel
     public int? Capacity { get; set; }
 
     public string? CreatedById { get; set; }
+
 }

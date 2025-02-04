@@ -39,6 +39,42 @@ public class RoomService : IRoomService
 
         return result;
     }
+    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, List<DayOfWeek> dayOfTheWeeks, DateOnly startWeek, int totalDays)
+    {
+        //TODO : Consider day-offs
+        if (startWeek.DayOfWeek != DayOfWeek.Monday)
+        {
+            throw new BadRequestException("Incorrect start week");
+        }
+        var dates = new List<DateOnly>();
+        while (totalDays > 0)
+        {
+            foreach (var dayOfWeek in dayOfTheWeeks)
+            {
+                dates.Add(startWeek.AddDays((int)dayOfWeek));
+                totalDays--;
+                if (totalDays == 0)
+                {
+                    break;
+                }
+            }
+            startWeek = startWeek.AddDays(8);
+        }
+        var rooms = new List<RoomModel>();
+        foreach (var date in dates)
+        {
+            var availableRooms = await _unitOfWork.RoomRepository.FindAsync(r => !r.Slots.Any(s => s.Shift != shift && s.Date == date));
+            availableRooms.ForEach(ar =>
+            {
+                if (!rooms.Any(r => r.Id == ar.Id))
+                {
+                    rooms.Add(ar.Adapt<RoomModel>());
+                }
+            });
+        }
+
+        return rooms;
+    }
 
     public async Task<RoomDetailModel> GetRoomDetailById(Guid id)
     {

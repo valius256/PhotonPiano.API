@@ -14,7 +14,7 @@ var database = postgres
     .AddDatabase("photonpiano");
 
 
-var api = builder.AddProject<PhotonPiano_Api>("photonpiano-api")
+builder.AddProject<PhotonPiano_Api>("photonpiano-api")
         // .WithExternalHttpEndpoints()
         .WithReference(database)
         .WaitFor(database)

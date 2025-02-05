@@ -14,6 +14,7 @@ public class Account : BaseEntity
     [EmailAddress(ErrorMessage = "Invalid Email Address")]
     public required string Email { get; set; }
 
+    public string? FullName { get; set; }
     public Role Role { get; set; } = Role.Guest;
     public string? AvatarUrl { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }

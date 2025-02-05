@@ -41,19 +41,20 @@ public class SlotService : ISlotService
         return shiftStartTime;
     }
 
-    public async Task<SlotDetailModel> GetSLotDetailById(Guid id, string? userFirebaseid = null)
+    public async Task<SlotDetailModel> GetSLotDetailById(Guid id, AccountModel? accountModel = default)
     {
         var result = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<SlotDetailModel>(
             s => s.Id == id,
             false
         );
 
+
         if (result == null) throw new NotFoundException("Slot not found");
 
         return result;
     }
 
-    public async Task<List<SlotDetailModel>> GetSlotsAsync(GetSlotModel slotModel, AccountModel? accountModel)
+    public async Task<List<SlotDetailModel>> GetSlotsAsync(GetSlotModel slotModel, AccountModel? accountModel = default)
     {
         Expression<Func<Slot, bool>> filter = s =>
             s.Date >= slotModel.StartTime &&
@@ -74,11 +75,11 @@ public class SlotService : ISlotService
 
 
     public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel,
-        string? userFirebaseId = default)
+        AccountModel? accountModel = default)
     {
-        if (userFirebaseId == null) throw new Exception("UserFirebaseId is required");
+        if (accountModel.AccountFirebaseId == null) throw new Exception("UserFirebaseId is required");
 
-        var classModel = await _serviceFactory.ClassService.GetClassByUserFirebaseId(userFirebaseId);
+        var classModel = await _serviceFactory.ClassService.GetClassByUserFirebaseId(accountModel.AccountFirebaseId);
 
         var cacheKey = $"GetWeeklyScheduleAsync_{slotModel.StartTime}_{slotModel.EndTime}_{classModel.Id}";
 
@@ -92,6 +93,12 @@ public class SlotService : ISlotService
             (slotModel.Shifts == null || slotModel.Shifts.Contains(s.Shift)) &&
             (slotModel.SlotStatuses == null || slotModel.SlotStatuses.Contains(s.Status)) &&
             s.ClassId == classModel.Id;
+
+        if (accountModel is { Role: Role.Instructor })
+            filter = filter.AndAlso(s => s.Class.InstructorId == accountModel.AccountFirebaseId);
+        else if (accountModel is { Role: Role.Student })
+            filter = filter.AndAlso(s =>
+                s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId));
 
         var result = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(filter);
 

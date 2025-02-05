@@ -8,12 +8,12 @@ public interface ISlotService
 {
     Task<List<SlotDetailModel>> GetSlotsAsync(GetSlotModel slotModel, AccountModel? accountModel);
 
-    Task<SlotDetailModel> GetSLotDetailById(Guid id, string? userFirebaseid = default);
+    Task<SlotDetailModel> GetSLotDetailById(Guid id, AccountModel? accountModel = default);
 
     TimeOnly GetShiftStartTime(Shift shift);
 
 
-    Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, string? userFirebaseId = default);
+    Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel? accountModel = default);
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId);
 }

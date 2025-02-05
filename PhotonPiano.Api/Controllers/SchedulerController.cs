@@ -27,7 +27,7 @@ public class SchedulerController : BaseController
     {
         var result =
             await _serviceFactory.SlotService.GetWeeklyScheduleAsync(request.Adapt<GetSlotModel>(),
-                CurrentUserFirebaseId);
+                CurrentAccount);
         return Ok(result.Adapt<List<SlotSimpleModel>>());
     }
 
@@ -41,10 +41,11 @@ public class SchedulerController : BaseController
     }
 
     [HttpGet("slot/{id}")]
+    [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
     [EndpointDescription("Get Slot by Id")]
     public async Task<ActionResult> GetSlotById([FromRoute] Guid id)
     {
-        var result = await _serviceFactory.SlotService.GetSLotDetailById(id);
+        var result = await _serviceFactory.SlotService.GetSLotDetailById(id, CurrentAccount);
         return Ok(result.Adapt<SlotDetailModel>());
     }
 
@@ -53,7 +54,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Update Attendance by Intructor")]
     public async Task<ActionResult> UpdateAttendance([FromBody] AttendanceRequest request)
     {
-        await _serviceFactory.SLotStudentService.UpdateAttentStudent(request.Adapt<UpdateAttentdanceModel>(),
+        await _serviceFactory.SlotStudentService.UpdateAttentStudent(request.Adapt<UpdateAttentdanceModel>(),
             CurrentUserFirebaseId);
         return Ok("Update attendance successful");
     }

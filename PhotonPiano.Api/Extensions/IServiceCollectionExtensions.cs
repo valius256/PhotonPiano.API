@@ -127,6 +127,10 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
+    
+    
+    private static bool MessagePrinted = false;
+    
     private static string? GetConnectionString(this IConfiguration configuration)
     {
         var rs = configuration.GetValue<bool>("IsDeploy")
@@ -136,11 +140,15 @@ public static class IServiceCollectionExtensions
         if (configuration.GetValue<bool>("IsAspireHost"))
             rs = configuration.GetConnectionString("photonpiano");
 
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" && !MessagePrinted)
+        {
             Console.WriteLine("This running is using connection string: " + rs);
+            MessagePrinted = true;
+        }
 
         return rs;
     }
+
 
     private static IServiceCollection AddDbContextConfigurations(this IServiceCollection services,
         IConfiguration configuration)
@@ -196,7 +204,7 @@ public static class IServiceCollectionExtensions
         if (configuration.GetValue<bool>("IsCacheDeploy"))
         {
             var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
-            services.AddSingleton<IConnectionMultiplexer>(cf =>
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConnectionString!, options =>
                 {
                     options.ConnectRetry = 5;
@@ -250,7 +258,7 @@ public static class IServiceCollectionExtensions
         // Register any other required services here
         services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
 
-        services.AddHangfireServer(cf =>
+        services.AddHangfireServer(_ =>
         {
             RecurringJob.AddOrUpdate<TutionService>(x =>
                 x.CronAutoCreateTution(), Cron.Monthly());

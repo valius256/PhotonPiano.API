@@ -7,12 +7,12 @@ using PhotonPiano.Shared.Extensions;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
-public class SLotStudentService : ISLotStudentService
+public class SlotStudentService : ISlotStudentService
 {
     private readonly IServiceFactory _serviceFactory;
     private readonly IUnitOfWork _unitOfWork;
 
-    public SLotStudentService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork)
+    public SlotStudentService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork)
     {
         _serviceFactory = serviceFactory;
         _unitOfWork = unitOfWork;
@@ -23,10 +23,10 @@ public class SLotStudentService : ISLotStudentService
         var slotEntity = await _serviceFactory.SlotService.GetSLotDetailById(model.SlotId);
 
         if (slotEntity.Class.InstructorId != teacherId)
-            throw new InvalidOperationException("You are not allowed to update attendance for this slot.");
+            throw new IllegalArgumentException("You are not allowed to update attendance for this slot.");
 
 
-        if (slotEntity == null) throw new ArgumentException("The specified slot does not exist.");
+        if (slotEntity == null) throw new IllegalArgumentException("The specified slot does not exist.");
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
 

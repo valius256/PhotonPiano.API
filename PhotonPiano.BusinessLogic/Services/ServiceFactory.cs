@@ -33,23 +33,22 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IRoomService> _roomService;
 
+    private readonly Lazy<ISchedulerService> _schedulerService;
+
     private readonly Lazy<ISlotService> _slotService;
 
-    private readonly Lazy<ISLotStudentService> _sLotStudentService;
+    private readonly Lazy<ISlotStudentService> _sLotStudentService;
 
     private readonly Lazy<ISystemConfigService> _systemConfigService;
 
     private readonly Lazy<ITransactionService> _transactionService;
-    
-    private readonly Lazy<ISchedulerService> _schedulerService;
 
     private readonly Lazy<ITutionService> _tutionService;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay,
-        IDefaultScheduleJob defaultScheduleJob,
-        IServiceProvider serviceProvider, IRazorTemplateEngine razorTemplateEngine)
+        IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine)
     {
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork));
         _authService =
@@ -64,7 +63,7 @@ public class ServiceFactory : IServiceFactory
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
-        _sLotStudentService = new Lazy<ISLotStudentService>(() => new SLotStudentService(this, unitOfWork));
+        _sLotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
         _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
@@ -95,7 +94,7 @@ public class ServiceFactory : IServiceFactory
 
     public ISystemConfigService SystemConfigService => _systemConfigService.Value;
 
-    public ISLotStudentService SLotStudentService => _sLotStudentService.Value;
+    public ISlotStudentService SlotStudentService => _sLotStudentService.Value;
 
     public ITutionService TutionService => _tutionService.Value;
 
@@ -104,6 +103,6 @@ public class ServiceFactory : IServiceFactory
     public IDefaultScheduleJob DefaultScheduleJob => _defaultScheduleJob.Value;
 
     public IEmailService EmailService => _emailService.Value;
-    
+
     public ISchedulerService SchedulerService => _schedulerService.Value;
 }

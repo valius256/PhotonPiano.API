@@ -1,6 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Mapster;
+using Microsoft.Extensions.DependencyInjection;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
+using PhotonPiano.DataAccess.Models.Entity;
 
 namespace PhotonPiano.BusinessLogic.Extensions;
 
@@ -36,6 +39,10 @@ public static class ServiceCollectionExtensions
         //TypeAdapterConfig<UpdateQuizModel, Quiz>.NewConfig().IgnoreNullValues(true);
         //TypeAdapterConfig<Quiz, QuizWithAttemptsModel>.NewConfig()
         //    .Map(dest => dest.QuestionCnt, src => src.QuizQuestions.Count);
+
+        TypeAdapterConfig<Class, ClassModel>
+            .NewConfig()
+            .Map(dest => dest.InstructorName, src => src.Instructor.UserName);
         return services;
     }
 }

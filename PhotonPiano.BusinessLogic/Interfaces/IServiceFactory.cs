@@ -26,7 +26,7 @@ public interface IServiceFactory
 
     ISystemConfigService SystemConfigService { get; }
 
-    ISLotStudentService SLotStudentService { get; }
+    ISlotStudentService SlotStudentService { get; }
 
     ITutionService TutionService { get; }
 
@@ -35,6 +35,6 @@ public interface IServiceFactory
     IDefaultScheduleJob DefaultScheduleJob { get; }
 
     IEmailService EmailService { get; }
-    
+
     ISchedulerService SchedulerService { get; }
 }

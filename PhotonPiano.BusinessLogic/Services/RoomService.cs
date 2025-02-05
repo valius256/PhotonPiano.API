@@ -41,40 +41,30 @@ public class RoomService : IRoomService
     }
     public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, List<DayOfWeek> dayOfTheWeeks, DateOnly startWeek, int totalDays)
     {
-        //TODO : Consider day-offs
+        // Validate start week
         if (startWeek.DayOfWeek != DayOfWeek.Monday)
         {
             throw new BadRequestException("Incorrect start week");
         }
-        var dates = new List<DateOnly>();
-        while (totalDays > 0)
-        {
-            foreach (var dayOfWeek in dayOfTheWeeks)
-            {
-                dates.Add(startWeek.AddDays((int)dayOfWeek));
-                totalDays--;
-                if (totalDays == 0)
-                {
-                    break;
-                }
-            }
-            startWeek = startWeek.AddDays(8);
-        }
-        var rooms = new List<RoomModel>();
-        foreach (var date in dates)
-        {
-            var availableRooms = await _unitOfWork.RoomRepository.FindAsync(r => !r.Slots.Any(s => s.Shift != shift && s.Date == date));
-            availableRooms.ForEach(ar =>
-            {
-                if (!rooms.Any(r => r.Id == ar.Id))
-                {
-                    rooms.Add(ar.Adapt<RoomModel>());
-                }
-            });
-        }
 
-        return rooms;
+        // Generate all required dates efficiently
+        var dates = Enumerable.Range(0, totalDays)
+            .Select(i => startWeek.AddDays((i / dayOfTheWeeks.Count) * 7 + (int)dayOfTheWeeks[i % dayOfTheWeeks.Count]))
+            .ToHashSet();
+
+
+        // Fetch all available rooms in a single query
+        var availableRooms = await _unitOfWork.RoomRepository.FindAsync(r =>
+            !r.Slots.Any(s => s.Shift != shift && dates.Contains(s.Date))
+        );
+
+        // Convert to RoomModel, ensuring unique rooms using HashSet
+        return availableRooms
+            .DistinctBy(r => r.Id) // LINQ to remove duplicates
+            .Select(r => r.Adapt<RoomModel>())
+            .ToList();
     }
+
 
     public async Task<RoomDetailModel> GetRoomDetailById(Guid id)
     {

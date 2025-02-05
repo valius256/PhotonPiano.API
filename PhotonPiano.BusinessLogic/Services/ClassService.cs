@@ -90,7 +90,8 @@ public class ClassService : IClassService
          * 1. Fill students in a class
          * 2. Assign a schedule, check for available rooms (if not, pick again)
          * 3. Create slots based on the selected time and places
-         * 4. Export the results
+         * 4. Save to database
+         * 5. Export the results
         =================================*/
         //Get awaited students
         var students = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
@@ -173,7 +174,7 @@ public class ClassService : IClassService
             var room = availableRooms[random.Next(availableRooms.Count - 1)];
 
 
-            //3. CREATE THE SLOTS
+            //3. GENERATE THE SLOTS
             
         }
 

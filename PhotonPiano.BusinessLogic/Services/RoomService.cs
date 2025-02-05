@@ -39,19 +39,9 @@ public class RoomService : IRoomService
 
         return result;
     }
-    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, List<DayOfWeek> dayOfTheWeeks, DateOnly startWeek, int totalDays)
+    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates)
     {
-        // Validate start week
-        if (startWeek.DayOfWeek != DayOfWeek.Monday)
-        {
-            throw new BadRequestException("Incorrect start week");
-        }
-
-        // Generate all required dates efficiently
-        var dates = Enumerable.Range(0, totalDays)
-            .Select(i => startWeek.AddDays((i / dayOfTheWeeks.Count) * 7 + (int)dayOfTheWeeks[i % dayOfTheWeeks.Count]))
-            .ToHashSet();
-
+        
 
         // Fetch all available rooms in a single query
         var availableRooms = await _unitOfWork.RoomRepository.FindAsync(r =>

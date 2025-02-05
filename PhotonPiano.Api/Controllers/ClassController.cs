@@ -1,5 +1,7 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.Criteria;
@@ -7,6 +9,7 @@ using PhotonPiano.Api.Responses.Criteria;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Controllers
 {
@@ -43,11 +46,12 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPost("auto-arrangement")]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Arrange classes to students who are waiting for a class")]
         public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
          [FromBody] ArrangeClassModel arrangeClassModel)
         {
-            return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel);
+            return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
         }
     }
 }

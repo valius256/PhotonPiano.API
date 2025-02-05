@@ -3,9 +3,12 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Slot
 {
-    public class CreateSlotThroughArrangementModel
+    public record CreateSlotThroughArrangementModel
     {
-        public Shift Shift { get; set; }
-        public DateOnly Date { get; set; }
+        public required Shift Shift { get; init; }
+
+        public required DateOnly Date { get; init; }
+
+        public required Guid RoomId { get; init; }
     }
 }

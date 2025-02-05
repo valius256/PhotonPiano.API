@@ -11,5 +11,5 @@ public interface IClassService
 
     Task<ClassModel> GetClassByUserFirebaseId(string userFirebaseId);
 
-    Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel);
+    Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId);
 }

@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Mapster;
+using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
+using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
@@ -84,15 +87,22 @@ public class ClassService : IClassService
         return result;
     }
 
-    public async Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel)
+    public async Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId)
     {
         /*===============================
          * 1. Fill students in a class
          * 2. Assign a schedule, check for available rooms (if not, pick again)
          * 3. Create slots based on the selected time and places
          * 4. Save to database
-         * 5. Export the results
         =================================*/
+        //Validation
+        // Validate start week
+        if (arrangeClassModel.StartWeek.DayOfWeek != DayOfWeek.Monday)
+        {
+            throw new BadRequestException("Incorrect start week");
+        }
+
+
         //Get awaited students
         var students = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
 
@@ -158,12 +168,20 @@ public class ClassService : IClassService
             //Pick a random shift in the passed shift list
             var pickedShift = arrangeClassModel.AllowedShifts[random.Next(arrangeClassModel.AllowedShifts.Count - 1)];
 
-            //Check available rooms -- If not, iterate
-            int maxAttempt = 100, attempt = 1;
+            int maxAttempt = 100, attempt = 1; //Avoid infinite loop
             var availableRooms = new List<RoomModel>();
-            while (availableRooms.Count == 0 && attempt < maxAttempt)
+
+
+            // Generate all required dates efficiently
+            //TODO : Consider day-offs
+            var dates = Enumerable.Range(0, levelConfig.TotalSlot)
+                .Select(i => arrangeClassModel.StartWeek.AddDays((i / dayFrames.Count) * 7 + (int)dayFrames[i % dayFrames.Count]))
+                .ToHashSet();
+
+            //Check available rooms -- If not, iterate
+            while (availableRooms.Count == 0 && attempt < maxAttempt) 
             {
-                availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dayFrames, arrangeClassModel.StartWeek, levelConfig.TotalSlot);
+                availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates);
                 attempt++;
                 if (attempt >= maxAttempt)
                 {
@@ -173,13 +191,100 @@ public class ClassService : IClassService
             //Pick a room
             var room = availableRooms[random.Next(availableRooms.Count - 1)];
 
-
-            //3. GENERATE THE SLOTS
+            classDraft.Slots.AddRange(dates.Select(d => new CreateSlotThroughArrangementModel
+            {
+                Date = d,
+                Shift = pickedShift,
+                RoomId = room.Id
+            }).ToList());
             
         }
 
-        throw new NotImplementedException();
+        //4. Now save them to database
+        var result = await SaveClasses(classes, userId);
+
+        return result;
     }
+
+    private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, string userId)
+    {
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            //Create classes
+            var mappedClasses = classes.Adapt<List<Class>>();
+            mappedClasses.ForEach(c =>
+            {
+                c.CreatedById = userId;
+                c.IsPublic = false;
+                c.IsScorePublished = false;
+                c.Status = ClassStatus.NotStarted;
+            });
+            //await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses);
+
+            //Create StudentClasses
+            var studentClasses = new List<StudentClass>();
+            foreach (var c in classes)
+            {
+                studentClasses.AddRange(c.StudentIds.Select(s => new StudentClass
+                {
+                    Id = Guid.NewGuid(),
+                    StudentFirebaseId = s,
+                    CreatedById = userId,
+                    ClassId = c.Id
+                }));
+            }
+            //await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
+
+            //Create Slots
+            var slots = new List<Slot>();
+            foreach (var c in classes)
+            {
+                slots.AddRange(c.Slots.Select(s => new Slot
+                {
+                    Id = Guid.NewGuid(),
+                    ClassId = c.Id,
+                    RoomId = s.RoomId,
+                    Shift = s.Shift,
+                    Date = s.Date,
+                    Status = SlotStatus.NotStarted
+                }));
+            }
+            //await _unitOfWork.SlotRepository.AddRangeAsync(slots);
+
+            //Create studentSlots
+            var studentSlots = new List<SlotStudent>();
+            foreach (var studentClass in studentClasses)
+            {
+                var classSlots = slots.Where(s => s.ClassId == studentClass.ClassId).ToList();
+                foreach (var  slot in classSlots)
+                {
+                    studentSlots.Add(new SlotStudent
+                    {
+                        CreatedById = userId,
+                        SlotId = slot.Id,
+                        StudentFirebaseId = studentClass.StudentFirebaseId!,
+                        AttendanceStatus = AttendanceStatus.NotYet,
+                    });
+                }
+            }
+            //await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
+
+            //Change student status
+
+            await _unitOfWork.SaveChangesAsync();
+
+            // Fetch the class capacity
+            var capacity =
+                int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+
+            return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with { 
+                Capacity = capacity,
+                StudentNumber = studentClasses.Where(sc => sc.ClassId == item.Id).Count()
+            }).ToList();
+        });
+    }
+
+
     /// <summary>
     /// Get random days of the week ensure that each day is at least 1 day apart if possible
     /// </summary>
@@ -192,23 +297,27 @@ public class ClassService : IClassService
             throw new ArgumentException("n must be between 1 and 7", nameof(n));
 
         Random random = new();
-        List<DayOfWeek> allDays = [.. Enum.GetValues<DayOfWeek>()];
+        List<DayOfWeek> allDays = Enum.GetValues<DayOfWeek>().ToList();
 
-        List<DayOfWeek> selectedDays = [];
+        // Shuffle days randomly
+        allDays = allDays.OrderBy(_ => random.Next()).ToList();
+
+        List<DayOfWeek> selectedDays = [allDays[0]]; // Start with a random first day
 
         while (selectedDays.Count < n)
         {
-            var availableDays = allDays.Where(d => !selectedDays.Any(s => Math.Abs((int)s - (int)d) == 1)).ToList();
+            var availableDays = allDays
+                .Where(d => !selectedDays.Contains(d) && selectedDays.All(s => Math.Abs((int)s - (int)d) > 1))
+                .ToList();
 
-            // If spacing is no longer possible, allow selection from all remaining days
+            // If strict spacing is no longer possible, relax the condition
             if (availableDays.Count == 0)
                 availableDays = allDays.Except(selectedDays).ToList();
 
             if (availableDays.Count == 0)
                 break; // Safety check
 
-            var chosenDay = availableDays[random.Next(availableDays.Count)];
-            selectedDays.Add(chosenDay);
+            selectedDays.Add(availableDays[random.Next(availableDays.Count)]);
         }
 
         return selectedDays;

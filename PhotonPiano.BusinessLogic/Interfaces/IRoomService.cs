@@ -18,5 +18,5 @@ public interface IRoomService
 
     Task<bool> IsRoomExist(Guid id);
 
-    Task<List<RoomModel>> GetAvailableRooms(Shift shift, List<DayOfWeek> dayOfTheWeeks, DateOnly startWeek, int totalDays);
+    Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates);
 }

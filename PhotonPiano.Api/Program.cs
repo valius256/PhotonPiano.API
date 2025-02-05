@@ -47,7 +47,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
     DashboardTitle = "PhotonPiano Dashboard",
     DarkModeEnabled = true,
-    IsReadOnlyFunc = context => false,
+    IsReadOnlyFunc = _ => false,
     TimeZoneResolver = new DefaultTimeZoneResolver()
 });
 

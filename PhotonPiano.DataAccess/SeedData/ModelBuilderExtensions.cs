@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -8,32 +10,64 @@ public static class ModelBuilderExtensions
 {
     public static void Seed(this ModelBuilder modelBuilder)
     {
+        static async Task<string> GetFirebaseIdAsync(string email, string password)
+        {
+            using var client = new HttpClient();
+
+            var url =
+                "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAgjNobHW7j13vXDbjd68ZmcGamsf26Z8c";
+
+            var jsonRequest = JsonConvert.SerializeObject(new
+            {
+                email,
+                password,
+                returnSecureToken = true
+            });
+
+            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(url, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorResponse = await response.Content.ReadAsStringAsync();
+                throw new Exception("Error occurred while signing in to Firebase account: " + errorResponse);
+            }
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
+
+            return responseObject.localId;
+        }
+
         #region Account Model
 
         const string admin001 = "admin001";
 
-        var studentFirebaseIds = new[]
+        var studentEmails = new[]
         {
-            "learner001", "learner002", "learner003", "learner004", "learner005", "learner006", "learner007",
-            "learner008",
-            "learner009", "learner010", "learner011", "learner012", "learner013", "learner014", "learner015",
-            "learner016",
-            "learner017", "learner018", "learner019", "learner020", "learner021", "learner022", "learner023",
-            "learner024",
-            "learner025", "learner026", "learner027", "learner028", "learner029", "learner030", "learner031",
-            "learner032",
-            "learner033", "learner034", "learner035", "learner036", "learner037", "learner038", "learner039",
-            "learner040",
-            "learner041", "learner042", "learner043", "learner044", "learner045", "learner046", "learner047",
-            "learner048",
-            "learner049", "learner050"
+            "learner001@gmail.com", "learner002@gmail.com", "learner003@gmail.com", "learner004@gmail.com",
+            "learner005@gmail.com",
+            "learner006@gmail.com", "learner007@gmail.com", "learner008@gmail.com", "learner009@gmail.com",
+            "learner010@gmail.com",
+            "learner011@gmail.com", "learner012@gmail.com", "learner013@gmail.com", "learner014@gmail.com",
+            "learner015@gmail.com",
+            "learner016@gmail.com", "learner017@gmail.com", "learner018@gmail.com", "learner019@gmail.com",
+            "learner020@gmail.com",
+            "learner021@gmail.com", "learner022@gmail.com", "learner023@gmail.com", "learner024@gmail.com",
+            "learner025@gmail.com",
+            "learner026@gmail.com", "learner027@gmail.com", "learner028@gmail.com", "learner029@gmail.com",
+            "learner030@gmail.com",
+            "learner031@gmail.com", "learner032@gmail.com", "learner033@gmail.com", "learner034@gmail.com",
+            "learner035@gmail.com",
+            "learner036@gmail.com", "learner037@gmail.com", "learner038@gmail.com", "learner039@gmail.com",
+            "learner040@gmail.com",
+            "learner041@gmail.com", "learner042@gmail.com", "learner043@gmail.com", "learner044@gmail.com",
+            "learner045@gmail.com",
+            "learner046@gmail.com", "learner047@gmail.com", "learner048@gmail.com", "learner049@gmail.com",
+            "learner050@gmail.com"
         };
 
-        const string teacher001 = "lymytrantest@gmail.com";
-        const string teacher002 = "quachthemytest@gmail.com";
-        const string teacher003 = "buiducnamtest@gmail.com";
-        const string teacherPhatLord = "teacherphatlord@gmail.com";
-        const string teacherBaga = "teacherbaga@gmail.com";
 
         var accounts = new List<Account>
         {
@@ -46,55 +80,61 @@ public static class ModelBuilderExtensions
             }
         };
 
-        for (var i = 0; i < studentFirebaseIds.Length; i++)
+        for (var i = 0; i < studentEmails.Length; i++)
+        {
+            var firebaseId = GetFirebaseIdAsync(studentEmails[i], "123456").Result;
             accounts.Add(new Account
             {
-                AccountFirebaseId = studentFirebaseIds[i],
-                Email = $"{studentFirebaseIds[i]}@gmail.com",
+                AccountFirebaseId = firebaseId,
+                Email = studentEmails[i],
                 Role = Role.Student,
-                UserName = studentFirebaseIds[i],
+                UserName = studentEmails[i].Split('@')[0],
                 Level = Level.Beginner,
                 StudentStatus = StudentStatus.Unregistered
             });
+        }
 
         modelBuilder.Entity<Account>().HasData(accounts.ToArray());
 
         modelBuilder.Entity<Account>().HasData(
             new Account
             {
-                AccountFirebaseId = teacher001,
-                Email = teacher001,
+                AccountFirebaseId = "I8Kl7zLMjbgwZrkN6h9fjHSMHoP2",
+                Email = "lymytrantest@gmail.com",
                 Role = Role.Instructor,
-                UserName = teacher001
+                UserName = "Cô Trân",
+                FullName = "Lý Mỹ Trân"
             },
             new Account
             {
-                AccountFirebaseId = teacher002,
-                Email = teacher002,
+                AccountFirebaseId = "Q0gfswO9mZTGMReq3pyQ7l5qen03",
+                Email = "quachthemytest@gmail.com",
                 Role = Role.Instructor,
-                UserName = teacher002
+                UserName = "Thầy Mỹ",
+                FullName = "Quách Thế Mỹ"
             },
             new Account
             {
-                AccountFirebaseId = teacher003,
-                Email = teacher003,
+                AccountFirebaseId = "tLbBkH40xreMLylKIopJz9Z09Le2",
+                Email = "buiducnamtest@gmail.com",
                 Role = Role.Instructor,
-                UserName = teacher003
+                UserName = "Thầy Nam",
+                FullName = "Bùi Đức Nam"
             },
             new Account
             {
                 AccountFirebaseId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
-                Email = teacherPhatLord,
+                Email = "teacherphatlord@gmail.com",
                 Role = Role.Instructor,
-                UserName = teacherPhatLord,
+                UserName = "Thầy Phát",
                 Level = Level.Intermediate
             },
             new Account
             {
                 AccountFirebaseId = "5YyhXdDHEiXZx38K5kj2qOrgM0l2",
-                Email = teacherBaga,
+                Email = "teacherbaga@gmail.com",
                 Role = Role.Instructor,
-                UserName = teacherBaga,
+                UserName = "Thầy ba",
                 Level = Level.Intermediate
             },
             new Account
@@ -263,7 +303,7 @@ public static class ModelBuilderExtensions
                 RoomId = roomGuids[0],
                 Shift = Shift.Shift1_7h_8h30,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow),
-                InstructorId = teacher002,
+                InstructorId = "I8Kl7zLMjbgwZrkN6h9fjHSMHoP2",
                 RoomName = "Room 1",
                 CreatedById = admin001,
                 Name = "EntranceTest 1"
@@ -284,7 +324,7 @@ public static class ModelBuilderExtensions
                 RoomId = roomGuids[2],
                 Shift = Shift.Shift5_14h15_15h45,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5)),
-                InstructorId = teacher002,
+                InstructorId = "Q0gfswO9mZTGMReq3pyQ7l5qen03",
                 CreatedById = admin001,
                 Name = "EntranceTest 3"
             }
@@ -303,7 +343,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid1,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = studentFirebaseIds[0], // learner001
+                StudentFirebaseId = GetFirebaseIdAsync("learner001@gmail.com", "123456").Result, // learner001
                 Rank = 1,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -314,7 +354,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid2,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = studentFirebaseIds[1], // learner002
+                StudentFirebaseId = GetFirebaseIdAsync("learner002@gmail.com", "123456").Result, // learner002
                 Rank = 2,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -325,7 +365,7 @@ public static class ModelBuilderExtensions
                 Id = entranceTestStudentGuid3,
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
-                StudentFirebaseId = studentFirebaseIds[2], // learner003
+                StudentFirebaseId = GetFirebaseIdAsync("learner003@gmail.com", "123456").Result, // learner003
                 Rank = 3,
                 Year = 2024,
                 IsScoreAnnounced = true,
@@ -363,7 +403,7 @@ public static class ModelBuilderExtensions
             {
                 Id = classTestGuid1,
                 CreatedById = admin001,
-                InstructorId = teacher001,
+                InstructorId = "I8Kl7zLMjbgwZrkN6h9fjHSMHoP2",
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
                 Name = "Class Level 1",
@@ -373,7 +413,7 @@ public static class ModelBuilderExtensions
             {
                 Id = classTestGuid2,
                 CreatedById = admin001,
-                InstructorId = teacher002,
+                InstructorId = "Q0gfswO9mZTGMReq3pyQ7l5qen03",
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
                 Name = "Class Level 2",
@@ -383,7 +423,7 @@ public static class ModelBuilderExtensions
             {
                 Id = classTestGuid3,
                 CreatedById = admin001,
-                InstructorId = teacher003,
+                InstructorId = "tLbBkH40xreMLylKIopJz9Z09Le2",
                 Status = ClassStatus.Ongoing,
                 IsPublic = true,
                 Name = "Class Level 3",
@@ -550,7 +590,6 @@ public static class ModelBuilderExtensions
 
         #endregion
 
-
         #region SystemConfig Model
 
         modelBuilder.Entity<SystemConfig>().HasData(
@@ -684,13 +723,21 @@ public static class ModelBuilderExtensions
 
         var slotStudents = new List<SlotStudent>();
 
+        // Fetch firebaseIds for all students
+        var studentFirebaseIds = new List<string>();
+        foreach (var email in studentEmails)
+        {
+            var firebaseId = GetFirebaseIdAsync(email, "123456").Result;
+            studentFirebaseIds.Add(firebaseId);
+        }
+
         // Assign students to slots ensuring each class has 8-10 students
         for (var i = 0; i < 180; i++)
         for (var j = 0; j < 10; j++)
             slotStudents.Add(new SlotStudent
             {
                 SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[(i * 10 + j) % studentFirebaseIds.Length],
+                StudentFirebaseId = studentFirebaseIds[(i * 10 + j) % studentFirebaseIds.Count],
                 CreatedById = admin001
             });
 
@@ -704,6 +751,12 @@ public static class ModelBuilderExtensions
         for (var i = 0; i < 50; i++) studentClassGuids.Add(Guid.NewGuid());
 
         var studentClasses = new List<StudentClass>();
+
+        foreach (var email in studentEmails)
+        {
+            var firebaseId = GetFirebaseIdAsync(email, "123456").Result;
+            studentFirebaseIds.Add(firebaseId);
+        }
 
         for (var i = 0; i < 5; i++)
         for (var j = 0; j < 10; j++)

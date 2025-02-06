@@ -201,12 +201,12 @@ public class ClassService : IClassService
         }
 
         //4. Now save them to database
-        var result = await SaveClasses(classes, userId);
+        var result = await SaveClasses(classes, students, userId);
 
         return result;
     }
 
-    private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, string userId)
+    private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, List<Account> students,string userId)
     {
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -219,7 +219,7 @@ public class ClassService : IClassService
                 c.IsScorePublished = false;
                 c.Status = ClassStatus.NotStarted;
             });
-            //await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses);
+            await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses);
 
             //Create StudentClasses
             var studentClasses = new List<StudentClass>();
@@ -233,7 +233,7 @@ public class ClassService : IClassService
                     ClassId = c.Id
                 }));
             }
-            //await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
+            await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
 
             //Create Slots
             var slots = new List<Slot>();
@@ -249,7 +249,7 @@ public class ClassService : IClassService
                     Status = SlotStatus.NotStarted
                 }));
             }
-            //await _unitOfWork.SlotRepository.AddRangeAsync(slots);
+            await _unitOfWork.SlotRepository.AddRangeAsync(slots);
 
             //Create studentSlots
             var studentSlots = new List<SlotStudent>();
@@ -267,9 +267,11 @@ public class ClassService : IClassService
                     });
                 }
             }
-            //await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
+            await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
 
             //Change student status
+            await _unitOfWork.AccountRepository.FindAsQueryable(a => a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(b => b.StudentStatus, StudentStatus.InClass)) ;
 
             await _unitOfWork.SaveChangesAsync();
 

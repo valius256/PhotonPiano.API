@@ -35,8 +35,7 @@ public static class IServiceCollectionExtensions
             .AddMapsterConfig()
             .AddRedisCache(configuration)
             .AddPostGresSqlConfiguration()
-            .AddRazorTemplateWithConfigPath()
-            ;
+            .AddRazorTemplateWithConfigPath();
 
 
         return services;
@@ -127,10 +126,9 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
-    
-    
+
     private static bool MessagePrinted = false;
-    
+
     private static string? GetConnectionString(this IConfiguration configuration)
     {
         var rs = configuration.GetValue<bool>("IsDeploy")
@@ -230,6 +228,43 @@ public static class IServiceCollectionExtensions
     }
 
 
+    // private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
+    //     IConfiguration configuration)
+    // {
+    //     services.AddHangfire((_, config) =>
+    //     {
+    //         config.UsePostgreSqlStorage(options =>
+    //         {
+    //             options.UseNpgsqlConnection(GetConnectionString(configuration));
+    //         });
+    //     });
+    //
+    //     services.AddHangfireServer();
+    //     // Register Hangfire and configure it
+    //     services.AddHangfire(config =>
+    //         config.UsePostgreSqlStorage(GetConnectionString(configuration),
+    //             new PostgreSqlStorageOptions
+    //             {
+    //                 QueuePollInterval = TimeSpan.FromSeconds(15),
+    //                 PrepareSchemaIfNecessary = true
+    //             })
+    //     );
+    //
+    //     // Register Hangfire server
+    //     services.AddHangfireServer();
+    //
+    //     // Register any other required services here
+    //     services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
+    //
+    //     services.AddHangfireServer(_ =>
+    //     {
+    //         RecurringJob.AddOrUpdate<TutionService>(x =>
+    //             x.CronAutoCreateTution(), Cron.Monthly());
+    //     });
+    //
+    //
+    //     return services;
+    // }
     private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -240,20 +275,6 @@ public static class IServiceCollectionExtensions
                 options.UseNpgsqlConnection(GetConnectionString(configuration));
             });
         });
-
-        services.AddHangfireServer();
-        // Register Hangfire and configure it
-        services.AddHangfire(config =>
-            config.UsePostgreSqlStorage(GetConnectionString(configuration),
-                new PostgreSqlStorageOptions
-                {
-                    QueuePollInterval = TimeSpan.FromSeconds(15),
-                    PrepareSchemaIfNecessary = true
-                })
-        );
-
-        // Register Hangfire server
-        services.AddHangfireServer();
 
         // Register any other required services here
         services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();

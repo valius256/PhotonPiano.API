@@ -8,6 +8,8 @@ public record AccountModel
     public string? UserName { get; init; }
     
     public string? Phone { get; init; } = string.Empty;
+
+    public string? FullName { get; init; }
     
     public required string Email { get; init; }
     public Role Role { get; init; }

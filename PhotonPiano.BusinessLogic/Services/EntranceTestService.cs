@@ -369,6 +369,7 @@ public class EntranceTestService : IEntranceTestService
                             Id = Guid.CreateVersion7(),
                             StudentFirebaseId = student.AccountFirebaseId,
                             CreatedById = staffAccountId,
+                            FullName = student.FullName,
                             CreatedAt = DateTime.UtcNow,
                         }).ToList()
                 };

@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -43,6 +44,8 @@ public static class ServiceCollectionExtensions
         TypeAdapterConfig<Class, ClassModel>
             .NewConfig()
             .Map(dest => dest.InstructorName, src => src.Instructor.UserName);
+
+        TypeAdapterConfig<UpdateEntranceTestModel, EntranceTest>.NewConfig().IgnoreNullValues(true);
         return services;
     }
 }

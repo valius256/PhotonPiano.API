@@ -5,6 +5,8 @@ public record EntranceTestStudentModel
     public required Guid Id { get; init; }
     public required string StudentFirebaseId { get; init; }
     public Guid? EntranceTestId { get; init; }
+
+    public string? FullName { get; init; }
     
     public decimal? BandScore { get; init; }
     

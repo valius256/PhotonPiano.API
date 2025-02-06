@@ -8,7 +8,7 @@ public class SlotStudent : BaseEntity
     public required string StudentFirebaseId { get; set; }
 
     public AttendanceStatus AttendanceStatus { get; set; } = AttendanceStatus.NotYet;
-
+    public string? TeacherNote { get; set; } = string.Empty;
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
 

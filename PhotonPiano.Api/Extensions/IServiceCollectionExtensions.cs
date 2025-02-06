@@ -21,6 +21,8 @@ namespace PhotonPiano.Api.Extensions;
 
 public static class IServiceCollectionExtensions
 {
+    private static bool MessagePrinted;
+
     public static IServiceCollection AddApiDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllerConfigurations()
@@ -82,7 +84,7 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>
             .NewConfig()
-            .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
+            .Map(dest => dest.ShiftOptions, src => Enumerable.OrderBy(src.ShiftOptions, s => (int)s));
 
         return services;
     }
@@ -125,9 +127,6 @@ public static class IServiceCollectionExtensions
         );
         return services;
     }
-
-
-    private static bool MessagePrinted = false;
 
     private static string? GetConnectionString(this IConfiguration configuration)
     {
@@ -228,43 +227,6 @@ public static class IServiceCollectionExtensions
     }
 
 
-    // private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
-    //     IConfiguration configuration)
-    // {
-    //     services.AddHangfire((_, config) =>
-    //     {
-    //         config.UsePostgreSqlStorage(options =>
-    //         {
-    //             options.UseNpgsqlConnection(GetConnectionString(configuration));
-    //         });
-    //     });
-    //
-    //     services.AddHangfireServer();
-    //     // Register Hangfire and configure it
-    //     services.AddHangfire(config =>
-    //         config.UsePostgreSqlStorage(GetConnectionString(configuration),
-    //             new PostgreSqlStorageOptions
-    //             {
-    //                 QueuePollInterval = TimeSpan.FromSeconds(15),
-    //                 PrepareSchemaIfNecessary = true
-    //             })
-    //     );
-    //
-    //     // Register Hangfire server
-    //     services.AddHangfireServer();
-    //
-    //     // Register any other required services here
-    //     services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
-    //
-    //     services.AddHangfireServer(_ =>
-    //     {
-    //         RecurringJob.AddOrUpdate<TutionService>(x =>
-    //             x.CronAutoCreateTution(), Cron.Monthly());
-    //     });
-    //
-    //
-    //     return services;
-    // }
     private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
         IConfiguration configuration)
     {

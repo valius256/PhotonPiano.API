@@ -52,7 +52,7 @@ public class ClassService : IClassService
             expressions:
             [
                 q => classStatus.Count == 0 || classStatus.Contains(q.Status),
-                q => level.Count == 0 || level.Contains(q.Level ?? Level.Beginner),
+                q => level.Count == 0 || level.Contains(q.Level),
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
                 q => teacherId == null || q.InstructorId == teacherId,
                 q => studentId == null || Enumerable.Any(q.StudentClasses, sc => sc.StudentFirebaseId == studentId),
@@ -98,13 +98,12 @@ public class ClassService : IClassService
         //Validation
         // Validate start week
         if (arrangeClassModel.StartWeek.DayOfWeek != DayOfWeek.Monday)
-        {
             throw new BadRequestException("Incorrect start week");
-        }
 
 
         //Get awaited students
-        var students = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
+        var students = await _unitOfWork.AccountRepository.FindAsync(a =>
+            a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
 
         var maxStudents =
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
@@ -121,19 +120,21 @@ public class ClassService : IClassService
             //Find out how many classes should be created to avoid having left over students
             //Using this formular : minStudents <= Number of student need to assign / Number of classes <= maxStudents
 
-            int numberOfStudentEachClass = 0;
+            var numberOfStudentEachClass = 0;
 
             var validNumbersOfClasses = GetNumberOfClasses(minStudents, studentsOfLevel.Count, maxStudents);
-            int numberOfClasses = validNumbersOfClasses.Count == 0 ? 1 : validNumbersOfClasses[0];
+            var numberOfClasses = validNumbersOfClasses.Count == 0 ? 1 : validNumbersOfClasses[0];
 
             if (validNumbersOfClasses.Count != 0)
             {
-                numberOfStudentEachClass = (int) Math.Ceiling((studentsOfLevel.Count * 1.0) / numberOfClasses);
-            } else
+                numberOfStudentEachClass = (int)Math.Ceiling(studentsOfLevel.Count * 1.0 / numberOfClasses);
+            }
+            else
             {
                 numberOfStudentEachClass = maxStudents;
-                numberOfClasses = (int)Math.Floor((studentsOfLevel.Count * 1.0) / maxStudents);
+                numberOfClasses = (int)Math.Floor(studentsOfLevel.Count * 1.0 / maxStudents);
             }
+
             //Great! With number of students each class and number of classes, we can easily fill in students
             for (var i = 0; i < numberOfClasses; i++)
             {
@@ -142,21 +143,23 @@ public class ClassService : IClassService
                 {
                     Id = Guid.NewGuid(),
                     Level = level,
-                    Name = $"LEVEL{(int)level + 1}_{i}_{DateTime.Now.Month}{DateTime.Now.Year}", //There is a naming rule, handle later
+                    Name =
+                        $"LEVEL{(int)level + 1}_{i}_{DateTime.Now.Month}{DateTime.Now.Year}", //There is a naming rule, handle later
                     StudentIds = selectedStudents.Select(s => s.AccountFirebaseId).ToList()
                 });
             }
         }
+
         //2. IT's SCHEDULE TIME! 
         Random random = new();
         //Get config values
         var levelConfigs = new List<GetSystemConfigOnLevelModel>();
         foreach (var level in Enum.GetValues<Level>())
         {
-            var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(((int) level) + 1);
+            var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)level + 1);
             levelConfigs.Add(config);
         }
-            
+
         //With each class, we will pick a random schedule for it!
         foreach (var classDraft in classes)
         {
@@ -175,19 +178,20 @@ public class ClassService : IClassService
             // Generate all required dates efficiently
             //TODO : Consider day-offs
             var dates = Enumerable.Range(0, levelConfig.TotalSlot)
-                .Select(i => arrangeClassModel.StartWeek.AddDays((i / dayFrames.Count) * 7 + (int)dayFrames[i % dayFrames.Count]))
+                .Select(i =>
+                    arrangeClassModel.StartWeek.AddDays(i / dayFrames.Count * 7 + (int)dayFrames[i % dayFrames.Count]))
                 .ToHashSet();
 
             //Check available rooms -- If not, iterate
-            while (availableRooms.Count == 0 && attempt < maxAttempt) 
+            while (availableRooms.Count == 0 && attempt < maxAttempt)
             {
                 availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates);
                 attempt++;
                 if (attempt >= maxAttempt)
-                {
-                    throw new ConflictException("Unable to complete arranging classes! No available rooms found! Consider different start week or change the shift range");
-                }
+                    throw new ConflictException(
+                        "Unable to complete arranging classes! No available rooms found! Consider different start week or change the shift range");
             }
+
             //Pick a room
             var room = availableRooms[random.Next(availableRooms.Count - 1)];
 
@@ -197,7 +201,6 @@ public class ClassService : IClassService
                 Shift = pickedShift,
                 RoomId = room.Id
             }).ToList());
-            
         }
 
         //4. Now save them to database
@@ -206,7 +209,8 @@ public class ClassService : IClassService
         return result;
     }
 
-    private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, List<Account> students,string userId)
+    private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, List<Account> students,
+        string userId)
     {
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -224,7 +228,6 @@ public class ClassService : IClassService
             //Create StudentClasses
             var studentClasses = new List<StudentClass>();
             foreach (var c in classes)
-            {
                 studentClasses.AddRange(c.StudentIds.Select(s => new StudentClass
                 {
                     Id = Guid.NewGuid(),
@@ -232,13 +235,11 @@ public class ClassService : IClassService
                     CreatedById = userId,
                     ClassId = c.Id
                 }));
-            }
             await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
 
             //Create Slots
             var slots = new List<Slot>();
             foreach (var c in classes)
-            {
                 slots.AddRange(c.Slots.Select(s => new Slot
                 {
                     Id = Guid.NewGuid(),
@@ -248,7 +249,6 @@ public class ClassService : IClassService
                     Date = s.Date,
                     Status = SlotStatus.NotStarted
                 }));
-            }
             await _unitOfWork.SlotRepository.AddRangeAsync(slots);
 
             //Create studentSlots
@@ -256,22 +256,22 @@ public class ClassService : IClassService
             foreach (var studentClass in studentClasses)
             {
                 var classSlots = slots.Where(s => s.ClassId == studentClass.ClassId).ToList();
-                foreach (var  slot in classSlots)
-                {
+                foreach (var slot in classSlots)
                     studentSlots.Add(new SlotStudent
                     {
                         CreatedById = userId,
                         SlotId = slot.Id,
                         StudentFirebaseId = studentClass.StudentFirebaseId!,
-                        AttendanceStatus = AttendanceStatus.NotYet,
+                        AttendanceStatus = AttendanceStatus.NotYet
                     });
-                }
             }
+
             await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
 
             //Change student status
-            await _unitOfWork.AccountRepository.FindAsQueryable(a => a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(b => b.StudentStatus, StudentStatus.InClass)) ;
+            await _unitOfWork.AccountRepository.FindAsQueryable(a =>
+                    a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(b => b.StudentStatus, StudentStatus.InClass));
 
             await _unitOfWork.SaveChangesAsync();
 
@@ -279,7 +279,8 @@ public class ClassService : IClassService
             var capacity =
                 int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
 
-            return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with { 
+            return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with
+            {
                 Capacity = capacity,
                 StudentNumber = studentClasses.Where(sc => sc.ClassId == item.Id).Count()
             }).ToList();
@@ -288,7 +289,7 @@ public class ClassService : IClassService
 
 
     /// <summary>
-    /// Get random days of the week ensure that each day is at least 1 day apart if possible
+    ///     Get random days of the week ensure that each day is at least 1 day apart if possible
     /// </summary>
     /// <param name="n"></param>
     /// <returns></returns>
@@ -299,7 +300,7 @@ public class ClassService : IClassService
             throw new ArgumentException("n must be between 1 and 7", nameof(n));
 
         Random random = new();
-        List<DayOfWeek> allDays = Enum.GetValues<DayOfWeek>().ToList();
+        var allDays = Enum.GetValues<DayOfWeek>().ToList();
 
         // Shuffle days randomly
         allDays = allDays.OrderBy(_ => random.Next()).ToList();
@@ -324,8 +325,9 @@ public class ClassService : IClassService
 
         return selectedDays;
     }
+
     /// <summary>
-    /// Pick randomly n elements from a list and remove it from the list
+    ///     Pick randomly n elements from a list and remove it from the list
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="list"></param>
@@ -333,15 +335,15 @@ public class ClassService : IClassService
     /// <returns></returns>
     private List<T> PickRandomFromList<T>(ref List<T> list, int n)
     {
-        Random rand = new Random();
+        var rand = new Random();
         List<T> selected = [];
 
         if (n > list.Count)
             n = list.Count; // Ensure we don't remove more elements than available
 
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
-            int index = rand.Next(list.Count); // Get random index
+            var index = rand.Next(list.Count); // Get random index
             selected.Add(list[index]); // Add to selected list
             list.RemoveAt(index); // Remove from original list
         }
@@ -354,18 +356,15 @@ public class ClassService : IClassService
         List<int> validNs = [];
 
         // Solve for lower and upper bounds of N
-        double minN = B / C; // Derived from B/N <= C -> N >= B/C
-        double maxN = B / A; // Derived from A <= B/N -> N <= B/A
+        var minN = B / C; // Derived from B/N <= C -> N >= B/C
+        var maxN = B / A; // Derived from A <= B/N -> N <= B/A
 
         // Convert bounds to integer range
-        int start = (int)Math.Ceiling(minN); // Smallest integer >= minN
-        int end = (int)Math.Floor(maxN);     // Largest integer <= maxN
+        var start = (int)Math.Ceiling(minN); // Smallest integer >= minN
+        var end = (int)Math.Floor(maxN); // Largest integer <= maxN
 
         // Collect valid integer values
-        for (int N = start; N <= end; N++)
-        {
-            validNs.Add(N);
-        }
+        for (var N = start; N <= end; N++) validNs.Add(N);
 
         return validNs;
     }

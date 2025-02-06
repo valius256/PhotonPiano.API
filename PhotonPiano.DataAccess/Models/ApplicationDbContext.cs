@@ -61,8 +61,6 @@ public class ApplicationDbContext : DbContext
 
         // modelBuilder.Seed();
 
-
-
         base.OnModelCreating(modelBuilder);
     }
 

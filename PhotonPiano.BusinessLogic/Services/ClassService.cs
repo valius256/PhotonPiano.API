@@ -64,6 +64,15 @@ public class ClassService : IClassService
         // Fetch the class capacity
         var capacity =
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+        var levelConfigs = new List<GetSystemConfigOnLevelModel>
+        {
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(1),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(2),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(3),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(4),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(5),
+
+        };
 
         // Fetch students of the classes in one query
         var classIds = result.Items.Select(c => c.Id).ToList();
@@ -75,12 +84,21 @@ public class ClassService : IClassService
             .Select(g => new { ClassId = g.Key, Count = g.Count() })
             .ToDictionary(c => c.ClassId, c => c.Count);
 
+        var slots = await _unitOfWork.SlotRepository
+            .FindAsync(s => classIds.Contains(s.ClassId));
 
+        var slotCountDictionary = slots
+           .GroupBy(c => c.ClassId)
+           .Select(g => new { ClassId = g.Key, Count = g.Count() })
+           .ToDictionary(c => c.ClassId, c => c.Count);
         // Update items efficiently
         result.Items = result.Items.Select(item => item with
         {
             Capacity = capacity,
-            StudentNumber = countDictionary.TryGetValue(item.Id, out var count) ? count : 0
+            StudentNumber = countDictionary.TryGetValue(item.Id, out var count) ? count : 0,
+            TotalSlots = slotCountDictionary.TryGetValue(item.Id, out var slotCount) ? slotCount : 0,
+            RequiredSlots = levelConfigs[(int) item.Level].TotalSlot,
+            
         }).ToList();
 
 

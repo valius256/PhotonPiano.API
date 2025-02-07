@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
@@ -47,7 +48,7 @@ public class ClassService : IClassService
 
         var likeKeyword = queryClass.GetLikeKeyword();
 
-        var result = await _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsync<ClassModel>(
+        var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassModel>(
             page, pageSize, sortColumn, orderByDesc,
             expressions:
             [
@@ -64,27 +65,48 @@ public class ClassService : IClassService
         // Fetch the class capacity
         var capacity =
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
-
-        // Fetch students of the classes in one query
-        var classIds = result.Items.Select(c => c.Id).ToList();
-        var studentClasses = await _unitOfWork.StudentClassRepository
-            .FindAsync(sc => classIds.Contains(sc.ClassId));
-
-        var countDictionary = studentClasses
-            .GroupBy(c => c.ClassId)
-            .Select(g => new { ClassId = g.Key, Count = g.Count() })
-            .ToDictionary(c => c.ClassId, c => c.Count);
-
-
-        // Update items efficiently
-        result.Items = result.Items.Select(item => item with
+        var levelConfigs = new List<GetSystemConfigOnLevelModel>
         {
-            Capacity = capacity,
-            StudentNumber = countDictionary.TryGetValue(item.Id, out var count) ? count : 0
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(1),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(2),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(3),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(4),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(5),
+
+        };
+
+        // Perform the paged query with projections
+        var result = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(q => new ClassModel
+            {
+                Id = q.Id,
+                Name = q.Name,
+                Level = q.Level,
+                Status = q.Status,
+                InstructorId = q.InstructorId,
+                IsScorePublished = q.IsScorePublished,
+                Capacity = capacity,
+                CreatedById = q.CreatedById,
+                // Aggregate counts directly in SQL
+                StudentNumber = q.StudentClasses.Count(),
+                TotalSlots = q.Slots.Count()
+            })
+            .ToListAsync();
+
+        result = result.Select(item => item with
+        {
+            RequiredSlots = levelConfigs[(int)item.Level].TotalSlot
         }).ToList();
 
-
-        return result;
+        return new PagedResult<ClassModel>
+        {
+            TotalCount = await query.CountAsync(),
+            Page = page,
+            Limit = pageSize,
+            Items = result
+        };
     }
 
     public async Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId)

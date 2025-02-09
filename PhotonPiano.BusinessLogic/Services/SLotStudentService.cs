@@ -3,7 +3,6 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
-using PhotonPiano.Shared.Extensions;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -48,7 +47,7 @@ public class SlotStudentService : ISlotStudentService
             {
                 slotStudent.AttendanceStatus = AttendanceStatus.Attended;
                 slotStudent.UpdateById = teacherId;
-                slotStudent.UpdatedAt = DateTime.UtcNow.ToVietnamTime();
+                slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
                 await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
             }
         }
@@ -66,9 +65,11 @@ public class SlotStudentService : ISlotStudentService
                 {
                     slotStudent.AttendanceStatus = AttendanceStatus.Absent;
                     slotStudent.UpdateById = teacherId;
-                    slotStudent.UpdatedAt = DateTime.UtcNow.ToVietnamTime();
+                    slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
                     await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
                 }
             }
+
+        await _unitOfWork.SaveChangesAsync();
     }
 }

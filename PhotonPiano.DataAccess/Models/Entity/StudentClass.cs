@@ -3,7 +3,7 @@ namespace PhotonPiano.DataAccess.Models.Entity;
 public class StudentClass : BaseEntityWithId
 {
     public Guid ClassId { get; set; }
-    public string? StudentFirebaseId { get; set; }
+    public required string StudentFirebaseId { get; set; }
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }

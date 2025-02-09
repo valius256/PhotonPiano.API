@@ -39,6 +39,22 @@ public class RoomService : IRoomService
 
         return result;
     }
+    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates)
+    {
+        
+
+        // Fetch all available rooms in a single query
+        var availableRooms = await _unitOfWork.RoomRepository.FindAsync(r =>
+            !r.Slots.Any(s => s.Shift != shift && dates.Contains(s.Date))
+        );
+
+        // Convert to RoomModel, ensuring unique rooms using HashSet
+        return availableRooms
+            .DistinctBy(r => r.Id) // LINQ to remove duplicates
+            .Select(r => r.Adapt<RoomModel>())
+            .ToList();
+    }
+
 
     public async Task<RoomDetailModel> GetRoomDetailById(Guid id)
     {

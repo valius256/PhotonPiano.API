@@ -6,7 +6,7 @@ public class Class : BaseEntityWithId
 {
     public string? InstructorId { get; set; }
     public ClassStatus Status { get; set; } = ClassStatus.NotStarted;
-    public Level? Level { get; set; }
+    public Level Level { get; set; }
     public bool IsPublic { get; set; }
     public required string Name { get; set; }
     public required string CreatedById { get; set; }

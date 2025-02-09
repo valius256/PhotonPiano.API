@@ -128,7 +128,8 @@ public class SchedulerService : ISchedulerService
         return entranceTests;
     }
 
-    public async Task<List<EntranceTest>> AssignInstructorsToEntranceTests(List<EntranceTest> entranceTests, List<TimeSlot> validSlots)
+    public async Task<List<EntranceTest>> AssignInstructorsToEntranceTests(List<EntranceTest> entranceTests,
+        List<TimeSlot> validSlots)
     {
         var instructors = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Instructor
                                                                              && a.Status == AccountStatus.Active,
@@ -141,8 +142,9 @@ public class SchedulerService : ISchedulerService
 
         //Get all booked slot
         var bookedSlots =
-            await _unitOfWork.SlotRepository.FindProjectedAsync<SlotWithClassModel>(s => s.Status != SlotStatus.NotStarted, hasTrackings: false);
-        
+            await _unitOfWork.SlotRepository.FindProjectedAsync<SlotWithClassModel>(
+                s => s.Status != SlotStatus.NotStarted, hasTrackings: false);
+
         var assignedTests = new List<EntranceTest>();
         var unassignedTests = new List<EntranceTest>(); // Track tests that need rescheduling
 
@@ -169,7 +171,7 @@ public class SchedulerService : ISchedulerService
                     Shift = entranceTest.Shift,
                     Status = SlotStatus.NotStarted
                 });
-                
+
                 assignedTests.Add(entranceTest);
             }
             else
@@ -187,7 +189,7 @@ public class SchedulerService : ISchedulerService
                 && !bookedSlots.Any(s => s.Date == DateOnly.FromDateTime(slot.Date) && s.Shift == slot.Shift)
             );
 
-            if (alternativeSlot is not null) 
+            if (alternativeSlot is not null)
             {
                 // Update test to new shift
                 test.Date = DateOnly.FromDateTime(alternativeSlot.Date);
@@ -205,7 +207,7 @@ public class SchedulerService : ISchedulerService
                 if (availableLecturer is not null)
                 {
                     test.InstructorId = availableLecturer.AccountFirebaseId;
-                    
+
                     assignedTests.Add(test);
 
                     unassignedTests.Remove(test);
@@ -222,11 +224,15 @@ public class SchedulerService : ISchedulerService
                     continue;
                 }
             }
-            
-            // If rescheduling fails, notify admin or handle manually
-            throw new BadRequestException($"No available lecturer or alternative slot for entrance test {test.Id}.");
         }
 
-        return [..assignedTests, ..unassignedTests];
+        if (unassignedTests.Count != 0)
+        {
+            // If rescheduling fails, notify admin or handle manually
+            throw new BadRequestException(
+                $"No available lecturer or alternative slot for entrance test {unassignedTests.Select(t => t.Id).ToArray()}.");
+        }
+
+        return assignedTests;
     }
 }

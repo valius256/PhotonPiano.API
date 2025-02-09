@@ -5,6 +5,7 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Room;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -20,6 +21,7 @@ public class RoomsController : BaseController
     }
 
     [HttpGet]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Get rooms with paging")]
     public async Task<ActionResult<List<RoomDetailModel>>> GetRooms(
         [FromQuery] QueryRoomRequest request)

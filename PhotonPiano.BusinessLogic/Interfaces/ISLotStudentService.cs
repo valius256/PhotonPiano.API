@@ -4,5 +4,5 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface ISlotStudentService
 {
-    Task UpdateAttentStudent(UpdateAttentdanceModel model, string teacherId);
+    Task<bool> UpdateAttentStudent(UpdateAttentdanceModel model, string teacherId);
 }

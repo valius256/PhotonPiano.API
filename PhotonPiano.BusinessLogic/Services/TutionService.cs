@@ -101,7 +101,8 @@ public class TutionService : ITutionService
                         { "validFromTo", $"{tutionEntity.StartDate:yyyy-MM-dd} to {tutionEntity.EndDate:yyyy-MM-dd}" }
                     };
 
-                    await _serviceFactory.EmailService.SendAsync("PaymentSuccess", new List<string> { account.Email },
+                    await _serviceFactory.EmailService.SendAsync("PaymentSuccess",
+                        new List<string> { account.Email },
                         null, emailParam);
 
 
@@ -155,6 +156,8 @@ public class TutionService : ITutionService
                 Amount = systemConfigLevel.PriceOfSlot * systemConfigLevel.NumOfSlotInWeek * 4,
                 PaymentStatus = PaymentStatus.Pending
             });
+
+            tutions.RemoveAll(x => x.Amount == 0);
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -176,11 +179,13 @@ public class TutionService : ITutionService
             page, pageSize, sortColumn, orderByDesc,
             expressions:
             [
-                x => studentClassIds == null || studentClassIds.Count == 0 || studentClassIds.Contains(x.StudentClassId),
+                x => studentClassIds == null || studentClassIds.Count == 0 ||
+                     studentClassIds.Contains(x.StudentClassId),
                 x => paymentStatuses == null || paymentStatuses.Count == 0 || paymentStatuses.Contains(x.PaymentStatus),
                 x => !startDate.HasValue || x.StartDate >= startDate.Value,
                 x => !endDate.HasValue || x.EndDate <= endDate.Value,
-                x => account != null && (account.Role == Role.Staff || x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
+                x => account != null && (account.Role == Role.Staff ||
+                                         x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
             ]);
 
 
@@ -189,11 +194,10 @@ public class TutionService : ITutionService
 
     public async Task<TutionWithStudentClassModel> GetTutionById(Guid tutionId)
     {
-        
         var result = await _unitOfWork.TuitionRepository
             .FindSingleProjectedAsync<TutionWithStudentClassModel>(e => e.Id == tutionId, false);
         if (result is null) throw new NotFoundException("Tuition not found.");
-        
+
         return result;
     }
 

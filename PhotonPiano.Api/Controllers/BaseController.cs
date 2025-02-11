@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.Shared.Models;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -48,5 +49,27 @@ public class BaseController : Controller
             // _logger.LogInformation("Can't get userEntityId from HttpContext");
             return string.Empty;
         }
+    }
+
+    protected async Task<IApiResult<F>> OkAsync<F>(Task<F> action, string? op = null)
+    {
+        var result = await Task.Run(() => action);
+
+        return new ApiResult<F>
+        {
+            Op = op,
+            Status = "OK",
+            Data = result
+        };
+    }
+
+    protected static IApiResult<F> OkAsync<F>(F data, string? op = null)
+    {
+        return new ApiResult<F>
+        {
+            Op = op,
+            Status = "OK",
+            Data = data
+        };
     }
 }

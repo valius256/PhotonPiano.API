@@ -34,7 +34,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<New> News { get; set; }
     public DbSet<DayOff> DayOffs { get; set; }
     public DbSet<AccountNotification> AccountNotifications { get; set; }
-
+    public DbSet<Application> Applications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,6 +56,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new NewConfiguration());
         modelBuilder.ApplyConfiguration(new DayOffConfiguration());
         modelBuilder.ApplyConfiguration(new AccountNotificationConfiguration());
+        modelBuilder.ApplyConfiguration(new ApplicationConfiguration());
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());
 

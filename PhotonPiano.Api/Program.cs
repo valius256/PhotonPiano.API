@@ -5,6 +5,7 @@ using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
+using PhotonPiano.PubSub;
 using PhotonPiano.ServiceDefaults;
 using Serilog;
 
@@ -19,6 +20,8 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
 
+builder.AddPubSub();
+
 builder.Services.AddSingleton<RedirectUrlValidator>();
 
 //Add serilog
@@ -28,7 +31,7 @@ builder.AddServiceDefaults();
 TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
-
+app.UseRouting();
 app.MapDefaultEndpoints();
 
 await app.ConfigureDatabaseAsync();
@@ -55,6 +58,8 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 app.UseExceptionHandler();
 
 app.UseAuthorization();
+
+app.MapPubSub();
 
 app.MapControllers();
 

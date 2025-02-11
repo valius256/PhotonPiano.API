@@ -112,4 +112,10 @@ public class Account : BaseEntity
     // AccountNotification 
     public virtual ICollection<AccountNotification> AccountNotifications { get; set; } =
         new List<AccountNotification>();
+
+    // Application
+    public virtual ICollection<Application> CreatedApplications { get; set; } = new List<Application>();
+    public virtual ICollection<Application> UpdatedApplications { get; set; } = new List<Application>();
+    public virtual ICollection<Application> ApprovedApplications { get; set; } = new List<Application>();
+    public virtual ICollection<Application> DeletedApplications { get; set; } = new List<Application>();
 }

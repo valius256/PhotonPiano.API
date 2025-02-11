@@ -90,7 +90,8 @@ public static class ModelBuilderExtensions
                 Role = Role.Student,
                 UserName = studentEmails[i].Split('@')[0],
                 Level = Level.Beginner,
-                StudentStatus = StudentStatus.Unregistered
+                StudentStatus = StudentStatus.Unregistered,
+                FullName = NameGenerator.GenerateFullName()
             });
         }
 
@@ -466,7 +467,17 @@ public static class ModelBuilderExtensions
 
         var slots = new List<Slot>();
 
-// Level 1: 30 sessions, 2 sessions per week (Monday and Wednesday)
+        // Assign a fixed room for each class
+        var classRooms = new Dictionary<Guid, Guid>
+        {
+            { classTestGuid1, roomGuids[0] },
+            { classTestGuid2, roomGuids[1] },
+            { classTestGuid3, roomGuids[2] },
+            { classTestGuid4, roomGuids[3] },
+            { classTestGuid5, roomGuids[4] }
+        };
+
+        // Level 1: 30 sessions, 2 sessions per week (Monday and Wednesday)
         for (var i = 0; i < 15; i++)
         {
             var date = DateTime.UtcNow.AddDays(i * 7);
@@ -475,7 +486,7 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2],
                 ClassId = classTestGuid1,
                 Date = DateOnly.FromDateTime(date),
-                RoomId = roomGuids[i % 20],
+                RoomId = classRooms[classTestGuid1],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
@@ -484,13 +495,13 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2 + 1],
                 ClassId = classTestGuid1,
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
-                RoomId = roomGuids[i % 20],
-                Shift = shifts[i % shifts.Length],
+                RoomId = classRooms[classTestGuid1],
+                Shift = shifts[(i + 1) % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
         }
 
-// Level 2: 30 sessions, 2 sessions per week (Tuesday and Thursday)
+        // Level 2: 30 sessions, 2 sessions per week (Tuesday and Thursday)
         for (var i = 15; i < 30; i++)
         {
             var date = DateTime.UtcNow.AddDays((i - 15) * 7 + 1);
@@ -499,7 +510,7 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2],
                 ClassId = classTestGuid2,
                 Date = DateOnly.FromDateTime(date),
-                RoomId = roomGuids[i % 20],
+                RoomId = classRooms[classTestGuid2],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
@@ -508,13 +519,13 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2 + 1],
                 ClassId = classTestGuid2,
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
-                RoomId = roomGuids[i % 20],
-                Shift = shifts[i % shifts.Length],
+                RoomId = classRooms[classTestGuid2],
+                Shift = shifts[(i + 1) % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
         }
 
-// Level 3: 30 sessions, 2 sessions per week (Monday and Wednesday)
+        // Level 3: 30 sessions, 2 sessions per week (Monday and Wednesday)
         for (var i = 30; i < 45; i++)
         {
             var date = DateTime.UtcNow.AddDays((i - 30) * 7);
@@ -523,7 +534,7 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2],
                 ClassId = classTestGuid3,
                 Date = DateOnly.FromDateTime(date),
-                RoomId = roomGuids[i % 20],
+                RoomId = classRooms[classTestGuid3],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
@@ -532,13 +543,13 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2 + 1],
                 ClassId = classTestGuid3,
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
-                RoomId = roomGuids[i % 20],
-                Shift = shifts[i % shifts.Length],
+                RoomId = classRooms[classTestGuid3],
+                Shift = shifts[(i + 1) % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
         }
 
-// Level 4: 40 sessions, 2 sessions per week (Tuesday and Thursday)
+        // Level 4: 40 sessions, 2 sessions per week (Tuesday and Thursday)
         for (var i = 45; i < 65; i++)
         {
             var date = DateTime.UtcNow.AddDays((i - 45) * 7 + 1);
@@ -547,7 +558,7 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2],
                 ClassId = classTestGuid4,
                 Date = DateOnly.FromDateTime(date),
-                RoomId = roomGuids[i % 20],
+                RoomId = classRooms[classTestGuid4],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
@@ -556,13 +567,13 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2 + 1],
                 ClassId = classTestGuid4,
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
-                RoomId = roomGuids[i % 20],
-                Shift = shifts[i % shifts.Length],
+                RoomId = classRooms[classTestGuid4],
+                Shift = shifts[(i + 1) % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
         }
 
-// Level 5: 50 sessions, 2 sessions per week (Monday and Wednesday)
+        // Level 5: 50 sessions, 2 sessions per week (Monday and Wednesday)
         for (var i = 65; i < 90; i++)
         {
             var date = DateTime.UtcNow.AddDays((i - 65) * 7);
@@ -571,7 +582,7 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2],
                 ClassId = classTestGuid5,
                 Date = DateOnly.FromDateTime(date),
-                RoomId = roomGuids[i % 20],
+                RoomId = classRooms[classTestGuid5],
                 Shift = shifts[i % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
@@ -580,8 +591,8 @@ public static class ModelBuilderExtensions
                 Id = slotGuids[i * 2 + 1],
                 ClassId = classTestGuid5,
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
-                RoomId = roomGuids[i % 20],
-                Shift = shifts[i % shifts.Length],
+                RoomId = classRooms[classTestGuid5],
+                Shift = shifts[(i + 1) % shifts.Length],
                 Status = SlotStatus.Ongoing
             });
         }
@@ -731,15 +742,35 @@ public static class ModelBuilderExtensions
             studentFirebaseIds.Add(firebaseId);
         }
 
-        // Assign students to slots ensuring each class has 8-10 students
-        for (var i = 0; i < 180; i++)
-        for (var j = 0; j < 10; j++)
-            slotStudents.Add(new SlotStudent
+        // Assign students to classes
+        var studentsPerClass = 10;
+        var classIds = new[] { classTestGuid1, classTestGuid2, classTestGuid3, classTestGuid4, classTestGuid5 };
+        var studentClassAssignments = new Dictionary<Guid, List<string>>();
+
+        for (var i = 0; i < classIds.Length; i++)
+        {
+            var classId = classIds[i];
+            studentClassAssignments[classId] = new List<string>();
+            for (var j = 0; j < studentsPerClass; j++)
             {
-                SlotId = slotGuids[i],
-                StudentFirebaseId = studentFirebaseIds[(i * 10 + j) % studentFirebaseIds.Count],
-                CreatedById = admin001
-            });
+                var studentIndex = i * studentsPerClass + j;
+                if (studentIndex < studentFirebaseIds.Count)
+                    studentClassAssignments[classId].Add(studentFirebaseIds[studentIndex]);
+            }
+        }
+
+        // Assign students to slots based on their class assignment
+        foreach (var slot in slots)
+        {
+            var studentsForClass = studentClassAssignments[slot.ClassId];
+            foreach (var studentId in studentsForClass)
+                slotStudents.Add(new SlotStudent
+                {
+                    SlotId = slot.Id,
+                    StudentFirebaseId = studentId,
+                    CreatedById = admin001
+                });
+        }
 
         modelBuilder.Entity<SlotStudent>().HasData(slotStudents);
 
@@ -752,24 +783,22 @@ public static class ModelBuilderExtensions
 
         var studentClasses = new List<StudentClass>();
 
-        foreach (var email in studentEmails)
+        for (var i = 0; i < classIds.Length; i++)
         {
-            var firebaseId = GetFirebaseIdAsync(email, "123456").Result;
-            studentFirebaseIds.Add(firebaseId);
+            var classId = classIds[i];
+            var studentsInClass = studentClassAssignments[classId];
+            for (var j = 0; j < studentsInClass.Count; j++)
+                studentClasses.Add(new StudentClass
+                {
+                    Id = studentClassGuids[i * studentsPerClass + j],
+                    ClassId = classId,
+                    StudentFirebaseId = studentsInClass[j],
+                    CreatedById = admin001,
+                    IsPassed = false,
+                    GPA = null,
+                    InstructorComment = null
+                });
         }
-
-        for (var i = 0; i < 5; i++)
-        for (var j = 0; j < 10; j++)
-            studentClasses.Add(new StudentClass
-            {
-                Id = studentClassGuids[i * 10 + j],
-                ClassId = new[] { classTestGuid1, classTestGuid2, classTestGuid3, classTestGuid4, classTestGuid5 }[i],
-                StudentFirebaseId = studentFirebaseIds[i * 10 + j],
-                CreatedById = admin001,
-                IsPassed = false,
-                GPA = null,
-                InstructorComment = null
-            });
 
         modelBuilder.Entity<StudentClass>().HasData(studentClasses);
 

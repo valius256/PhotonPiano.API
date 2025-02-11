@@ -17,7 +17,7 @@ public class SlotStudentService : ISlotStudentService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task UpdateAttentStudent(UpdateAttentdanceModel model, string teacherId)
+    public async Task<bool> UpdateAttentStudent(UpdateAttentdanceModel model, string teacherId)
     {
         var slotEntity = await _serviceFactory.SlotService.GetSLotDetailById(model.SlotId);
 
@@ -35,8 +35,8 @@ public class SlotStudentService : ISlotStudentService
 
         // Todo: allow for future attendance or not? 
         // Validate if the slot has passed 24 hours
-        if ((currentDateTime - slotDateTime).TotalHours > 24)
-            throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
+        // if ((currentDateTime - slotDateTime).TotalHours > 24)
+        //     throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
 
         foreach (var studentId in model.StudentAttentIds)
         {
@@ -71,5 +71,7 @@ public class SlotStudentService : ISlotStudentService
             }
 
         await _unitOfWork.SaveChangesAsync();
+
+        return true;
     }
 }

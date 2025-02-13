@@ -30,6 +30,8 @@ public interface IUnitOfWork
     ITuitionRepository TuitionRepository { get; }
     
     IDayOffRepository DayOffRepository { get; }
+    
+    IApplicationRepository ApplicationRepository { get; }
 
     Task<int> SaveChangesAsync();
 

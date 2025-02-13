@@ -37,4 +37,6 @@ public interface IServiceFactory
     IEmailService EmailService { get; }
 
     ISchedulerService SchedulerService { get; }
+    
+    IApplicationService ApplicationService { get; }
 }

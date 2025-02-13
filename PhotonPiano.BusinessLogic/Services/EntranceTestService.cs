@@ -177,9 +177,26 @@ public class EntranceTestService : IEntranceTestService
     {
         var entranceTestEntity = await _unitOfWork.EntranceTestRepository.FindSingleAsync(q => q.Id == id);
 
-        if (entranceTestEntity is null) throw new NotFoundException("This EntranceTest not found.");
+        if (entranceTestEntity is null)
+        {
+            throw new NotFoundException("This EntranceTest not found.");
+        }
 
         entranceTestStudentModel.Adapt(entranceTestEntity);
+
+        if (entranceTestStudentModel.RoomId.HasValue)
+        {
+            var room = await _unitOfWork.RoomRepository.FindSingleAsync(
+                r => r.Id == entranceTestStudentModel.RoomId.Value,
+                hasTrackings: false);
+
+            if (room is null)
+            {
+                throw new NotFoundException("Room not found.");
+            }
+
+            entranceTestEntity.RoomName = room.Name;
+        }
 
         entranceTestEntity.UpdateById = currentUserFirebaseId;
         entranceTestEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
@@ -386,7 +403,7 @@ public class EntranceTestService : IEntranceTestService
     }
 
 
-    public async Task<List<EntranceTestModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
+    public async Task<List<EntranceTestDetailModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
         AccountModel currentAccount)
     {
         var (studentIds, startDate, endDate, shiftOptions) = model;
@@ -438,11 +455,14 @@ public class EntranceTestService : IEntranceTestService
             startDate, endDate,
             validSlots);
 
+        entranceTests =
+            await _serviceFactory.SchedulerService.AssignInstructorsToEntranceTests(entranceTests, validSlots);
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.EntranceTestRepository.AddRangeAsync(entranceTests);
         });
 
-        return entranceTests.Adapt<List<EntranceTestModel>>();
+        return entranceTests.Adapt<List<EntranceTestDetailModel>>();
     }
 }

@@ -233,6 +233,25 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         bool ignoreQueryFilters = false,
         params List<Expression<Func<T, bool>>?> expressions)
     {
+        var query = GetPaginatedWithProjectionAsQueryable<TProjectTo>(pageNumber, pageSize, sortColumn, desc, hasTrackings, ignoreQueryFilters, expressions);
+
+        // Paginate and return results
+        return new PagedResult<TProjectTo>
+        {
+            TotalCount = await query.CountAsync(),
+            Page = pageNumber,
+            Limit = pageSize,
+            Items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ProjectToType<TProjectTo>()
+                .ToListAsync()
+        };
+    }
+
+    public IQueryable<T> GetPaginatedWithProjectionAsQueryable<TProjectTo>(int pageNumber,
+        int pageSize, string sortColumn, bool desc,
+        bool hasTrackings = false,
+        bool ignoreQueryFilters = false,
+        params List<Expression<Func<T, bool>>?> expressions)
+    {
         // Validate the sortColumn
         var property = typeof(T).GetProperty(sortColumn);
         if (property is null)
@@ -261,13 +280,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             : Queryable.OrderBy(query, (dynamic)orderByExpression);
 
         // Paginate and return results
-        return new PagedResult<TProjectTo>
-        {
-            TotalCount = await query.CountAsync(),
-            Page = pageNumber,
-            Limit = pageSize,
-            Items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ProjectToType<TProjectTo>()
-                .ToListAsync()
-        };
+        return query;
     }
 }

@@ -62,4 +62,10 @@ public interface IGenericRepository<T> where T : BaseEntity
     (int pageNumber, int pageSize, string sortColumn, bool desc, bool hasTrackings = false,
         bool ignoreQueryFilters = false,
         params List<Expression<Func<T, bool>>?> expressions);
+
+    IQueryable<T> GetPaginatedWithProjectionAsQueryable<TProjectTo>(int pageNumber,
+        int pageSize, string sortColumn, bool desc,
+        bool hasTrackings = false,
+        bool ignoreQueryFilters = false,
+        params List<Expression<Func<T, bool>>?> expressions);
 }

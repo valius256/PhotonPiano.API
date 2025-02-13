@@ -7,7 +7,6 @@ public class EntranceTestStudent : BaseEntityWithId
     public required string StudentFirebaseId { get; set; }
     public Guid? EntranceTestId { get; set; }
     public decimal? BandScore { get; set; }
-
     public string? FullName { get; set; }
     [Range(1, 5)] public int? Rank { get; set; }
 

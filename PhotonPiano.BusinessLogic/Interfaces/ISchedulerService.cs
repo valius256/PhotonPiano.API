@@ -13,4 +13,6 @@ public interface ISchedulerService
     Task<List<EntranceTest>> AssignTimeSlotsToEntranceTests(List<EntranceTest> entranceTests, Graph<EntranceTest> graph,
         DateTime startDate, DateTime endDate,
         List<TimeSlot> validSlots);
+
+    Task<List<EntranceTest>> AssignInstructorsToEntranceTests(List<EntranceTest> entranceTests, List<TimeSlot> validSlots);
 }

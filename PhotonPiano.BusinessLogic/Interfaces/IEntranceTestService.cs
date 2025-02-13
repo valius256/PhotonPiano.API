@@ -31,5 +31,5 @@ public interface IEntranceTestService
 
     Task HandleEnrollmentPaymentCallback(VnPayCallbackModel callbackModel, string accountId);
 
-    Task<List<EntranceTestModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model, AccountModel currentAccount);
+    Task<List<EntranceTestDetailModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model, AccountModel currentAccount);
 }

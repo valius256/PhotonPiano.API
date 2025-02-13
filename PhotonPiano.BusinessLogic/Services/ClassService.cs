@@ -1,9 +1,6 @@
-using System.Drawing;
 using Mapster;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using OfficeOpenXml;
-using OfficeOpenXml.Style;
-using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
@@ -44,18 +41,17 @@ public class ClassService : IClassService
         return result;
     }
 
-    public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass, AccountModel accountModel)
+    public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass)
     {
         var (page, pageSize, sortColumn, orderByDesc,
             classStatus, level, keyword, isScorePublished, teacherId, studentId) = queryClass;
 
         var likeKeyword = queryClass.GetLikeKeyword();
 
-        var result = await _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsync<ClassModel>(
+        var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassModel>(
             page, pageSize, sortColumn, orderByDesc,
             expressions:
             [
-                q => accountModel.Role == Role.Staff || q.InstructorId == accountModel.AccountFirebaseId,
                 q => classStatus.Count == 0 || classStatus.Contains(q.Status),
                 q => level.Count == 0 || level.Contains(q.Level),
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
@@ -69,27 +65,48 @@ public class ClassService : IClassService
         // Fetch the class capacity
         var capacity =
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
-
-        // Fetch students of the classes in one query
-        var classIds = result.Items.Select(c => c.Id).ToList();
-        var studentClasses = await _unitOfWork.StudentClassRepository
-            .FindAsync(sc => classIds.Contains(sc.ClassId));
-
-        var countDictionary = studentClasses
-            .GroupBy(c => c.ClassId)
-            .Select(g => new { ClassId = g.Key, Count = g.Count() })
-            .ToDictionary(c => c.ClassId, c => c.Count);
-
-
-        // Update items efficiently
-        result.Items = result.Items.Select(item => item with
+        var levelConfigs = new List<GetSystemConfigOnLevelModel>
         {
-            Capacity = capacity,
-            StudentNumber = countDictionary.TryGetValue(item.Id, out var count) ? count : 0
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(1),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(2),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(3),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(4),
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(5),
+
+        };
+
+        // Perform the paged query with projections
+        var result = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(q => new ClassModel
+            {
+                Id = q.Id,
+                Name = q.Name,
+                Level = q.Level,
+                Status = q.Status,
+                InstructorId = q.InstructorId,
+                IsScorePublished = q.IsScorePublished,
+                Capacity = capacity,
+                CreatedById = q.CreatedById,
+                // Aggregate counts directly in SQL
+                StudentNumber = q.StudentClasses.Count(),
+                TotalSlots = q.Slots.Count()
+            })
+            .ToListAsync();
+
+        result = result.Select(item => item with
+        {
+            RequiredSlots = levelConfigs[(int)item.Level].TotalSlot
         }).ToList();
 
-
-        return result;
+        return new PagedResult<ClassModel>
+        {
+            TotalCount = await query.CountAsync(),
+            Page = page,
+            Limit = pageSize,
+            Items = result
+        };
     }
 
     public async Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId)
@@ -173,7 +190,7 @@ public class ClassService : IClassService
             //Pick n day(s) of the week based on the config
             var dayFrames = GetRandomDays(levelConfig.NumOfSlotInWeek);
 
-            //Pick a random shift in the past shift list
+            //Pick a random shift in the passed shift list
             var pickedShift = arrangeClassModel.AllowedShifts[random.Next(arrangeClassModel.AllowedShifts.Count - 1)];
 
             int maxAttempt = 100, attempt = 1; //Avoid infinite loop
@@ -372,133 +389,5 @@ public class ClassService : IClassService
         for (var N = start; N <= end; N++) validNs.Add(N);
 
         return validNs;
-    }
-    
-    //Down excel
-    public async Task<byte[]> GenerateGradeTemplate(Guid classId)
-    {
-        //fetch class details 
-        var classDetails = await GetClassDetailById(classId);
-
-        using var package = new ExcelPackage();
-        var worksheet = package.Workbook.Worksheets.Add("Grades");
-        
-        //Add headers
-        worksheet.Cells[1, 1].Value = "Grade book";
-        worksheet.Cells[1, 1].Style.Font.Bold = true;
-        worksheet.Cells[1, 1].Style.Font.Size = 14;
-        worksheet.Cells[1, 1].Style.Font.Color.SetColor(Color.FromArgb(139, 69, 19)); 
-        worksheet.Cells[2, 1].Value = $"Course: {classDetails.Name}";
-        worksheet.Cells[3, 1].Value = $"Instructor: {classDetails.Instructor.UserName}";
-        worksheet.Cells[4, 1].Value = "Assignments";
-            
-        // Define column headers
-        worksheet.Cells[6, 1].Value = "Student Name";
-        
-        var assignmentHeader = worksheet.Cells[6, 1, 6, 15];
-        assignmentHeader.Style.Fill.PatternType = ExcelFillStyle.Solid;
-        assignmentHeader.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(222, 184, 170)); // Light brown
-        assignmentHeader.Style.Font.Bold = true;
-
-        // Column Headers - HW and Exam columns
-        int startCol = 2;
-        string[] assignments = { "HW-1", "HW-2", "HW-3", "HW-4", "Exam-1", "HW-5", "HW-6", "HW-7", "HW-8", "Exam-2", "HW-9", "HW-10", "HW-11", "Final" };
-    
-        // Create assignment columns
-        for (int i = 0; i < assignments.Length; i++)
-        {
-            worksheet.Cells[7, startCol + i].Value = assignments[i];
-            worksheet.Cells[8, startCol + i].Value = "50"; // Points/Weighting row
-        }
-        
-        // Points/Weighting row styling
-        var pointsRow = worksheet.Cells[8, 2, 8, startCol + assignments.Length - 1];
-        pointsRow.Style.Border.Top.Style = ExcelBorderStyle.Thin;
-        pointsRow.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
-        pointsRow.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-        
-        // Student column
-        worksheet.Cells[7, 1].Value = "Student";
-        worksheet.Cells[7, 1].Style.Font.Bold = true;
-        
-        // Final columns
-        int finalCol = startCol + assignments.Length;
-        worksheet.Cells[7, finalCol].Value = "Total";
-        worksheet.Cells[7, finalCol + 1].Value = "%";
-        worksheet.Cells[7, finalCol + 2].Value = "Grade";
-        
-        // Add grade conversion table
-    int gradeStartRow = 7;
-    string[,] gradeConversion = {
-        {"Grade", "Percent", "Performance"},
-        {"A++", "100%", "Perfect (or with extra credit)"},
-        {"A+", "98%", "Excellent"},
-        {"A", "95%", "Excellent"},
-        {"A-", "92%", "Excellent"},
-        {"B+", "89%", "Good"},
-        {"B", "86%", "Good"},
-        {"B-", "83%", "Good"},
-        {"C+", "79%", "Satisfactory"},
-        {"C", "75%", "Satisfactory"},
-        {"C-", "72%", "Satisfactory"},
-        {"D+", "69%", "Passing"},
-        {"D", "65%", "Passing"},
-        {"D-", "62%", "Passing"},
-        {"F", "55%", "Failure"}
-    };
-
-    // Position grade conversion table to the right
-    int gradeTableCol = finalCol + 4;
-    worksheet.Cells[gradeStartRow, gradeTableCol].LoadFromArrays(
-        Enumerable.Range(0, gradeConversion.GetLength(0))
-            .Select(i => Enumerable.Range(0, gradeConversion.GetLength(1))
-                .Select(j => (object)gradeConversion[i, j])
-                .ToArray())
-    );
-
-
-    // Style grade conversion table
-    var gradeTable = worksheet.Cells[gradeStartRow, gradeTableCol, gradeStartRow + 14, gradeTableCol + 2];
-    gradeTable.Style.Border.BorderAround(ExcelBorderStyle.Thin);
-    gradeTable.Style.Border.Top.Style = ExcelBorderStyle.Thin;
-    gradeTable.Style.Border.Left.Style = ExcelBorderStyle.Thin;
-    gradeTable.Style.Border.Right.Style = ExcelBorderStyle.Thin;
-    gradeTable.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
-
-    // Add student rows
-    int studentStartRow = 9;
-    foreach (var studentClass in classDetails.StudentClasses)
-    {
-        worksheet.Cells[studentStartRow, 1].Value = studentClass.Student.UserName;
-        
-        // Add formula for total
-        var totalCell = worksheet.Cells[studentStartRow, finalCol];
-        totalCell.Formula = $"SUM({worksheet.Cells[studentStartRow, 2].Address}:{worksheet.Cells[studentStartRow, finalCol - 1].Address})";
-        
-        // Add formula for percentage
-        var percentCell = worksheet.Cells[studentStartRow, finalCol + 1];
-        percentCell.Formula = $"{totalCell.Address}/(SUM({worksheet.Cells[8, 2].Address}:{worksheet.Cells[8, finalCol - 1].Address}))*100";
-        percentCell.Style.Numberformat.Format = "0.0\\%";
-
-        studentStartRow++;
-    }
-
-    // Add Class Average and Median rows at the bottom
-    int lastRow = studentStartRow + 1;
-    worksheet.Cells[lastRow, 1].Value = "Class Average:";
-    worksheet.Cells[lastRow + 1, 1].Value = "Median:";
-
-    // Style for average and median rows
-    var statsRows = worksheet.Cells[lastRow, 1, lastRow + 1, finalCol + 2];
-    statsRows.Style.Fill.PatternType = ExcelFillStyle.Solid;
-    statsRows.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(222, 184, 170)); // Light brown
-
-    // Auto-fit columns
-    worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-
-    // Freeze panes
-    worksheet.View.FreezePanes(9, 2);
-
-    return package.GetAsByteArray();
     }
 }

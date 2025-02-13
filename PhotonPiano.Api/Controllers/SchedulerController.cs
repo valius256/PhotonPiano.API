@@ -6,6 +6,8 @@ using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.PubSub;
+using PhotonPiano.Shared.Models;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -32,6 +34,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpGet("attendance-status/{slotId}")]
+    [PubSub(PubSubTopic.SCHEDULER_ATTENDANCE_GET_LIST)]
     [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
     [EndpointDescription("Get Attendance Status for a Slot")]
     public async Task<ActionResult> GetAttendanceStatus([FromRoute] Guid slotId)
@@ -50,12 +53,16 @@ public class SchedulerController : BaseController
     }
 
     [HttpPost("update-attendance")]
-    [FirebaseAuthorize(Roles = [Role.Instructor])]
-    [EndpointDescription("Update Attendance by Intructor")]
-    public async Task<ActionResult> UpdateAttendance([FromBody] AttendanceRequest request)
+    [FirebaseAuthorize(Roles = new[] { Role.Instructor })]
+    [EndpointDescription("Update Attendance by Instructor")]
+    public async Task<IApiResult<bool>> UpdateAttendance([FromBody] AttendanceRequest request)
     {
-        await _serviceFactory.SlotStudentService.UpdateAttentStudent(request.Adapt<UpdateAttentdanceModel>(),
+        var result = await _serviceFactory.SlotStudentService.UpdateAttentStudent(
+            request.Adapt<UpdateAttentdanceModel>(),
             CurrentUserFirebaseId);
-        return Ok("Update attendance successful");
+
+
+        // return OkAsync(result, PubSubTopic.SCHEDULER_ATTENDANCE_GET_LIST);
+        return OkAsync(result);
     }
 }

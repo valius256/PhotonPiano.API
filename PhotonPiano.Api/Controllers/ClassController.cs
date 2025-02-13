@@ -25,13 +25,14 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet]
+        [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
         [EndpointDescription("Get Classes with Paging")]
         public async Task<ActionResult<List<ClassModel>>> GetCriteria(
          [FromQuery] QueryClassRequest request)
         {
             var pagedResult =
                 await _serviceFactory.ClassService.GetPagedClasses(
-                    request.Adapt<QueryClassModel>());
+                    request.Adapt<QueryClassModel>(), CurrentAccount!);
 
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
             return pagedResult.Items.Adapt<List<ClassModel>>();
@@ -52,6 +53,15 @@ namespace PhotonPiano.Api.Controllers
          [FromBody] ArrangeClassModel arrangeClassModel)
         {
             return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
+        }
+        
+                
+        [HttpGet("{id}/grade-template")]
+        [EndpointDescription("Download Template Excel")]
+        public async Task<IActionResult> DownloadGradeTemplate(Guid id)
+        {
+            var templateBytes = await _serviceFactory.ClassService.GenerateGradeTemplate(id);
+            return File(templateBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "grade_template.xlsx");
         }
     }
 }

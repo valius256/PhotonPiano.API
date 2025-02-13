@@ -1,6 +1,7 @@
 using System.Reflection;
 using Hangfire;
 using Mapster;
+using OfficeOpenXml;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
@@ -13,6 +14,9 @@ builder.Services.AddHostedService<DbMigrationJob>();
 var configuration = builder.Configuration;
 
 // if (configuration.GetValue<bool  >("IsAspireHost")) builder.AddRedisClient("redis-cache");
+
+// EPPlus Configuration
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)

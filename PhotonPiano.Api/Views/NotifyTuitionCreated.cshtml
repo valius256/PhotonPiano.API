@@ -1,17 +1,16 @@
 @{
-    var customerName = Model["customerName"];
-    var transactionId = Model["transactionId"];
+    var studentName = Model["studentName"];
+    var className = Model["className"];
+    var startDate = Model["startDate"];
+    var endDate = Model["endDate"];
     var amount = Model["amount"];
-    var paymentMethod = Model["paymentMethod"];
-    var transactionDate = Model["transactionDate"];
-    var validFromTo = Model["validFromTo"];
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Thanh Toán Thành Công</title>
+    <title>Thông Báo Tạo Học Phí Mới</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,36 +75,31 @@
 <body>
 <div class="email-container">
     <div class="email-header">
-        Payment Success Notification
+        New Tuition Created Notification
     </div>
 
     <div class="email-content">
-        <p>Xin Chào @customerName,</p>
+        <p>Xin Chào @studentName,</p>
 
-        <p>Chúng tôi vui mừng thông báo với bạn rằng khoản thanh toán của bạn đã được xử lý thành công. Dưới đây là
-            thông tin chi tiết về
-            thanh toán của bạn:</p>
+        <p>Chúng tôi vui mừng thông báo với bạn rằng một học phí mới đã được tạo cho lớp học của bạn. Dưới đây là thông
+            tin chi tiết:</p>
 
         <table class="details-table">
             <tr>
-                <th>Mã Giao Dịch</th>
-                <td>@transactionId</td>
+                <th>Lớp hiện tại:</th>
+                <td>@className</td>
             </tr>
             <tr>
-                <th>Tổng Tiền</th>
+                <th>Ngày bắt đầu:</th>
+                <td>@startDate</td>
+            </tr>
+            <tr>
+                <th>Ngày kết thúc:</th>
+                <td>@endDate</td>
+            </tr>
+            <tr>
+                <th>Tổng Tiền:</th>
                 <td>@amount Vnd</td>
-            </tr>
-            <tr>
-                <th>Phương Thức Thanh Toán</th>
-                <td>@paymentMethod</td>
-            </tr>
-            <tr>
-                <th>Ngày Tạo Giao Dịch</th>
-                <td>@transactionDate</td>
-            </tr>
-            <tr>
-                <th>Có hiệu lực từ -> đến</th>
-                <td>@validFromTo</td>
             </tr>
         </table>
 

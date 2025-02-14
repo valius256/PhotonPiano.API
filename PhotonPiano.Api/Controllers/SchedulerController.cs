@@ -27,10 +27,15 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get All Slots in this Week")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {
-        var result =
-            await _serviceFactory.SlotService.GetWeeklyScheduleAsync(request.Adapt<GetSlotModel>(),
-                CurrentAccount);
-        return Ok(result.Adapt<List<SlotSimpleModel>>());
+        if (CurrentAccount != null)
+        {
+            var result =
+                await _serviceFactory.SlotService.GetWeeklyScheduleAsync(request.Adapt<GetSlotModel>(),
+                    CurrentAccount);
+            return Ok(result.Adapt<List<SlotSimpleModel>>());
+        }
+
+        return Unauthorized("The user is not authorized to access this resource.");
     }
 
     [HttpGet("attendance-status/{slotId}")]
@@ -62,7 +67,6 @@ public class SchedulerController : BaseController
             CurrentUserFirebaseId);
 
 
-        // return OkAsync(result, PubSubTopic.SCHEDULER_ATTENDANCE_GET_LIST);
-        return OkAsync(result);
+        return OkAsync(result, PubSubTopic.SCHEDULER_ATTENDANCE_GET_LIST);
     }
 }

@@ -18,7 +18,7 @@ public class PubSubHub : Hub<IPubSubHub>, IPubSubHub
     public override async Task OnConnectedAsync()
     {
         _connectedClients.Add(Context.ConnectionId);
-        Console.WriteLine($"[PubSub] Client connected: {Context.ConnectionId} (Total: {_connectedClients.Count})");
+         Console.WriteLine($"[PubSub] Client connected: {Context.ConnectionId} (Total: {_connectedClients.Count})");
         await base.OnConnectedAsync();
     }
 

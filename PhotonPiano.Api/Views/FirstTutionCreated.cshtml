@@ -1,9 +1,8 @@
 @{
     var customerName = Model["customerName"];
-    var transactionId = Model["transactionId"];
+    var className = Model["className"];
     var amount = Model["amount"];
-    var paymentMethod = Model["paymentMethod"];
-    var transactionDate = Model["transactionDate"];
+    var paymentStatus = Model["paymentStatus"];
     var validFromTo = Model["validFromTo"];
 }
 <!DOCTYPE html>
@@ -11,7 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Thanh Toán Thành Công</title>
+    <title>Thông Báo Xếp lớp Thành Công</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,41 +75,41 @@
 <body>
 <div class="email-container">
     <div class="email-header">
-        Payment Success Notification
+        Thông báo đóng học phí đầu vào
     </div>
+
+    <p><strong>Vui lòng đóng học phí ngay khi email này được gửi</strong></p>
 
     <div class="email-content">
         <p>Xin Chào @customerName,</p>
 
-        <p>Chúng tôi vui mừng thông báo với bạn rằng khoản thanh toán của bạn đã được xử lý thành công. Dưới đây là
-            thông tin chi tiết về
-            thanh toán của bạn:</p>
+        <p>Chúng tôi vui mừng thông báo với bạn rằng bạn đã được xếp lớp và đây là học phí tháng đầu của bạn
+        </p>
 
         <table class="details-table">
             <tr>
-                <th>Mã Giao Dịch</th>
-                <td>@transactionId</td>
+                <th>Lớp hiện tại:</th>
+                <td>@className</td>
             </tr>
             <tr>
-                <th>Tổng Tiền</th>
+                <th>Tổng Tiền:</th>
                 <td>@amount Vnd</td>
             </tr>
             <tr>
-                <th>Phương Thức Thanh Toán</th>
-                <td>@paymentMethod</td>
+                <th>Trạng thái học phí:</th>
+                <td>@paymentStatus</td>
             </tr>
+
             <tr>
-                <th>Ngày Tạo Giao Dịch</th>
-                <td>@transactionDate</td>
-            </tr>
-            <tr>
-                <th>Có hiệu lực từ -> đến</th>
+                <th>Ngày học:</th>
                 <td>@validFromTo</td>
             </tr>
+
         </table>
 
         <p>Cảm ơn bạn đã sử dụng dịch vụ PhotonPiano. Chúng tôi mong muốn được phục vụ bạn lần nữa!</p>
     </div>
+
 
     <div class="footer">
         <p>Nếu bạn có bất kỳ câu hỏi nào hoặc cần hỗ trợ, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi tại <a

@@ -33,7 +33,6 @@ public class SlotStudentService : ISlotStudentService
         var slotDateTime = slotEntity.Date.ToDateTime(shiftStartTime);
         var currentDateTime = DateTime.UtcNow.AddHours(7);
 
-        // Todo: allow for future attendance or not? 
         // Validate if the slot has passed 24 hours
         // if ((currentDateTime - slotDateTime).TotalHours > 24)
         //     throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");

@@ -46,6 +46,10 @@ public static class ServiceCollectionExtensions
             .NewConfig()
             .Map(dest => dest.InstructorName, src => src.Instructor.UserName);
 
+        TypeAdapterConfig<Class, ClassSimpleModel>
+            .NewConfig()
+            .Map(dest => dest.InstructorName, src => src.Instructor.UserName);
+
         TypeAdapterConfig<UpdateEntranceTestModel, EntranceTest>.NewConfig().IgnoreNullValues(true);
         return services;
     }

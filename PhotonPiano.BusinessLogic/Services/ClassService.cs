@@ -1,5 +1,4 @@
 ﻿using Mapster;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
@@ -32,14 +31,25 @@ public class ClassService : IClassService
         return classDetail;
     }
 
-    public async Task<ClassModel> GetClassByUserFirebaseId(string userFirebaseId)
+    public async Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role)
     {
-        var result = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassModel>(x =>
-            x.InstructorId == userFirebaseId ||
-            Enumerable.Any(x.StudentClasses, sc => sc.StudentFirebaseId == userFirebaseId));
-        if (result == null) throw new NotFoundException("Class not found");
+        List<ClassModel> result;
+
+        if (role == Role.Staff)
+            // If the user is a Staff, return all classes
+            result = await _unitOfWork.ClassRepository.FindProjectedAsync<ClassModel>();
+        else
+            // Otherwise, filter based on InstructorId or StudentClasses
+            result = await _unitOfWork.ClassRepository.FindProjectedAsync<ClassModel>(x =>
+                x.InstructorId == userFirebaseId ||
+                Enumerable.Any(x.StudentClasses, sc => sc.StudentFirebaseId == userFirebaseId));
+
+        if (result == null || !result.Any())
+            throw new NotFoundException("Class not found");
+
         return result;
     }
+
 
     public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass)
     {
@@ -71,8 +81,7 @@ public class ClassService : IClassService
             await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(2),
             await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(3),
             await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(4),
-            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(5),
-
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(5)
         };
 
         // Perform the paged query with projections
@@ -228,6 +237,7 @@ public class ClassService : IClassService
         //4. Now save them to database
         var result = await SaveClasses(classes, students, userId);
 
+
         return result;
     }
 
@@ -301,6 +311,14 @@ public class ClassService : IClassService
             var capacity =
                 int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
 
+            // create 1st tuition for students in class
+            if (studentClasses.Any())
+            {
+                await _serviceFactory.TutionService.CreateTutionWhenRegisterClass(studentClasses);
+            }
+            
+
+        
             return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with
             {
                 Capacity = capacity,

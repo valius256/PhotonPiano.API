@@ -15,10 +15,10 @@ public class SlotService : ISlotService
     private readonly IServiceFactory _serviceFactory;
     private readonly IUnitOfWork _unitOfWork;
 
-    public SlotService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
+    public SlotService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
+        _unitOfWork = unitOfWork;
     }
 
     public TimeOnly GetShiftStartTime(Shift shift)
@@ -74,35 +74,83 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel,
-        AccountModel? accountModel = default)
+    public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
-        if (accountModel.AccountFirebaseId == null) throw new Exception("UserFirebaseId is required");
-
-        var classModel = await _serviceFactory.ClassService.GetClassByUserFirebaseId(accountModel.AccountFirebaseId);
-
-        var cacheKey = $"GetWeeklyScheduleAsync_{slotModel.StartTime}_{slotModel.EndTime}_{classModel.Id}";
-
-        var existCache = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
-
-        if (existCache != null) return existCache;
+        // var instructorIds = slotModel.InstructorFirebaseIds is { Count: > 0 }
+        //     ? string.Join(',', slotModel.InstructorFirebaseIds)
+        //     : "All";
+        //
+        // var shifts = slotModel.Shifts is { Count: > 0 }
+        //     ? string.Join(',', slotModel.Shifts)
+        //     : "All";
+        //
+        // var slotStatuses = slotModel.SlotStatuses is { Count: > 0 }
+        //     ? string.Join(',', slotModel.SlotStatuses)
+        //     : "All";
+        //
+        // var classIds = slotModel.ClassIds is { Count: > 0 }
+        //     ? string.Join(',', slotModel.ClassIds)
+        //     : "All";
+        //
+        // var studentId = !string.IsNullOrEmpty(slotModel.StudentFirebaseId)
+        //     ? slotModel.StudentFirebaseId
+        //     : "All";
+        //
+        // var cacheKey =
+        //     $"WeeklySchedule:{slotModel.StartTime:yyyyMMdd}:{slotModel.EndTime:yyyyMMdd}:{accountModel.AccountFirebaseId}:" +
+        //     $"{instructorIds}:{studentId}:{shifts}:{slotStatuses}:{classIds}";
+        //
+        //
+        // // var cacheKey =
+        // //     $"GetWeeklyScheduleAsync:{slotModel.StartTime}:{slotModel.EndTime}:{accountModel.AccountFirebaseId}";
+        //
+        // // Only use cache if no filters are applied
+        // if (slotModel.IsFilterEmpty())
+        // {
+        //     var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
+        //     if (cachedResult != null) return cachedResult;
+        // }
 
         Expression<Func<Slot, bool>> filter = s =>
             s.Date >= slotModel.StartTime &&
-            s.Date <= slotModel.EndTime &&
-            (slotModel.Shifts == null || slotModel.Shifts.Contains(s.Shift)) &&
-            (slotModel.SlotStatuses == null || slotModel.SlotStatuses.Contains(s.Status)) &&
-            s.ClassId == classModel.Id;
+            s.Date <= slotModel.EndTime;
 
-        if (accountModel is { Role: Role.Instructor })
-            filter = filter.AndAlso(s => s.Class.InstructorId == accountModel.AccountFirebaseId);
-        else if (accountModel is { Role: Role.Student })
+        // Apply role-based filtering only for non-staff roles
+        if (accountModel.Role != Role.Staff)
+            switch (accountModel.Role)
+            {
+                case Role.Instructor:
+                    filter = filter.AndAlso(s =>
+                        s.Class.InstructorId == accountModel.AccountFirebaseId);
+                    break;
+                case Role.Student:
+                    filter = filter.AndAlso(s =>
+                        s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId));
+                    break;
+            }
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.InstructorFirebaseIds)))
             filter = filter.AndAlso(s =>
-                s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId));
+                s.Class.InstructorId != null &&
+                slotModel.InstructorFirebaseIds != null && (slotModel.InstructorFirebaseIds.Count == 0 ||
+                                                            slotModel.InstructorFirebaseIds.Contains(
+                                                                s.Class.InstructorId)));
+
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.Shifts)))
+            filter = filter.AndAlso(s => slotModel.Shifts.Contains(s.Shift));
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.SlotStatuses)))
+            filter = filter.AndAlso(s => slotModel.SlotStatuses.Contains(s.Status));
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.ClassIds)))
+            filter = filter.AndAlso(s => slotModel.ClassIds.Contains(s.ClassId));
 
         var result = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(filter);
 
-        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
+        // todo: if role is staff so no need to cache cause the filter is only applied in role staff 
+
+        // await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
 
         return result;
     }

@@ -5,5 +5,5 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 public interface INotificationService
 {
     Task SendNotificationAsync(string userFirebaseId, string title, string message);
-    Task<List<Notification>> GetUserNotificationsAsync(string userId);
+    Task<List<AccountNotification>> GetUserNotificationsAsync(string userId);
 }

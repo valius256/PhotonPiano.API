@@ -46,6 +46,8 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ITutionService> _tutionService;
     
     private readonly Lazy<IApplicationService> _applicationService;
+    
+    private readonly Lazy<IPinataService> _pinataService;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings,
@@ -73,6 +75,7 @@ public class ServiceFactory : IServiceFactory
             new Lazy<IEmailService>(() => new EmailService(razorTemplateEngine, defaultScheduleJob, smtpAppSettings));
         _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService(unitOfWork));
         _applicationService = new Lazy<IApplicationService>(() => new ApplicationService(unitOfWork));
+        _pinataService = new Lazy<IPinataService>(() => new PinataService(configuration, httpClientFactory));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -110,4 +113,6 @@ public class ServiceFactory : IServiceFactory
     public ISchedulerService SchedulerService => _schedulerService.Value;
     
     public IApplicationService ApplicationService => _applicationService.Value;
+    
+    public IPinataService PinataService => _pinataService.Value;
 }

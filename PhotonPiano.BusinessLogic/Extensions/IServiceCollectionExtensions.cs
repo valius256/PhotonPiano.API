@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ISchedulerService, SchedulerService>();
         services.AddScoped<IApplicationService, ApplicationService>();
+        services.AddScoped<IPinataService, PinataService>();
         services.AddHttpClient();
         services.AddMapsterConfig();
         return services;

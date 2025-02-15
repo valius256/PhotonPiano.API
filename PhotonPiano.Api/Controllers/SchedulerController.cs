@@ -6,7 +6,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
-using PhotonPiano.PubSub;
+using PhotonPiano.PubSub.Pubsub;
 using PhotonPiano.Shared.Models;
 
 namespace PhotonPiano.Api.Controllers;

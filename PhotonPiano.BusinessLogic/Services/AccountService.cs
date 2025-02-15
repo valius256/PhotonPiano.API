@@ -56,15 +56,6 @@ public class AccountService : IAccountService
         return true;
     }
 
-    private static Expression<Func<Account, bool>> GetAccountsFilterExpression(Role role)
-        => role switch
-        {
-            Role.Instructor => a => a.Role == Role.Student,
-            Role.Staff => a => a.Role != Role.Administrator,
-            Role.Administrator => a => true,
-            _ => a => a.Role == role
-        };
-
     public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {
         var (page, size, column, desc, q, roles, levels, studentStatuses) = model;
@@ -104,6 +95,7 @@ public class AccountService : IAccountService
             Email = email,
             AccountFirebaseId = firebaseId,
             Role = Role.Student,
+            UserName = email.Split('@')[0],
             RecordStatus = RecordStatus.IsActive,
             IsEmailVerified = isEmailVerified
         };
@@ -113,5 +105,16 @@ public class AccountService : IAccountService
         await _unitOfWork.SaveChangesAsync();
 
         return newAccount.Adapt<AccountModel>();
+    }
+
+    private static Expression<Func<Account, bool>> GetAccountsFilterExpression(Role role)
+    {
+        return role switch
+        {
+            Role.Instructor => a => a.Role == Role.Student,
+            Role.Staff => a => a.Role != Role.Administrator,
+            Role.Administrator => a => true,
+            _ => a => a.Role == role
+        };
     }
 }

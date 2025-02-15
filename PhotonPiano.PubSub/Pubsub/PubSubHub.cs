@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
-namespace PhotonPiano.PubSub;
+namespace PhotonPiano.PubSub.Pubsub;
 
 public class PubSubHub : Hub<IPubSubHub>, IPubSubHub
 {
@@ -9,7 +9,7 @@ public class PubSubHub : Hub<IPubSubHub>, IPubSubHub
 
     public Task PubSub(PubSubMessage message)
     {
-        Console.WriteLine($"[PubSub] Received message: {JsonConvert.SerializeObject(message)}");
+        // Console.WriteLine($"[PubSub] Received message: {JsonConvert.SerializeObject(message)}");
 
         // Prevent duplicate messages
         return Clients.Others.PubSub(message); // Send to all except the sender
@@ -18,15 +18,15 @@ public class PubSubHub : Hub<IPubSubHub>, IPubSubHub
     public override async Task OnConnectedAsync()
     {
         _connectedClients.Add(Context.ConnectionId);
-         Console.WriteLine($"[PubSub] Client connected: {Context.ConnectionId} (Total: {_connectedClients.Count})");
+        // Console.WriteLine($"[PubSub] Client connected: {Context.ConnectionId} (Total: {_connectedClients.Count})");
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         _connectedClients.Remove(Context.ConnectionId);
-        Console.WriteLine(
-            $"[PubSub] Client disconnected: {Context.ConnectionId} (Remaining: {_connectedClients.Count})");
+        // Console.WriteLine(
+        //     $"[PubSub] Client disconnected: {Context.ConnectionId} (Remaining: {_connectedClients.Count})");
         await base.OnDisconnectedAsync(exception);
     }
 }

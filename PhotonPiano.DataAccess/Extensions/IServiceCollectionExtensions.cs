@@ -20,7 +20,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
         services.AddScoped<IDayOffRepository, DayOffRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
-
+        services.AddScoped<IAccountNotificationRepository, AccountNotificationRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         return services;
     }
 }

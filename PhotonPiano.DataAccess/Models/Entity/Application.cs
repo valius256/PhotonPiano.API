@@ -10,12 +10,12 @@ public class Application : BaseEntityWithId
     public string? FileUrl { get; set; }
 
     // Denormalized  
-    public string? CreatedByEmail { get; set; }
+    public required string CreatedByEmail { get; set; }
     public string? UpdatedByEmail { get; set; }
     public string? DeletedByEmail { get; set; }
     public string? ApprovedByEmail { get; set; }
 
-    public string? CreatedById { get; set; }
+    public required string CreatedById { get; set; }
     public string? UpdatedById { get; set; }
     public string? ApprovedById { get; set; }
     public DateTime? ApprovedAt { get; set; }

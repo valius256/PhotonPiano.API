@@ -28,10 +28,14 @@ public interface IUnitOfWork
     ISlotStudentRepository SlotStudentRepository { get; }
 
     ITuitionRepository TuitionRepository { get; }
-    
+
     IDayOffRepository DayOffRepository { get; }
-    
+
     IApplicationRepository ApplicationRepository { get; }
+
+    INotificationRepository NotificationRepository { get; }
+
+    IAccountNotificationRepository AccountNotificationRepository { get; }
 
     Task<int> SaveChangesAsync();
 

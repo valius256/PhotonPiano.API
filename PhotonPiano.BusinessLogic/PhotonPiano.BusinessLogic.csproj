@@ -7,19 +7,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\PhotonPiano.BackgroundJob\PhotonPiano.BackgroundJob.csproj" />
-        <ProjectReference Include="..\PhotonPiano.DataAccess\PhotonPiano.DataAccess.csproj" />
-        <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj" />
+        <ProjectReference Include="..\PhotonPiano.BackgroundJob\PhotonPiano.BackgroundJob.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.DataAccess\PhotonPiano.DataAccess.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.PubSub\PhotonPiano.PubSub.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentEmail.Core" Version="3.0.2" />
-        <PackageReference Include="Hangfire.Core" Version="1.8.17" />
-        <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="Razor.Templating.Core" Version="2.1.0" />
-        <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
+        <PackageReference Include="FluentEmail.Core" Version="3.0.2"/>
+        <PackageReference Include="Hangfire.Core" Version="1.8.17"/>
+        <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="Razor.Templating.Core" Version="2.1.0"/>
+        <PackageReference Include="StackExchange.Redis" Version="2.8.24"/>
     </ItemGroup>
 
 </Project>

@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PhotonPiano.DataAccess.Extensions;
 
-namespace PhotonPiano.PubSub;
+namespace PhotonPiano.PubSub.Pubsub;
 
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
 public class PubSubAttribute : ActionFilterAttribute
@@ -67,9 +67,9 @@ public class PubSubAttribute : ActionFilterAttribute
 
                 if (m_topics.Any())
                 {
-                    Console.WriteLine($"[PubSub] Topics to trigger: {string.Join(", ", m_topics)}");
+                    // Console.WriteLine($"[PubSub] Topics to trigger: {string.Join(", ", m_topics)}");
                     var uniqueTopics = m_topics.Distinct().ToList();
-                    Console.WriteLine($"[PubSub] Sending unique topics: {string.Join(", ", uniqueTopics)}");
+                    // Console.WriteLine($"[PubSub] Sending unique topics: {string.Join(", ", uniqueTopics)}");
                     var pubSubService =
                         context.HttpContext.RequestServices.GetService(typeof(IPubSubService)) as IPubSubService;
                     pubSubService?.SendToAll(m_topics, "changed");
@@ -77,7 +77,7 @@ public class PubSubAttribute : ActionFilterAttribute
             }
             else if (Topic.Any())
             {
-                Console.WriteLine($"[PubSub] Triggering SignalR for topics: {string.Join(", ", Topic)}");
+                // Console.WriteLine($"[PubSub] Triggering SignalR for topics: {string.Join(", ", Topic)}");
 
                 var pubSubService =
                     context.HttpContext.RequestServices.GetService(typeof(IPubSubService)) as IPubSubService;

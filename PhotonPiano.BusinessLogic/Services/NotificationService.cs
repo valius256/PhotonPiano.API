@@ -42,9 +42,10 @@ public class NotificationService : INotificationService
         await _serviceFactory.NotificationServiceHub.SendNotificationAsync(userFirebaseId, "", title, message);
     }
 
-    public async Task<List<Notification>> GetUserNotificationsAsync(string userId)
+    public async Task<List<AccountNotification>> GetUserNotificationsAsync(string userId)
     {
-        return await _unitOfWork.AccountNotificationRepository
-            .FindProjectedAsync<Notification>(an => an.AccountFirebaseId == userId && !an.IsViewed);
+        var result = await _unitOfWork.AccountNotificationRepository
+            .FindProjectedAsync<AccountNotification>(an => an.AccountFirebaseId == userId && !an.IsViewed);
+        return result;
     }
 }

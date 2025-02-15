@@ -71,21 +71,21 @@ public class AuthService : IAuthService
 
         var notifications = await _serviceFactory.NotificationService.GetUserNotificationsAsync(responseObject.LocalId);
 
-        // foreach (var notification in notifications)
-        // {
-        //     // Split Content back into Title and Message
-        //     var splitContent = notification.Content.Split(new[] { ": " }, 2, StringSplitOptions.None);
-        //     var title = splitContent.Length > 1 ? splitContent[0] : "Notification"; 
-        //     var message = splitContent.Length > 1 ? splitContent[1] : notification.Content;
-        //
-        //     await _serviceFactory.NotificationServiceHub.SendNotificationAsync(
-        //         responseObject.LocalId,
-        //         account.UserName,
-        //         title,    
-        //         message  
-        //     );
-        // }
-        
+        foreach (var notification in notifications)
+        {
+            // Split Content back into Title and Message
+            var splitContent = notification.Notification.Content.Split(new[] { ": " }, 2, StringSplitOptions.None);
+            var title = splitContent.Length > 1 ? splitContent[0] : "Notification";
+            var message = splitContent.Length > 1 ? splitContent[1] : notification.Notification.Content;
+
+            await _serviceFactory.NotificationServiceHub.SendNotificationAsync(
+                responseObject.LocalId,
+                account.UserName,
+                title,
+                message
+            );
+        }
+
         return responseObject;
     }
 

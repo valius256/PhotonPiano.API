@@ -126,4 +126,6 @@ public class ServiceFactory : IServiceFactory
     public INotificationService NotificationService => _notificationService.Value;
 
     public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
+    
+    public IPinataService PinataService => _pinataService.Value;
 }

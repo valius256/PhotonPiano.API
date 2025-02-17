@@ -1,9 +1,13 @@
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Notification;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface INotificationService
 {
+    Task<PagedResult<NotificationDetailsModel>> GetPagedNotifications(QueryPagedNotificationsModel queryModel, AccountModel currentAccount);
     Task SendNotificationAsync(string userFirebaseId, string title, string message);
     Task<List<AccountNotification>> GetUserNotificationsAsync(string userId);
 }

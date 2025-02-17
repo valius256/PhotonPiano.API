@@ -1,6 +1,9 @@
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Notification;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -13,6 +16,22 @@ public class NotificationService : INotificationService
     {
         _serviceFactory = serviceFactory;
         _unitOfWork = unitOfWork;
+    }
+
+    public async Task<PagedResult<NotificationDetailsModel>> GetPagedNotifications(
+        QueryPagedNotificationsModel queryModel,
+        AccountModel currentAccount)
+    {
+        var (page, size, column, desc) = queryModel;
+
+        var pagedResult = await _unitOfWork.NotificationRepository
+            .GetPaginatedWithProjectionAsync<NotificationDetailsModel>(
+                page, size, column, desc,
+                expressions: [
+                    n => n.AccountNotifications.Any(an => an.AccountFirebaseId == currentAccount.AccountFirebaseId)
+                ]);
+
+        return pagedResult;
     }
 
     public async Task SendNotificationAsync(string userFirebaseId, string title, string message)

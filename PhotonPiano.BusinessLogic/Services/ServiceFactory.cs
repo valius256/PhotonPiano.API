@@ -52,8 +52,11 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ITransactionService> _transactionService;
 
     private readonly Lazy<ITutionService> _tutionService;
-
-
+    
+    private readonly Lazy<IApplicationService> _applicationService;
+    
+    private readonly Lazy<IPinataService> _pinataService;
+    
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay,
@@ -79,6 +82,7 @@ public class ServiceFactory : IServiceFactory
             new Lazy<IEmailService>(() => new EmailService(razorTemplateEngine, defaultScheduleJob, smtpAppSettings));
         _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService(unitOfWork));
         _applicationService = new Lazy<IApplicationService>(() => new ApplicationService(unitOfWork));
+        _pinataService = new Lazy<IPinataService>(() => new PinataService(configuration, httpClientFactory));
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
     }
@@ -118,6 +122,8 @@ public class ServiceFactory : IServiceFactory
     public ISchedulerService SchedulerService => _schedulerService.Value;
 
     public IApplicationService ApplicationService => _applicationService.Value;
+    
+    public IPinataService PinataService => _pinataService.Value;
 
     public INotificationService NotificationService => _notificationService.Value;
 

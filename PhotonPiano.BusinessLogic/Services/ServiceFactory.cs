@@ -53,8 +53,6 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ITutionService> _tutionService;
     
-    private readonly Lazy<IApplicationService> _applicationService;
-    
     private readonly Lazy<IPinataService> _pinataService;
     
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,

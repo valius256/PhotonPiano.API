@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using PhotonPiano.PubSub.Notification;
+using PhotonPiano.PubSub.Pubsub;
 
 namespace PhotonPiano.PubSub;
 
@@ -20,6 +22,7 @@ public static class AppBuilderExtensions
 
         builder.Services.AddSignalR();
         builder.Services.AddSingleton<IPubSubService, PubSubService>();
+        builder.Services.AddSingleton<INotificationServiceHub, NotificationServiceHub>();
     }
 
     public static void MapPubSub(this WebApplication app)
@@ -28,5 +31,6 @@ public static class AppBuilderExtensions
             throw new ArgumentNullException(nameof(app));
 
         app.MapHub<PubSubHub>("/pubsub");
+        app.MapHub<NotificationHub>("/notification");
     }
 }

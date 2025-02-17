@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
+using PhotonPiano.PubSub.Notification;
 using Razor.Templating.Core;
 using StackExchange.Redis;
 
@@ -12,6 +14,8 @@ namespace PhotonPiano.BusinessLogic.Services;
 public class ServiceFactory : IServiceFactory
 {
     private readonly Lazy<IAccountService> _accountService;
+
+    private readonly Lazy<IApplicationService> _applicationService;
 
     private readonly Lazy<IAuthService> _authService;
 
@@ -26,6 +30,10 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IEntranceTestService> _entranceTestService;
 
     private readonly Lazy<IEntranceTestStudentService> _entranceTestStudentService;
+
+    private readonly Lazy<INotificationService> _notificationService;
+
+    private readonly Lazy<INotificationServiceHub> _notificationServiceHub;
 
     private readonly Lazy<IPaymentService> _paymentService;
 
@@ -48,9 +56,9 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IApplicationService> _applicationService;
     
     private readonly Lazy<IPinataService> _pinataService;
-
+    
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
-        IOptions<SmtpAppSetting> smtpAppSettings,
+        IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine)
     {
@@ -63,19 +71,20 @@ public class ServiceFactory : IServiceFactory
         _entranceTestService = new Lazy<IEntranceTestService>(() => new EntranceTestService(unitOfWork, this));
         _roomService = new Lazy<IRoomService>(() => new RoomService(unitOfWork));
         _criteriaService = new Lazy<ICriteriaService>(() => new CriteriaService(unitOfWork, this));
-        _slotService = new Lazy<ISlotService>(() => new SlotService(unitOfWork, this));
+        _slotService = new Lazy<ISlotService>(() => new SlotService(this, unitOfWork));
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
         _sLotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
         _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
-        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
         _emailService =
             new Lazy<IEmailService>(() => new EmailService(razorTemplateEngine, defaultScheduleJob, smtpAppSettings));
         _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService(unitOfWork));
         _applicationService = new Lazy<IApplicationService>(() => new ApplicationService(unitOfWork));
         _pinataService = new Lazy<IPinataService>(() => new PinataService(configuration, httpClientFactory));
+        _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
+        _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -111,8 +120,12 @@ public class ServiceFactory : IServiceFactory
     public IEmailService EmailService => _emailService.Value;
 
     public ISchedulerService SchedulerService => _schedulerService.Value;
-    
+
     public IApplicationService ApplicationService => _applicationService.Value;
     
     public IPinataService PinataService => _pinataService.Value;
+
+    public INotificationService NotificationService => _notificationService.Value;
+
+    public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
 }

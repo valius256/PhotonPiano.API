@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -13,7 +14,7 @@ public interface ISlotService
     TimeOnly GetShiftStartTime(Shift shift);
 
 
-    Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel? accountModel = default);
+    Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, [Required] AccountModel accountModel);
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId);
 }

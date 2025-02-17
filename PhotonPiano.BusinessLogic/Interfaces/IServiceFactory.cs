@@ -1,4 +1,5 @@
 ﻿using PhotonPiano.BackgroundJob;
+using PhotonPiano.PubSub.Notification;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
@@ -37,8 +38,12 @@ public interface IServiceFactory
     IEmailService EmailService { get; }
 
     ISchedulerService SchedulerService { get; }
-    
+
     IApplicationService ApplicationService { get; }
-    
+  
     IPinataService PinataService { get; }
+
+    INotificationService NotificationService { get; }
+
+    INotificationServiceHub NotificationServiceHub { get; }
 }

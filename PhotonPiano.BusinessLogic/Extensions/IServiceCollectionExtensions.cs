@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISchedulerService, SchedulerService>();
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IPinataService, PinataService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddHttpClient();
         services.AddMapsterConfig();
         return services;
@@ -44,6 +45,10 @@ public static class ServiceCollectionExtensions
         //    .Map(dest => dest.QuestionCnt, src => src.QuizQuestions.Count);
 
         TypeAdapterConfig<Class, ClassModel>
+            .NewConfig()
+            .Map(dest => dest.InstructorName, src => src.Instructor.UserName);
+
+        TypeAdapterConfig<Class, ClassSimpleModel>
             .NewConfig()
             .Map(dest => dest.InstructorName, src => src.Instructor.UserName);
 

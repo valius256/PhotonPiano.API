@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 
-namespace PhotonPiano.PubSub;
+namespace PhotonPiano.PubSub.Pubsub;
 
 public class PubSubService : IPubSubService
 {
@@ -25,7 +25,7 @@ public class PubSubService : IPubSubService
             {
                 if (_lastMessageSent.TryGetValue(topic, out var lastSent) && now - lastSent < _debounceInterval)
                 {
-                    Console.WriteLine($"[PubSub] Skipping duplicate message for topic: {topic}");
+                    // Console.WriteLine($"[PubSub] Skipping duplicate message for topic: {topic}");
                     continue;
                 }
 

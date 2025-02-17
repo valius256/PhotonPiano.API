@@ -10,7 +10,7 @@ using PhotonPiano.PubSub.Notification;
 namespace PhotonPiano.Api.Controllers;
 
 [ApiController]
-[Route("api/notification")]
+[Route("api/notifications")]
 public class NotificationController : BaseController
 {
     private readonly INotificationServiceHub _notificationServiceHub;
@@ -45,5 +45,14 @@ public class NotificationController : BaseController
         await _notificationServiceHub.SendNotificationAsync(CurrentUserFirebaseId, request.UserName, request.Title,
             request.Message);
         return Ok();
+    }
+
+    [HttpPut("{id}/view-status")]
+    [EndpointDescription("Toggle notification view status")]
+    [FirebaseAuthorize]
+    public async Task<ActionResult> ToggleNotificationViewStatus([FromRoute] Guid id)
+    {
+        await _serviceFactory.NotificationService.ToggleNotificationViewStatus(id, base.CurrentAccount!.AccountFirebaseId);
+        return NoContent();
     }
 }

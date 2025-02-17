@@ -79,7 +79,7 @@ public class ServiceFactory : IServiceFactory
         _emailService =
             new Lazy<IEmailService>(() => new EmailService(razorTemplateEngine, defaultScheduleJob, smtpAppSettings));
         _schedulerService = new Lazy<ISchedulerService>(() => new SchedulerService(unitOfWork));
-        _applicationService = new Lazy<IApplicationService>(() => new ApplicationService(unitOfWork));
+        _applicationService = new Lazy<IApplicationService>(() => new ApplicationService(unitOfWork, this));
         _pinataService = new Lazy<IPinataService>(() => new PinataService(configuration, httpClientFactory));
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));

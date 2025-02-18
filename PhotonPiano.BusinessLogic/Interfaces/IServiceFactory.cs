@@ -40,12 +40,10 @@ public interface IServiceFactory
     ISchedulerService SchedulerService { get; }
 
     IApplicationService ApplicationService { get; }
-  
+
     IPinataService PinataService { get; }
 
     INotificationService NotificationService { get; }
 
     INotificationServiceHub NotificationServiceHub { get; }
-
-    IPinataService PinataService { get; }
 }

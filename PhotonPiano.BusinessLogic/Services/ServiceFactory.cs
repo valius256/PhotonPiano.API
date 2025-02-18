@@ -45,7 +45,7 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ISlotService> _slotService;
 
-    private readonly Lazy<ISlotStudentService> _sLotStudentService;
+    private readonly Lazy<ISlotStudentService> _slotStudentService;
 
     private readonly Lazy<ISystemConfigService> _systemConfigService;
 
@@ -74,7 +74,7 @@ public class ServiceFactory : IServiceFactory
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
-        _sLotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
+        _slotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
         _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
         _emailService =
@@ -108,7 +108,7 @@ public class ServiceFactory : IServiceFactory
 
     public ISystemConfigService SystemConfigService => _systemConfigService.Value;
 
-    public ISlotStudentService SlotStudentService => _sLotStudentService.Value;
+    public ISlotStudentService SlotStudentService => _slotStudentService.Value;
 
     public ITutionService TutionService => _tutionService.Value;
 
@@ -128,5 +128,4 @@ public class ServiceFactory : IServiceFactory
 
     public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
 
-    public IPinataService PinataService => _pinataService.Value;
 }

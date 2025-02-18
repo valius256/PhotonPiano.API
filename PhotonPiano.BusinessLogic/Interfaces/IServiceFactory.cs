@@ -46,4 +46,6 @@ public interface IServiceFactory
     INotificationService NotificationService { get; }
 
     INotificationServiceHub NotificationServiceHub { get; }
+
+    IPinataService PinataService { get; }
 }

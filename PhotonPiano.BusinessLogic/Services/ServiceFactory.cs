@@ -52,9 +52,10 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ITransactionService> _transactionService;
 
     private readonly Lazy<ITutionService> _tutionService;
-    
+
+
     private readonly Lazy<IPinataService> _pinataService;
-    
+
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay,
@@ -120,10 +121,12 @@ public class ServiceFactory : IServiceFactory
     public ISchedulerService SchedulerService => _schedulerService.Value;
 
     public IApplicationService ApplicationService => _applicationService.Value;
-    
+
     public IPinataService PinataService => _pinataService.Value;
 
     public INotificationService NotificationService => _notificationService.Value;
 
     public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
+
+    public IPinataService PinataService => _pinataService.Value;
 }

@@ -61,6 +61,8 @@ app.UseAuthorization();
 
 app.MapPubSub();
 
+app.UseResponseCompression();
+
 app.MapControllers();
 
 await app.RunAsync();

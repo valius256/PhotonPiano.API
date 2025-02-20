@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -31,11 +32,18 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IEntranceTestStudentService> _entranceTestStudentService;
 
+
+    // Add ILogger  for logging
+    private readonly ILogger<ServiceFactory> _logger;
+
     private readonly Lazy<INotificationService> _notificationService;
 
     private readonly Lazy<INotificationServiceHub> _notificationServiceHub;
 
     private readonly Lazy<IPaymentService> _paymentService;
+
+
+    private readonly Lazy<IPinataService> _pinataService;
 
     private readonly Lazy<IRedisCacheService> _redisCacheService;
 
@@ -53,14 +61,12 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ITutionService> _tutionService;
 
-
-    private readonly Lazy<IPinataService> _pinataService;
-
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
-        IConnectionMultiplexer redis, IOptions<VnPay> vnPay,
+        IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine)
     {
+        _logger = logger;
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork));
         _authService =
             new Lazy<IAuthService>(() => new AuthService(httpClientFactory, unitOfWork, this, configuration));
@@ -84,6 +90,8 @@ public class ServiceFactory : IServiceFactory
         _pinataService = new Lazy<IPinataService>(() => new PinataService(configuration, httpClientFactory));
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
+
+        _logger.LogInformation("ServiceFactory has been initialized.");
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -127,5 +135,4 @@ public class ServiceFactory : IServiceFactory
     public INotificationService NotificationService => _notificationService.Value;
 
     public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
-
 }

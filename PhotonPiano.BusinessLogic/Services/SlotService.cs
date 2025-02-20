@@ -76,40 +76,15 @@ public class SlotService : ISlotService
 
     public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
-        // var instructorIds = slotModel.InstructorFirebaseIds is { Count: > 0 }
-        //     ? string.Join(',', slotModel.InstructorFirebaseIds)
-        //     : "All";
-        //
-        // var shifts = slotModel.Shifts is { Count: > 0 }
-        //     ? string.Join(',', slotModel.Shifts)
-        //     : "All";
-        //
-        // var slotStatuses = slotModel.SlotStatuses is { Count: > 0 }
-        //     ? string.Join(',', slotModel.SlotStatuses)
-        //     : "All";
-        //
-        // var classIds = slotModel.ClassIds is { Count: > 0 }
-        //     ? string.Join(',', slotModel.ClassIds)
-        //     : "All";
-        //
-        // var studentId = !string.IsNullOrEmpty(slotModel.StudentFirebaseId)
-        //     ? slotModel.StudentFirebaseId
-        //     : "All";
-        //
-        // var cacheKey =
-        //     $"WeeklySchedule:{slotModel.StartTime:yyyyMMdd}:{slotModel.EndTime:yyyyMMdd}:{accountModel.AccountFirebaseId}:" +
-        //     $"{instructorIds}:{studentId}:{shifts}:{slotStatuses}:{classIds}";
-        //
-        //
-        // // var cacheKey =
-        // //     $"GetWeeklyScheduleAsync:{slotModel.StartTime}:{slotModel.EndTime}:{accountModel.AccountFirebaseId}";
-        //
-        // // Only use cache if no filters are applied
-        // if (slotModel.IsFilterEmpty())
-        // {
-        //     var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
-        //     if (cachedResult != null) return cachedResult;
-        // }
+        var cacheKey =
+            $"GetWeeklyScheduleAsync:{slotModel.StartTime}:{slotModel.EndTime}:{accountModel.AccountFirebaseId}";
+
+        if (accountModel.Role != Role.Staff && slotModel.IsFilterEmpty())
+        {
+           
+            var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
+            if (cachedResult != null) return cachedResult;
+        }
 
         Expression<Func<Slot, bool>> filter = s =>
             s.Date >= slotModel.StartTime &&
@@ -150,7 +125,7 @@ public class SlotService : ISlotService
 
         // todo: if role is staff so no need to cache cause the filter is only applied in role staff 
 
-        // await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
+         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
 
         return result;
     }

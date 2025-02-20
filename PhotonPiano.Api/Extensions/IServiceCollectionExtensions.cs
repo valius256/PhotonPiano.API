@@ -1,7 +1,11 @@
-﻿using Hangfire;
+﻿using System.IO.Compression;
+using System.Net;
+using System.Threading.RateLimiting;
+using Hangfire;
 using Hangfire.PostgreSql;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -23,7 +27,7 @@ namespace PhotonPiano.Api.Extensions;
 
 public static class IServiceCollectionExtensions
 {
-    private static bool MessagePrinted;
+    private static bool _messagePrinted;
 
     public static IServiceCollection AddApiDependencies(this IServiceCollection services, IConfiguration configuration)
     {
@@ -39,7 +43,10 @@ public static class IServiceCollectionExtensions
             .AddMapsterConfig()
             .AddRedisCache(configuration)
             .AddPostGresSqlConfiguration()
-            .AddRazorTemplateWithConfigPath();
+            .AddRazorTemplateWithConfigPath()
+            .AddRateLimitedForAllEndpoints()
+            .ConfigureResponseCompression()
+            ;
 
 
         return services;
@@ -86,10 +93,10 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>
             .NewConfig()
-            .Map(dest => dest.ShiftOptions, src => Enumerable.OrderBy(src.ShiftOptions, s => (int)s));
+            .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
         TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig().IgnoreNullValues(true);
-        
+
         return services;
     }
 
@@ -144,10 +151,10 @@ public static class IServiceCollectionExtensions
         if (configuration.GetValue<bool>("IsAspireHost"))
             rs = configuration.GetConnectionString("photonpiano");
 
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" && !MessagePrinted)
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" && !_messagePrinted)
         {
             Console.WriteLine("This running is using connection string: " + rs);
-            MessagePrinted = true;
+            _messagePrinted = true;
         }
 
         return rs;
@@ -187,7 +194,8 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddFireBaseServices(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection AddFireBaseServices(this IServiceCollection services,
+        IConfiguration configuration)
     {
         //var firebaseSettings = configuration.GetSection(nameof(Appsettings.FireBase)).Get<FireBase>();
         //var firebaseJsonPath = Path.Combine(Directory.GetCurrentDirectory(), "fit-swipe-161d7-firebase-adminsdk-l0tth-9884dc9fa1.json");
@@ -251,9 +259,46 @@ public static class IServiceCollectionExtensions
         services.AddHangfireServer(_ =>
         {
             RecurringJob.AddOrUpdate<TutionService>(x =>
-                x.CronAutoCreateTution(), Cron.Monthly());
+                x.CronAutoCreateTution(), Cron.Monthly(), TimeZoneInfo.Local);
         });
 
+
+        return services;
+    }
+
+    private static IServiceCollection AddRateLimitedForAllEndpoints(this IServiceCollection services)
+    {
+        services.AddRateLimiter(options =>
+        {
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, IPAddress>(context =>
+            {
+                var ipAddress = context.Connection.RemoteIpAddress;
+                return RateLimitPartition.GetFixedWindowLimiter(ipAddress,
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 100, // 100 requests per window
+                        Window = TimeSpan.FromMinutes(1), // Per 1 minute window
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    })!;
+            });
+        });
+        return services;
+    }
+
+    private static IServiceCollection ConfigureResponseCompression(this IServiceCollection services)
+    {
+        // Brotli and Gzip reduce the size of the outgoing JSON, HTML or Static files data.
+        services.AddResponseCompression(options =>
+        {
+            options.EnableForHttps = true;
+            options.Providers.Add<BrotliCompressionProvider>();
+            options.Providers.Add<GzipCompressionProvider>();
+        });
+
+        services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
+
+        services.Configure<GzipCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
 
         return services;
     }

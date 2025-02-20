@@ -43,7 +43,7 @@ public class NotificationService : INotificationService
         {
             Id = Guid.NewGuid(),
             Content = $"{title}: {message}",
-            Thumbnail = "",
+            Thumbnail = ""
         };
 
         await _unitOfWork.NotificationRepository.AddAsync(notification);
@@ -51,7 +51,6 @@ public class NotificationService : INotificationService
 
         var accountNotification = new AccountNotification
         {
-            Id = Guid.NewGuid(),
             AccountFirebaseId = userFirebaseId,
             NotificationId = notification.Id,
             IsViewed = false
@@ -74,30 +73,22 @@ public class NotificationService : INotificationService
     public async Task ToggleNotificationViewStatus(Guid id, string accountId)
     {
         var notification =
-            await _unitOfWork.NotificationRepository.FindSingleAsync(n => n.Id == id, hasTrackings: false);
+            await _unitOfWork.NotificationRepository.FindSingleAsync(n => n.Id == id, false);
 
-        if (notification is null)
-        {
-            throw new NotFoundException("Notification not found.");
-        }
+        if (notification is null) throw new NotFoundException("Notification not found.");
 
         var account =
             await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == accountId,
-                hasTrackings: false);
+                false);
 
-        if (account is null)
-        {
-            throw new NotFoundException("Account not found.");
-        }
+        if (account is null) throw new NotFoundException("Account not found.");
 
         var accountNotification = await _unitOfWork.AccountNotificationRepository.FindSingleAsync(an =>
             an.NotificationId == id
             && an.AccountFirebaseId == account.AccountFirebaseId);
 
         if (accountNotification is null)
-        {
             throw new ForbiddenMethodException("You're not allowed to change this notification view status.");
-        }
 
         accountNotification.IsViewed = true;
         accountNotification.UpdatedAt = DateTime.UtcNow;

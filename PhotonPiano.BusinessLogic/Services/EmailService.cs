@@ -77,7 +77,7 @@ public class EmailService : IEmailService
                 }
                 catch (Exception ex)
                 {
-                    throw new ApplicationException($"Failed to send Email: {ex.Message}", ex);
+                    Console.WriteLine(ex.Message);
                 }
             }
         }

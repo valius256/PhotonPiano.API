@@ -7,6 +7,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using SemaphoreSlim = System.Threading.SemaphoreSlim;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -120,7 +121,7 @@ public class TutionService : ITutionService
         }
     }
 
-    
+
     // note: this function just run in 1st of month
     public async Task CronAutoCreateTution()
     {
@@ -129,8 +130,13 @@ public class TutionService : ITutionService
         var endDate = new DateTime(utcNow.Year, utcNow.Month, lastDayOfMonth, 23, 59, 59, DateTimeKind.Utc);
         var endDateConverted = DateOnly.FromDateTime(endDate);
 
+        // validate if created tuition or not 
+        var isExist = await _unitOfWork.TuitionRepository.AnyAsync(x => x.StartDate == utcNow && x.EndDate == endDate);
+        if (isExist) return;
+
         // Get all ongoing classes
-        var ongoingClasses = await _unitOfWork.ClassRepository.FindAsync(c => c.Status == ClassStatus.Ongoing);
+        var ongoingClasses =
+            await _unitOfWork.ClassRepository.FindProjectedAsync<Class>(c => c.Status == ClassStatus.Ongoing);
         var ongoingClassIds = ongoingClasses.Select(x => x.Id).ToList();
 
         var studentClasses = await _unitOfWork.StudentClassRepository.FindProjectedAsync<StudentClass>(
@@ -139,11 +145,14 @@ public class TutionService : ITutionService
 
         var tutions = new List<Tution>();
 
-        var tasks = studentClasses.Select(async studentClass =>
+        foreach (var studentClass in studentClasses)
         {
             var levelValue = (int)studentClass.Class.Level;
             var systemConfigLevel = await _serviceFactory.SystemConfigService
                 .GetSystemConfigValueBaseOnLevel(levelValue);
+
+            var actualSlotsInMonth =
+                studentClass.Class.Slots.Count(sl => sl.Date.Year == utcNow.Year && sl.Date.Month == utcNow.Month);
 
             var tution = new Tution
             {
@@ -152,17 +161,15 @@ public class TutionService : ITutionService
                 StartDate = utcNow,
                 EndDate = endDate,
                 CreatedAt = utcNow,
-                Amount = systemConfigLevel.PriceOfSlot * systemConfigLevel.NumOfSlotInWeek * 4,
+                Amount = systemConfigLevel.PriceOfSlot * actualSlotsInMonth,
                 PaymentStatus = PaymentStatus.Pending
             };
 
-            return (tution, studentClass.Student.Email, studentClass.Class.Name);
-        });
+            if (tution.Amount > 0) tutions.Add(tution);
+        }
 
-        var tuitionResults = await Task.WhenAll(tasks);
+        var currentTuition = tutions.Count();
 
-        // Filter out tuitions with Amount == 0
-        tutions.AddRange(tuitionResults.Select(x => x.tution).Where(t => t.Amount > 0));
 
         // Save to database inside a transaction
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -171,27 +178,37 @@ public class TutionService : ITutionService
             await _unitOfWork.SaveChangesAsync();
         });
 
+
         // Send emails in parallel
-        var emailTasks = tuitionResults
-            .Where(x => x.tution.Amount > 0)
-            .Select(async result =>
+        var semaphore = new SemaphoreSlim(10); // Max 10 concurrent emails
+        var emailTasks = tutions.Select(async tution =>
+        {
+            await semaphore.WaitAsync();
+            try
             {
+                var studentClass = studentClasses.First(sc => sc.Id == tution.StudentClassId);
+
                 var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "studentName", result.Email },
-                    { "className", result.Name },
+                    { "studentName", studentClass.Student.Email },
+                    { "className", studentClass.Class.Name },
                     { "startDate", $"{utcNow:yyyy-MM-dd}" },
                     { "endDate", $"{endDateConverted}" },
-                    { "amount", $"{result.tution.Amount}" }
+                    { "amount", $"{tution.Amount}" }
                 };
 
                 await _serviceFactory.EmailService.SendAsync(
-                    "PaymentSuccess",
-                    new List<string> { result.Email },
+                    "NotifyTuitionCreated",
+                    new List<string> { studentClass.Student.Email },
                     null,
                     emailParam
                 );
-            });
+            }
+            finally
+            {
+                semaphore.Release(); // Release the semaphore after sending each email
+            }
+        });
 
         await Task.WhenAll(emailTasks);
     }
@@ -232,7 +249,6 @@ public class TutionService : ITutionService
 
     public async Task CreateTutionWhenRegisterClass(List<StudentClass> models)
     {
-        
         var utcNow = DateTime.UtcNow.AddHours(7);
         var utcNowConvert = DateOnly.FromDateTime(utcNow);
         var lastDayOfMonth = DateTime.DaysInMonth(utcNow.Year, utcNow.Month);

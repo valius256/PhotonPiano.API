@@ -74,9 +74,8 @@ public class SlotStudentService : ISlotStudentService
                     slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
                     await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
 
-                    await _serviceFactory.NotificationServiceHub.SendNotificationAsync(studentId,
-                        teacherName.UserName!, $"Đã điểm danh cho lớp {slotEntity.Class.Name}",
-                        $"trạng thái: {AttendanceStatus.Absent}");
+                    await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
+                        $"Đã điểm danh cho lớp {slotEntity.Class.Name}", $"trạng thái: {AttendanceStatus.Absent}");
                 }
             }
 

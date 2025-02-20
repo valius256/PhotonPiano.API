@@ -255,8 +255,12 @@ public class ClassService : IClassService
                 c.IsScorePublished = false;
                 c.Status = ClassStatus.NotStarted;
             });
-            await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses);
-
+            await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>
+            {
+                c.Slots = [];
+                return c;
+            }).ToList());
+             
             //Create StudentClasses
             var studentClasses = new List<StudentClass>();
             foreach (var c in classes)

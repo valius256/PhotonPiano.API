@@ -314,7 +314,7 @@ public class ClassService : IClassService
             // create 1st tuition for students in class
             if (studentClasses.Any())
             {
-                await _serviceFactory.TutionService.CreateTutionWhenRegisterClass(studentClasses);
+                await _serviceFactory.TutionService.CreateTutionWhenRegisterClass(studentClasses, slots);
             }
             
 

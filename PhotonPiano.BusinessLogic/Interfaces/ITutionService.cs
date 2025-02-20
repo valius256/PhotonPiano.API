@@ -21,5 +21,5 @@ public interface ITutionService
 
     Task<TutionWithStudentClassModel> GetTutionById(Guid tutionId);
 
-    Task CreateTutionWhenRegisterClass(List<StudentClass> models);
+    Task CreateTutionWhenRegisterClass(List<StudentClass> models, List<Slot> slots);
 }

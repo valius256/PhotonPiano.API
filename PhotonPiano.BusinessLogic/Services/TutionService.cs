@@ -147,7 +147,7 @@ public class TutionService : ITutionService
 
         foreach (var studentClass in studentClasses)
         {
-            var levelValue = (int)studentClass.Class.Level;
+            var levelValue = (int)studentClass.Class.Level + 1;
             var systemConfigLevel = await _serviceFactory.SystemConfigService
                 .GetSystemConfigValueBaseOnLevel(levelValue);
 
@@ -247,7 +247,7 @@ public class TutionService : ITutionService
     }
 
 
-    public async Task CreateTutionWhenRegisterClass(List<StudentClass> models)
+    public async Task CreateTutionWhenRegisterClass(List<StudentClass> models, List<Slot> slots)
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
         var utcNowConvert = DateOnly.FromDateTime(utcNow);
@@ -256,14 +256,13 @@ public class TutionService : ITutionService
         var enDateConvert = DateOnly.FromDateTime(endDate);
 
         var tuitions = new List<Tution>();
-        var tasks = models.Select(async studentClass =>
+        foreach (var studentClass in models)
         {
             var sysConfigValue = await _serviceFactory.SystemConfigService
-                .GetSystemConfigValueBaseOnLevel((int)studentClass.Class.Level);
+                .GetSystemConfigValueBaseOnLevel((int)studentClass.Class.Level + 1);
 
             var numOfSlotTillEndMonth =
-                studentClass.Class.Slots.Count(x => x.Date >= utcNowConvert && x.Date <= enDateConvert);
-
+                slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
             var tuition = new Tution
             {
                 Id = Guid.NewGuid(),
@@ -275,36 +274,33 @@ public class TutionService : ITutionService
                 PaymentStatus = PaymentStatus.Pending
             };
 
-            return (tuition, studentClass.Student.Email, studentClass.Class.Name);
-        });
+            if (tuition.Amount > 0) tuitions.Add(tuition);
+        }
 
-        var tuitionResults = await Task.WhenAll(tasks);
 
-        tuitions.AddRange(tuitionResults.Select(x => x.tuition));
 
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
-        });
+        tuitions.AddRange(tuitions);
+
+        await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
 
         // Send emails in parallel
-        var emailTasks = tuitionResults.Select(async result =>
-        {
-            var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "customerName", $"{result.Email}" },
-                { "className", $"{result.Name}" },
-                { "amount", $"{result.tuition.Amount}" },
-                { "paymentStatus", $"{result.tuition.PaymentStatus}" },
-                { "validFromTo", $"{result.tuition.StartDate:yyyy-MM-dd} to {result.tuition.EndDate:yyyy-MM-dd}" }
-            };
+        //var emailTasks = tuitions.Select(async result =>
+        //{
+        //    var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        //    {
+        //        { "customerName", $"{result.StudentClass.Student.Email}" },
+        //        { "className", $"{result.StudentClass.Class.Name}" },
+        //        { "amount", $"{result.Amount}" },
+        //        { "paymentStatus", $"{result.PaymentStatus}" },
+        //        { "validFromTo", $"{result.StartDate:yyyy-MM-dd} to {result.EndDate:yyyy-MM-dd}" }
+        //    };
 
-            await _serviceFactory.EmailService.SendAsync("PaymentSuccess",
-                new List<string> { result.Email, "quangphat7a1@gmail.com" },
-                null, emailParam);
-        });
+        //    await _serviceFactory.EmailService.SendAsync("PaymentSuccess",
+        //        new List<string> { result.StudentClass.Student.Email, "quangphat7a1@gmail.com" },
+        //        null, emailParam);
+        //});
 
-        await Task.WhenAll(emailTasks);
+        //await Task.WhenAll(emailTasks);
     }
 
 

@@ -14,9 +14,12 @@ public class AccountService : IAccountService
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public AccountService(IUnitOfWork unitOfWork)
+    private readonly IServiceFactory _serviceFactory;
+
+    public AccountService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
+        _serviceFactory = serviceFactory;
     }
 
     public async Task<AccountModel> CreateAccount(string firebaseUId, string email)
@@ -55,6 +58,41 @@ public class AccountService : IAccountService
         if (result is null) throw new NotFoundException("Account not found.");
         return true;
     }
+
+    public async Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount, string idToken)
+    {
+        var account =
+            await _unitOfWork.AccountRepository.FindSingleAsync(a =>
+                a.AccountFirebaseId == currentAccount.AccountFirebaseId);
+
+        if (account is null)
+        {
+            throw new NotFoundException("Account not found.");
+        }
+
+        if (!string.IsNullOrEmpty(model.UserName) &&
+            model.UserName != currentAccount.UserName &&
+            await _unitOfWork.AccountRepository.AnyAsync(a => a.UserName == model.UserName)
+           )
+        {
+            throw new ConflictException("Username already exists.");
+        }
+
+        if (!string.IsNullOrEmpty(model.Email) && model.Email != currentAccount.Email)
+        {
+            if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == model.Email))
+            {
+                throw new ConflictException("Email already exists.");
+            }
+
+            await _serviceFactory.AuthService.UpdateFirebaseEmail(idToken, model.Email);
+        }
+
+        model.Adapt(account);
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+
 
     public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {

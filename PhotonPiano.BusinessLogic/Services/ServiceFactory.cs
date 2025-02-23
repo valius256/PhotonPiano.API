@@ -67,7 +67,7 @@ public class ServiceFactory : IServiceFactory
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine)
     {
         _logger = logger;
-        _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork));
+        _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork, this));
         _authService =
             new Lazy<IAuthService>(() => new AuthService(httpClientFactory, unitOfWork, this, configuration));
         _redisCacheService = new Lazy<IRedisCacheService>(() => new RedisCacheService(redis));

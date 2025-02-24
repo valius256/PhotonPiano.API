@@ -277,6 +277,11 @@ public static class IServiceCollectionExtensions
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                 x => x.CronForTuitionReminder(),
                 Cron.Monthly(15));
+            
+            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus", 
+                x => x.CronJobAutoChangeSlotStatus(),
+                Cron.Hourly());
+            
         });
 
 

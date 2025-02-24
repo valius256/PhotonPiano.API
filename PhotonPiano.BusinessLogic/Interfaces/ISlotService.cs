@@ -17,4 +17,6 @@ public interface ISlotService
     Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, [Required] AccountModel accountModel);
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId);
+    
+    Task CronJobAutoChangeSlotStatus();
 }

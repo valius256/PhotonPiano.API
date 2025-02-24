@@ -9,6 +9,7 @@ public enum ApplicationType
     ClassTransfer, // Đơn xin chuyển lớp
     TeacherComplaint, // Đơn khiếu nại giáo viên
     ServiceComplaint, // Đơn khiếu nại csvc
+    RefundTuition, // Đơn hoàn học phí
     Other, // Các loại đơn khác
     CertificateErrorReport // Báo cáo sai sót chứng chỉ
 }

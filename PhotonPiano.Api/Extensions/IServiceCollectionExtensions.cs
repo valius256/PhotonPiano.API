@@ -267,10 +267,17 @@ public static class IServiceCollectionExtensions
             cf.TimeZoneResolver = new DefaultTimeZoneResolver();
 
             var recurringJobManager = service.GetRequiredService<IRecurringJobManager>();
+            
+            
+            
             //  recurring job
-            recurringJobManager.AddOrUpdate<TutionService>("AutoCreateTuitionInStartOfMonth",
-                x => x.CronAutoCreateTution(),
+            recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                x => x.CronAutoCreateTuition(),
                 Cron.Monthly);
+            
+            recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
+                x => x.CronForTuitionReminder(),
+                Cron.Monthly(15));
         });
 
 

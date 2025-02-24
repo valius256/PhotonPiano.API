@@ -30,7 +30,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<StudentClassScore> StudentClassScores { get; set; }
     public DbSet<SystemConfig> SystemConfigs { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
-    public DbSet<Tution> Tutions { get; set; }
+    public DbSet<Tuition> Tuitions { get; set; }
     public DbSet<New> News { get; set; }
     public DbSet<DayOff> DayOffs { get; set; }
     public DbSet<AccountNotification> AccountNotifications { get; set; }
@@ -52,7 +52,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new StudentClassScoreConfiguration());
         modelBuilder.ApplyConfiguration(new SystemConfigConfiguration());
         modelBuilder.ApplyConfiguration(new TransactionConfiguration());
-        modelBuilder.ApplyConfiguration(new TutionConfiguration());
+        modelBuilder.ApplyConfiguration(new TuitionConfiguration());
         modelBuilder.ApplyConfiguration(new NewConfiguration());
         modelBuilder.ApplyConfiguration(new DayOffConfiguration());
         modelBuilder.ApplyConfiguration(new AccountNotificationConfiguration());
@@ -60,7 +60,7 @@ public class ApplicationDbContext : DbContext
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());
 
-        // modelBuilder.Seed();
+         // modelBuilder.Seed();
 
         base.OnModelCreating(modelBuilder);
     }

@@ -11,28 +11,29 @@ using SemaphoreSlim = System.Threading.SemaphoreSlim;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
-public class TutionService : ITutionService
+public class TuitionService : ITuitionService
 {
     private readonly IServiceFactory _serviceFactory;
     private readonly IUnitOfWork _unitOfWork;
 
-    public TutionService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
+    public TuitionService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
     }
 
-    public async Task<string> PayTuition(AccountModel currentAccount, Guid tutionId, string returnUrl, string ipAddress,
+    public async Task<string> PayTuition(AccountModel currentAccount, Guid tuitionId, string returnUrl,
+        string ipAddress,
         string apiBaseUrl)
     {
-        var paymentTution = await _unitOfWork.TuitionRepository.FindFirstProjectedAsync<Tution>(x => x.Id == tutionId);
+        var paymentTution = await _unitOfWork.TuitionRepository.FindFirstProjectedAsync<Tuition>(x => x.Id == tuitionId);
 
-        ValidateTution(paymentTution, currentAccount.AccountFirebaseId);
+        ValidateTuition(paymentTution, currentAccount.AccountFirebaseId);
 
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
-            TutionId = tutionId,
+            TutionId = tuitionId,
             Amount = paymentTution!.Amount,
             CreatedAt = DateTime.UtcNow,
             CreatedById = currentAccount.AccountFirebaseId,
@@ -54,7 +55,7 @@ public class TutionService : ITutionService
             returnUrl, customReturnUrl);
     }
 
-    public async Task HandleTutionPaymentCallback(VnPayCallbackModel callbackModel, string accountId)
+    public async Task HandleTuitionPaymentCallback(VnPayCallbackModel callbackModel, string accountId)
     {
         var transactionCode = Guid.Parse(callbackModel.VnpTxnRef);
 
@@ -123,7 +124,7 @@ public class TutionService : ITutionService
 
 
     // note: this function just run in 1st of month
-    public async Task CronAutoCreateTution()
+    public async Task CronAutoCreateTuition()
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
         var lastDayOfMonth = DateTime.DaysInMonth(utcNow.Year, utcNow.Month);
@@ -143,7 +144,7 @@ public class TutionService : ITutionService
             sc => ongoingClassIds.Contains(sc.ClassId)
         );
 
-        var tutions = new List<Tution>();
+        var tutions = new List<Tuition>();
 
         foreach (var studentClass in studentClasses)
         {
@@ -154,7 +155,7 @@ public class TutionService : ITutionService
             var actualSlotsInMonth =
                 studentClass.Class.Slots.Count(sl => sl.Date.Year == utcNow.Year && sl.Date.Month == utcNow.Month);
 
-            var tution = new Tution
+            var tution = new Tuition
             {
                 Id = Guid.NewGuid(),
                 StudentClassId = studentClass.Id,
@@ -214,13 +215,47 @@ public class TutionService : ITutionService
     }
 
 
-    public async Task<PagedResult<TutionWithStudentClassModel>> GetTutionsPaged(QueryTutionModel queryTutionModel,
+    // note: this function will run in 15th of month
+    public async Task CronForTuitionReminder()
+    {
+        var allNotPaidTuition =
+            await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
+                t => t.PaymentStatus == PaymentStatus.Pending,
+                false);
+        foreach (var tuition in allNotPaidTuition)
+        {
+            var studentClass =
+                await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
+            var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "studentName", studentClass.Student.Email },
+                { "className", studentClass.Class.Name },
+                { "startDate", $"{tuition.StartDate:yyyy-MM-dd}" },
+                { "endDate", $"{tuition.EndDate:yyyy-MM-dd}" },
+                { "amount", $"{tuition.Amount}" }
+            };
+
+            await _serviceFactory.EmailService.SendAsync(
+                "NotifyTuitionReminder",
+                new List<string> { studentClass.Student.Email },
+                null,
+                emailParam
+            );
+            
+            await _serviceFactory.NotificationService.SendNotificationAsync(studentClass.Student.AccountFirebaseId, 
+                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} chưa thanh toán", 
+                "Hãy thanh toán học phí để tiếp tục học tập");
+        }
+    }
+
+
+    public async Task<PagedResult<TuitionWithStudentClassModel>> GetTuitionsPaged(QueryTuitionModel queryTuitionModel,
         AccountModel? account = default)
     {
         var (page, pageSize, sortColumn, orderByDesc, studentClassIds, startDate, endDate, paymentStatuses) =
-            queryTutionModel;
+            queryTuitionModel;
 
-        var result = await _unitOfWork.TuitionRepository.GetPaginatedWithProjectionAsync<TutionWithStudentClassModel>(
+        var result = await _unitOfWork.TuitionRepository.GetPaginatedWithProjectionAsync<TuitionWithStudentClassModel>(
             page, pageSize, sortColumn, orderByDesc,
             expressions:
             [
@@ -237,17 +272,17 @@ public class TutionService : ITutionService
         return result;
     }
 
-    public async Task<TutionWithStudentClassModel> GetTutionById(Guid tutionId)
+    public async Task<TuitionWithStudentClassModel> GetTuitionById(Guid tuitionId)
     {
         var result = await _unitOfWork.TuitionRepository
-            .FindSingleProjectedAsync<TutionWithStudentClassModel>(e => e.Id == tutionId, false);
+            .FindSingleProjectedAsync<TuitionWithStudentClassModel>(e => e.Id == tuitionId, false);
         if (result is null) throw new NotFoundException("Tuition not found.");
 
         return result;
     }
 
 
-    public async Task CreateTutionWhenRegisterClass(List<StudentClass> models, List<Slot> slots)
+    public async Task CreateTuitionWhenRegisterClass(List<StudentClass> models, List<Slot> slots)
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
         var utcNowConvert = DateOnly.FromDateTime(utcNow);
@@ -255,7 +290,7 @@ public class TutionService : ITutionService
         var endDate = new DateTime(utcNow.Year, utcNow.Month, lastDayOfMonth, 23, 59, 59, DateTimeKind.Utc);
         var enDateConvert = DateOnly.FromDateTime(endDate);
 
-        var tuitions = new List<Tution>();
+        var tuitions = new List<Tuition>();
         foreach (var studentClass in models)
         {
             var sysConfigValue = await _serviceFactory.SystemConfigService
@@ -263,7 +298,7 @@ public class TutionService : ITutionService
 
             var numOfSlotTillEndMonth =
                 slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
-            var tuition = new Tution
+            var tuition = new Tuition
             {
                 Id = Guid.NewGuid(),
                 StudentClassId = studentClass.Id,
@@ -276,7 +311,6 @@ public class TutionService : ITutionService
 
             if (tuition.Amount > 0) tuitions.Add(tuition);
         }
-
 
 
         tuitions.AddRange(tuitions);
@@ -316,15 +350,15 @@ public class TutionService : ITutionService
             throw new IllegalArgumentException("The PaymentStatus of this tuition must be pending.");
     }
 
-    private void ValidateTution(Tution? tution, string userFirebaseId)
+    private void ValidateTuition(Tuition? tuition, string userFirebaseId)
     {
-        if (tution == null)
+        if (tuition == null)
             throw new NullReferenceException("No tuition found for this, please add tuition first.");
 
-        if (tution.PaymentStatus == PaymentStatus.Successed)
+        if (tuition.PaymentStatus == PaymentStatus.Successed)
             throw new BadRequestException("This tuition has already been processed.");
 
-        if (tution.StudentClass.StudentFirebaseId != userFirebaseId)
+        if (tuition.StudentClass.StudentFirebaseId != userFirebaseId)
             throw new BadRequestException("You are not allowed to pay this tuition.");
     }
 }

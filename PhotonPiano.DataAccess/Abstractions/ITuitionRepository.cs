@@ -2,6 +2,6 @@ using PhotonPiano.DataAccess.Models.Entity;
 
 namespace PhotonPiano.DataAccess.Abstractions;
 
-public interface ITuitionRepository : IGenericRepository<Tution>
+public interface ITuitionRepository : IGenericRepository<Tuition>
 {
 }

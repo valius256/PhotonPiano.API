@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IClassService, ClassService>();
         services.AddScoped<ISystemConfigService, SystemConfigService>();
-        services.AddScoped<ITutionService, TutionService>();
+        services.AddScoped<ITuitionService, TuitionService>();
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ISchedulerService, SchedulerService>();

@@ -9,8 +9,8 @@ public record UpdateAccountRequest
     
     public string? Phone { get; init; } 
     
-    [EmailAddress]
-    public string? Email { get; init; }
+    // [EmailAddress]
+    // public string? Email { get; init; }
 
     public string? FullName { get; init; }  
     

@@ -97,7 +97,6 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
         TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig().IgnoreNullValues(true);
-
         return services;
     }
 

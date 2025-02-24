@@ -1,5 +1,4 @@
 using Mapster;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
@@ -42,7 +41,12 @@ namespace PhotonPiano.Api.Controllers
         public async Task<ActionResult> SendApplication([FromForm] SendApplicationRequest request)
         {
             return Created(nameof(SendApplication),
-                await _serviceFactory.ApplicationService.SendAnApplication(request.Adapt<SendApplicationModel>(),
+                await _serviceFactory.ApplicationService.SendAnApplication(new SendApplicationModel
+                    {
+                        File = request.File,
+                        Reason = request.Reason,
+                        Type = request.Type,
+                    },
                     base.CurrentAccount!));
         }
 

@@ -2,7 +2,7 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Tution;
 
-public record TutionModel
+public record TuitionModel
 {
     public required Guid Id { get; init; }
     public required Guid StudentClassId { get; init; }

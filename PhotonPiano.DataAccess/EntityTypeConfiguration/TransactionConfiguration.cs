@@ -20,7 +20,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(x => x.Tution)
-            .WithMany(x => x.TransactionTutions)
+            .WithMany(x => x.TransactionTuitions)
             .HasForeignKey(x => x.TutionId)
             .OnDelete(DeleteBehavior.NoAction);
 

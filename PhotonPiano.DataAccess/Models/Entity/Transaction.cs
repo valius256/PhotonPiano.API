@@ -17,6 +17,6 @@ public class Transaction : BaseEntityWithId
 
     // Reference
     public virtual Account CreatedBy { get; set; } = default!;
-    public virtual Tution? Tution { get; set; }
+    public virtual Tuition? Tution { get; set; }
     public virtual EntranceTestStudent? EntranceTestStudent { get; set; }
 }

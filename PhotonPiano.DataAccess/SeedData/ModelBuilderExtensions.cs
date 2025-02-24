@@ -488,7 +488,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date),
                 RoomId = classRooms[classTestGuid1],
                 Shift = shifts[i % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
             slots.Add(new Slot
             {
@@ -497,7 +497,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
                 RoomId = classRooms[classTestGuid1],
                 Shift = shifts[(i + 1) % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
         }
 
@@ -512,7 +512,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date),
                 RoomId = classRooms[classTestGuid2],
                 Shift = shifts[i % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
             slots.Add(new Slot
             {
@@ -521,7 +521,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
                 RoomId = classRooms[classTestGuid2],
                 Shift = shifts[(i + 1) % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
         }
 
@@ -536,7 +536,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date),
                 RoomId = classRooms[classTestGuid3],
                 Shift = shifts[i % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
             slots.Add(new Slot
             {
@@ -545,7 +545,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
                 RoomId = classRooms[classTestGuid3],
                 Shift = shifts[(i + 1) % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
         }
 
@@ -560,7 +560,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date),
                 RoomId = classRooms[classTestGuid4],
                 Shift = shifts[i % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
             slots.Add(new Slot
             {
@@ -569,7 +569,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
                 RoomId = classRooms[classTestGuid4],
                 Shift = shifts[(i + 1) % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
         }
 
@@ -584,7 +584,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date),
                 RoomId = classRooms[classTestGuid5],
                 Shift = shifts[i % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
             slots.Add(new Slot
             {
@@ -593,7 +593,7 @@ public static class ModelBuilderExtensions
                 Date = DateOnly.FromDateTime(date.AddDays(2)),
                 RoomId = classRooms[classTestGuid5],
                 Shift = shifts[(i + 1) % shifts.Length],
-                Status = SlotStatus.Ongoing
+                Status = SlotStatus.NotStarted
             });
         }
 

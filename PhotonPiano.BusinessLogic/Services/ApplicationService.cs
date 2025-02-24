@@ -49,6 +49,12 @@ public class ApplicationService : IApplicationService
         application.CreatedAt = DateTime.UtcNow;
         application.Status = ApplicationStatus.Pending;
 
+        if (sendModel.File is not null)
+        {
+            string fileUrl = await _serviceFactory.PinataService.UploadFile(sendModel.File);
+            application.FileUrl = fileUrl;
+        }
+        
         await _unitOfWork.ApplicationRepository.AddAsync(application);
         await _unitOfWork.SaveChangesAsync();
 

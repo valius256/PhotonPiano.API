@@ -18,7 +18,7 @@ public class StudentClass : BaseEntityWithId
     public virtual Account Student { get; set; } = default!;
 
     public virtual ICollection<StudentClassScore> StudentClassScores { get; set; } = new List<StudentClassScore>();
-    public virtual ICollection<Tution> Tutions { get; set; } = new List<Tution>();
+    public virtual ICollection<Tuition> Tutions { get; set; } = new List<Tuition>();
     public virtual Account CreatedBy { get; set; } = default!;
     public virtual Account UpdateBy { get; set; } = default!;
     public virtual Account DeletedBy { get; set; } = default!;

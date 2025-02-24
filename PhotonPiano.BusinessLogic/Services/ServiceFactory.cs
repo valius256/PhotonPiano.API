@@ -59,7 +59,7 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ITransactionService> _transactionService;
 
-    private readonly Lazy<ITutionService> _tutionService;
+    private readonly Lazy<ITuitionService> _tutionService;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
@@ -81,7 +81,7 @@ public class ServiceFactory : IServiceFactory
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
         _slotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
-        _tutionService = new Lazy<ITutionService>(() => new TutionService(unitOfWork, this));
+        _tutionService = new Lazy<ITuitionService>(() => new TuitionService(unitOfWork, this));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));
         _emailService =
             new Lazy<IEmailService>(() => new EmailService(razorTemplateEngine, defaultScheduleJob, smtpAppSettings));
@@ -91,7 +91,7 @@ public class ServiceFactory : IServiceFactory
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
 
-        _logger.LogInformation("ServiceFactory has been initialized.");
+        // _logger.LogInformation("ServiceFactory has been initialized.");
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -118,7 +118,7 @@ public class ServiceFactory : IServiceFactory
 
     public ISlotStudentService SlotStudentService => _slotStudentService.Value;
 
-    public ITutionService TutionService => _tutionService.Value;
+    public ITuitionService TuitionService => _tutionService.Value;
 
     public ITransactionService TransactionService => _transactionService.Value;
 

@@ -29,7 +29,7 @@ public interface IServiceFactory
 
     ISlotStudentService SlotStudentService { get; }
 
-    ITutionService TutionService { get; }
+    ITuitionService TuitionService { get; }
 
     ITransactionService TransactionService { get; }
 

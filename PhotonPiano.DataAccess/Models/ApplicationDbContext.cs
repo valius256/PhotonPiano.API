@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using PhotonPiano.DataAccess.EntityTypeConfiguration;
 using PhotonPiano.DataAccess.Models.Entity;
-using PhotonPiano.DataAccess.SeedData;
 
 namespace PhotonPiano.DataAccess.Models;
 
@@ -60,7 +59,7 @@ public class ApplicationDbContext : DbContext
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());
 
-          // modelBuilder.Seed();
+        //modelBuilder.Seed();
 
         base.OnModelCreating(modelBuilder);
     }

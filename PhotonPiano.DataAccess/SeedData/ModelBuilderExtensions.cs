@@ -722,6 +722,13 @@ public static class ModelBuilderExtensions
                 ConfigName = "Tổng số buổi học LEVEL 5",
                 ConfigValue = "50",
                 Role = Role.Administrator
+            },
+            new SystemConfig
+            {
+                Id = Guid.NewGuid(),
+                ConfigName = "Thuế suất năm 2025",
+                ConfigValue = "0.05",
+                Role = Role.Administrator
             }
         );
 

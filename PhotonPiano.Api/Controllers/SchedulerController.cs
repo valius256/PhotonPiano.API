@@ -27,6 +27,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get All Slots in this Week")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {
+        
         if (CurrentAccount != null)
         {
             var result =

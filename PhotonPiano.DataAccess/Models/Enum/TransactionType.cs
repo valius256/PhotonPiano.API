@@ -4,4 +4,5 @@ public enum TransactionType
 {
     EntranceTestFee,
     TutionFee,
+    Refund
 }

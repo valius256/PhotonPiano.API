@@ -16,7 +16,6 @@ public class OpenApiSecuritySchemeTransformer
         {
             Name = "PhotonPiano",
             Email = "PhotonPiano@gmail.com"
-            //Url = new Uri(@"https://learn2drive-v2.vercel.app/")
         };
 
         var securitySchema =

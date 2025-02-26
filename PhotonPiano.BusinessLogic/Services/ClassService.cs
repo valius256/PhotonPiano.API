@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
@@ -26,9 +27,23 @@ public class ClassService : IClassService
 
     public async Task<ClassDetailModel> GetClassDetailById(Guid id)
     {
+        // Fetch the class capacity
+        var capacity =
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+
         var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id);
         if (classDetail is null) throw new NotFoundException("Class not found");
-        return classDetail;
+
+        var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
+
+        return classDetail with
+        {
+            Capacity = capacity,
+            RequiredSlots = config.TotalSlot,
+            StudentNumber = classDetail.StudentClasses.Count,
+            TotalSlots = classDetail.Slots.Count,
+            Slots = classDetail.Slots.OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList()
+        };
     }
 
     public async Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role)
@@ -100,7 +115,8 @@ public class ClassService : IClassService
                 CreatedById = q.CreatedById,
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
-                TotalSlots = q.Slots.Count()
+                TotalSlots = q.Slots.Count(),
+                Instructor = q.Instructor.Adapt<AccountSimpleModel>()
             })
             .ToListAsync();
 

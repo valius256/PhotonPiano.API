@@ -47,6 +47,16 @@ public class NotificationController : BaseController
         return Ok();
     }
 
+    [HttpPut("view-status")]
+    [EndpointDescription("Toggle batch notifications view status")]
+    [FirebaseAuthorize]
+    public async Task<ActionResult> ToggleBatchViewStatus([FromBody] BatchUpdateNotificationsRequest request)
+    {
+        await _serviceFactory.NotificationService.ToggleBatchViewStatus(base.CurrentAccount!, request.NotificationIds);
+        return NoContent();
+    }
+    
+
     [HttpPut("{id}/view-status")]
     [EndpointDescription("Toggle notification view status")]
     [FirebaseAuthorize]

@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Query;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
@@ -50,6 +51,10 @@ public interface IGenericRepository<T> where T : BaseEntity
     Task AddRangeAsync(IEnumerable<T> entities);
 
     Task ExecuteDeleteAsync(Expression<Func<T, bool>> expression);
+
+    Task<int> ExecuteUpdateAsync(Expression<Func<T, bool>> expression,
+        Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression,
+        CancellationToken cancellationToken = default);
 
     Task<int> CountAsync(Expression<Func<T, bool>>? expression, bool hasTrackings = true,
         bool ignoreQueryFilters = false);

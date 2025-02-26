@@ -19,6 +19,13 @@ public class CriteriaService : ICriteriaService
     }
 
 
+    public async Task<List<MinimalCriteriaModel>> GetMinimalCriterias(QueryMinimalCriteriasModel queryModel)
+    {
+        return await _unitOfWork.CriteriaRepository.FindProjectedAsync<MinimalCriteriaModel>(
+            c => c.For == queryModel.CriteriaFor,
+            hasTrackings: false);
+    }
+
     public async Task<PagedResult<CriteriaDetailModel>> GetPagedCriteria(QueryCriteriaModel query)
     {
         // var cacheCriteria =

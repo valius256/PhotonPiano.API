@@ -38,6 +38,25 @@ public class NotificationService : INotificationService
         return pagedResult;
     }
 
+    public async Task ToggleBatchViewStatus(AccountModel currentAccount, params List<Guid> notificationIds)
+    {
+        var notifications = await _unitOfWork.NotificationRepository.FindAsync(n => notificationIds.Contains(n.Id));
+
+        if (notifications.Count != notificationIds.Count)
+        {
+            throw new NotFoundException("Some notifications are Not Found");
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.AccountNotificationRepository.ExecuteUpdateAsync(
+                expression: an => notificationIds.Contains(an.NotificationId)
+                                  && an.AccountFirebaseId == currentAccount.AccountFirebaseId && an.IsViewed == false,
+                setter => setter.SetProperty(an => an.IsViewed, true)
+            );
+        });
+    }
+
     public async Task SendNotificationAsync(string userFirebaseId, string title, string message)
     {
         var notification = new Notification
@@ -108,7 +127,7 @@ public class NotificationService : INotificationService
         {
             pushNotificationTasks.Add(SendNotificationAsync(staff.AccountFirebaseId, title, message));
         }
-        
+
         await Task.WhenAll(pushNotificationTasks);
     }
 }

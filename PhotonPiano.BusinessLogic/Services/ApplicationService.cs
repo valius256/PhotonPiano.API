@@ -49,6 +49,12 @@ public class ApplicationService : IApplicationService
         application.CreatedAt = DateTime.UtcNow;
         application.Status = ApplicationStatus.Pending;
 
+        if (sendModel.File is not null)
+        {
+            string fileUrl = await _serviceFactory.PinataService.UploadFile(sendModel.File);
+            application.FileUrl = fileUrl;
+        }
+        
         await _unitOfWork.ApplicationRepository.AddAsync(application);
         await _unitOfWork.SaveChangesAsync();
 
@@ -64,7 +70,7 @@ public class ApplicationService : IApplicationService
                 $"Học viên {currentAccount.FullName} vừa gửi đơn {sendModel.Type}",
                 $"Chi tiết: {sendModel.Reason}"));
         }
-        
+
         await Task.WhenAll(pushNotiTasks);
 
         return (await _unitOfWork.ApplicationRepository.FindSingleProjectedAsync<ApplicationDetailsModel>(
@@ -102,5 +108,7 @@ public class ApplicationService : IApplicationService
         await _unitOfWork.SaveChangesAsync();
 
         //Push noti here
+        await _serviceFactory.NotificationService.SendNotificationAsync(application.CreatedById,
+            $"Đơn {application.Id} của bạn vừa được duyệt", "");
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using Microsoft.Extensions.DependencyInjection;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -25,7 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IClassService, ClassService>();
         services.AddScoped<ISystemConfigService, SystemConfigService>();
-        services.AddScoped<ITutionService, TutionService>();
+        services.AddScoped<ITuitionService, TuitionService>();
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ISchedulerService, SchedulerService>();
@@ -53,6 +54,7 @@ public static class ServiceCollectionExtensions
             .Map(dest => dest.InstructorName, src => src.Instructor.UserName);
 
         TypeAdapterConfig<UpdateEntranceTestModel, EntranceTest>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<UpdateAccountModel, Account>.NewConfig().IgnoreNullValues(true);
         return services;
     }
 }

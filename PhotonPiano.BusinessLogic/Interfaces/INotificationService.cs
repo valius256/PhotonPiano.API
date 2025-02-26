@@ -7,8 +7,11 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface INotificationService
 {
-    Task<PagedResult<NotificationDetailsModel>> GetPagedNotifications(QueryPagedNotificationsModel queryModel, AccountModel currentAccount);
+    Task<PagedResult<NotificationDetailsModel>> GetPagedNotifications(QueryPagedNotificationsModel queryModel,
+        AccountModel currentAccount);
+
     Task SendNotificationAsync(string userFirebaseId, string title, string message);
     Task<List<AccountNotification>> GetUserNotificationsAsync(string userId);
     Task ToggleNotificationViewStatus(Guid id, string accountId);
+    Task SendNotificationsToAllStaffsAsync(string title, string message);
 }

@@ -3,6 +3,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Notification;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
 
@@ -94,5 +95,20 @@ public class NotificationService : INotificationService
         accountNotification.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task SendNotificationsToAllStaffsAsync(string title, string message)
+    {
+        var staffs = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Staff,
+            hasTrackings: false);
+
+        List<Task> pushNotificationTasks = [];
+
+        foreach (var staff in staffs)
+        {
+            pushNotificationTasks.Add(SendNotificationAsync(staff.AccountFirebaseId, title, message));
+        }
+        
+        await Task.WhenAll(pushNotificationTasks);
     }
 }

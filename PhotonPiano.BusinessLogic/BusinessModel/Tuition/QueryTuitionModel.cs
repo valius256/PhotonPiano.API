@@ -3,7 +3,7 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Tution;
 
-public record QueryTutionModel : QueryPagedModel
+public record QueryTuitionModel : QueryPagedModel
 {
     public List<Guid>? StudentClassId { get; init; } = [];
     public DateTime? StartDate { get; init; }

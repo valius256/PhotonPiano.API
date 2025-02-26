@@ -334,6 +334,10 @@ public class EntranceTestService : IEntranceTestService
 
                     await _unitOfWork.SaveChangesAsync();
                     await _unitOfWork.CommitTransactionAsync();
+
+                    await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
+                        $"Học viên {account.FullName} vừa đăng ký thi đầu vào", "");
+
                     break;
                 case PaymentStatus.Failed:
                     throw new BadRequestException("Payment has failed.");

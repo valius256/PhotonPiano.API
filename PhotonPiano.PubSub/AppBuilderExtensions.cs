@@ -8,7 +8,7 @@ namespace PhotonPiano.PubSub;
 
 public static class AppBuilderExtensions
 {
-    public static void AddPubSub(this WebApplicationBuilder builder, Action<PubSubConfig> configure = null)
+    public static void AddSignalRConfig(this WebApplicationBuilder builder, Action<PubSubConfig> configure = null)
     {
         if (builder is null)
             throw new ArgumentNullException(nameof(builder));
@@ -25,7 +25,7 @@ public static class AppBuilderExtensions
         builder.Services.AddSingleton<INotificationServiceHub, NotificationServiceHub>();
     }
 
-    public static void MapPubSub(this WebApplication app)
+    public static void MapSignalRConfig(this WebApplication app)
     {
         if (app is null)
             throw new ArgumentNullException(nameof(app));

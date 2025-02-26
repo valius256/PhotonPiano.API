@@ -5,9 +5,9 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration;
 
-public class TutionConfiguration : IEntityTypeConfiguration<Tution>
+public class TuitionConfiguration : IEntityTypeConfiguration<Tuition>
 {
-    public void Configure(EntityTypeBuilder<Tution> builder)
+    public void Configure(EntityTypeBuilder<Tuition> builder)
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();

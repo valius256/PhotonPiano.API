@@ -1,9 +1,9 @@
 @{
-    var studentName = Model.StudentName;
-    var className = Model.ClassName;
-    var startDate = Model.StartDate.ToString("dd/MM/yyyy");
-    var endDate = Model.EndDate.ToString("dd/MM/yyyy");
-    var amount = Model.Amount.ToString("N0") + " VND";
+    var studentName = Model["studentName"];
+    var className = Model["className"];
+    var startDate = Model["startDate"];
+    var endDate = Model["endDate"];
+    var amount = Model["amount"];
 }
 
 <!DOCTYPE html>
@@ -81,14 +81,34 @@
     <div class="email-content">
         <p>Xin chào @studentName,</p>
 
-        <p>Chúng tôi vui mừng thông báo rằng học phí mới đã được tạo cho lớp học của bạn <strong>@className</strong>.</p>
-        <p><strong>Ngày bắt đầu:</strong> @startDate</p>
-        <p><strong>Ngày kết thúc:</strong> @endDate</p>
-        <p><strong>Số tiền cần thanh toán:</strong> @amount</p>
-        <p>Trạng thái thanh toán hiện tại của bạn là <strong>Chưa thanh toán</strong>.</p>
-        <p>Cảm ơn bạn đã đồng hành cùng PhotonPiano. Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
-        <p>Trân trọng,</p>
-        <p><strong>Đội ngũ PhotonPiano</strong></p>
+        <p>Chúng tôi vui mừng thông báo rằng học phí mới đã được tạo cho lớp học của bạn. Dưới đây là thông tin chi
+            tiết:</p>
+
+        <table class="details-table">
+            <tr>
+                <th>Tên lớp:</th>
+                <td>@className</td>
+            </tr>
+            <tr>
+                <th>Ngày bắt đầu:</th>
+                <td>@startDate</td>
+            </tr>
+            <tr>
+                <th>Ngày kết thúc:</th>
+                <td>@endDate</td>
+            </tr>
+            <tr>
+                <th>Số tiền:</th>
+                <td>@amount VND</td>
+            </tr>
+        </table>
+
+        <p>Cảm ơn bạn đã sử dụng dịch vụ của PhotonPiano. Chúng tôi mong được phục vụ bạn trong thời gian tới!</p>
+    </div>
+
+    <div class="footer">
+        <p>Nếu bạn có bất kỳ câu hỏi nào hoặc cần hỗ trợ, vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi tại <a
+                href="mailto:support@photonpiano.com">support@photonpiano.com</a>.</p>
     </div>
 </div>
 </body>

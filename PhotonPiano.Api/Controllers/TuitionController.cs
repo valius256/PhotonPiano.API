@@ -14,7 +14,7 @@ using Role = PhotonPiano.DataAccess.Models.Enum.Role;
 namespace PhotonPiano.Api.Controllers;
 
 [ApiController]
-[Route("api/tutions")]
+[Route("api/tuitions")]
 public class TuitionController : BaseController
 {
     private readonly ILogger<TuitionController> _logger;
@@ -39,7 +39,7 @@ public class TuitionController : BaseController
 
         return Ok(new PaymentUrlResponse
             {
-                Url = await _serviceFactory.TutionService.PayTuition(CurrentAccount!, request.TutionId,
+                Url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, request.TutionId,
                     request.ReturnUrl,
                     ipAddress, apiBaseUrl)
             }
@@ -60,7 +60,7 @@ public class TuitionController : BaseController
         //     return BadRequest(new { Error = "Invalid redirect URL" });
         // }
 
-        await _serviceFactory.TutionService.HandleTutionPaymentCallback(
+        await _serviceFactory.TuitionService.HandleTuitionPaymentCallback(
             request.Adapt<VnPayCallbackModel>(), accountId);
 
         return Redirect(clientRedirectUrl);
@@ -69,25 +69,25 @@ public class TuitionController : BaseController
     [HttpGet]
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
     [EndpointDescription("Get Tutions with paging")]
-    public async Task<ActionResult<List<TutionWithStudentClassResponse>>> GetPagedTutions(
+    public async Task<ActionResult<List<TuitionWithStudentClassResponse>>> GetPagedTuitions(
         [FromQuery] QueryTutionRequest request)
     {
         var pagedResult =
-            await _serviceFactory.TutionService.GetTutionsPaged(request.Adapt<QueryTutionModel>(),
+            await _serviceFactory.TuitionService.GetTuitionsPaged(request.Adapt<QueryTuitionModel>(),
                 CurrentAccount);
 
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
-        return Ok(pagedResult.Items.Adapt<List<TutionWithStudentClassResponse>>());
+        return Ok(pagedResult.Items.Adapt<List<TuitionWithStudentClassResponse>>());
     }
-    
+
     [HttpGet("{id}")]
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
-    [EndpointDescription("Get Tutions with paging")]
-    public async Task<ActionResult<TutionWithStudentClassResponse>> GetPagedTutions(
+    [EndpointDescription("Get Tutions details")]
+    public async Task<ActionResult<TuitionWithStudentClassResponse>> GetTuitionDetails(
         [FromQuery] Guid id)
     {
-        return Ok(await _serviceFactory.TutionService.GetTutionById(id));
+        return Ok(await _serviceFactory.TuitionService.GetTuitionById(id));
     }
 }

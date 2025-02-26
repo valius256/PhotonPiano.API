@@ -57,7 +57,7 @@ public class ClassService : IClassService
             // Otherwise, filter based on InstructorId or StudentClasses
             result = await _unitOfWork.ClassRepository.FindProjectedAsync<ClassModel>(x =>
                 x.InstructorId == userFirebaseId ||
-                Enumerable.Any(x.StudentClasses, sc => sc.StudentFirebaseId == userFirebaseId));
+                x.StudentClasses.Any(sc => sc.StudentFirebaseId == userFirebaseId));
 
         if (result == null || !result.Any())
             throw new NotFoundException("Class not found");
@@ -81,7 +81,7 @@ public class ClassService : IClassService
                 q => level.Count == 0 || level.Contains(q.Level),
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
                 q => teacherId == null || q.InstructorId == teacherId,
-                q => studentId == null || Enumerable.Any(q.StudentClasses, sc => sc.StudentFirebaseId == studentId),
+                q => studentId == null || q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId),
                 q =>
                     string.IsNullOrEmpty(keyword) ||
                     EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword)
@@ -276,7 +276,7 @@ public class ClassService : IClassService
                 c.Slots = [];
                 return c;
             }).ToList());
-             
+
             //Create StudentClasses
             var studentClasses = new List<StudentClass>();
             foreach (var c in classes)
@@ -333,12 +333,9 @@ public class ClassService : IClassService
 
             // create 1st tuition for students in class
             if (studentClasses.Any())
-            {
-                await _serviceFactory.TutionService.CreateTutionWhenRegisterClass(studentClasses, slots);
-            }
-            
+                await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(studentClasses, slots);
 
-        
+
             return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with
             {
                 Capacity = capacity,

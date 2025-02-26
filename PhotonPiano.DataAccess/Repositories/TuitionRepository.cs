@@ -4,7 +4,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 
 namespace PhotonPiano.DataAccess.Repositories;
 
-public class TuitionRepository : GenericRepository<Tution>, ITuitionRepository
+public class TuitionRepository : GenericRepository<Tuition>, ITuitionRepository
 {
     private readonly ApplicationDbContext _dbContext;
 

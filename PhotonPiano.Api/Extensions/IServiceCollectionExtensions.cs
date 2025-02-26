@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System.Globalization;
+using System.IO.Compression;
 using System.Net;
 using System.Threading.RateLimiting;
 using Hangfire;
@@ -96,7 +97,6 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
         TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig().IgnoreNullValues(true);
-
         return services;
     }
 
@@ -253,13 +253,35 @@ public static class IServiceCollectionExtensions
             });
         });
 
+        var cultureInfo = new CultureInfo("vn-VN");
+        CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+        CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
         // Register any other required services here
         services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
 
-        services.AddHangfireServer(_ =>
+        services.AddHangfireServer((service, cf) =>
         {
-            RecurringJob.AddOrUpdate<TutionService>(x =>
-                x.CronAutoCreateTution(), Cron.Monthly(), TimeZoneInfo.Local);
+            cf.WorkerCount = 50;
+            cf.TimeZoneResolver = new DefaultTimeZoneResolver();
+
+            var recurringJobManager = service.GetRequiredService<IRecurringJobManager>();
+            
+            
+            
+            //  recurring job
+            recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                x => x.CronAutoCreateTuition(),
+                Cron.Monthly);
+            
+            recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
+                x => x.CronForTuitionReminder(),
+                Cron.Monthly(15));
+            
+            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus", 
+                x => x.CronJobAutoChangeSlotStatus(),
+                Cron.Hourly());
+            
         });
 
 

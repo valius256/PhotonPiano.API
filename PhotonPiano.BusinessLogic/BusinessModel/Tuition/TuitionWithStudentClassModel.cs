@@ -2,7 +2,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Class;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Tution;
 
-public record TutionWithStudentClassModel : TutionModel
+public record TuitionWithStudentClassModel : TuitionModel
 {
     public StudentClassModel StudentClass { get; init; }
 }

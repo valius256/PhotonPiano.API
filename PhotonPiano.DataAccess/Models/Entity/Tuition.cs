@@ -2,7 +2,7 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.Models.Entity;
 
-public class Tution : BaseEntityWithId
+public class Tuition : BaseEntityWithId
 {
     public required Guid StudentClassId { get; set; }
     public decimal Amount { get; set; }
@@ -13,5 +13,5 @@ public class Tution : BaseEntityWithId
 
     // reference
     public virtual StudentClass StudentClass { get; set; } = default!;
-    public virtual ICollection<Transaction> TransactionTutions { get; set; } = new List<Transaction>();
+    public virtual ICollection<Transaction> TransactionTuitions { get; set; } = new List<Transaction>();
 }

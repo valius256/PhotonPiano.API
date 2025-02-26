@@ -228,6 +228,33 @@ public class AuthService : IAuthService
         return credentials;
     }
 
+    public async Task UpdateFirebaseEmail(string idToken, string newEmail)
+    {
+        using var client = _httpClientFactory.CreateClient();
+
+        string url =
+            $"https://identitytoolkit.googleapis.com/v1/accounts:update?key={_configuration["Firebase:Auth:ApiKey"]}";
+
+        var jsonRequest = JsonConvert.SerializeObject(new
+        {
+            idToken,
+            email = newEmail,
+            returnSecureToken = true
+        });
+        
+        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+        
+        var response = await client.PostAsync(url, content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorResponse = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(errorResponse.ToString());
+            var errorResponseObject = JsonConvert.DeserializeObject<FirebaseErrorResponseModel>(errorResponse)!;
+            throw new BadRequestException(errorResponseObject.Message);
+        }
+    }
+
     private async Task<OAuthCredentialsModel> LinkWithFirebaseOAuthCredentials(string googleCode, string idToken)
     {
         using var client = _httpClientFactory.CreateClient();

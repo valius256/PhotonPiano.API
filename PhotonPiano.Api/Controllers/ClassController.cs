@@ -39,6 +39,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
         [EndpointDescription("Get Class detail by Id")]
         public async Task<ActionResult<ClassDetailModel>> GetClassDetail(
          [FromRoute] Guid id)
@@ -57,6 +58,7 @@ namespace PhotonPiano.Api.Controllers
         
                 
         [HttpGet("{id}/grade-template")]
+        [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
         [EndpointDescription("Download Template Excel")]
         public async Task<IActionResult> DownloadGradeTemplate(Guid id)
         {

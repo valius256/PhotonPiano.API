@@ -16,6 +16,8 @@ public class Transaction : BaseEntityWithId
     public Guid? EntranceTestStudentId { get; set; }
     public double? TaxRate { get; set; }
 
+    public decimal? TaxAmount { get; set; }
+
     // Reference
     public virtual Account CreatedBy { get; set; } = default!;
     public virtual Tuition? Tution { get; set; }

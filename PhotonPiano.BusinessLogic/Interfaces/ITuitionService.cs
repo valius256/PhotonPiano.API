@@ -1,5 +1,6 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Paging;

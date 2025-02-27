@@ -7,7 +7,7 @@ using PhotonPiano.Api.Requests.Tution;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.Api.Responses.Tution;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
-using PhotonPiano.BusinessLogic.BusinessModel.Tution;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.Interfaces;
 using Role = PhotonPiano.DataAccess.Models.Enum.Role;
 
@@ -29,7 +29,7 @@ public class TuitionController : BaseController
         _logger = logger;
     }
 
-    [HttpPost("tution-fee")]
+    [HttpPost("tuition-fee")]
     [FirebaseAuthorize(Roles = [Role.Student])]
     public async Task<ActionResult> PayTuitionFee([FromBody] PayTuitionFeeRequest request)
     {
@@ -37,16 +37,18 @@ public class TuitionController : BaseController
 
         var apiBaseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.PathBase}";
 
+        var url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, request.TuitionId,
+            request.ReturnUrl,
+            ipAddress, apiBaseUrl);
+
         return Ok(new PaymentUrlResponse
             {
-                Url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, request.TutionId,
-                    request.ReturnUrl,
-                    ipAddress, apiBaseUrl)
+                Url = url
             }
         );
     }
 
-    [HttpGet("{account-id}/tution-payment-callback")]
+    [HttpGet("{account-id}/tuition-payment-callback")]
     [EndpointDescription("Enrollment payment callback")]
     public async Task<ActionResult> HandleEnrollmentPaymentCallback(
         [FromQuery] VnPayReturnRequest request,
@@ -68,7 +70,7 @@ public class TuitionController : BaseController
 
     [HttpGet]
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
-    [EndpointDescription("Get Tutions with paging")]
+    [EndpointDescription("Get Tuition with paging")]
     public async Task<ActionResult<List<TuitionWithStudentClassResponse>>> GetPagedTuitions(
         [FromQuery] QueryTutionRequest request)
     {
@@ -84,7 +86,7 @@ public class TuitionController : BaseController
 
     [HttpGet("{id}")]
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
-    [EndpointDescription("Get Tutions details")]
+    [EndpointDescription("Get Tuition details")]
     public async Task<ActionResult<TuitionWithStudentClassResponse>> GetTuitionDetails(
         [FromQuery] Guid id)
     {

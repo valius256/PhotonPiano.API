@@ -1,5 +1,6 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -26,15 +27,26 @@ public class TuitionService : ITuitionService
         string ipAddress,
         string apiBaseUrl)
     {
-        var paymentTution = await _unitOfWork.TuitionRepository.FindFirstProjectedAsync<Tuition>(x => x.Id == tuitionId);
+        var paymentTuition =
+            await _unitOfWork.TuitionRepository.FindFirstProjectedAsync<Tuition>(x => x.Id == tuitionId);
 
-        ValidateTuition(paymentTution, currentAccount.AccountFirebaseId);
+        var currentYear = DateTime.UtcNow.Year;
+
+        var currentTaxRateConfig = await _serviceFactory.SystemConfigService.GetTaxesRateConfig(currentYear);
+
+        var currentTaxRate = double.TryParse(currentTaxRateConfig?.ConfigValue, out var taxRate) ? taxRate : 0;
+
+        var currentTaxAmount = paymentTuition!.Amount * (decimal)currentTaxRate;
+
+        ValidateTuition(paymentTuition, currentAccount.AccountFirebaseId);
 
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
             TutionId = tuitionId,
-            Amount = paymentTution!.Amount,
+            TaxRate = currentTaxRate,
+            TaxAmount = currentTaxAmount,
+            Amount = paymentTuition!.Amount + currentTaxAmount,
             CreatedAt = DateTime.UtcNow,
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.TutionFee,
@@ -48,7 +60,7 @@ public class TuitionService : ITuitionService
         await _unitOfWork.SaveChangesAsync();
 
         var customReturnUrl =
-            $"{apiBaseUrl}/api/tutions/{currentAccount.AccountFirebaseId}/tution-payment-callback?url={returnUrl}";
+            $"{apiBaseUrl}/api/tuitions/{currentAccount.AccountFirebaseId}/tuition-payment-callback?url={returnUrl}";
 
         return _serviceFactory.PaymentService.CreateVnPayPaymentUrl(transaction, ipAddress, apiBaseUrl,
             currentAccount.AccountFirebaseId,
@@ -241,9 +253,9 @@ public class TuitionService : ITuitionService
                 null,
                 emailParam
             );
-            
-            await _serviceFactory.NotificationService.SendNotificationAsync(studentClass.Student.AccountFirebaseId, 
-                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} chưa thanh toán", 
+
+            await _serviceFactory.NotificationService.SendNotificationAsync(studentClass.Student.AccountFirebaseId,
+                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} chưa thanh toán",
                 "Hãy thanh toán học phí để tiếp tục học tập");
         }
     }
@@ -255,6 +267,15 @@ public class TuitionService : ITuitionService
         var (page, pageSize, sortColumn, orderByDesc, studentClassIds, startDate, endDate, paymentStatuses) =
             queryTuitionModel;
 
+        // Convert DateOnly to DateTime (UTC) for filtering
+        var startDateTimeUtc = startDate.HasValue
+            ? DateTime.SpecifyKind(startDate.Value.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc)
+            : (DateTime?)null;
+
+        var endDateTimeUtc = endDate.HasValue
+            ? DateTime.SpecifyKind(endDate.Value.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc)
+            : (DateTime?)null;
+
         var result = await _unitOfWork.TuitionRepository.GetPaginatedWithProjectionAsync<TuitionWithStudentClassModel>(
             page, pageSize, sortColumn, orderByDesc,
             expressions:
@@ -262,15 +283,15 @@ public class TuitionService : ITuitionService
                 x => studentClassIds == null || studentClassIds.Count == 0 ||
                      studentClassIds.Contains(x.StudentClassId),
                 x => paymentStatuses == null || paymentStatuses.Count == 0 || paymentStatuses.Contains(x.PaymentStatus),
-                x => !startDate.HasValue || x.StartDate >= startDate.Value,
-                x => !endDate.HasValue || x.EndDate <= endDate.Value,
+                x => !startDateTimeUtc.HasValue || x.StartDate <= endDateTimeUtc, 
+                x => !endDateTimeUtc.HasValue || x.EndDate >= startDateTimeUtc, 
                 x => account != null && (account.Role == Role.Staff ||
                                          x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
             ]);
 
-
         return result;
     }
+
 
     public async Task<TuitionWithStudentClassModel> GetTuitionById(Guid tuitionId)
     {

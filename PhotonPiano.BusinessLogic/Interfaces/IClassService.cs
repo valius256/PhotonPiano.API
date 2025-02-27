@@ -11,8 +11,10 @@ public interface IClassService
 
     Task<ClassDetailModel> GetClassDetailById(Guid id);
 
-    Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role);
+    Task<ClassModel> GetClassByUserFirebaseId(string userFirebaseId);
 
     Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId);
     Task<byte[]> GenerateGradeTemplate(Guid classId);
+    
+    
 }

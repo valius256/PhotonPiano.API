@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Reflection;
 using Hangfire;
 using Mapster;
@@ -9,6 +10,7 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using PhotonPiano.ServiceDefaults;
 using Serilog;
+using LicenseContext = OfficeOpenXml.LicenseContext;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();

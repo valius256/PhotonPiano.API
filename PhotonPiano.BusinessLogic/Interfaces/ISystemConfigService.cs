@@ -8,4 +8,5 @@ public interface ISystemConfigService
     Task<SystemConfig> GetConfig(string name);
     Task SetConfigValue(UpdateSystemConfigModel updateSystemConfigModel);
     Task<GetSystemConfigOnLevelModel> GetSystemConfigValueBaseOnLevel(int level);
+    Task<SystemConfig?> GetTaxesRateConfig(int year);
 }

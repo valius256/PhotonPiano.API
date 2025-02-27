@@ -60,4 +60,19 @@ public class SystemConfigService : ISystemConfigService
 
         return result;
     }
+
+    public async Task<SystemConfig?> GetTaxesRateConfig(int year)
+    {
+        while (year >= 2000)
+        {
+            var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(
+                x => x.ConfigName == $"Thuế suất năm {year}");
+
+            if (config != null) return config;
+
+            year--;
+        }
+
+        return null;
+    }
 }

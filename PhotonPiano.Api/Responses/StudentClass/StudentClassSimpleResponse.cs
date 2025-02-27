@@ -7,4 +7,6 @@ public class StudentClassSimpleResponse
     public string? StudentFirebaseId { get; init; }
     public string? CertificateUrl { get; init; }
     public bool IsPassed { get; init; }
+    
+    public string ClassName { get; init; }
 }

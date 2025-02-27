@@ -1,0 +1,115 @@
+@{
+    var studentName = Model["studentName"];
+    var className = Model["className"];
+    var startDate = Model["startDate"];
+    var endDate = Model["endDate"];
+    var amount = Model["amount"];
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Báo Tạo Học Phí Mới</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .email-container {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 20px auto;
+            width: 600px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .email-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .email-content {
+            margin: 20px 0;
+            font-size: 16px;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .details-table th, .details-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 20px;
+            color: #777;
+        }
+
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        .footer p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header">
+        New Tuition Created Notification
+    </div>
+
+    <div class="email-content">
+        <p>Xin Chào @studentName,</p>
+
+        <p>Chúng tôi vui mừng thông báo với bạn rằng một học phí mới đã được tạo cho lớp học của bạn. Dưới đây là thông
+            tin chi tiết:</p>
+
+        <table class="details-table">
+            <tr>
+                <th>Lớp hiện tại:</th>
+                <td>@className</td>
+            </tr>
+            <tr>
+                <th>Ngày bắt đầu:</th>
+                <td>@startDate</td>
+            </tr>
+            <tr>
+                <th>Ngày kết thúc:</th>
+                <td>@endDate</td>
+            </tr>
+            <tr>
+                <th>Tổng Tiền:</th>
+                <td>@amount Vnd</td>
+            </tr>
+        </table>
+
+        <p>Cảm ơn bạn đã sử dụng dịch vụ PhotonPiano. Chúng tôi mong muốn được phục vụ bạn lần nữa!</p>
+    </div>
+
+    <div class="footer">
+        <p>Nếu bạn có bất kỳ câu hỏi nào hoặc cần hỗ trợ, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi tại <a
+                href="mailto:support@photonpiano.com">support@photonpiano.com</a>.</p>
+    </div>
+</div>
+</body>
+</html>

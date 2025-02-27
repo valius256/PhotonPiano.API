@@ -14,9 +14,12 @@ public class AccountService : IAccountService
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public AccountService(IUnitOfWork unitOfWork)
+    private readonly IServiceFactory _serviceFactory;
+
+    public AccountService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
+        _serviceFactory = serviceFactory;
     }
 
     public async Task<AccountModel> CreateAccount(string firebaseUId, string email)
@@ -56,14 +59,40 @@ public class AccountService : IAccountService
         return true;
     }
 
-    private static Expression<Func<Account, bool>> GetAccountsFilterExpression(Role role)
-        => role switch
+    public async Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount, string idToken)
+    {
+        var account =
+            await _unitOfWork.AccountRepository.FindSingleAsync(a =>
+                a.AccountFirebaseId == currentAccount.AccountFirebaseId);
+
+        if (account is null)
         {
-            Role.Instructor => a => a.Role == Role.Student,
-            Role.Staff => a => a.Role != Role.Administrator,
-            Role.Administrator => a => true,
-            _ => a => a.Role == role
-        };
+            throw new NotFoundException("Account not found.");
+        }
+
+        if (!string.IsNullOrEmpty(model.UserName) &&
+            model.UserName != currentAccount.UserName &&
+            await _unitOfWork.AccountRepository.AnyAsync(a => a.UserName == model.UserName)
+           )
+        {
+            throw new ConflictException("Username already exists.");
+        }
+
+        if (!string.IsNullOrEmpty(model.Email) && model.Email != currentAccount.Email)
+        {
+            if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == model.Email))
+            {
+                throw new ConflictException("Email already exists.");
+            }
+
+            await _serviceFactory.AuthService.UpdateFirebaseEmail(idToken, model.Email);
+        }
+
+        model.Adapt(account);
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+
 
     public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {
@@ -104,6 +133,7 @@ public class AccountService : IAccountService
             Email = email,
             AccountFirebaseId = firebaseId,
             Role = Role.Student,
+            UserName = email.Split('@')[0],
             RecordStatus = RecordStatus.IsActive,
             IsEmailVerified = isEmailVerified
         };
@@ -113,5 +143,16 @@ public class AccountService : IAccountService
         await _unitOfWork.SaveChangesAsync();
 
         return newAccount.Adapt<AccountModel>();
+    }
+
+    private static Expression<Func<Account, bool>> GetAccountsFilterExpression(Role role)
+    {
+        return role switch
+        {
+            Role.Instructor => a => a.Role == Role.Student,
+            Role.Staff => a => a.Role != Role.Administrator,
+            Role.Administrator => a => true,
+            _ => a => a.Role == role
+        };
     }
 }

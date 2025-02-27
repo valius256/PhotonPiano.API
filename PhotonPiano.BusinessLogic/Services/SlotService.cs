@@ -15,10 +15,10 @@ public class SlotService : ISlotService
     private readonly IServiceFactory _serviceFactory;
     private readonly IUnitOfWork _unitOfWork;
 
-    public SlotService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
+    public SlotService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
+        _unitOfWork = unitOfWork;
     }
 
     public TimeOnly GetShiftStartTime(Shift shift)
@@ -33,6 +33,26 @@ public class SlotService : ISlotService
             { Shift.Shift6_16h00_17h30, new TimeOnly(16, 0) },
             { Shift.Shift7_18h_19h30, new TimeOnly(18, 0) },
             { Shift.Shift8_19h45_21h15, new TimeOnly(19, 45) }
+        };
+
+        if (!shiftStartTimes.TryGetValue(shift, out var shiftStartTime))
+            throw new InvalidOperationException("Invalid shift value.");
+
+        return shiftStartTime;
+    }
+    
+    public TimeOnly GetShiftEndTime(Shift shift)
+    {
+        var shiftStartTimes = new Dictionary<Shift, TimeOnly>
+        {
+            { Shift.Shift1_7h_8h30, new TimeOnly(8, 30) },
+            { Shift.Shift2_8h45_10h15, new TimeOnly(10, 45) },
+            { Shift.Shift3_10h45_12h, new TimeOnly(12, 00) },
+            { Shift.Shift4_12h30_14h00, new TimeOnly(14, 00) },
+            { Shift.Shift5_14h15_15h45, new TimeOnly(15, 45) },
+            { Shift.Shift6_16h00_17h30, new TimeOnly(17, 30) },
+            { Shift.Shift7_18h_19h30, new TimeOnly(19, 30) },
+            { Shift.Shift8_19h45_21h15, new TimeOnly(21, 15) }
         };
 
         if (!shiftStartTimes.TryGetValue(shift, out var shiftStartTime))
@@ -74,35 +94,58 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel,
-        AccountModel? accountModel = default)
+    public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
-        if (accountModel.AccountFirebaseId == null) throw new Exception("UserFirebaseId is required");
+        var cacheKey =
+            $"GetWeeklyScheduleAsync:{slotModel.StartTime}:{slotModel.EndTime}:{accountModel.AccountFirebaseId}";
 
-        var classModel = await _serviceFactory.ClassService.GetClassByUserFirebaseId(accountModel.AccountFirebaseId);
-
-        var cacheKey = $"GetWeeklyScheduleAsync_{slotModel.StartTime}_{slotModel.EndTime}_{classModel.Id}";
-
-        var existCache = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
-
-        if (existCache != null) return existCache;
+        if (accountModel.Role != Role.Staff && slotModel.IsFilterEmpty())
+        {
+           
+            var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
+            if (cachedResult != null) return cachedResult;
+        }
 
         Expression<Func<Slot, bool>> filter = s =>
             s.Date >= slotModel.StartTime &&
-            s.Date <= slotModel.EndTime &&
-            (slotModel.Shifts == null || slotModel.Shifts.Contains(s.Shift)) &&
-            (slotModel.SlotStatuses == null || slotModel.SlotStatuses.Contains(s.Status)) &&
-            s.ClassId == classModel.Id;
+            s.Date <= slotModel.EndTime;
 
-        if (accountModel is { Role: Role.Instructor })
-            filter = filter.AndAlso(s => s.Class.InstructorId == accountModel.AccountFirebaseId);
-        else if (accountModel is { Role: Role.Student })
+        // Apply role-based filtering only for non-staff roles
+        if (accountModel.Role != Role.Staff)
+            switch (accountModel.Role)
+            {
+                case Role.Instructor:
+                    filter = filter.AndAlso(s =>
+                        s.Class.InstructorId == accountModel.AccountFirebaseId);
+                    break;
+                case Role.Student:
+                    filter = filter.AndAlso(s =>
+                        s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId));
+                    break;
+            }
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.InstructorFirebaseIds)))
             filter = filter.AndAlso(s =>
-                s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId));
+                s.Class.InstructorId != null &&
+                slotModel.InstructorFirebaseIds != null && (slotModel.InstructorFirebaseIds.Count == 0 ||
+                                                            slotModel.InstructorFirebaseIds.Contains(
+                                                                s.Class.InstructorId)));
+
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.Shifts)))
+            filter = filter.AndAlso(s => slotModel.Shifts.Contains(s.Shift));
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.SlotStatuses)))
+            filter = filter.AndAlso(s => slotModel.SlotStatuses.Contains(s.Status));
+
+        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.ClassIds)))
+            filter = filter.AndAlso(s => slotModel.ClassIds.Contains(s.ClassId));
 
         var result = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(filter);
 
-        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
+        // todo: if role is staff so no need to cache cause the filter is only applied in role staff 
+
+         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
 
         return result;
     }
@@ -119,5 +162,24 @@ public class SlotService : ISlotService
             StudentFirebaseId = ss.StudentFirebaseId
         }).ToList();
         return attendanceStatuses;
+    }
+
+    public async Task CronJobAutoChangeSlotStatus()
+    {
+        var currentDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var currentTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+
+        var allSlotsForToday = await _unitOfWork.SlotRepository.FindAsync(s => s.Date == currentDate);
+
+        foreach (var slot in allSlotsForToday)
+        {
+            var shiftEndTime = GetShiftEndTime(slot.Shift);
+            if (currentTime > shiftEndTime)
+            {
+                slot.Status = SlotStatus.Finished;
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync();
     }
 }

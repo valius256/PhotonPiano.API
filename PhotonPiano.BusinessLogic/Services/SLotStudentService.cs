@@ -1,6 +1,7 @@
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
+using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 
@@ -17,6 +18,7 @@ public class SlotStudentService : ISlotStudentService
         _unitOfWork = unitOfWork;
     }
 
+
     public async Task<bool> UpdateAttentStudent(UpdateAttentdanceModel model, string teacherId)
     {
         var slotEntity = await _serviceFactory.SlotService.GetSLotDetailById(model.SlotId);
@@ -29,11 +31,11 @@ public class SlotStudentService : ISlotStudentService
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
 
+        var teacherName = await _serviceFactory.AccountService.GetAccountById(teacherId);
 
         var slotDateTime = slotEntity.Date.ToDateTime(shiftStartTime);
         var currentDateTime = DateTime.UtcNow.AddHours(7);
 
-        // Todo: allow for future attendance or not? 
         // Validate if the slot has passed 24 hours
         // if ((currentDateTime - slotDateTime).TotalHours > 24)
         //     throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
@@ -41,7 +43,8 @@ public class SlotStudentService : ISlotStudentService
         foreach (var studentId in model.StudentAttentIds)
         {
             var slotStudent = await _unitOfWork.SlotStudentRepository
-                .FindFirstAsync(x => x.SlotId == model.SlotId && x.StudentFirebaseId == studentId);
+                .FindFirstProjectedAsync<SlotStudent>(x =>
+                    x.SlotId == model.SlotId && x.StudentFirebaseId == studentId);
 
             if (slotStudent != null)
             {
@@ -49,6 +52,9 @@ public class SlotStudentService : ISlotStudentService
                 slotStudent.UpdateById = teacherId;
                 slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
                 await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
+
+                await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
+                    $"Đã điểm danh cho lớp {slotEntity.Class.Name}", $"trạng thái: {AttendanceStatus.Attended}");
             }
         }
 
@@ -67,6 +73,9 @@ public class SlotStudentService : ISlotStudentService
                     slotStudent.UpdateById = teacherId;
                     slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
                     await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
+
+                    await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
+                        $"Đã điểm danh cho lớp {slotEntity.Class.Name}", $"trạng thái: {AttendanceStatus.Absent}");
                 }
             }
 

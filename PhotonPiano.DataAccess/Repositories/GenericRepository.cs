@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -46,6 +47,14 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
         await _context.Set<T>().Where(expression)
             .ExecuteDeleteAsync();
+    }
+
+    public async Task<int> ExecuteUpdateAsync(Expression<Func<T, bool>> expression, Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<T>()
+            .Where(expression)
+            .ExecuteUpdateAsync(updateExpression, cancellationToken);
     }
 
     public async Task<List<T>> FindAsync(Expression<Func<T, bool>> expression, bool hasTrackings = true,

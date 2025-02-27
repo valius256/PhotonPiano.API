@@ -9,6 +9,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
         public required Guid Id { get; set; }
         public Guid ClassId { get; set; }
         public string? StudentFirebaseId { get; set; }
+        public string? ClassName { get; set; }
         public required string CreatedById { get; set; }
         public string? UpdateById { get; set; }
         public string? DeletedById { get; set; }

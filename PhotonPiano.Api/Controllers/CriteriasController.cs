@@ -1,10 +1,12 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Criteria;
 using PhotonPiano.Api.Responses.Criteria;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -17,6 +19,15 @@ public class CriteriasController : BaseController
     public CriteriasController(IServiceFactory serviceFactory)
     {
         _serviceFactory = serviceFactory;
+    }
+
+    [HttpGet("all-minimal")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student, Role.Instructor])]
+    [EndpointDescription("Get all minimal criterias")]
+    public async Task<ActionResult<List<MinimalCriteriaModel>>> GetMinimalCriterias(
+        [FromQuery] QueryMinimalCriteriasRequest request)
+    {
+        return await _serviceFactory.CriteriaService.GetMinimalCriterias(request.Adapt<QueryMinimalCriteriasModel>());
     }
 
     [HttpGet]

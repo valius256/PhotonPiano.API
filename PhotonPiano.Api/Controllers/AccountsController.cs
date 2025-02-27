@@ -54,6 +54,19 @@ public class AccountsController : BaseController
         return Ok(result.Adapt<AccountDetailResponse>());
     }
 
+    [HttpPut]
+    [FirebaseAuthorize]
+    [EndpointDescription("Update account info")]
+    public async Task<ActionResult> UpdateAccountInfo([FromBody] UpdateAccountRequest request,
+        [FromHeader(Name = "Authorization")] string bearerToken)
+    {
+        string idToken = bearerToken.Replace("Bearer ", "");
+        await _serviceFactory.AccountService.UpdateAccount(request.Adapt<UpdateAccountModel>(),
+            base.CurrentAccount!, idToken);
+        
+        return NoContent();
+    }
+
     //[HttpGet("{account-id}/attempt-stats")]
     //[FirebaseAuthorize]
     //public async Task<ActionResult> GetAttemptsStats([FromRoute(UserName = "account-id")] string accountId)

@@ -7,14 +7,14 @@ using PhotonPiano.Api.Requests.Tution;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.Api.Responses.Tution;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
-using PhotonPiano.BusinessLogic.BusinessModel.Tution;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.Interfaces;
 using Role = PhotonPiano.DataAccess.Models.Enum.Role;
 
 namespace PhotonPiano.Api.Controllers;
 
 [ApiController]
-[Route("api/tutions")]
+[Route("api/tuitions")]
 public class TuitionController : BaseController
 {
     private readonly ILogger<TuitionController> _logger;
@@ -29,7 +29,7 @@ public class TuitionController : BaseController
         _logger = logger;
     }
 
-    [HttpPost("tution-fee")]
+    [HttpPost("tuition-fee")]
     [FirebaseAuthorize(Roles = [Role.Student])]
     public async Task<ActionResult> PayTuitionFee([FromBody] PayTuitionFeeRequest request)
     {
@@ -37,16 +37,18 @@ public class TuitionController : BaseController
 
         var apiBaseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.PathBase}";
 
+        var url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, request.TuitionId,
+            request.ReturnUrl,
+            ipAddress, apiBaseUrl);
+
         return Ok(new PaymentUrlResponse
             {
-                Url = await _serviceFactory.TutionService.PayTuition(CurrentAccount!, request.TutionId,
-                    request.ReturnUrl,
-                    ipAddress, apiBaseUrl)
+                Url = url
             }
         );
     }
 
-    [HttpGet("{account-id}/tution-payment-callback")]
+    [HttpGet("{account-id}/tuition-payment-callback")]
     [EndpointDescription("Enrollment payment callback")]
     public async Task<ActionResult> HandleEnrollmentPaymentCallback(
         [FromQuery] VnPayReturnRequest request,
@@ -60,7 +62,7 @@ public class TuitionController : BaseController
         //     return BadRequest(new { Error = "Invalid redirect URL" });
         // }
 
-        await _serviceFactory.TutionService.HandleTutionPaymentCallback(
+        await _serviceFactory.TuitionService.HandleTuitionPaymentCallback(
             request.Adapt<VnPayCallbackModel>(), accountId);
 
         return Redirect(clientRedirectUrl);
@@ -68,26 +70,26 @@ public class TuitionController : BaseController
 
     [HttpGet]
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
-    [EndpointDescription("Get Tutions with paging")]
-    public async Task<ActionResult<List<TutionWithStudentClassResponse>>> GetPagedTutions(
+    [EndpointDescription("Get Tuition with paging")]
+    public async Task<ActionResult<List<TuitionWithStudentClassResponse>>> GetPagedTuitions(
         [FromQuery] QueryTutionRequest request)
     {
         var pagedResult =
-            await _serviceFactory.TutionService.GetTutionsPaged(request.Adapt<QueryTutionModel>(),
+            await _serviceFactory.TuitionService.GetTuitionsPaged(request.Adapt<QueryTuitionModel>(),
                 CurrentAccount);
 
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
-        return Ok(pagedResult.Items.Adapt<List<TutionWithStudentClassResponse>>());
+        return Ok(pagedResult.Items.Adapt<List<TuitionWithStudentClassResponse>>());
     }
-    
+
     [HttpGet("{id}")]
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
-    [EndpointDescription("Get Tutions with paging")]
-    public async Task<ActionResult<TutionWithStudentClassResponse>> GetPagedTutions(
+    [EndpointDescription("Get Tuition details")]
+    public async Task<ActionResult<TuitionWithStudentClassResponse>> GetTuitionDetails(
         [FromQuery] Guid id)
     {
-        return Ok(await _serviceFactory.TutionService.GetTutionById(id));
+        return Ok(await _serviceFactory.TuitionService.GetTuitionById(id));
     }
 }

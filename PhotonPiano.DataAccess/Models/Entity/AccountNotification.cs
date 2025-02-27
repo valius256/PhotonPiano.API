@@ -1,6 +1,6 @@
 namespace PhotonPiano.DataAccess.Models.Entity;
 
-public class AccountNotification : BaseEntityWithId
+public class AccountNotification : BaseEntity
 {
     public required string AccountFirebaseId { get; set; }
     public required Guid NotificationId { get; set; }

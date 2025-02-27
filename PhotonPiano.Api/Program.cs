@@ -24,7 +24,7 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
 
-builder.AddPubSub();
+builder.AddSignalRConfig();
 
 builder.Services.AddSingleton<RedirectUrlValidator>();
 
@@ -63,7 +63,9 @@ app.UseExceptionHandler();
 
 app.UseAuthorization();
 
-app.MapPubSub();
+app.MapSignalRConfig();
+
+app.UseResponseCompression();
 
 app.MapControllers();
 

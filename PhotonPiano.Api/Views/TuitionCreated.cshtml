@@ -1,26 +1,95 @@
 @{
-var studentName = Model.StudentName;
-var className = Model.ClassName;
-var startDate = Model.StartDate.ToString("MMMM dd, yyyy");
-var endDate = Model.EndDate.ToString("MMMM dd, yyyy");
-var amount = Model.Amount.ToString("C");
+    var studentName = Model.StudentName;
+    var className = Model.ClassName;
+    var startDate = Model.StartDate.ToString("dd/MM/yyyy");
+    var endDate = Model.EndDate.ToString("dd/MM/yyyy");
+    var amount = Model.Amount.ToString("N0") + " VND";
 }
 
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>New Tuition Created</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Báo Tạo Học Phí Mới</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .email-container {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 20px auto;
+            width: 600px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .email-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .email-content {
+            font-size: 16px;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .details-table th, .details-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 20px;
+            color: #777;
+        }
+
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        .footer p {
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-<p>Dear @studentName,</p>
-<p>We are pleased to inform you that a new tuition has been created for your class <strong>@className</strong>.</p>
-<p><strong>Start Date:</strong> @startDate</p>
-<p><strong>End Date:</strong> @endDate</p>
-<p><strong>Amount Due:</strong> @amount</p>
-<p>Your payment status is currently marked as <strong>Pending</strong>.</p>
-<p>Thank you for being a part of PhotonPiano. If you have any questions, please do not hesitate to reach out to our
-    support team.</p>
-<p>Best regards,</p>
-<p><strong>PhotonPiano Team</strong></p>
+<div class="email-container">
+    <div class="email-header">
+        Thông Báo Tạo Học Phí Mới
+    </div>
+
+    <div class="email-content">
+        <p>Xin chào @studentName,</p>
+
+        <p>Chúng tôi vui mừng thông báo rằng học phí mới đã được tạo cho lớp học của bạn <strong>@className</strong>.</p>
+        <p><strong>Ngày bắt đầu:</strong> @startDate</p>
+        <p><strong>Ngày kết thúc:</strong> @endDate</p>
+        <p><strong>Số tiền cần thanh toán:</strong> @amount</p>
+        <p>Trạng thái thanh toán hiện tại của bạn là <strong>Chưa thanh toán</strong>.</p>
+        <p>Cảm ơn bạn đã đồng hành cùng PhotonPiano. Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
+        <p>Trân trọng,</p>
+        <p><strong>Đội ngũ PhotonPiano</strong></p>
+    </div>
+</div>
 </body>
 </html>

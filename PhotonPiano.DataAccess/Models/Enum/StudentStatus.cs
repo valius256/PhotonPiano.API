@@ -6,6 +6,6 @@ public enum StudentStatus
     AttemptingEntranceTest,
     WaitingForClass,
     InClass,
-    DropOut,
-    Leave
+    DropOut, // buoc thoi hoc
+    Leave // tu nguyen 
 }

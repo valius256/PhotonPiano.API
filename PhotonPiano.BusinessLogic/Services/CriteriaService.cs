@@ -19,11 +19,18 @@ public class CriteriaService : ICriteriaService
     }
 
 
+    public async Task<List<MinimalCriteriaModel>> GetMinimalCriterias(QueryMinimalCriteriasModel queryModel)
+    {
+        return await _unitOfWork.CriteriaRepository.FindProjectedAsync<MinimalCriteriaModel>(
+            c => c.For == queryModel.CriteriaFor,
+            hasTrackings: false);
+    }
+
     public async Task<PagedResult<CriteriaDetailModel>> GetPagedCriteria(QueryCriteriaModel query)
     {
-        var cacheCriteria =
-            await _serviceFactory.RedisCacheService.GetAsync<PagedResult<CriteriaDetailModel>>("criteria");
-        if (cacheCriteria is not null) return cacheCriteria;
+        // var cacheCriteria =
+        //     await _serviceFactory.RedisCacheService.GetAsync<PagedResult<CriteriaDetailModel>>("criteria");
+        // if (cacheCriteria is not null) return cacheCriteria;
 
         var (page, pageSize, sortColumn, orderByDesc, keyword)
             = query;
@@ -38,7 +45,7 @@ public class CriteriaService : ICriteriaService
                      EF.Functions.ILike(EF.Functions.Unaccent(c.Description ?? string.Empty), likeKeyword)
             ]);
         var allCriterial = await _unitOfWork.CriteriaRepository.GetAllAsync();
-        await _serviceFactory.RedisCacheService.SaveAsync("criteria", allCriterial, TimeSpan.FromHours(10));
+        // await _serviceFactory.RedisCacheService.SaveAsync("criteria", allCriterial, TimeSpan.FromHours(10));
         return result;
     }
 

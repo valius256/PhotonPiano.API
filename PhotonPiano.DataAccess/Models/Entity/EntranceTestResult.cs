@@ -9,7 +9,7 @@ public class EntranceTestResult : BaseEntityWithId
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
-    
+    public decimal? Weight { get; set; }
 
     // reference 
 

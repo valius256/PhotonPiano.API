@@ -345,7 +345,7 @@ public static class ModelBuilderExtensions
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
                 StudentFirebaseId = GetFirebaseIdAsync("learner001@gmail.com", "123456").Result, // learner001
-                Rank = 1,
+                Level = Level.Beginner,
                 Year = 2024,
                 IsScoreAnnounced = true,
                 CreatedById = admin001
@@ -356,7 +356,7 @@ public static class ModelBuilderExtensions
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
                 StudentFirebaseId = GetFirebaseIdAsync("learner002@gmail.com", "123456").Result, // learner002
-                Rank = 2,
+                Level = Level.Intermediate,
                 Year = 2024,
                 IsScoreAnnounced = true,
                 CreatedById = admin001
@@ -367,7 +367,7 @@ public static class ModelBuilderExtensions
                 BandScore = Random.Shared.NextInt64(3, 10),
                 EntranceTestId = entranceTestGuid1,
                 StudentFirebaseId = GetFirebaseIdAsync("learner003@gmail.com", "123456").Result, // learner003
-                Rank = 3,
+                Level = Level.Advanced,
                 Year = 2024,
                 IsScoreAnnounced = true,
                 CreatedById = admin001

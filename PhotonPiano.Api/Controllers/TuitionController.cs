@@ -92,4 +92,15 @@ public class TuitionController : BaseController
     {
         return Ok(await _serviceFactory.TuitionService.GetTuitionById(id));
     }
+
+    [HttpGet("refund-amount")]
+    [FirebaseAuthorize(Roles = [Role.Student])]
+    [EndpointDescription("Get Refund Tuition Amount")]
+    public async Task<ActionResult> RefundTuitionAmount()
+    {
+        if (CurrentAccount != null)
+            return Ok(await _serviceFactory.TuitionService.GetTuitionRefundAmount(CurrentAccount.AccountFirebaseId,
+                CurrentAccount.CurrentClassId));
+        return NoContent();
+    }
 }

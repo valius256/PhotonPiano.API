@@ -135,6 +135,34 @@ public class TuitionService : ITuitionService
     }
 
 
+    public async Task<decimal> GetTuitionRefundAmount(string studentId, Guid? classId)
+    {
+        var currentTime = DateTime.UtcNow.AddHours(7);
+        var currentStudentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc =>
+            sc.StudentFirebaseId == studentId && sc.ClassId == classId);
+
+        if (currentStudentClass is null) throw new NotFoundException("Student is not belongs to this class ");
+
+        var currentTuitionHasPaid = await _unitOfWork.TuitionRepository.FindSingleAsync(t =>
+            t.StudentClassId == currentStudentClass.Id && t.PaymentStatus == PaymentStatus.Successed);
+        if (currentTuitionHasPaid is null) throw new NotFoundException("This student has not paid for this class yet.");
+
+        var allSlotInClassWithCurrentMonth =
+            await _unitOfWork.SlotRepository.FindProjectedAsync<Slot>(c => c.ClassId == currentStudentClass.ClassId
+                                                                           && c.Date.Month == currentTime.Month &&
+                                                                           c.Date.Year == currentTime.Year);
+        var numOfSlotNotStarted = allSlotInClassWithCurrentMonth
+            .Where(x => x.SlotStudents.Where(ss => ss.StudentFirebaseId == studentId).Count() == 0).Count();
+
+        var systemConfigValue =
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(
+                (int)currentStudentClass.Class.Level + 1);
+        var refundAmount = systemConfigValue.PriceOfSlot * numOfSlotNotStarted;
+
+        return currentTuitionHasPaid.Amount - refundAmount;
+    }
+
+
     // note: this function just run in 1st of month
     public async Task CronAutoCreateTuition()
     {
@@ -283,8 +311,8 @@ public class TuitionService : ITuitionService
                 x => studentClassIds == null || studentClassIds.Count == 0 ||
                      studentClassIds.Contains(x.StudentClassId),
                 x => paymentStatuses == null || paymentStatuses.Count == 0 || paymentStatuses.Contains(x.PaymentStatus),
-                x => !startDateTimeUtc.HasValue || x.StartDate <= endDateTimeUtc, 
-                x => !endDateTimeUtc.HasValue || x.EndDate >= startDateTimeUtc, 
+                x => !startDateTimeUtc.HasValue || x.StartDate <= endDateTimeUtc,
+                x => !endDateTimeUtc.HasValue || x.EndDate >= startDateTimeUtc,
                 x => account != null && (account.Role == Role.Staff ||
                                          x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
             ]);

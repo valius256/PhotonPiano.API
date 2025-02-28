@@ -9,6 +9,9 @@ public class Application : BaseEntityWithId
     public required string Reason { get; set; }
     public string? FileUrl { get; set; }
 
+    public string? AdditionalData { get; set; }
+
+
     // Denormalized  
     public required string CreatedByEmail { get; set; }
     public string? UpdatedByEmail { get; set; }

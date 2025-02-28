@@ -21,6 +21,7 @@ public interface ITuitionService
 
     Task CreateTuitionWhenRegisterClass(List<StudentClass> models, List<Slot> slots);
 
+    Task<decimal> GetTuitionRefundAmount(string studentId, Guid? classId);
 
     // Cron job
     Task CronAutoCreateTuition();

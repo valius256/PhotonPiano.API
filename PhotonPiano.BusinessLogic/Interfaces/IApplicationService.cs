@@ -6,9 +6,12 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IApplicationService
 {
-    Task<PagedResult<ApplicationModel>> GetPagedApplications(QueryPagedApplicationModel model, AccountModel currentAccount);
+    Task<PagedResult<ApplicationModel>> GetPagedApplications(QueryPagedApplicationModel model,
+        AccountModel currentAccount);
+
     Task<ApplicationDetailsModel> SendAnApplication(SendApplicationModel sendModel, AccountModel currentAccount);
     Task UpdateApplicationStatus(Guid id, UpdateApplicationModel updateModel, AccountModel currentAccount);
 
-
+    Task<ApplicationDetailsModel> SendRefundApplication(SendRefundApplicationModel sendModel,
+        AccountModel currentAccount);
 }

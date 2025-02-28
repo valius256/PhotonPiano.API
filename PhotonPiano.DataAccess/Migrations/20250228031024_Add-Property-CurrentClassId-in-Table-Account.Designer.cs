@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhotonPiano.DataAccess.Models;
@@ -12,9 +13,11 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250228031024_Add-Property-CurrentClassId-in-Table-Account")]
+    partial class AddPropertyCurrentClassIdinTableAccount
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -551,7 +554,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<bool>("IsScoreAnnounced")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("Level")
+                    b.Property<int?>("Rank")
                         .HasColumnType("integer");
 
                     b.Property<int>("RecordStatus")
@@ -560,9 +563,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<string>("StudentFirebaseId")
                         .IsRequired()
                         .HasColumnType("character varying(30)");
-
-                    b.Property<double?>("TheoraticalScore")
-                        .HasColumnType("double precision");
 
                     b.Property<string>("UpdateById")
                         .HasColumnType("character varying(30)");

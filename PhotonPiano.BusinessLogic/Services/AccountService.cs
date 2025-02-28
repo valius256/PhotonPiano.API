@@ -109,8 +109,8 @@ public class AccountService : IAccountService
                 a => roles.Count == 0 || roles.Contains(a.Role),
                 a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
                 a => levels.Count == 0 || !a.Level.HasValue || levels.Contains(a.Level.Value),
-                a => studentStatuses.Count == 0 || !a.StudentStatus.HasValue ||
-                     studentStatuses.Contains(a.StudentStatus.Value)
+                a => studentStatuses.Count == 0 ||
+                     a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)
             ]
         );
 

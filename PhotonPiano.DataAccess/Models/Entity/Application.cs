@@ -10,7 +10,7 @@ public class Application : BaseEntityWithId
     public string? FileUrl { get; set; }
 
     public string? AdditionalData { get; set; }
-
+    public string? StaffConfirmNote { get; set; }
 
     // Denormalized  
     public required string CreatedByEmail { get; set; }

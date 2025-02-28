@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Newtonsoft.Json;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -12,9 +13,8 @@ namespace PhotonPiano.BusinessLogic.Services;
 
 public class ApplicationService : IApplicationService
 {
-    private readonly IUnitOfWork _unitOfWork;
-
     private readonly IServiceFactory _serviceFactory;
+    private readonly IUnitOfWork _unitOfWork;
 
     public ApplicationService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
@@ -34,64 +34,41 @@ public class ApplicationService : IApplicationService
             [
                 a => currentAccount.Role == Role.Staff || a.CreatedById == currentAccount.AccountFirebaseId,
                 a => types.Count == 0 || types.Contains(a.Type),
-                a => statuses.Count == 0 || statuses.Contains(a.Status),
+                a => statuses.Count == 0 || statuses.Contains(a.Status)
             ]);
     }
+
 
     public async Task<ApplicationDetailsModel> SendAnApplication(SendApplicationModel sendModel,
         AccountModel currentAccount)
     {
         var application = sendModel.Adapt<Application>();
 
-        // application.Id = Guid.CreateVersion7();
         application.CreatedById = currentAccount.AccountFirebaseId;
         application.CreatedByEmail = currentAccount.Email;
         application.CreatedAt = DateTime.UtcNow;
         application.Status = ApplicationStatus.Pending;
 
         if (sendModel.File is not null)
-        {
-            string fileUrl = await _serviceFactory.PinataService.UploadFile(sendModel.File);
-            application.FileUrl = fileUrl;
-        }
-        
+            application.FileUrl = await _serviceFactory.PinataService.UploadFile(sendModel.File);
+
         await _unitOfWork.ApplicationRepository.AddAsync(application);
         await _unitOfWork.SaveChangesAsync();
 
-        //Push noti here
-        var staffs = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Staff,
-            hasTrackings: false);
+        await NotifyStaffsAsync(application, currentAccount);
 
-        List<Task> pushNotiTasks = [];
-
-        foreach (var staff in staffs)
-        {
-            pushNotiTasks.Add(_serviceFactory.NotificationService.SendNotificationAsync(staff.AccountFirebaseId,
-                $"Học viên {currentAccount.FullName} vừa gửi đơn {sendModel.Type}",
-                $"Chi tiết: {sendModel.Reason}"));
-        }
-
-        await Task.WhenAll(pushNotiTasks);
-
-        return (await _unitOfWork.ApplicationRepository.FindSingleProjectedAsync<ApplicationDetailsModel>(
-            a => a.Id == application.Id,
-            hasTrackings: false,
-            option: TrackingOption.IdentityResolution))!;
+        return await GetApplicationDetailsAsync(application.Id);
     }
+
 
     public async Task UpdateApplicationStatus(Guid id, UpdateApplicationModel updateModel, AccountModel currentAccount)
     {
         var application = await _unitOfWork.ApplicationRepository.FindSingleAsync(a => a.Id == id);
 
-        if (application is null)
-        {
-            throw new NotFoundException("Application not found");
-        }
+        if (application is null) throw new NotFoundException("Application not found");
 
         if (application.Status == ApplicationStatus.Approved)
-        {
             throw new BadRequestException("Application is already approved");
-        }
 
         updateModel.Adapt(application);
         application.UpdatedAt = DateTime.UtcNow;
@@ -110,5 +87,80 @@ public class ApplicationService : IApplicationService
         //Push noti here
         await _serviceFactory.NotificationService.SendNotificationAsync(application.CreatedById,
             $"Đơn {application.Id} của bạn vừa được duyệt", "");
+    }
+
+    public async Task<ApplicationDetailsModel> SendRefundApplication(SendRefundApplicationModel sendModel,
+        AccountModel currentAccount)
+    {
+        // convert to json 
+        var bankInformation = new
+        {
+            sendModel.BankName,
+            sendModel.BankAccountName,
+            sendModel.BankAccountNumber,
+            sendModel.Amount
+        };
+
+        var application = sendModel.Adapt<Application>();
+
+        application.CreatedById = currentAccount.AccountFirebaseId;
+        application.CreatedByEmail = currentAccount.Email;
+        application.CreatedAt = DateTime.UtcNow;
+        application.Status = ApplicationStatus.Pending;
+        application.AdditionalData = JsonConvert.SerializeObject(bankInformation);
+
+        if (sendModel.File is not null)
+        {
+            var fileUrl = await _serviceFactory.PinataService.UploadFile(sendModel.File);
+            application.FileUrl = fileUrl;
+        }
+
+        // if student have class, remove student from class
+        // if (currentAccount.CurrentClassId is not null)
+        // {
+        //     await _unitOfWork.ExecuteInTransactionAsync()
+        // }
+
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.ApplicationRepository.AddAsync(application);
+        });
+
+        await NotifyStaffsAsync(application, currentAccount);
+
+        return await GetApplicationDetailsAsync(application.Id);
+    }
+
+    protected async Task NotifyStaffsAsync(Application application, AccountModel currentAccount)
+    {
+        var staffs = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Staff, false);
+
+        List<Task> pushNotiTasks = staffs.Select(staff =>
+            _serviceFactory.NotificationService.SendNotificationAsync(
+                staff.AccountFirebaseId,
+                $"Học viên {currentAccount.FullName} vừa gửi đơn {application.Type}",
+                $"Chi tiết: {application.Reason}"
+            )).ToList();
+
+        await Task.WhenAll(pushNotiTasks);
+    }
+
+    protected async Task<ApplicationDetailsModel> GetApplicationDetailsAsync(Guid applicationId)
+    {
+        return (await _unitOfWork.ApplicationRepository.FindSingleProjectedAsync<ApplicationDetailsModel>(
+            a => a.Id == applicationId,
+            false,
+            option: TrackingOption.IdentityResolution))!;
+    }
+
+    protected async Task HandleApplication(Application application)
+    {
+        switch (application.Type)
+        {
+            case ApplicationType.RefundTuition:
+
+                break;
+        }
     }
 }

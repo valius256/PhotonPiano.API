@@ -14,6 +14,12 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
 
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
 
+
+        builder.HasOne(x => x.CurrentClass)
+            .WithMany()
+            .HasForeignKey(x => x.CurrentClassId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // reference
         builder.HasMany(x => x.EntranceTestStudents)
             .WithOne(x => x.Student)

@@ -33,6 +33,12 @@ public class Account : BaseEntity
 
     public List<string> PreferredLearningMethods { get; set; } = [];
 
+    public Guid? CurrentClassId { get; set; }
+
+
+    public virtual Class? CurrentClass { get; set; }
+
+
     // reference 
     // EntranceTest
     public virtual ICollection<EntranceTest> InstructorEntranceTests { get; set; } = new List<EntranceTest>();

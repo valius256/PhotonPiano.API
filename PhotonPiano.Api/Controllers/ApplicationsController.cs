@@ -7,59 +7,77 @@ using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
-namespace PhotonPiano.Api.Controllers
+namespace PhotonPiano.Api.Controllers;
+
+[Route("api/applications")]
+[ApiController]
+public class ApplicationsController : BaseController
 {
-    [Route("api/applications")]
-    [ApiController]
-    public class ApplicationsController : BaseController
+    private readonly IServiceFactory _serviceFactory;
+
+    public ApplicationsController(IServiceFactory serviceFactory)
     {
-        private readonly IServiceFactory _serviceFactory;
+        _serviceFactory = serviceFactory;
+    }
 
-        public ApplicationsController(IServiceFactory serviceFactory)
-        {
-            _serviceFactory = serviceFactory;
-        }
+    [HttpGet]
+    [EndpointDescription("Get academic applications with paging")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+    public async Task<ActionResult<List<ApplicationModel>>> GetPagedApplications(
+        [FromQuery] QueryPagedApplicationsRequest request)
+    {
+        var pagedResult =
+            await _serviceFactory.ApplicationService.GetPagedApplications(
+                request.Adapt<QueryPagedApplicationModel>(), CurrentAccount!);
 
-        [HttpGet]
-        [EndpointDescription("Get academic applications with paging")]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
-        public async Task<ActionResult<List<ApplicationModel>>> GetPagedApplications(
-            [FromQuery] QueryPagedApplicationsRequest request)
-        {
-            var pagedResult =
-                await _serviceFactory.ApplicationService.GetPagedApplications(
-                    request.Adapt<QueryPagedApplicationModel>(), base.CurrentAccount!);
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
-            HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+        return pagedResult.Items;
+    }
 
-            return pagedResult.Items;
-        }
+    [HttpPost]
+    [FirebaseAuthorize(Roles = [Role.Student])]
+    [EndpointDescription("Send an application")]
+    public async Task<ActionResult> SendApplication([FromForm] SendApplicationRequest request)
+    {
+        return Created(nameof(SendApplication),
+            await _serviceFactory.ApplicationService.SendAnApplication(new SendApplicationModel
+                {
+                    File = request.File,
+                    Reason = request.Reason,
+                    Type = request.Type
+                },
+                CurrentAccount!));
+    }
 
-        [HttpPost]
-        [FirebaseAuthorize(Roles = [Role.Student])]
-        [EndpointDescription("Send an application")]
-        public async Task<ActionResult> SendApplication([FromForm] SendApplicationRequest request)
-        {
-            return Created(nameof(SendApplication),
-                await _serviceFactory.ApplicationService.SendAnApplication(new SendApplicationModel
-                    {
-                        File = request.File,
-                        Reason = request.Reason,
-                        Type = request.Type,
-                    },
-                    base.CurrentAccount!));
-        }
+    [HttpPost("refund")]
+    [FirebaseAuthorize(Roles = [Role.Student])]
+    [EndpointDescription("Send a refund application")]
+    public async Task<ActionResult> SendRefundApplication([FromForm] RefundApplicationRequest refundRequest)
+    {
+        return Created(nameof(SendApplication),
+            await _serviceFactory.ApplicationService.SendRefundApplication(new SendRefundApplicationModel
+                {
+                    File = refundRequest.File,
+                    Reason = refundRequest.Reason,
+                    Type = refundRequest.Type,
+                    BankName = refundRequest.BankName,
+                    BankAccountName = refundRequest.BankAccountName,
+                    BankAccountNumber = refundRequest.BankAccountNumber,
+                    Amount = refundRequest.Amount
+                },
+                CurrentAccount!));
+    }
 
-        [HttpPut("{id}/status")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Update an application status")]
-        public async Task<ActionResult> UpdateApplicationStatus([FromRoute] Guid id,
-            [FromBody] UpdateApplicationRequest request)
-        {
-            await _serviceFactory.ApplicationService.UpdateApplicationStatus(id,
-                request.Adapt<UpdateApplicationModel>(), base.CurrentAccount!);
-            
-            return NoContent();
-        }
+    [HttpPut("{id}/status")]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Update an application status")]
+    public async Task<ActionResult> UpdateApplicationStatus([FromRoute] Guid id,
+        [FromBody] UpdateApplicationRequest request)
+    {
+        await _serviceFactory.ApplicationService.UpdateApplicationStatus(id,
+            request.Adapt<UpdateApplicationModel>(), CurrentAccount!);
+
+        return NoContent();
     }
 }

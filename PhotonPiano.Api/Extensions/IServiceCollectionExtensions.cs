@@ -171,7 +171,7 @@ public static class IServiceCollectionExtensions
         services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseNpgsql(GetConnectionString(configuration));
-            options.EnableSensitiveDataLogging();
+            options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
             options.EnableDetailedErrors();
         });
 
@@ -270,22 +270,20 @@ public static class IServiceCollectionExtensions
             cf.TimeZoneResolver = new DefaultTimeZoneResolver();
 
             var recurringJobManager = service.GetRequiredService<IRecurringJobManager>();
-            
-            
-            
+
+
             //  recurring job
             recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
                 x => x.CronAutoCreateTuition(),
                 Cron.Monthly);
-            
+
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                 x => x.CronForTuitionReminder(),
                 Cron.Monthly(15));
-            
-            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus", 
+
+            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
                 x => x.CronJobAutoChangeSlotStatus(),
                 Cron.Hourly());
-            
         });
 
 

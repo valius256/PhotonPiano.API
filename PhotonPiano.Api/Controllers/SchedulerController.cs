@@ -1,7 +1,11 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Scheduler;
+using PhotonPiano.Api.Responses.EntranceTest;
+using PhotonPiano.Api.Responses.Slot;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -69,5 +73,37 @@ public class SchedulerController : BaseController
 
 
         return OkAsync(result, PubSubTopic.SCHEDULER_ATTENDANCE_GET_LIST);
+    }
+
+    [HttpPost]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Create a slot individually")]
+    public async Task<ActionResult<GetSlotResponses>> CreateSlot(
+        [FromBody] CreateSlotRequest request)
+    {
+        var result =
+            await _serviceFactory.SlotService.CreateSlot(
+                request.Adapt<CreateSlotModel>(), CurrentUserFirebaseId);
+        return Created(nameof(CreateSlot), result.Adapt<GetSlotResponses>());
+    }
+
+    [HttpDelete("{id}")]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Delete a slot")]
+    public async Task<ActionResult> DeleteSlot([FromRoute] Guid id)
+    {
+        await _serviceFactory.SlotService.DeleteSlot(id, CurrentUserFirebaseId);
+        return NoContent();
+    }
+
+    [HttpPut]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Update a slot")]
+    public async Task<ActionResult> UpdateSlot([FromBody] UpdateSlotRequest request)
+    {
+        await _serviceFactory.SlotService.UpdateSlot(request.Adapt<UpdateSlotModel>(),
+            CurrentUserFirebaseId);
+
+        return NoContent();
     }
 }

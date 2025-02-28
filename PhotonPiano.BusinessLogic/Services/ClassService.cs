@@ -213,7 +213,7 @@ public class ClassService : IClassService
             var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)level + 1);
             levelConfigs.Add(config);
         }
-        var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync();
+        var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
         //With each class, we will pick a random schedule for it!
         foreach (var classDraft in classes)
         {

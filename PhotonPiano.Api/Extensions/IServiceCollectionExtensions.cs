@@ -97,6 +97,10 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
         TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
+            .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
+            .Map(dest => dest.Status, src => src.RecordStatus);
+        
         return services;
     }
 

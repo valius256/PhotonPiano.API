@@ -99,12 +99,12 @@ public class EntranceTestService : IEntranceTestService
 
     public async Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id, AccountModel currentAccount)
     {
-        var cache = await _serviceFactory.RedisCacheService.GetAsync<EntranceTestDetailModel>($"entranceTest_{id}");
-
-        if (cache is not null)
-        {
-            return cache;
-        }
+        // var cache = await _serviceFactory.RedisCacheService.GetAsync<EntranceTestDetailModel>($"entranceTest_{id}");
+        //
+        // if (cache is not null)
+        // {
+        //     return cache;
+        // }
 
         var entranceTest = await _unitOfWork.EntranceTestRepository
             .FindSingleProjectedAsync<EntranceTestDetailModel>(e => e.Id == id, false,
@@ -329,7 +329,7 @@ public class EntranceTestService : IEntranceTestService
                         CreatedById = accountId,
                     });
 
-                    account.StudentStatus = StudentStatus.AttemptingEntranceTest;
+                    account.StudentStatus = StudentStatus.WaitingForEntranceTestArrangement;
                     account.UpdatedAt = DateTime.UtcNow;
 
                     await _unitOfWork.SaveChangesAsync();
@@ -422,7 +422,7 @@ public class EntranceTestService : IEntranceTestService
             throw new BadRequestException("Some students are not found.");
         }
 
-        if (students.Any(s => s.StudentStatus != StudentStatus.AttemptingEntranceTest))
+        if (students.Any(s => s.StudentStatus != StudentStatus.WaitingForEntranceTestArrangement))
         {
             throw new BadRequestException("Some students are not valid to be arranged with entrance tests.");
         }
@@ -462,9 +462,15 @@ public class EntranceTestService : IEntranceTestService
         entranceTests =
             await _serviceFactory.SchedulerService.AssignInstructorsToEntranceTests(entranceTests, validSlots);
 
+        var arrangedStudentIds = students.Select(s => s.AccountFirebaseId);
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.EntranceTestRepository.AddRangeAsync(entranceTests);
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
+                expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
         });
 
         return entranceTests.Adapt<List<EntranceTestDetailModel>>();

@@ -10,4 +10,5 @@ public record EntranceTestResultModel
     public required string CreatedById { get; init; }
     public string? UpdateById { get; init; }
     public string? DeletedById { get; init; }
+    public decimal? Weight { get; init; }
 }

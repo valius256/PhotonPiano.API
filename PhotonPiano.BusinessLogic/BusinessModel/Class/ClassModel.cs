@@ -9,12 +9,14 @@ public record ClassModel
     public string? InstructorId { get; init; }
     public string? InstructorName { get; init; }
     public ClassStatus Status { get; init; } = ClassStatus.NotStarted;
+    public DateOnly StartTime { get; set; }
     public Level Level { get; init; }
     public bool IsPublic { get; init; }
     public required string Name { get; init; }
     public required string CreatedById { get; init; }
     public bool IsScorePublished { get; init; }
     public int Capacity { get; init; }
+    public int MinimumStudents { get; init; }
     public int RequiredSlots { get; init; }
     public int TotalSlots { get; init; }
     public int StudentNumber { get; init; }

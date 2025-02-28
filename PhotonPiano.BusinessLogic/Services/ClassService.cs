@@ -26,9 +26,26 @@ public class ClassService : IClassService
 
     public async Task<ClassDetailModel> GetClassDetailById(Guid id)
     {
+        var minStudents =
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+        var maxStudents =
+           int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+
+
         var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id);
         if (classDetail is null) throw new NotFoundException("Class not found");
-        return classDetail;
+
+        var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
+
+        return classDetail with { 
+            MinimumStudents = minStudents,
+            Capacity = maxStudents,
+            InstructorName = classDetail.Instructor?.Name,
+            RequiredSlots = config.TotalSlot,
+            StudentNumber = classDetail.StudentClasses.Count,     
+            SlotsPerWeek = config.NumOfSlotInWeek,
+            PricePerSlots = config.PriceOfSlot,
+        };
     }
 
     public async Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role)
@@ -75,6 +92,9 @@ public class ClassService : IClassService
         // Fetch the class capacity
         var capacity =
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+        var minStudents =
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+
         var levelConfigs = new List<GetSystemConfigOnLevelModel>
         {
             await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(1),
@@ -100,7 +120,8 @@ public class ClassService : IClassService
                 CreatedById = q.CreatedById,
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
-                TotalSlots = q.Slots.Count()
+                TotalSlots = q.Slots.Count(),
+                MinimumStudents = minStudents
             })
             .ToListAsync();
 
@@ -166,6 +187,8 @@ public class ClassService : IClassService
                 numberOfClasses = (int)Math.Floor(studentsOfLevel.Count * 1.0 / maxStudents);
             }
 
+            var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == DateTime.UtcNow.AddHours(7).Month 
+                && c.StartTime.Year == DateTime.UtcNow.AddHours(7).Year); 
             //Great! With number of students each class and number of classes, we can easily fill in students
             for (var i = 0; i < numberOfClasses; i++)
             {
@@ -175,7 +198,7 @@ public class ClassService : IClassService
                     Id = Guid.NewGuid(),
                     Level = level,
                     Name =
-                        $"LEVEL{(int)level + 1}_{i}_{DateTime.Now.Month}{DateTime.Now.Year}", //There is a naming rule, handle later
+                        $"LEVEL{(int)level + 1}_{classesThisMonth + i + 1}_{DateTime.Now.Month}{DateTime.Now.Year}",
                     StudentIds = selectedStudents.Select(s => s.AccountFirebaseId).ToList()
                 });
             }
@@ -190,7 +213,7 @@ public class ClassService : IClassService
             var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)level + 1);
             levelConfigs.Add(config);
         }
-
+        var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync();
         //With each class, we will pick a random schedule for it!
         foreach (var classDraft in classes)
         {
@@ -205,13 +228,28 @@ public class ClassService : IClassService
             int maxAttempt = 100, attempt = 1; //Avoid infinite loop
             var availableRooms = new List<RoomModel>();
 
+            var dates = new HashSet<DateOnly>();
+            var currentDate = arrangeClassModel.StartWeek;
+            int slotCount = 0;
+            while (slotCount < levelConfig.TotalSlot)
+            {
+                foreach (var frame in dayFrames)
+                {
+                    var date = currentDate.AddDays((int)frame);
 
-            // Generate all required dates efficiently
-            //TODO : Consider day-offs
-            var dates = Enumerable.Range(0, levelConfig.TotalSlot)
-                .Select(i =>
-                    arrangeClassModel.StartWeek.AddDays(i / dayFrames.Count * 7 + (int)dayFrames[i % dayFrames.Count]))
-                .ToHashSet();
+                    if (!dayOffs.Any(dayOff =>
+                        date.ToDateTime(TimeOnly.MinValue) >= dayOff.StartTime &&
+                        date.ToDateTime(TimeOnly.MaxValue) <= dayOff.EndTime))
+                    {
+                        dates.Add(date);
+                        slotCount++;
+
+                        if (slotCount >= levelConfig.TotalSlot)
+                            break;
+                    }
+                }
+                currentDate = currentDate.AddDays(7); // Move to the next week
+            }
 
             //Check available rooms -- If not, iterate
             while (availableRooms.Count == 0 && attempt < maxAttempt)
@@ -254,6 +292,7 @@ public class ClassService : IClassService
                 c.IsPublic = false;
                 c.IsScorePublished = false;
                 c.Status = ClassStatus.NotStarted;
+                c.StartTime = c.Slots.Count > 0 ? c.Slots.First().Date : DateOnly.MinValue;
             });
             await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>
             {
@@ -304,10 +343,11 @@ public class ClassService : IClassService
 
             await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
 
-            //Change student status
+            //Change student status and current class
             await _unitOfWork.AccountRepository.FindAsQueryable(a =>
                     a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(b => b.StudentStatus, StudentStatus.InClass));
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(b => b.StudentStatus, StudentStatus.InClass));
 
             await _unitOfWork.SaveChangesAsync();
 

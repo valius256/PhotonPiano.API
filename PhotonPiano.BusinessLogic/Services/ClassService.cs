@@ -477,10 +477,10 @@ public class ClassService : IClassService
         mappedClass.IsScorePublished = false;
 
         var now = DateTime.UtcNow.AddHours(7);
-        var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == now.Month
-                && c.StartTime.Year == now.Year);
+        var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.CreatedAt.Month == now.Month
+                && c.CreatedAt.Year == now.Year && c.Level == model.Level);
 
-        mappedClass.Name = $"LEVEL{(int)mappedClass.Level + 1}_{classesThisMonth + 1}_{now.Date}{now.Year}";
+        mappedClass.Name = $"LEVEL{(int)mappedClass.Level + 1}_{classesThisMonth + 1}_{now.Month}{now.Year}";
 
         var addedClass = await _unitOfWork.ClassRepository.AddAsync(mappedClass);
         await _unitOfWork.SaveChangesAsync();
@@ -496,12 +496,12 @@ public class ClassService : IClassService
         }
         if (classInfo.Status != ClassStatus.NotStarted && (model.Level.HasValue))
         {
-            throw new BadRequestException("Cannot update instructor or level of classes that are started");
+            throw new BadRequestException("Cannot update level of classes that are started");
         }
 
         var message = $"Đã có thay đổi với lớp học {classInfo.Name} của bạn.";
 
-        if (model.Name != null)
+        if (model.Name != null && model.Name != classInfo.Name)
         {
             if (await _unitOfWork.ClassRepository.AnyAsync(c => c.Name == model.Name))
             {
@@ -518,12 +518,14 @@ public class ClassService : IClassService
         {
             classInfo.Level = model.Level.Value;
         }
-        if (model.InstructorId != null)
+        if (model.InstructorId != null && model.InstructorId != classInfo.InstructorId)
         {
-            if (model.InstructorId == classInfo.InstructorId)
+            var teacher = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == model.InstructorId);
+            if (teacher is null)
             {
-                throw new BadRequestException("Teacher is already assigned to this class");
+                throw new NotFoundException("Teacher not found");
             }
+
             //Check instructor conflicts..
             var slotOfTeacher = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class)
                 .Where(s => s.Class.InstructorId == model.InstructorId 
@@ -609,7 +611,8 @@ public class ClassService : IClassService
             await _unitOfWork.SlotRepository.UpdateRangeAsync(slots);
 
             //Delete studentSlots
-            var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => slots.Any(s => s.Id == ss.SlotId));
+            var slotIds = slots.Select(s => s.Id).ToList();
+            var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => slotIds.Contains(ss.SlotId));
             foreach (var studentSlot in studentSlots)
             {
                 studentSlot.DeletedAt = DateTime.UtcNow.AddHours(7);

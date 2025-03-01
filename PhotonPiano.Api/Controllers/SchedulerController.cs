@@ -97,7 +97,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpPut]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Update a slot")]
     public async Task<ActionResult> UpdateSlot([FromBody] UpdateSlotRequest request)
     {

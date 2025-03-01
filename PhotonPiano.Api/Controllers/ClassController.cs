@@ -5,9 +5,13 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.Criteria;
+using PhotonPiano.Api.Requests.Scheduler;
+using PhotonPiano.Api.Responses.Class;
 using PhotonPiano.Api.Responses.Criteria;
+using PhotonPiano.Api.Responses.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -52,6 +56,38 @@ namespace PhotonPiano.Api.Controllers
          [FromBody] ArrangeClassModel arrangeClassModel)
         {
             return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
+        }
+
+        [HttpPost]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Create a class individually")]
+        public async Task<ActionResult<ClassModel>> CreateClass(
+        [FromBody] CreateClassRequest request)
+        {
+            var result =
+                await _serviceFactory.ClassService.CreateClass(
+                    request.Adapt<CreateClassModel>(), CurrentUserFirebaseId);
+            return Created(nameof(CreateClass), result);
+        }
+
+        [HttpDelete("{id}")]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Delete a class")]
+        public async Task<ActionResult> DeleteClass([FromRoute] Guid id)
+        {
+            await _serviceFactory.ClassService.DeleteClass(id, CurrentUserFirebaseId);
+            return NoContent();
+        }
+
+        [HttpPut]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Update a class")]
+        public async Task<ActionResult> UpdateClass([FromBody] UpdateClassRequest request)
+        {
+            await _serviceFactory.ClassService.UpdateClass(request.Adapt<UpdateClassModel>(),
+                CurrentUserFirebaseId);
+
+            return NoContent();
         }
     }
 }

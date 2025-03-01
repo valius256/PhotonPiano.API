@@ -13,4 +13,12 @@ public interface IClassService
     Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role);
 
     Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId);
+
+    Task UpdateClassStartTime(Guid classId);
+
+    Task<ClassModel> CreateClass(CreateClassModel model, string accountFirebaseId);
+
+    Task UpdateClass(UpdateClassModel model, string accountFirebaseId);
+
+    Task DeleteClass(Guid classId, string accountFirebaseId);
 }

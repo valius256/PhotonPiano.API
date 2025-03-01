@@ -50,6 +50,7 @@ public interface IGenericRepository<T> where T : BaseEntity
 
     Task AddRangeAsync(IEnumerable<T> entities);
 
+    Task UpdateRangeAsync(IEnumerable<T> entities);
     Task ExecuteDeleteAsync(Expression<Func<T, bool>> expression);
 
     Task<int> ExecuteUpdateAsync(Expression<Func<T, bool>> expression,

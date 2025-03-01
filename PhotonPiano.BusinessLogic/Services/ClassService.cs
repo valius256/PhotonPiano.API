@@ -269,7 +269,7 @@ public class ClassService : IClassService
                 Date = d,
                 Shift = pickedShift,
                 RoomId = room.Id
-            }).ToList());
+            }).OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList());
         }
 
         //4. Now save them to database
@@ -279,6 +279,24 @@ public class ClassService : IClassService
         return result;
     }
 
+    public async Task UpdateClassStartTime(Guid classId)
+    {
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+        var slots = await _unitOfWork.SlotRepository.FindAsync(s => s.ClassId == classId);
+        if (classInfo is null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        var firstSlot = slots.OrderBy(c => c.Date).ThenBy(c => c.Shift).FirstOrDefault();
+        if (firstSlot is not null)
+        {
+            classInfo.StartTime = firstSlot.Date;
+            classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
+        }
+        await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+        await _unitOfWork.SaveChangesAsync();
+
+    }
     private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, List<Account> students,
         string userId)
     {
@@ -448,5 +466,194 @@ public class ClassService : IClassService
         for (var N = start; N <= end; N++) validNs.Add(N);
 
         return validNs;
+    }
+
+    public async Task<ClassModel> CreateClass(CreateClassModel model, string accountFirebaseId)
+    {
+        var mappedClass = model.Adapt<Class>();
+        mappedClass.CreatedById = accountFirebaseId;
+        mappedClass.IsPublic = false;
+        mappedClass.Status = ClassStatus.NotStarted;
+        mappedClass.IsScorePublished = false;
+
+        var now = DateTime.UtcNow.AddHours(7);
+        var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == now.Month
+                && c.StartTime.Year == now.Year);
+
+        mappedClass.Name = $"LEVEL{(int)mappedClass.Level + 1}_{classesThisMonth + 1}_{now.Date}{now.Year}";
+
+        var addedClass = await _unitOfWork.ClassRepository.AddAsync(mappedClass);
+        await _unitOfWork.SaveChangesAsync();
+        return addedClass.Adapt<ClassModel>();
+    }
+
+    public async Task UpdateClass(UpdateClassModel model, string accountFirebaseId)
+    {
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(model.Id);
+        if (classInfo is null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        if (classInfo.Status != ClassStatus.NotStarted && (model.Level.HasValue))
+        {
+            throw new BadRequestException("Cannot update instructor or level of classes that are started");
+        }
+
+        var message = $"Đã có thay đổi với lớp học {classInfo.Name} của bạn.";
+
+        if (model.Name != null)
+        {
+            if (await _unitOfWork.ClassRepository.AnyAsync(c => c.Name == model.Name))
+            {
+                throw new ConflictException("That name is taken! Please choose an unique name!");
+            }
+            classInfo.Name = model.Name;
+        }
+
+        string? oldTeacherId = null;
+        string oldTeacherMessage = $"Bạn đã không còn phụ trách lớp {classInfo.Name} nữa.";
+        string? newTeacherMessage = null;
+
+        if (model.Level.HasValue)
+        {
+            classInfo.Level = model.Level.Value;
+        }
+        if (model.InstructorId != null)
+        {
+            if (model.InstructorId == classInfo.InstructorId)
+            {
+                throw new BadRequestException("Teacher is already assigned to this class");
+            }
+            //Check instructor conflicts..
+            var slotOfTeacher = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class)
+                .Where(s => s.Class.InstructorId == model.InstructorId 
+                    && s.Class.Status != ClassStatus.Finished
+                    && s.ClassId != model.Id).ToListAsync();
+
+            var slotOfClass = await _unitOfWork.SlotRepository.FindAsync(s => s.ClassId == classInfo.Id);
+
+            foreach (var teacherSlot in slotOfTeacher)
+            {
+                foreach(var classSlot in slotOfClass)
+                {
+                    if (teacherSlot.Shift == classSlot.Shift && teacherSlot.Date == classSlot.Date)
+                    {
+                        throw new ConflictException("Teacher can not be assigned to this class due to a schedule conflict");
+                    }
+                }
+            }
+            oldTeacherId = classInfo.InstructorId;
+            classInfo.InstructorId = model.InstructorId;
+            newTeacherMessage = $"Chúc mừng! Giờ đây bạn là giảng viên chủ nhiệm của lớp {classInfo.Name}";
+        }
+        classInfo.UpdateById = accountFirebaseId;
+        classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
+        
+        await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+        await _unitOfWork.SaveChangesAsync();
+
+        if (classInfo.IsPublic)
+        {
+            //send noti to teacher
+            if (classInfo.InstructorId != null)
+            {
+                if (newTeacherMessage != null)
+                {
+                    await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, newTeacherMessage, "");
+                } else
+                {
+                    await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, message, "");
+                }
+            }           
+            if (oldTeacherId != null)
+            {
+                await _serviceFactory.NotificationService.SendNotificationAsync(oldTeacherId, oldTeacherMessage, "");
+            }
+
+            if (classInfo.InstructorId != null)
+            {
+                await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, message, "");
+            }
+            //send noti to students
+            var studentClass = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == model.Id);
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentClass.Select(sc => sc.StudentFirebaseId).ToList(), message, "");
+        }
+    }
+
+    public async Task DeleteClass(Guid classId, string accountFirebaseId)
+    {
+        var classDetail = await GetClassDetailById(classId);
+        if (classDetail is null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+
+        if (classDetail.Status != ClassStatus.NotStarted)
+        {
+            throw new BadRequestException("Cannot delete classes that are started");
+        }
+        if (classDetail.IsPublic)
+        {
+            throw new BadRequestException("Cannot delete classes that are announced");
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            //Delete slots
+            var slots = classDetail.Slots.Adapt<List<Slot>>();
+            foreach (var slot in slots)
+            {
+                slot.DeletedAt = DateTime.UtcNow.AddHours(7);
+                slot.RecordStatus = RecordStatus.IsDeleted;
+            }
+            await _unitOfWork.SlotRepository.UpdateRangeAsync(slots);
+
+            //Delete studentSlots
+            var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => slots.Any(s => s.Id == ss.SlotId));
+            foreach (var studentSlot in studentSlots)
+            {
+                studentSlot.DeletedAt = DateTime.UtcNow.AddHours(7);
+                studentSlot.RecordStatus = RecordStatus.IsDeleted;
+            }
+            await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(studentSlots);
+
+            //Delete studentClasses
+            var studentClasses = classDetail.StudentClasses.Adapt<List<StudentClass>>();
+            foreach (var studentClass in studentClasses)
+            {
+                studentClass.DeletedAt = DateTime.UtcNow.AddHours(7);
+                studentClass.RecordStatus = RecordStatus.IsDeleted;
+            }
+            await _unitOfWork.StudentClassRepository.UpdateRangeAsync(studentClasses);
+
+            //Update student
+            var students = studentClasses.Select(sc => sc.Student).ToList();
+            foreach (var student in students)
+            {
+                if (student.CurrentClassId == classDetail.Id)
+                {
+                    student.CurrentClassId = null;
+                }
+                student.StudentStatus = StudentStatus.WaitingForClass;
+                student.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            }
+            await _unitOfWork.AccountRepository.UpdateRangeAsync(students);
+
+            var classInfo = (await _unitOfWork.ClassRepository.GetByIdAsync(classId))!;
+            classInfo.DeletedById = accountFirebaseId;
+            classInfo.DeletedAt = DateTime.UtcNow.AddHours(7);
+            classInfo.RecordStatus = RecordStatus.IsDeleted;
+
+            await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+            await _unitOfWork.SaveChangesAsync();
+        });
+
+        //if (classDetail.InstructorId != null)
+        //{
+        //    //send noti to teacher
+        //    var message = $"Lớp học {classDetail.Name} của bạn đã bị xóa!";
+        //    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, message, "");
+        //}
+
     }
 }

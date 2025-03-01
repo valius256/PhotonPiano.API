@@ -20,6 +20,7 @@ using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
 using StackExchange.Redis;
@@ -100,6 +101,11 @@ public static class IServiceCollectionExtensions
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus);
+
+
+        TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
+            .IgnoreNullValues(true);
+        
         
         return services;
     }

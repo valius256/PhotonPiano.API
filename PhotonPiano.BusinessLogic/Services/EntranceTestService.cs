@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
@@ -11,7 +12,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
-using PhotonPiano.Shared.Utils;
+
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -474,5 +475,139 @@ public class EntranceTestService : IEntranceTestService
         });
 
         return entranceTests.Adapt<List<EntranceTestDetailModel>>();
+    }
+
+    private static Level GetPianoSkillLevel(decimal bandScore) =>
+        bandScore switch
+        {
+            >= 0 and < 2.5m => Level.Beginner,
+            >= 2.5m and < 5.0m => Level.Novice,
+            >= 5.0m and < 7.5m => Level.Intermediate,
+            >= 7.5m and < 9.5m => Level.Advanced,
+            >= 9.5m and <= 10.0m => Level.Virtuoso,
+            _ => throw new BadRequestException("Band score must be between 0 and 10.")
+        };
+
+
+    public async Task UpdateStudentEntranceResults(Guid id, string studentId,
+        UpdateEntranceTestResultsModel updateModel,
+        AccountModel currentAccount)
+    {
+        var entranceTestStudent = await _unitOfWork.EntranceTestStudentRepository.FindFirstAsync(ets =>
+            ets.EntranceTestId == id
+            && ets.StudentFirebaseId == studentId);
+
+        if (entranceTestStudent is null)
+        {
+            throw new NotFoundException("Entrance test not found or student not found.");
+        }
+
+        if (!string.IsNullOrEmpty(updateModel.InstructorComment) && currentAccount.Role != Role.Instructor)
+        {
+            throw new ForbiddenMethodException("You cannot update the instructor comment.");
+        }
+
+        if (updateModel.TheoraticalScore.HasValue && currentAccount.Role != Role.Staff)
+        {
+            throw new ForbiddenMethodException("You cannot update the theoratical score.");
+        }
+
+        if (updateModel.UpdateScoreRequests.Count > 0 && currentAccount.Role != Role.Instructor)
+        {
+            throw new ForbiddenMethodException("You cannot update the practical score results.");
+        }
+
+        var entranceTest =
+            await _unitOfWork.EntranceTestRepository.FindSingleAsync(et => et.Id == id,
+                hasTrackings: false);
+
+        if (currentAccount.Role == Role.Instructor && entranceTest!.InstructorId != currentAccount.AccountFirebaseId)
+        {
+            throw new ForbiddenMethodException("You cannot update the results.");
+        }
+
+        List<EntranceTestResult> results = [];
+        decimal bandScore = 0;
+
+        if (updateModel.UpdateScoreRequests.Count > 0)
+        {
+            var criteriaIds = updateModel.UpdateScoreRequests.Select(s => s.CriteriaId);
+
+            var criterias =
+                await _unitOfWork.CriteriaRepository.FindAsync(c => criteriaIds.Contains(c.Id), hasTrackings: false);
+
+            if (criterias.Count != criteriaIds.Count())
+            {
+                throw new BadRequestException("Some criterias are not found.");
+            }
+
+            if ((await _unitOfWork.CriteriaRepository.CountAsync(c => c.For == CriteriaFor.EntranceTest,
+                    hasTrackings: false)) != criterias.Count)
+            {
+                throw new BadRequestException("Not enough criterias.");
+            }
+
+            foreach (var score in updateModel.UpdateScoreRequests)
+            {
+                var criteria = criterias.FirstOrDefault(c => c.Id == score.CriteriaId);
+                results.Add(new EntranceTestResult
+                {
+                    Id = Guid.CreateVersion7(),
+                    EntranceTestStudentId = entranceTestStudent.Id,
+                    CriteriaId = score.CriteriaId,
+                    CriteriaName = criteria?.Name,
+                    CreatedById = currentAccount.AccountFirebaseId,
+                    Score = score.Score,
+                    Weight = criteria?.Weight
+                });
+            }
+
+            decimal practicalScore = results.Aggregate(decimal.Zero,
+                (current, result) => current + result.Score!.Value * result.Weight!.Value);
+
+            bandScore = (entranceTestStudent.TheoraticalScore.HasValue
+                ? (decimal)entranceTestStudent.TheoraticalScore.Value
+                : decimal.Zero + practicalScore) / 2;
+        }
+
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            updateModel.Adapt(entranceTestStudent);
+
+            if (updateModel.UpdateScoreRequests.Count > 0)
+            {
+                entranceTestStudent.BandScore = bandScore;
+                entranceTestStudent.Level = GetPianoSkillLevel(bandScore);
+                await _unitOfWork.EntranceTestResultRepository.ExecuteDeleteAsync(etr =>
+                    etr.EntranceTestStudentId == entranceTestStudent.Id);
+                await _unitOfWork.EntranceTestResultRepository.AddRangeAsync(results);
+            }
+
+            if (updateModel.TheoraticalScore.HasValue)
+            {
+                var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
+                    hasTrackings: false);
+                
+                decimal practicalScore = dbResults.Aggregate(decimal.Zero,
+                    (current, result) => current + result.Score!.Value * result.Weight!.Value);
+                
+                decimal theoryScore = updateModel.TheoraticalScore.HasValue 
+                    ? Convert.ToDecimal(updateModel.TheoraticalScore.Value) 
+                    : decimal.Zero;
+
+
+                bandScore = (theoryScore + practicalScore) / 2;
+                
+                entranceTestStudent.BandScore = bandScore;
+                entranceTestStudent.Level = GetPianoSkillLevel(bandScore);
+            }
+
+            entranceTestStudent.UpdateById = currentAccount.AccountFirebaseId;
+            entranceTestStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
+        });
+
+        await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
+            "Điểm thi đầu vào của bạn vừa được cập nhật", "");
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -55,6 +56,7 @@ public static class ServiceCollectionExtensions
 
         TypeAdapterConfig<UpdateEntranceTestModel, EntranceTest>.NewConfig().IgnoreNullValues(true);
         TypeAdapterConfig<UpdateAccountModel, Account>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<UpdateEntranceTestResultsModel, EntranceTestStudent>.NewConfig().IgnoreNullValues(true);
         return services;
     }
 }

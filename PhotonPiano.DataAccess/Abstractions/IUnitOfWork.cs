@@ -36,6 +36,8 @@ public interface IUnitOfWork
     INotificationRepository NotificationRepository { get; }
 
     IAccountNotificationRepository AccountNotificationRepository { get; }
+    
+    IEntranceTestResultRepository EntranceTestResultRepository { get; }
 
     Task<int> SaveChangesAsync();
 

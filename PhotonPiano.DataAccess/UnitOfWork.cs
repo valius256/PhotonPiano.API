@@ -39,6 +39,8 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<ITransactionRepository> _transactionRepository;
 
     private readonly Lazy<ITuitionRepository> _tuitionRepository;
+    
+    private readonly Lazy<IEntranceTestResultRepository> _entranceTestResultRepository;
 
     private IDbContextTransaction? _currentTransaction;
 
@@ -63,6 +65,7 @@ public class UnitOfWork : IUnitOfWork
         _applicationRepository = new Lazy<IApplicationRepository>(() => new ApplicationRepository(context));
         _accountNotificationRepository =
             new Lazy<IAccountNotificationRepository>(() => new AccountNotificationRepository(context));
+        _entranceTestResultRepository = new Lazy<IEntranceTestResultRepository>(() => new EntranceTestResultRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -96,6 +99,8 @@ public class UnitOfWork : IUnitOfWork
     public INotificationRepository NotificationRepository => _notificationRepository.Value;
 
     public IAccountNotificationRepository AccountNotificationRepository => _accountNotificationRepository.Value;
+    
+    public IEntranceTestResultRepository EntranceTestResultRepository => _entranceTestResultRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

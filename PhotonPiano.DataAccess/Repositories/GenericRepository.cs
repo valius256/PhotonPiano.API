@@ -37,16 +37,20 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return await _context.Set<T>().AnyAsync(expression);
     }
 
-    public Task DeleteAsync(T TEntity)
+    public async Task DeleteAsync(T TEntity)
     {
-        _context.Remove(TEntity);
-        return Task.CompletedTask;
+        TEntity.DeletedAt = DateTime.UtcNow.AddHours(7);
+        TEntity.RecordStatus = RecordStatus.IsDeleted;
+        _context.Update(TEntity);
+        await _context.SaveChangesAsync();
     }
 
     public async Task ExecuteDeleteAsync(Expression<Func<T, bool>> expression)
     {
         await _context.Set<T>().Where(expression)
-            .ExecuteDeleteAsync();
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(e => e.DeletedAt, e => DateTime.UtcNow.AddHours(7))
+                .SetProperty(e => e.RecordStatus, e => RecordStatus.IsDeleted));
     }
 
     public async Task<int> ExecuteUpdateAsync(Expression<Func<T, bool>> expression, Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateExpression,

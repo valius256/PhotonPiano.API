@@ -116,18 +116,31 @@ public class ApplicationService : IApplicationService
         }
 
         // if student have class, remove student from class
-        // if (currentAccount.CurrentClassId is not null)
-        // {
-        //     await _unitOfWork.ExecuteInTransactionAsync()
-        // }
-
-
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        if (currentAccount.CurrentClassId is not null)
         {
-            await _unitOfWork.ApplicationRepository.AddAsync(application);
-        });
+            var result =  _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(x =>
+                    x.StudentFirebaseId == currentAccount.AccountFirebaseId);
 
+                await _unitOfWork.StudentClassRepository.ExecuteDeleteAsync(x =>
+                    x.StudentFirebaseId == currentAccount.AccountFirebaseId);
+
+                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
+                    account => account.AccountFirebaseId == currentAccount.AccountFirebaseId,
+                    set => set.SetProperty(account => account.CurrentClassId, account => (Guid?)null)
+                );
+                
+                await _unitOfWork.ApplicationRepository.AddAsync(application);
+            });
+
+            await Task.WhenAll(result);
+        }
+        
         await NotifyStaffsAsync(application, currentAccount);
+
+        if (currentAccount.CurrentClassId != null)
+            await _serviceFactory.RedisCacheService.DeleteByPatternAsync($"*{currentAccount.CurrentClassId}*");
 
         return await GetApplicationDetailsAsync(application.Id);
     }
@@ -153,14 +166,5 @@ public class ApplicationService : IApplicationService
             false,
             option: TrackingOption.IdentityResolution))!;
     }
-
-    protected async Task HandleApplication(Application application)
-    {
-        switch (application.Type)
-        {
-            case ApplicationType.RefundTuition:
-
-                break;
-        }
-    }
+    
 }

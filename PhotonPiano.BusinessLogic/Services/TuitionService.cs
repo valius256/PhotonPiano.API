@@ -147,17 +147,22 @@ public class TuitionService : ITuitionService
             t.StudentClassId == currentStudentClass.Id && t.PaymentStatus == PaymentStatus.Successed);
         if (currentTuitionHasPaid is null) throw new NotFoundException("This student has not paid for this class yet.");
 
-        var allSlotInClassWithCurrentMonth =
-            await _unitOfWork.SlotRepository.FindProjectedAsync<Slot>(c => c.ClassId == currentStudentClass.ClassId
-                                                                           && c.Date.Month == currentTime.Month &&
-                                                                           c.Date.Year == currentTime.Year);
-        var numOfSlotNotStarted = allSlotInClassWithCurrentMonth
-            .Where(x => x.SlotStudents.Where(ss => ss.StudentFirebaseId == studentId).Count() == 0).Count();
+        var allSlotsInClass =
+            await _unitOfWork.SlotRepository.FindProjectedAsync<Slot>(s => s.ClassId == currentStudentClass.ClassId);
+
+        var slotsInCurrentMonth = allSlotsInClass
+            .Where(s => s.Date.Month == currentTime.Month && s.Date.Year == currentTime.Year)
+            .ToList();
+
+        var numOfSlotHaveAttended = slotsInCurrentMonth
+            .Count(slot => slot.SlotStudents.Any(ss =>
+                ss.StudentFirebaseId == studentId && ss.AttendanceStatus != AttendanceStatus.NotYet));
+
 
         var systemConfigValue =
             await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(
                 (int)currentStudentClass.Class.Level + 1);
-        var refundAmount = systemConfigValue.PriceOfSlot * numOfSlotNotStarted;
+        var refundAmount = systemConfigValue.PriceOfSlot * numOfSlotHaveAttended;
 
         return currentTuitionHasPaid.Amount - refundAmount;
     }
@@ -177,7 +182,7 @@ public class TuitionService : ITuitionService
 
         // Get all ongoing classes
         var ongoingClasses =
-            await _unitOfWork.ClassRepository.FindProjectedAsync<Class>(c => c.Status == ClassStatus.Ongoing);
+            await _unitOfWork.ClassRepository.FindProjectedAsync<Class>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true);
         var ongoingClassIds = ongoingClasses.Select(x => x.Id).ToList();
 
         var studentClasses = await _unitOfWork.StudentClassRepository.FindProjectedAsync<StudentClass>(

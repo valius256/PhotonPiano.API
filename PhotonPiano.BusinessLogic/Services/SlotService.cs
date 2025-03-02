@@ -40,26 +40,6 @@ public class SlotService : ISlotService
 
         return shiftStartTime;
     }
-    
-    public TimeOnly GetShiftEndTime(Shift shift)
-    {
-        var shiftStartTimes = new Dictionary<Shift, TimeOnly>
-        {
-            { Shift.Shift1_7h_8h30, new TimeOnly(8, 30) },
-            { Shift.Shift2_8h45_10h15, new TimeOnly(10, 45) },
-            { Shift.Shift3_10h45_12h, new TimeOnly(12, 00) },
-            { Shift.Shift4_12h30_14h00, new TimeOnly(14, 00) },
-            { Shift.Shift5_14h15_15h45, new TimeOnly(15, 45) },
-            { Shift.Shift6_16h00_17h30, new TimeOnly(17, 30) },
-            { Shift.Shift7_18h_19h30, new TimeOnly(19, 30) },
-            { Shift.Shift8_19h45_21h15, new TimeOnly(21, 15) }
-        };
-
-        if (!shiftStartTimes.TryGetValue(shift, out var shiftStartTime))
-            throw new InvalidOperationException("Invalid shift value.");
-
-        return shiftStartTime;
-    }
 
     public async Task<SlotDetailModel> GetSLotDetailById(Guid id, AccountModel? accountModel = default)
     {
@@ -97,11 +77,10 @@ public class SlotService : ISlotService
     public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
         var cacheKey =
-            $"GetWeeklyScheduleAsync:{slotModel.StartTime}:{slotModel.EndTime}:{accountModel.AccountFirebaseId}";
+            $"GetWeeklyScheduleAsync:{slotModel.StartTime}:{slotModel.EndTime}:{accountModel.CurrentClassId}";
 
         if (accountModel.Role != Role.Staff && slotModel.IsFilterEmpty())
         {
-           
             var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
             if (cachedResult != null) return cachedResult;
         }
@@ -145,7 +124,7 @@ public class SlotService : ISlotService
 
         // todo: if role is staff so no need to cache cause the filter is only applied in role staff 
 
-         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
+        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
 
         return result;
     }
@@ -169,17 +148,38 @@ public class SlotService : ISlotService
         var currentDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var currentTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
 
-        var allSlotsForToday = await _unitOfWork.SlotRepository.FindAsync(s => s.Date == currentDate);
+        var pastSlots = await _unitOfWork.SlotRepository.FindAsync(s => s.Date < currentDate);
 
-        foreach (var slot in allSlotsForToday)
+        foreach (var slot in pastSlots) slot.Status = SlotStatus.Finished;
+
+        var todaySlots = await _unitOfWork.SlotRepository.FindAsync(s => s.Date == currentDate);
+
+        foreach (var slot in todaySlots)
         {
             var shiftEndTime = GetShiftEndTime(slot.Shift);
-            if (currentTime > shiftEndTime)
-            {
-                slot.Status = SlotStatus.Finished;
-            }
+            if (currentTime > shiftEndTime) slot.Status = SlotStatus.Finished;
         }
 
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    public TimeOnly GetShiftEndTime(Shift shift)
+    {
+        var shiftStartTimes = new Dictionary<Shift, TimeOnly>
+        {
+            { Shift.Shift1_7h_8h30, new TimeOnly(8, 30) },
+            { Shift.Shift2_8h45_10h15, new TimeOnly(10, 45) },
+            { Shift.Shift3_10h45_12h, new TimeOnly(12, 00) },
+            { Shift.Shift4_12h30_14h00, new TimeOnly(14, 00) },
+            { Shift.Shift5_14h15_15h45, new TimeOnly(15, 45) },
+            { Shift.Shift6_16h00_17h30, new TimeOnly(17, 30) },
+            { Shift.Shift7_18h_19h30, new TimeOnly(19, 30) },
+            { Shift.Shift8_19h45_21h15, new TimeOnly(21, 15) }
+        };
+
+        if (!shiftStartTimes.TryGetValue(shift, out var shiftStartTime))
+            throw new InvalidOperationException("Invalid shift value.");
+
+        return shiftStartTime;
     }
 }

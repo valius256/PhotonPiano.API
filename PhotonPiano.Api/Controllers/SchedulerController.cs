@@ -4,6 +4,7 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Scheduler;
 using PhotonPiano.Api.Responses.EntranceTest;
+using PhotonPiano.Api.Responses.Scheduler;
 using PhotonPiano.Api.Responses.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;

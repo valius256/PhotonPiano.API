@@ -41,7 +41,7 @@ public class ClassService : IClassService
         return classDetail with { 
             MinimumStudents = minStudents,
             Capacity = maxStudents,
-            InstructorName = classDetail.Instructor?.Name,
+            InstructorName = classDetail.Instructor?.FullName,
             RequiredSlots = config.TotalSlot,
             StudentNumber = classDetail.StudentClasses.Count,     
             SlotsPerWeek = config.NumOfSlotInWeek,
@@ -66,7 +66,7 @@ public class ClassService : IClassService
         {
             MinimumStudents = minStudents,
             Capacity = maxStudents,
-            InstructorName = classDetail.Instructor?.Name,
+            InstructorName = classDetail.Instructor?.FullName,
             RequiredSlots = config.TotalSlot,
             StudentNumber = classDetail.StudentClasses.Count,
         };
@@ -146,7 +146,7 @@ public class ClassService : IClassService
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
                 TotalSlots = q.Slots.Count(),
-                Instructor = q.Instructor.Adapt<AccountSimpleModel>()
+                Instructor = q.Instructor.Adapt<AccountSimpleModel>(),
                 MinimumStudents = minStudents
             })
             .ToListAsync();

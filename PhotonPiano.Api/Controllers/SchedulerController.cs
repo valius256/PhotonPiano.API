@@ -2,6 +2,7 @@ using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Scheduler;
+using PhotonPiano.Api.Responses.Scheduler;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -27,7 +28,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get All Slots in this Week")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {
-        
+
         if (CurrentAccount != null)
         {
             var result =
@@ -46,7 +47,7 @@ public class SchedulerController : BaseController
     public async Task<ActionResult> GetAttendanceStatus([FromRoute] Guid slotId)
     {
         var result = await _serviceFactory.SlotService.GetAttendanceStatusAsync(slotId);
-        return Ok(result);
+        return Ok(result.Adapt<List<StudentAttendanceResponse>>());
     }
 
     [HttpGet("slot/{id}")]

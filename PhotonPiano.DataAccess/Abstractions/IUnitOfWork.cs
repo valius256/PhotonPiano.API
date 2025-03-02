@@ -37,6 +37,8 @@ public interface IUnitOfWork
 
     IAccountNotificationRepository AccountNotificationRepository { get; }
 
+    IStudentClassScoreRepository StudentClassScoreRepository { get; }
+
     Task<int> SaveChangesAsync();
 
     Task<IDbContextTransaction> BeginTransactionAsync();

@@ -659,4 +659,14 @@ public class ClassService : IClassService
         //}
 
     }
+
+    public Task PublishClass(Guid classId, string accountFirebaseId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task ScheduleClass(ScheduleClassModel scheduleClassModel, string accountFirebaseId)
+    {
+        throw new NotImplementedException();
+    }
 }

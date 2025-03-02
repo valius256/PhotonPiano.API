@@ -21,4 +21,8 @@ public interface IClassService
     Task UpdateClass(UpdateClassModel model, string accountFirebaseId);
 
     Task DeleteClass(Guid classId, string accountFirebaseId);
+
+    Task PublishClass(Guid classId, string accountFirebaseId);
+
+    Task ScheduleClass(ScheduleClassModel scheduleClassModel, string accountFirebaseId);
 }

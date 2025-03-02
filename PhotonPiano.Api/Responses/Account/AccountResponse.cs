@@ -21,4 +21,5 @@ public record AccountResponse
     public AccountStatus Status { get; init; }
     public DateTime? RegistrationDate { get; init; }
     public RecordStatus RecordStatus { get; init; }
+    public Guid? CurrentClassId { get; set; }
 }

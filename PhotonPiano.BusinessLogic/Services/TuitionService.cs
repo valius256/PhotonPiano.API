@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
@@ -336,7 +337,7 @@ public class TuitionService : ITuitionService
     }
 
 
-    public async Task CreateTuitionWhenRegisterClass(List<StudentClass> models, List<Slot> slots)
+    public async Task CreateTuitionWhenRegisterClass(ClassDetailModel classDetailModel)
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
         var utcNowConvert = DateOnly.FromDateTime(utcNow);
@@ -345,13 +346,13 @@ public class TuitionService : ITuitionService
         var enDateConvert = DateOnly.FromDateTime(endDate);
 
         var tuitions = new List<Tuition>();
-        foreach (var studentClass in models)
+        foreach (var studentClass in classDetailModel.StudentClasses)
         {
             var sysConfigValue = await _serviceFactory.SystemConfigService
-                .GetSystemConfigValueBaseOnLevel((int)studentClass.Class.Level + 1);
+                .GetSystemConfigValueBaseOnLevel((int)classDetailModel.Level + 1);
 
             var numOfSlotTillEndMonth =
-                slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
+                classDetailModel.Slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
             var tuition = new Tuition
             {
                 Id = Guid.NewGuid(),

@@ -39,6 +39,8 @@ public interface IUnitOfWork
     
     IEntranceTestResultRepository EntranceTestResultRepository { get; }
 
+    IStudentClassScoreRepository StudentClassScoreRepository { get; }
+
     Task<int> SaveChangesAsync();
 
     Task<IDbContextTransaction> BeginTransactionAsync();

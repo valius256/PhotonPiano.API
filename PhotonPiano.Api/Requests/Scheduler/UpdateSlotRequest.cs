@@ -1,0 +1,16 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.DataAccess.Models.Enum;
+using System.ComponentModel.DataAnnotations;
+
+namespace PhotonPiano.Api.Requests.Scheduler
+{
+    public record UpdateSlotRequest
+    {
+        [Required]
+        public required Guid Id { get; init; }
+        public Shift? Shift { get; init; }
+        public DateOnly? Date { get; init; }
+        public Guid? RoomId { get; init; }
+
+    }
+}

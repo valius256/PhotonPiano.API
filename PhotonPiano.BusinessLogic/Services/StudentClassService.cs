@@ -22,17 +22,15 @@ namespace PhotonPiano.BusinessLogic.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task ChangeClassOfStudent(CreateStudentClassModel changeClassModel, string accountFirebaseId)
+        public async Task ChangeClassOfStudent(ChangeClassModel changeClassModel, string accountFirebaseId)
         {
-            var oldStudentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.StudentFirebaseId == changeClassModel.StudentFirebaseId && sc.ClassId == changeClassModel.ClassId);
+            var oldStudentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.StudentFirebaseId == changeClassModel.StudentFirebaseId && sc.ClassId == changeClassModel.OldClassId);
             if (oldStudentClass is null)
             {
                 throw new NotFoundException("Student class not found");
             }
             var oldClassInfo = (await _unitOfWork.ClassRepository.Entities.Include(oc => oc.StudentClasses)
                 .SingleOrDefaultAsync(oc => oc.Id == oldStudentClass.ClassId))!;
-
-            
 
             var student = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == changeClassModel.StudentFirebaseId);
             if (student is null)
@@ -47,7 +45,7 @@ namespace PhotonPiano.BusinessLogic.Services
             var classInfo = await _unitOfWork.ClassRepository.Entities
                 .Include(c => c.StudentClasses)
                 .Include(c => c.Slots)
-                .FirstOrDefaultAsync(c => c.Id == changeClassModel.ClassId);
+                .FirstOrDefaultAsync(c => c.Id == changeClassModel.NewClassId);
             if (classInfo is null)
             {
                 throw new NotFoundException("Class not found");
@@ -77,16 +75,12 @@ namespace PhotonPiano.BusinessLogic.Services
                 StudentFirebaseId = changeClassModel.StudentFirebaseId
             });
 
-
-            var studentClass = changeClassModel.Adapt<StudentClass>();
-            studentClass.CreatedById = accountFirebaseId;
-            studentClass.IsPassed = false;
             student.CurrentClassId = classInfo.Id;
 
-            //Delete old studentClass
-            oldStudentClass.RecordStatus = RecordStatus.IsDeleted;
-            oldStudentClass.DeletedById = accountFirebaseId;
-            oldStudentClass.DeletedAt = DateTime.UtcNow.AddHours(7);
+            //Update old studentClass
+            oldStudentClass.ClassId = changeClassModel.NewClassId;
+            oldStudentClass.UpdateById = accountFirebaseId;
+            oldStudentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
             //Delete old studentSlots
             var oldSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
@@ -99,22 +93,13 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
-            {
-                var addedStudentClass = await _unitOfWork.StudentClassRepository.AddAsync(studentClass);
-
-                //Change student class score to preserve to score
-                var studentClassScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == oldStudentClass.Id);
-                foreach (var studentClassScore in studentClassScores)
-                {
-                    studentClassScore.StudentClassId = studentClass.Id;
-                }
-                await _unitOfWork.StudentClassScoreRepository.UpdateRangeAsync(studentClassScores);
-                
+            {                
                 await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
                 await _unitOfWork.AccountRepository.UpdateAsync(student);
+                await _unitOfWork.StudentClassRepository.UpdateAsync(oldStudentClass);
+
                 //Delete
                 await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(oldStudentSlots);
-                await _unitOfWork.StudentClassRepository.UpdateAsync(oldStudentClass);
                 await _unitOfWork.SaveChangesAsync();
             });
             //Notification
@@ -255,7 +240,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new BadRequestException("Class is finished");
             }
             student.StudentStatus = isExpelled ? StudentStatus.DropOut : StudentStatus.WaitingForClass;
-
+            student.CurrentClassId = null;
             //Delete studentClass
             studentClass.RecordStatus = RecordStatus.IsDeleted;
             studentClass.DeletedById = accountFirebaseId;

@@ -10,6 +10,8 @@ public interface IClassService
 
     Task<ClassDetailModel> GetClassDetailById(Guid id);
 
+    Task<ClassScoreboardModel> GetClassScoreboard(Guid id);
+
     Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role);
 
     Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId);

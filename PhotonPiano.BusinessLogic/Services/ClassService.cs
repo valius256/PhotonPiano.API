@@ -48,6 +48,30 @@ public class ClassService : IClassService
         };
     }
 
+    public async Task<ClassScoreboardModel> GetClassScoreboard(Guid id)
+    {
+        var minStudents =
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+        var maxStudents =
+           int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+
+
+        var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassScoreboardModel>(c => c.Id == id);
+        if (classDetail is null) throw new NotFoundException("Class not found");
+
+        var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
+
+        return classDetail with
+        {
+            MinimumStudents = minStudents,
+            Capacity = maxStudents,
+            InstructorName = classDetail.Instructor?.Name,
+            RequiredSlots = config.TotalSlot,
+            StudentNumber = classDetail.StudentClasses.Count,
+        };
+    }
+
+    
     public async Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role)
     {
         List<ClassModel> result;
@@ -213,63 +237,18 @@ public class ClassService : IClassService
             var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)level + 1);
             levelConfigs.Add(config);
         }
+        //Get day-offs
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
+        //Initialize a list to store unadded slots (for conflict check)
+        var unaddedSlots = new List<Slot>();
         //With each class, we will pick a random schedule for it!
         foreach (var classDraft in classes)
         {
             var levelConfig = levelConfigs[(int)classDraft.Level];
-
-            //Pick n day(s) of the week based on the config
             var dayFrames = GetRandomDays(levelConfig.NumOfSlotInWeek);
-
-            //Pick a random shift in the passed shift list
-            var pickedShift = arrangeClassModel.AllowedShifts[random.Next(arrangeClassModel.AllowedShifts.Count - 1)];
-
-            int maxAttempt = 100, attempt = 1; //Avoid infinite loop
-            var availableRooms = new List<RoomModel>();
-
-            var dates = new HashSet<DateOnly>();
-            var currentDate = arrangeClassModel.StartWeek;
-            int slotCount = 0;
-            while (slotCount < levelConfig.TotalSlot)
-            {
-                foreach (var frame in dayFrames)
-                {
-                    var date = currentDate.AddDays((int)frame);
-
-                    if (!dayOffs.Any(dayOff =>
-                        date.ToDateTime(TimeOnly.MinValue) >= dayOff.StartTime &&
-                        date.ToDateTime(TimeOnly.MaxValue) <= dayOff.EndTime))
-                    {
-                        dates.Add(date);
-                        slotCount++;
-
-                        if (slotCount >= levelConfig.TotalSlot)
-                            break;
-                    }
-                }
-                currentDate = currentDate.AddDays(7); // Move to the next week
-            }
-
-            //Check available rooms -- If not, iterate
-            while (availableRooms.Count == 0 && attempt < maxAttempt)
-            {
-                availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates);
-                attempt++;
-                if (attempt >= maxAttempt)
-                    throw new ConflictException(
-                        "Unable to complete arranging classes! No available rooms found! Consider different start week or change the shift range");
-            }
-
-            //Pick a room
-            var room = availableRooms[random.Next(availableRooms.Count - 1)];
-
-            classDraft.Slots.AddRange(dates.Select(d => new CreateSlotThroughArrangementModel
-            {
-                Date = d,
-                Shift = pickedShift,
-                RoomId = room.Id
-            }).OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList());
+            var slot = await ScheduleAClassAutomatically(arrangeClassModel, dayOffs, dayFrames, levelConfig, unaddedSlots);
+            classDraft.Slots.AddRange(slot);
+            unaddedSlots.AddRange(slot.Adapt<Slot>());
         }
 
         //4. Now save them to database
@@ -373,9 +352,7 @@ public class ClassService : IClassService
             var capacity =
                 int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
 
-            // create 1st tuition for students in class
-            if (studentClasses.Any())
-                await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(studentClasses, slots);
+            
 
 
             return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with
@@ -660,13 +637,209 @@ public class ClassService : IClassService
 
     }
 
-    public Task PublishClass(Guid classId, string accountFirebaseId)
+    public async Task PublishClass(Guid classId, string accountFirebaseId)
     {
-        throw new NotImplementedException();
+        var classDetail = await GetClassDetailById(classId);
+        var classInfo = (await _unitOfWork.ClassRepository.GetByIdAsync(classId));
+        if (classDetail is null || classInfo is null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        if (classDetail.IsPublic)
+        {
+            throw new BadRequestException("Class is already announced!");
+        }
+
+        classInfo.IsPublic = true;
+        classInfo.UpdateById = accountFirebaseId;
+        classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+        //Add studentClassScore
+        var studentClassScores = new List<StudentClassScore>();
+        var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
+        foreach (var studentClass in classDetail.StudentClasses)
+        {
+            foreach (var criterion in criteria)
+            {
+                studentClassScores.Add(new StudentClassScore
+                {
+                    Id = Guid.NewGuid(),
+                    StudentClassId = studentClass.Id,
+                    CriteriaId = criterion.Id
+                });
+            }
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+            await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(studentClassScores);
+            await _unitOfWork.SaveChangesAsync();
+
+            // create 1st tuition for students in class
+            if (classDetail.StudentClasses.Count > 0)
+                await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
+        });
+
+        //Notification
+        if (classInfo.IsPublic)
+        {
+            if (classInfo.InstructorId != null)
+            {
+                await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, "Thông tin lớp mới",
+                $"Bạn đã được giao cho phụ trách lớp mới {classInfo.Name}, LEVEL {classInfo.Level + 1}. Vui lòng kiểm tra lại lịch học. Chúc bạn và lớp làm việc hiệu quả và thành công!");
+            }
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(classDetail.StudentClasses.Select(c => c.StudentFirebaseId).ToList(),
+                $"Chúc mừng bạn đã được xếp vào lớp {classInfo.Name}, LEVEL {classInfo.Level + 1}. Vui lòng kiểm tra lại lịch học. Chúc bạn đạt được nhiều thành công!", "");
+        }
     }
 
-    public Task ScheduleClass(ScheduleClassModel scheduleClassModel, string accountFirebaseId)
+    public async Task ScheduleClass(ScheduleClassModel scheduleClassModel, string accountFirebaseId)
     {
-        throw new NotImplementedException();
+        if (!scheduleClassModel.IsValidDayOfWeeks())
+        {
+            throw new BadRequestException("Days of week is not correct");
+        }
+        if (scheduleClassModel.StartWeek.DayOfWeek != DayOfWeek.Monday)
+        {
+            throw new BadRequestException("StartWeek must be monday");
+        }
+        if (scheduleClassModel.StartWeek <= DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
+        {
+            throw new BadRequestException("Please choose start week in the future");
+        }
+        var classDetail = await GetClassDetailById(scheduleClassModel.Id);
+
+        if (classDetail is null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+
+        if (classDetail.Status != ClassStatus.NotStarted)
+        {
+            throw new BadRequestException("Class must not be started to use this feature");
+        }
+
+        if (classDetail.Slots.Count > 0)
+        {
+            throw new BadRequestException("Class must not have any slots to use this feature");
+        }
+
+        //Construct slots and check for conflicts
+        var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
+        var levelConfig = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
+        var slots = (await ScheduleAClassAutomatically(new ArrangeClassModel
+        {
+            AllowedShifts = [scheduleClassModel.Shift],
+            StartWeek = scheduleClassModel.StartWeek,
+            
+        }, dayOffs, scheduleClassModel.DayOfWeeks, levelConfig));
+
+        var mappedSlots = slots.Select(s => new Slot
+        {
+            Id = Guid.NewGuid(),
+            Shift = s.Shift,
+            Date = s.Date,
+            RoomId = s.RoomId,
+            ClassId = classDetail.Id
+        }).ToList();
+        //Add studentSlots
+        var slotStudents = new List<SlotStudent>();
+        foreach (var slot in mappedSlots)
+        {
+            foreach (var studentClass in classDetail.StudentClasses)
+            {
+                slotStudents.Add(new SlotStudent
+                {
+                    CreatedById = accountFirebaseId,
+                    SlotId = slot.Id,
+                    StudentFirebaseId = studentClass.StudentFirebaseId,
+                    AttendanceStatus = AttendanceStatus.NotYet
+                });
+            }
+        }
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.SlotRepository.AddRangeAsync(mappedSlots);
+            await _unitOfWork.SlotStudentRepository.AddRangeAsync(slotStudents);
+            await _unitOfWork.SaveChangesAsync();
+        });
+
+        //Notification
+        if (classDetail.IsPublic)
+        {
+            var receiverIds = new List<string>();
+            if (classDetail.InstructorId != null)
+            {
+                receiverIds.Add(classDetail.InstructorId);
+            }
+            receiverIds.AddRange(classDetail.StudentClasses.Select(s => s.StudentFirebaseId).ToList());
+
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
+                $"Lớp {classDetail.Name} đã cập nhật lịch học mới. Vui lòng kiểm tra lại. Chúc bạn đạt được nhiều thành công!", "");
+        }
+        
+    }
+
+    private async Task<List<CreateSlotThroughArrangementModel>> ScheduleAClassAutomatically(
+        ArrangeClassModel arrangeClassModel, 
+        List<DayOff> dayOffs, List<DayOfWeek> dayFrames, 
+        GetSystemConfigOnLevelModel levelConfig,
+        List<Slot>? otherSlots = null)
+    {
+        otherSlots ??= [];
+        var r = new Random();
+        //Pick a random shift in the passed shift list
+        var pickedShift = arrangeClassModel.AllowedShifts[r.Next(arrangeClassModel.AllowedShifts.Count - 1)];
+
+        int maxAttempt = 100, attempt = 1; //Avoid infinite loop
+        var availableRooms = new List<RoomModel>();
+
+        var dates = new HashSet<DateOnly>();
+        var currentDate = arrangeClassModel.StartWeek;
+        int slotCount = 0;
+        while (slotCount < levelConfig.TotalSlot)
+        {
+            foreach (var frame in dayFrames)
+            {
+                var date = currentDate.AddDays((int)frame);
+
+                if (!dayOffs.Any(dayOff =>
+                        date.ToDateTime(TimeOnly.MinValue) >= dayOff.StartTime &&
+                        date.ToDateTime(TimeOnly.MaxValue) <= dayOff.EndTime)
+                    && !otherSlots.Any(s => s.Shift == pickedShift && s.Date == date))
+                {
+                    dates.Add(date);
+                    slotCount++;
+
+                    if (slotCount >= levelConfig.TotalSlot)
+                        break;
+                }
+            }
+            currentDate = currentDate.AddDays(7); // Move to the next week
+        }
+
+        //Check available rooms -- If not, iterate
+        while (availableRooms.Count == 0 && attempt < maxAttempt)
+        {
+            availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates);
+            attempt++;
+            if (attempt >= maxAttempt)
+                throw new ConflictException(
+                    "Unable to complete arranging classes! No available rooms found! Consider different start week or change the shift range");
+        }
+        
+        
+
+        //Pick a room
+        var room = availableRooms[r.Next(availableRooms.Count - 1)];
+        var result = dates.Select(d => new CreateSlotThroughArrangementModel
+        {
+            Date = d,
+            Shift = pickedShift,
+            RoomId = room.Id
+        }).OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList();
+
+        return result;
     }
 }

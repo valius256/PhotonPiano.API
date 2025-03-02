@@ -7,10 +7,15 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
     {
         public required Guid Id { get; init; }
 
+        public DateOnly StartWeek {  get; init; }
+
         public List<DayOfWeek> DayOfWeeks { get; init; } = [];
 
         public Shift Shift { get; init; }
 
-        public Guid? RoomId { get; init; }
+        public bool IsValidDayOfWeeks()
+        {
+            return DayOfWeeks.All(d => Enum.IsDefined(typeof(DayOfWeek), d));
+        }
     }
 }

@@ -1,3 +1,5 @@
+using PhotonPiano.DataAccess.Models.Enum;
+
 namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 
 public record EntranceTestStudentModel
@@ -10,7 +12,9 @@ public record EntranceTestStudentModel
     
     public decimal? BandScore { get; init; }
     
-    public int? Rank { get; init; }
+    public Level? Level { get; init; }
+    
+    public double? TheoraticalScore { get; init; }
 
     public int? Year { get; init; }
     

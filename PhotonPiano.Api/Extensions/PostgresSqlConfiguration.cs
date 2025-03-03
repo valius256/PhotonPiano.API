@@ -18,6 +18,10 @@ public class PostgresSqlConfiguration
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             // Execute SQL after DbContext is fully configured
             context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS unaccent;");
+            context.Database.ExecuteSqlRaw(
+                "UPDATE \"Account\" SET \"CurrentClassId\" = (SELECT \"ClassId\" FROM \"StudentClass\" WHERE \"StudentClass\".\"StudentFirebaseId\" = \"Account\".\"AccountFirebaseId\" LIMIT 1) WHERE \"Role\" = 1"
+            );
+
         }
     }
 }

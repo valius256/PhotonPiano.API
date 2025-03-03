@@ -8,6 +8,7 @@ using PhotonPiano.Api.Requests.Query;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
@@ -153,5 +154,17 @@ public class EntranceTestsController : BaseController
                 request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!);
 
         return Created(nameof(AutoArrangeEntranceTests), result.Adapt<List<EntranceTestDetailResponse>>());
+    }
+
+    [HttpPut("{id}/students/{student-id}/results")]
+    [EndpointDescription("Update student entrance test results")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    public async Task<ActionResult> UpdateStudentEntranceResults([FromRoute] Guid id,
+        [FromRoute(Name = "student-id")] string studentId,
+        [FromBody] UpdateEntranceTestResultsRequest updateRequest)
+    {
+        await _serviceFactory.EntranceTestService.UpdateStudentEntranceResults(id, studentId,
+            updateRequest.Adapt<UpdateEntranceTestResultsModel>(), base.CurrentAccount!);
+        return NoContent();
     }
 }

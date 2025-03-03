@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
@@ -19,8 +20,9 @@ public interface ITuitionService
 
     Task<TuitionWithStudentClassModel> GetTuitionById(Guid tuitionId);
 
-    Task CreateTuitionWhenRegisterClass(List<StudentClass> models, List<Slot> slots);
+    Task CreateTuitionWhenRegisterClass(ClassDetailModel classDetailModel);
 
+    Task<decimal> GetTuitionRefundAmount(string studentId, Guid? classId);
 
     // Cron job
     Task CronAutoCreateTuition();

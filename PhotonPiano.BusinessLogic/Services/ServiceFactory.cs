@@ -61,6 +61,8 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<ITuitionService> _tutionService;
 
+    private readonly Lazy<IStudentClassService> _studentClassService;
+
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
@@ -90,7 +92,7 @@ public class ServiceFactory : IServiceFactory
         _pinataService = new Lazy<IPinataService>(() => new PinataService(configuration, httpClientFactory));
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
-
+        _studentClassService = new Lazy<IStudentClassService>(() => new StudentClassService(this, unitOfWork));
         // _logger.LogInformation("ServiceFactory has been initialized.");
     }
 
@@ -135,4 +137,6 @@ public class ServiceFactory : IServiceFactory
     public INotificationService NotificationService => _notificationService.Value;
 
     public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
+
+    public IStudentClassService StudentClassService => _studentClassService.Value;
 }

@@ -22,6 +22,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
 using StackExchange.Redis;
@@ -99,6 +100,15 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
         TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
+            .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
+            .Map(dest => dest.Status, src => src.RecordStatus);
+
+
+        TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
+            .IgnoreNullValues(true);
+        
+        
         return services;
     }
 
@@ -169,7 +179,7 @@ public static class IServiceCollectionExtensions
         services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseNpgsql(GetConnectionString(configuration));
-            options.EnableSensitiveDataLogging();
+            options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
             options.EnableDetailedErrors();
         });
 
@@ -268,22 +278,20 @@ public static class IServiceCollectionExtensions
             cf.TimeZoneResolver = new DefaultTimeZoneResolver();
 
             var recurringJobManager = service.GetRequiredService<IRecurringJobManager>();
-            
-            
-            
+
+
             //  recurring job
             recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
                 x => x.CronAutoCreateTuition(),
                 Cron.Monthly);
-            
+
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                 x => x.CronForTuitionReminder(),
                 Cron.Monthly(15));
-            
-            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus", 
+
+            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
                 x => x.CronJobAutoChangeSlotStatus(),
                 Cron.Hourly());
-            
         });
 
 

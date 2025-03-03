@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
@@ -135,6 +136,39 @@ public class TuitionService : ITuitionService
     }
 
 
+    public async Task<decimal> GetTuitionRefundAmount(string studentId, Guid? classId)
+    {
+        var currentTime = DateTime.UtcNow.AddHours(7);
+        var currentStudentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc =>
+            sc.StudentFirebaseId == studentId && sc.ClassId == classId);
+
+        if (currentStudentClass is null) throw new NotFoundException("Student is not belongs to this class ");
+
+        var currentTuitionHasPaid = await _unitOfWork.TuitionRepository.FindSingleAsync(t =>
+            t.StudentClassId == currentStudentClass.Id && t.PaymentStatus == PaymentStatus.Successed);
+        if (currentTuitionHasPaid is null) throw new NotFoundException("This student has not paid for this class yet.");
+
+        var allSlotsInClass =
+            await _unitOfWork.SlotRepository.FindProjectedAsync<Slot>(s => s.ClassId == currentStudentClass.ClassId);
+
+        var slotsInCurrentMonth = allSlotsInClass
+            .Where(s => s.Date.Month == currentTime.Month && s.Date.Year == currentTime.Year)
+            .ToList();
+
+        var numOfSlotHaveAttended = slotsInCurrentMonth
+            .Count(slot => slot.SlotStudents.Any(ss =>
+                ss.StudentFirebaseId == studentId && ss.AttendanceStatus != AttendanceStatus.NotYet));
+
+
+        var systemConfigValue =
+            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(
+                (int)currentStudentClass.Class.Level + 1);
+        var refundAmount = systemConfigValue.PriceOfSlot * numOfSlotHaveAttended;
+
+        return currentTuitionHasPaid.Amount - refundAmount;
+    }
+
+
     // note: this function just run in 1st of month
     public async Task CronAutoCreateTuition()
     {
@@ -149,7 +183,7 @@ public class TuitionService : ITuitionService
 
         // Get all ongoing classes
         var ongoingClasses =
-            await _unitOfWork.ClassRepository.FindProjectedAsync<Class>(c => c.Status == ClassStatus.Ongoing);
+            await _unitOfWork.ClassRepository.FindProjectedAsync<Class>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true);
         var ongoingClassIds = ongoingClasses.Select(x => x.Id).ToList();
 
         var studentClasses = await _unitOfWork.StudentClassRepository.FindProjectedAsync<StudentClass>(
@@ -283,8 +317,8 @@ public class TuitionService : ITuitionService
                 x => studentClassIds == null || studentClassIds.Count == 0 ||
                      studentClassIds.Contains(x.StudentClassId),
                 x => paymentStatuses == null || paymentStatuses.Count == 0 || paymentStatuses.Contains(x.PaymentStatus),
-                x => !startDateTimeUtc.HasValue || x.StartDate <= endDateTimeUtc, 
-                x => !endDateTimeUtc.HasValue || x.EndDate >= startDateTimeUtc, 
+                x => !startDateTimeUtc.HasValue || x.StartDate <= endDateTimeUtc,
+                x => !endDateTimeUtc.HasValue || x.EndDate >= startDateTimeUtc,
                 x => account != null && (account.Role == Role.Staff ||
                                          x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
             ]);
@@ -303,7 +337,7 @@ public class TuitionService : ITuitionService
     }
 
 
-    public async Task CreateTuitionWhenRegisterClass(List<StudentClass> models, List<Slot> slots)
+    public async Task CreateTuitionWhenRegisterClass(ClassDetailModel classDetailModel)
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
         var utcNowConvert = DateOnly.FromDateTime(utcNow);
@@ -312,13 +346,13 @@ public class TuitionService : ITuitionService
         var enDateConvert = DateOnly.FromDateTime(endDate);
 
         var tuitions = new List<Tuition>();
-        foreach (var studentClass in models)
+        foreach (var studentClass in classDetailModel.StudentClasses)
         {
             var sysConfigValue = await _serviceFactory.SystemConfigService
-                .GetSystemConfigValueBaseOnLevel((int)studentClass.Class.Level + 1);
+                .GetSystemConfigValueBaseOnLevel((int)classDetailModel.Level + 1);
 
             var numOfSlotTillEndMonth =
-                slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
+                classDetailModel.Slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
             var tuition = new Tuition
             {
                 Id = Guid.NewGuid(),

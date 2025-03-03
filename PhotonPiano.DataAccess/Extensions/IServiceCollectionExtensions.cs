@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IAccountNotificationRepository, AccountNotificationRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IEntranceTestResultRepository, EntranceTestResultRepository>();
         return services;
     }
 }

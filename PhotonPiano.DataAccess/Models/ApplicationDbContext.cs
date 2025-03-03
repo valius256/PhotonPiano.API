@@ -59,7 +59,7 @@ public class ApplicationDbContext : DbContext
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());
 
-        //modelBuilder.Seed();
+        // modelBuilder.Seed();
 
         base.OnModelCreating(modelBuilder);
     }

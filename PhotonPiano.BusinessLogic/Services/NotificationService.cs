@@ -82,7 +82,34 @@ public class NotificationService : INotificationService
 
         await _serviceFactory.NotificationServiceHub.SendNotificationAsync(userFirebaseId, "", title, message);
     }
+    public async Task SendNotificationToManyAsync(List<string> userFirebaseIds, string message, string thumbnail)
+    {
+        var notification = new Notification
+        {
+            Id = Guid.NewGuid(),
+            Content = message,
+            Thumbnail = thumbnail
+        };
 
+        await _unitOfWork.NotificationRepository.AddAsync(notification);
+        await _unitOfWork.SaveChangesAsync();
+
+        var accountNotifications = userFirebaseIds.Select(id => new AccountNotification
+        {
+            AccountFirebaseId = id,
+            NotificationId = notification.Id,
+            IsViewed = false
+        }).ToList();
+
+
+        await _unitOfWork.AccountNotificationRepository.AddRangeAsync(accountNotifications);
+        await _unitOfWork.SaveChangesAsync();
+
+        foreach (var accountNotification in accountNotifications)
+        {
+            await _serviceFactory.NotificationServiceHub.SendNotificationAsync(accountNotification.AccountFirebaseId, "", "", message);
+        }
+    }
     public async Task<List<AccountNotification>> GetUserNotificationsAsync(string userId)
     {
         var result = await _unitOfWork.AccountNotificationRepository

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.Models.Entity;
 
@@ -8,7 +9,8 @@ public class EntranceTestStudent : BaseEntityWithId
     public Guid? EntranceTestId { get; set; }
     public decimal? BandScore { get; set; }
     public string? FullName { get; set; }
-    [Range(1, 5)] public int? Rank { get; set; }
+    public Level? Level { get; set; }
+    public double? TheoraticalScore { get; set; }
 
     public int? Year { get; set; }
     public bool IsScoreAnnounced { get; set; } = false;

@@ -13,8 +13,6 @@ public interface IClassService
 
     Task<ClassScoreboardModel> GetClassScoreboard(Guid id);
 
-    Task<ClassScoreboardModel> GetClassScoreboard(Guid id);
-
     Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role);
 
     Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId);
@@ -30,5 +28,4 @@ public interface IClassService
     Task PublishClass(Guid classId, string accountFirebaseId);
 
     Task ScheduleClass(ScheduleClassModel scheduleClassModel, string accountFirebaseId);
-    Task<byte[]> GenerateGradeTemplate(Guid classId);
 }

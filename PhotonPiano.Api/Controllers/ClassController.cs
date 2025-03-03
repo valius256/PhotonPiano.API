@@ -157,7 +157,7 @@ namespace PhotonPiano.Api.Controllers
         [EndpointDescription("Download Template Excel")]
         public async Task<IActionResult> DownloadGradeTemplate(Guid id)
         {
-            var templateBytes = await _serviceFactory.ClassService.GenerateGradeTemplate(id);
+            var templateBytes = await _serviceFactory.StudentClassService.GenerateGradeTemplate(id);
             return File(templateBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "grade_template.xlsx");
         }
     }

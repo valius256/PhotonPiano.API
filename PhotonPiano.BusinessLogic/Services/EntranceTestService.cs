@@ -564,10 +564,12 @@ public class EntranceTestService : IEntranceTestService
 
             decimal practicalScore = results.Aggregate(decimal.Zero,
                 (current, result) => current + result.Score!.Value * result.Weight!.Value);
+            
+            decimal theoryScore = entranceTestStudent.TheoraticalScore.HasValue 
+                ? Convert.ToDecimal(entranceTestStudent.TheoraticalScore.Value) 
+                : decimal.Zero;
 
-            bandScore = (entranceTestStudent.TheoraticalScore.HasValue
-                ? (decimal)entranceTestStudent.TheoraticalScore.Value
-                : decimal.Zero + practicalScore) / 2;
+            bandScore = (theoryScore + practicalScore) / 2;
         }
 
 

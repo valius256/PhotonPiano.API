@@ -1,4 +1,3 @@
-using System.Reflection;
 using Hangfire;
 using Mapster;
 using PhotonPiano.Api.Configurations;
@@ -6,8 +5,8 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
-using PhotonPiano.ServiceDefaults;
 using Serilog;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -26,13 +25,13 @@ builder.Services.AddSingleton<RedirectUrlValidator>();
 
 //Add serilog
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
-builder.AddServiceDefaults();
+//builder.AddServiceDefaults();
 // add mapster 
 TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 app.UseRouting();
-app.MapDefaultEndpoints();
+//app.MapDefaultEndpoints();
 
 await app.ConfigureDatabaseAsync();
 

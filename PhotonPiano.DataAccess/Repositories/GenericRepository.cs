@@ -185,6 +185,15 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         _context.Set<T>().Update(TEntity);
         return Task.CompletedTask;
     }
+    public async Task UpdateRangeAsync(IEnumerable<T> entities)
+    {
+        var enumerable = entities as T[] ?? entities.ToArray();
+        if (enumerable.Any())
+        {
+            _context.Set<T>().UpdateRange(enumerable);
+            await _context.SaveChangesAsync();
+        }
+    }
 
     public async Task<int> CountAsync(Expression<Func<T, bool>>? expression, bool hasTrackings = true,
         bool ignoreQueryFilters = false)

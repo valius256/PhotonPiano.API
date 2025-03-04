@@ -6,11 +6,11 @@ public record GetSlotModel
 {
     public required DateOnly StartTime { get; init; }
     public required DateOnly EndTime { get; init; }
-    public List<Shift>? Shifts { get; set; }
-    public List<SlotStatus>? SlotStatuses { get; init; }
-    public List<string>? InstructorFirebaseIds { get; init; }
+    public List<Shift> Shifts { get; set; } = [];
+    public List<SlotStatus> SlotStatuses { get; init; } = [];
+    public List<string> InstructorFirebaseIds { get; init; } = [];
     public string? StudentFirebaseId { get; init; }
-    public List<Guid>? ClassIds { get; init; }
+    public List<Guid> ClassIds { get; init; } = [];
 
     // check all filter is empty
     public bool IsFilterEmpty()

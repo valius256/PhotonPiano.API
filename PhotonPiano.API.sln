@@ -11,10 +11,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.DataAccess", "P
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.Shared", "PhotonPiano.Shared\PhotonPiano.Shared.csproj", "{9E275899-50DB-4531-B28F-D04EA2DA5C6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.AppHost", "PhotonPiano.AppHost\PhotonPiano.AppHost.csproj", "{CA5C2654-EB15-4754-8373-34329118DEA8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.ServiceDefaults", "PhotonPiano.ServiceDefaults\PhotonPiano.ServiceDefaults.csproj", "{9702C7A9-CAF6-4915-B7E2-78174040D761}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.Test", "PhotonPiano.Test\PhotonPiano.Test.csproj", "{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.BackgroundJob", "PhotonPiano.BackgroundJob\PhotonPiano.BackgroundJob.csproj", "{9E033D94-3086-4B0E-AD6E-5B12CA87DB24}"
@@ -43,14 +39,6 @@ Global
 		{9E275899-50DB-4531-B28F-D04EA2DA5C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E275899-50DB-4531-B28F-D04EA2DA5C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E275899-50DB-4531-B28F-D04EA2DA5C6D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CA5C2654-EB15-4754-8373-34329118DEA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CA5C2654-EB15-4754-8373-34329118DEA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA5C2654-EB15-4754-8373-34329118DEA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CA5C2654-EB15-4754-8373-34329118DEA8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9702C7A9-CAF6-4915-B7E2-78174040D761}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E1D7DF7-91DD-4EC9-AFDE-624E628E313E}.Release|Any CPU.ActiveCfg = Release|Any CPU

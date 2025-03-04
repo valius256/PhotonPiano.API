@@ -12,8 +12,8 @@ namespace PhotonPiano.BusinessLogic.CustomMapping
             config.NewConfig<Class, ClassModel>()
                .Map(dest => dest.StudentNumber, src => src.StudentClasses.Count);
             
-            config.NewConfig<StudentClass, StudentClassModel>()
-                .Map(dest => dest.ClassName, src => src.Class.Name);
+            //config.NewConfig<StudentClass, StudentClassModel>()
+            //    .Map(dest => dest.C, src => src.Class.Name);
         }
     }
 }

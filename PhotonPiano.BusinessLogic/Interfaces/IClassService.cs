@@ -10,7 +10,21 @@ public interface IClassService
 
     Task<ClassDetailModel> GetClassDetailById(Guid id);
 
+    Task<ClassScoreboardModel> GetClassScoreboard(Guid id);
+
     Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role);
 
     Task<List<ClassModel>> AutoArrangeClasses(ArrangeClassModel arrangeClassModel, string userId);
+
+    Task UpdateClassStartTime(Guid classId);
+
+    Task<ClassModel> CreateClass(CreateClassModel model, string accountFirebaseId);
+
+    Task UpdateClass(UpdateClassModel model, string accountFirebaseId);
+
+    Task DeleteClass(Guid classId, string accountFirebaseId);
+
+    Task PublishClass(Guid classId, string accountFirebaseId);
+
+    Task ScheduleClass(ScheduleClassModel scheduleClassModel, string accountFirebaseId);
 }

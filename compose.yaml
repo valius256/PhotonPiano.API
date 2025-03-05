@@ -1,0 +1,6 @@
+﻿services:
+  photonpiano.api:
+    image: photonpiano.api
+    build:
+      context: .
+      dockerfile: PhotonPiano.Api/Dockerfile

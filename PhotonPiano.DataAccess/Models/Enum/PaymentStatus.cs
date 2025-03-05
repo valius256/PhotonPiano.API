@@ -3,7 +3,7 @@ namespace PhotonPiano.DataAccess.Models.Enum;
 public enum PaymentStatus
 {
     Pending,
-    Successed,
+    Succeed,
     Failed,
     Canceled
 }

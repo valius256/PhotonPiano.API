@@ -250,7 +250,7 @@ public class ClassService : IClassService
             var dayFrames = GetRandomDays(levelConfig.NumOfSlotInWeek);
             var slot = await ScheduleAClassAutomatically(arrangeClassModel, dayOffs, dayFrames, levelConfig, unaddedSlots);
             classDraft.Slots.AddRange(slot);
-            unaddedSlots.AddRange(slot.Adapt<Slot>());
+            unaddedSlots.AddRange(slot.Adapt<List<Slot>>());
         }
 
         //4. Now save them to database

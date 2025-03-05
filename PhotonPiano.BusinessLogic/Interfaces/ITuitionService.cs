@@ -27,4 +27,5 @@ public interface ITuitionService
     // Cron job
     Task CronAutoCreateTuition();
     Task CronForTuitionReminder();
+    Task CronForTuitionOverdue();
 }

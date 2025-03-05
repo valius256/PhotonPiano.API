@@ -1,6 +1,9 @@
 ﻿using System.Linq.Expressions;
+using System.Security.Cryptography;
+using System.Text;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.Extensions;
@@ -77,61 +80,121 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
+  public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
-        var cacheKey =
-            $"GetWeeklyScheduleAsync:{slotModel.StartTime}:{slotModel.EndTime}:{accountModel.CurrentClassId}";
-
-        if (accountModel.Role != Role.Staff && slotModel.IsFilterEmpty())
+        var cacheKey = GenerateCacheKey(slotModel, accountModel);
+        
+        if (accountModel.Role == Role.Staff)
         {
-            var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
-            if (cachedResult != null) return cachedResult;
+            if (!slotModel.IsFilterEmpty())
+            {
+                var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
+                if (cachedResult != null) return cachedResult;
+            }
+        }
+        else
+        {
+            if (slotModel.IsFilterEmpty())
+            {
+                var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
+                if (cachedResult != null) return cachedResult;
+            }
+        }
+        
+        var result = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(BuildFilterExpression(slotModel, accountModel));
+
+    
+        if (accountModel.Role == Role.Staff)
+        {
+            if (!slotModel.IsFilterEmpty())
+            {
+                await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, GetCacheDuration(result));
+            }
+        }
+        else
+        {
+            await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, GetCacheDuration(result));
         }
 
-        Expression<Func<Slot, bool>> filter = s =>
-            s.Date >= slotModel.StartTime &&
-            s.Date <= slotModel.EndTime;
+        return result;
+        
+        Expression<Func<Slot, bool>> BuildFilterExpression(GetSlotModel slotModel, AccountModel accountModel)
+        {
+            Expression<Func<Slot, bool>> filter = s =>
+                s.Date >= slotModel.StartTime &&
+                s.Date <= slotModel.EndTime;
 
-        // Apply role-based filtering only for non-staff roles
-        if (accountModel.Role != Role.Staff)
-            switch (accountModel.Role)
+            // Apply role-based filtering
+            if (accountModel.Role != Role.Staff)
             {
-                case Role.Instructor:
-                    filter = filter.AndAlso(s =>
-                        s.Class.InstructorId == accountModel.AccountFirebaseId);
-                    break;
-                case Role.Student:
-                    filter = filter.AndAlso(s =>
-                        s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId));
-                    break;
+                switch (accountModel.Role)
+                {
+                    case Role.Instructor:
+                        filter = filter.AndAlso(s => s.Class.InstructorId == accountModel.AccountFirebaseId);
+                        break;
+                    case Role.Student:
+                        filter = filter.AndAlso(s => s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId));
+                        break;
+                }
             }
 
-        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.InstructorFirebaseIds)))
-            filter = filter.AndAlso(s =>
-                s.Class.InstructorId != null &&
-                slotModel.InstructorFirebaseIds != null && (slotModel.InstructorFirebaseIds.Count == 0 ||
-                                                            slotModel.InstructorFirebaseIds.Contains(
-                                                                s.Class.InstructorId)));
+            // Additional filters
+            if (slotModel.InstructorFirebaseIds.Any())
+                filter = filter.AndAlso(s => s.Class.InstructorId != null && slotModel.InstructorFirebaseIds.Contains(s.Class.InstructorId));
 
+            if (slotModel.Shifts.Any())
+                filter = filter.AndAlso(s => slotModel.Shifts.Contains(s.Shift));
 
-        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.Shifts)))
-            filter = filter.AndAlso(s => slotModel.Shifts.Contains(s.Shift));
+            if (slotModel.SlotStatuses.Any())
+                filter = filter.AndAlso(s => slotModel.SlotStatuses.Contains(s.Status));
 
-        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.SlotStatuses)))
-            filter = filter.AndAlso(s => slotModel.SlotStatuses.Contains(s.Status));
+            if (slotModel.ClassIds.Any())
+                filter = filter.AndAlso(s => slotModel.ClassIds.Contains(s.ClassId));
 
-        if (!slotModel.IsPropertyNull(nameof(GetSlotModel.ClassIds)))
-            filter = filter.AndAlso(s => slotModel.ClassIds.Contains(s.ClassId));
-
-        var result = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(filter);
-
-        // todo: if role is staff so no need to cache cause the filter is only applied in role staff 
-
-        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(7));
-
-        return result;
+            return filter;
+        }
+    }
+  
+    private TimeSpan GetCacheDuration(List<SlotSimpleModel> slotModel)
+    {
+        var maxDay = slotModel.MaxBy(x => x.Date)!.Date;
+        var minDay = slotModel.MinBy(x => x.Date)!.Date;
+        return maxDay.ToDateTime(TimeOnly.MinValue) - minDay.ToDateTime(TimeOnly.MinValue);
     }
 
+    private string GenerateCacheKey(GetSlotModel slotModel, AccountModel accountModel)
+    {
+        var baseKey = $"schedule:{accountModel.Role}:{accountModel.AccountFirebaseId}";
+    
+        // If no filters, use a simple date-based key
+        if (slotModel.IsFilterEmpty())
+        {
+            return $"{baseKey}:{slotModel.StartTime:yyyyMMdd}-{slotModel.EndTime:yyyyMMdd}";
+        }
+
+        // Create a hash of filters for more specific caching
+        var filterHash = ComputeFilterHash(slotModel);
+        return $"{baseKey}:filtered:{filterHash}";
+    }
+
+    private string ComputeFilterHash(GetSlotModel slotModel)
+    {
+        using (var md5 = MD5.Create())
+        {
+            var filterString = JsonConvert.SerializeObject(new 
+            {
+                slotModel.Shifts,
+                Statuses = slotModel.SlotStatuses,
+                InstructorIds = slotModel.InstructorFirebaseIds,
+                StudentId = slotModel.StudentFirebaseId,
+                slotModel.ClassIds
+            });
+
+            var hashBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(filterString));
+            return Convert.ToBase64String(hashBytes);
+        }
+    }
+    
 
     public async Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId)
     {

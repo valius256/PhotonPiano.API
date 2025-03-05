@@ -24,6 +24,8 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         });
     }
 
+
+    
     // Unauthorized
     [Fact]
     public async Task GetSchedulers_Unauthorized_ReturnsUnauthorized()
@@ -75,7 +77,6 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-
     // Boundary Dates
     [Fact]
     public async Task GetSchedulers_BoundaryDates_ReturnsOkResult()
@@ -100,8 +101,6 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.NotNull(result);
     }
 
-
-
     [Fact]
     public async Task GetSchedulers_ReturnsOkResult()
     {
@@ -124,14 +123,12 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-
     }
 
     [Fact]
     public async Task GetAttendanceStatus_ReturnsOkResult()
     {
         // Arrange
-
         var request = new SchedulerRequest
         {
             StartTime = DateOnly.FromDateTime(DateTime.Now),
@@ -160,14 +157,24 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
     public async Task GetSlotById_ReturnsOkResult()
     {
         // Arrange
-        var slotId = Guid.NewGuid();
+        var request = new SchedulerRequest
+        {
+            StartTime = DateOnly.FromDateTime(DateTime.Now),
+            EndTime = DateOnly.FromDateTime(DateTime.Now.AddDays(7))
+        };
+        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={request.StartTime}&end-time={request.EndTime}");
 
+        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
         // Act
-        var response = await _client.GetAsync($"/api/scheduler/slot/{slotId}");
+        var response = await _client.GetAsync($"/api/scheduler/slot/{firstSlotId}");
 
         // Assert
         response.EnsureSuccessStatusCode();
         var result = await DeserializeResponse<SlotDetailModel>(response);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
     }
 
@@ -175,20 +182,131 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
     public async Task UpdateAttendance_ReturnsOkResult()
     {
         // Arrange
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com" , "Quangphat12a3");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
+        
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+        var slotResponse = await _client.GetAsync($"/api/scheduler/attendance-status/{firstSlotId}");
+        var  slotDetails = await DeserializeResponse<List<StudentAttendanceResponse>>(slotResponse);
+
+        var studentIds = slotDetails.Select(x => x.StudentFirebaseId).ToList();
+        
         var request = new AttendanceRequest
         {
-            SlotId = Guid.NewGuid(),
-            StudentAttentIds = new List<string> { "student1", "student2" },
-            StudentAbsentIds = new List<string> { "student3" }
+            SlotId = firstSlotId,
+            StudentAttentIds = studentIds,
+        };
+        
+        
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<ApiResult<bool>>();
+        Assert.NotNull(result);
+        Assert.True(result.Data);
+    }
+    
+    // Test for empty attendance lists
+    [Fact]
+    public async Task UpdateAttendance_EmptyLists_ReturnsBadRequest()
+    {
+        // Arrange
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
+
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+
+        var request = new AttendanceRequest
+        {
+            SlotId = firstSlotId,
+            StudentAttentIds = new List<string>(),
+            StudentAbsentIds = new List<string>()
         };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
 
         // Assert
-        response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<IApiResult<bool>>();
-        Assert.NotNull(result);
-        Assert.True(result.Data);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // Test for invalid slot ID
+    [Fact]
+    public async Task UpdateAttendance_InvalidSlotId_ReturnsNotFound()
+    {
+        // Arrange
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
+
+        var request = new AttendanceRequest
+        {
+            SlotId = Guid.NewGuid(), // Invalid slot ID
+            StudentAttentIds = new List<string> { "student1" },
+            StudentAbsentIds = new List<string> { "student2" }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // Test for duplicate student IDs
+    [Fact]
+    public async Task UpdateAttendance_DuplicateStudentIds_ReturnsBadRequest()
+    {
+        // Arrange
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
+
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+        var slotResponse = await _client.GetAsync($"/api/scheduler/attendance-status/{firstSlotId}");
+        var slotDetails = await DeserializeResponse<List<StudentAttendanceResponse>>(slotResponse);
+
+        var studentIds = slotDetails.Select(x => x.StudentFirebaseId).ToList();
+
+        var request = new AttendanceRequest
+        {
+            SlotId = firstSlotId,
+            StudentAttentIds = studentIds,
+            StudentAbsentIds = studentIds 
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // Test for non-existent student IDs
+    [Fact]
+    public async Task UpdateAttendance_NonExistentStudentIds_ReturnsBadRequest()
+    {
+        // Arrange
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
+
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+
+        var request = new AttendanceRequest
+        {
+            SlotId = firstSlotId,
+            StudentAttentIds = new List<string> { $"{Guid.NewGuid()}" },
+            StudentAbsentIds = new List<string> { $"{Guid.NewGuid()}" }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

@@ -62,6 +62,10 @@ public class GlobalExceptionHandler : IExceptionHandler
                 details.Status = customException.Code;
                 details.Type = "Other";
                 break;
+            case IllegalArgumentException iillegalArgumentException:
+                details.Status = (int)HttpStatusCode.BadRequest;
+                details.Type = "Illegal Argument";
+                break;
         }
 
         var response = JsonConvert.SerializeObject(details);

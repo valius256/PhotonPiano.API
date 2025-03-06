@@ -1,0 +1,33 @@
+services:
+  photonpiano.database:
+    image: postgres:15
+    container_name: photonpiano.database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: PhotonPiano
+    volumes:
+    - ./.container/photonpiano-db:/var/lib/postgresql/data
+    ports:
+    - "5432:5432"
+
+
+  photonpiano.api:
+    image: ${DOCKER_REGISTRY-}photonpianoapi
+    container_name: photonpiano.api
+    build:
+      context: .
+      dockerfile: PhotonPiano.Api/Dockerfile
+    ports:
+       - "5000:5000"
+       - "5001:5001"
+    environment:
+         - ASPNETCORE_ENVIRONMENT=Production
+         - ASPNETCORE_URLS=http://+:5000
+
+
+networks:
+  default:
+    name: photonpiano_network
+
+

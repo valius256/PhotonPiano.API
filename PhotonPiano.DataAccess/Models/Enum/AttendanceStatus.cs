@@ -5,4 +5,4 @@ public enum AttendanceStatus
     NotYet,
     Attended,
     Absent
-}
+}   

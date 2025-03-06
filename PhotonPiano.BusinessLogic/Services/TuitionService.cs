@@ -88,17 +88,17 @@ public class TuitionService : ITuitionService
         try
         {
             transaction.PaymentStatus =
-                callbackModel.VnpResponseCode == "00" ? PaymentStatus.Successed : PaymentStatus.Failed;
+                callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
             transaction.TransactionCode = callbackModel.VnpTransactionNo;
             transaction.UpdatedAt = DateTime.UtcNow;
 
             switch (transaction.PaymentStatus)
             {
-                case PaymentStatus.Successed:
+                case PaymentStatus.Succeed:
                     var tutionEntity =
                         await _unitOfWork.TuitionRepository.FindFirstAsync(x => x.Id == transaction.TutionId);
 
-                    tutionEntity!.PaymentStatus = PaymentStatus.Successed;
+                    tutionEntity!.PaymentStatus = PaymentStatus.Succeed;
 
                     await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
                     await _unitOfWork.SaveChangesAsync();
@@ -145,7 +145,7 @@ public class TuitionService : ITuitionService
         if (currentStudentClass is null) throw new NotFoundException("Student is not belongs to this class ");
 
         var currentTuitionHasPaid = await _unitOfWork.TuitionRepository.FindSingleAsync(t =>
-            t.StudentClassId == currentStudentClass.Id && t.PaymentStatus == PaymentStatus.Successed);
+            t.StudentClassId == currentStudentClass.Id && t.PaymentStatus == PaymentStatus.Succeed);
         if (currentTuitionHasPaid is null) throw new NotFoundException("This student has not paid for this class yet.");
 
         var allSlotsInClass =
@@ -294,6 +294,51 @@ public class TuitionService : ITuitionService
         }
     }
 
+    public async Task CronForTuitionOverdue()
+    {
+        var overdueTuitions = await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
+            t => t.PaymentStatus == PaymentStatus.Pending,
+            false);
+
+        foreach (var tuition in overdueTuitions)
+        {
+            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(
+                    ss => ss.StudentFirebaseId == studentClass!.StudentFirebaseId
+                );
+
+                await _unitOfWork.StudentClassRepository.ExecuteDeleteAsync(
+                    sc => sc.StudentFirebaseId == studentClass!.StudentFirebaseId
+                );
+
+                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
+                    account => account.AccountFirebaseId == studentClass!.StudentFirebaseId,
+                    account => account.SetProperty(a => a.StudentStatus, StudentStatus.DropOut)
+                );
+            });
+            
+            var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "studentName", studentClass.Student.Email },
+                { "className", studentClass.Class.Name },
+            };
+
+            await _serviceFactory.EmailService.SendAsync(
+                "NotifyTuitionOverdue",
+                new List<string> { studentClass.Student.Email },
+                null,
+                emailParam
+            );
+
+            await _serviceFactory.NotificationService.SendNotificationAsync(studentClass.Student.AccountFirebaseId,
+                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} đã quá hạn bạn đã ",
+                "Hãy thanh toán học phí để tránh bị gián đoạn học tập");
+        }
+    }
+
 
     public async Task<PagedResult<TuitionWithStudentClassModel>> GetTuitionsPaged(QueryTuitionModel queryTuitionModel,
         AccountModel? account = default)
@@ -410,7 +455,7 @@ public class TuitionService : ITuitionService
         if (tuition == null)
             throw new NullReferenceException("No tuition found for this, please add tuition first.");
 
-        if (tuition.PaymentStatus == PaymentStatus.Successed)
+        if (tuition.PaymentStatus == PaymentStatus.Succeed)
             throw new BadRequestException("This tuition has already been processed.");
 
         if (tuition.StudentClass.StudentFirebaseId != userFirebaseId)

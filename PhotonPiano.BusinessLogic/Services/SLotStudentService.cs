@@ -25,8 +25,10 @@ public class SlotStudentService : ISlotStudentService
 
         if (slotEntity.Class.InstructorId != teacherId)
             throw new IllegalArgumentException("You are not allowed to update attendance for this slot.");
-
-
+        
+        if(model.StudentAttentIds.Count == 0 && model.StudentAbsentIds != null && model.StudentAbsentIds.Count == 0)
+            throw new IllegalArgumentException("Student list sending cannot be empty.");
+        
         if (slotEntity == null) throw new IllegalArgumentException("The specified slot does not exist.");
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
@@ -46,8 +48,12 @@ public class SlotStudentService : ISlotStudentService
                 .FindFirstProjectedAsync<SlotStudent>(x =>
                     x.SlotId == model.SlotId && x.StudentFirebaseId == studentId);
 
-            if (slotStudent != null)
+            if (slotStudent is null)
             {
+                throw new IllegalArgumentException("The specified student does not exist in this slot.");
+            }
+            
+      
                 slotStudent.AttendanceStatus = AttendanceStatus.Attended;
                 slotStudent.UpdateById = teacherId;
                 slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
@@ -55,7 +61,6 @@ public class SlotStudentService : ISlotStudentService
 
                 await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
                     $"Đã điểm danh cho lớp {slotEntity.Class.Name}", $"trạng thái: {AttendanceStatus.Attended}");
-            }
         }
 
         if (model.StudentAbsentIds is not null)

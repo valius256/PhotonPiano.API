@@ -280,7 +280,7 @@ public class EntranceTestService : IEntranceTestService
             TransactionType = TransactionType.EntranceTestFee,
             PaymentStatus = PaymentStatus.Pending,
             PaymentMethod = PaymentMethod.VnPay,
-            CreatedByEmail = currentAccount.Email
+            CreatedByEmail = currentAccount.Email,
         };
 
         await _unitOfWork.TransactionRepository.AddAsync(transaction);
@@ -315,20 +315,25 @@ public class EntranceTestService : IEntranceTestService
         try
         {
             transaction.PaymentStatus =
-                callbackModel.VnpResponseCode == "00" ? PaymentStatus.Successed : PaymentStatus.Failed;
+                callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
             transaction.TransactionCode = callbackModel.VnpTransactionNo;
             transaction.UpdatedAt = DateTime.UtcNow;
 
             switch (transaction.PaymentStatus)
             {
-                case PaymentStatus.Successed:
-                    await _unitOfWork.EntranceTestStudentRepository.AddAsync(new EntranceTestStudent
+                case PaymentStatus.Succeed:
+                    
+                    var entranceTestStudent = new EntranceTestStudent
                     {
                         Id = Guid.CreateVersion7(),
                         StudentFirebaseId = accountId,
                         CreatedAt = DateTime.UtcNow,
                         CreatedById = accountId,
-                    });
+                    };
+                    
+                    await _unitOfWork.EntranceTestStudentRepository.AddAsync(entranceTestStudent);
+
+                    transaction.EntranceTestStudentId = entranceTestStudent.Id;
 
                     account.StudentStatus = StudentStatus.WaitingForEntranceTestArrangement;
                     account.UpdatedAt = DateTime.UtcNow;
@@ -564,10 +569,12 @@ public class EntranceTestService : IEntranceTestService
 
             decimal practicalScore = results.Aggregate(decimal.Zero,
                 (current, result) => current + result.Score!.Value * result.Weight!.Value);
+            
+            decimal theoryScore = entranceTestStudent.TheoraticalScore.HasValue 
+                ? Convert.ToDecimal(entranceTestStudent.TheoraticalScore.Value) 
+                : decimal.Zero;
 
-            bandScore = (entranceTestStudent.TheoraticalScore.HasValue
-                ? (decimal)entranceTestStudent.TheoraticalScore.Value
-                : decimal.Zero + practicalScore) / 2;
+            bandScore = (theoryScore + practicalScore) / 2;
         }
 
 
@@ -607,7 +614,7 @@ public class EntranceTestService : IEntranceTestService
             entranceTestStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
         });
 
-        await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
-            "Điểm thi đầu vào của bạn vừa được cập nhật", "");
+        // await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
+        //     "Điểm thi đầu vào của bạn vừa được cập nhật", "");
     }
 }

@@ -63,6 +63,8 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IStudentClassService> _studentClassService;
 
+    private readonly Lazy<IDayOffService> _dayOffService;
+
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
@@ -93,6 +95,7 @@ public class ServiceFactory : IServiceFactory
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
         _studentClassService = new Lazy<IStudentClassService>(() => new StudentClassService(this, unitOfWork));
+        _dayOffService = new Lazy<IDayOffService>(() => new DayOffService(unitOfWork, this));
         // _logger.LogInformation("ServiceFactory has been initialized.");
     }
 
@@ -139,4 +142,6 @@ public class ServiceFactory : IServiceFactory
     public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
 
     public IStudentClassService StudentClassService => _studentClassService.Value;
+
+    public IDayOffService DayOffService => _dayOffService.Value;
 }

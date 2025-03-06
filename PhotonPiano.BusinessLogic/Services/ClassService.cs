@@ -46,6 +46,7 @@ public class ClassService : IClassService
             StudentNumber = classDetail.StudentClasses.Count,     
             SlotsPerWeek = config.NumOfSlotInWeek,
             PricePerSlots = config.PriceOfSlot,
+            TotalSlots = classDetail.Slots.Count,
         };
     }
 
@@ -68,7 +69,7 @@ public class ClassService : IClassService
             Capacity = maxStudents,
             InstructorName = classDetail.Instructor?.FullName,
             RequiredSlots = config.TotalSlot,
-            StudentNumber = classDetail.StudentClasses.Count,
+            StudentNumber = classDetail.StudentClasses.Count
         };
     }
 
@@ -143,6 +144,7 @@ public class ClassService : IClassService
                 IsScorePublished = q.IsScorePublished,
                 Capacity = capacity,
                 CreatedById = q.CreatedById,
+                IsPublic = q.IsPublic,
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
                 TotalSlots = q.Slots.Count(),

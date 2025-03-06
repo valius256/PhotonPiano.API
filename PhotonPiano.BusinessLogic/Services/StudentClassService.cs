@@ -29,7 +29,9 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new NotFoundException("Student class not found");
             }
-            var oldClassInfo = (await _unitOfWork.ClassRepository.Entities.Include(oc => oc.StudentClasses)
+            var oldClassInfo = (await _unitOfWork.ClassRepository.Entities
+                .Include(c => c.Slots)
+                .Include(oc => oc.StudentClasses)
                 .SingleOrDefaultAsync(oc => oc.Id == oldStudentClass.ClassId))!;
 
             var student = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == changeClassModel.StudentFirebaseId);
@@ -68,12 +70,23 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             //Create student slots
+            var classSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
+            var existedStudentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => ss.StudentFirebaseId == changeClassModel.StudentFirebaseId
+                && classSlotIds.Contains(ss.SlotId), false, true);
             var studentSlots = classInfo.Slots.Select(s => new SlotStudent
             {
                 CreatedById = accountFirebaseId,
                 SlotId = s.Id,
                 StudentFirebaseId = changeClassModel.StudentFirebaseId
             });
+
+            studentSlots = studentSlots.Where(ss => !existedStudentSlots.Any(es => es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId)).ToList();
+
+
+            foreach (var slot in existedStudentSlots)
+            {
+                slot.RecordStatus = RecordStatus.IsActive;
+            }
 
             student.CurrentClassId = classInfo.Id;
 
@@ -83,7 +96,7 @@ namespace PhotonPiano.BusinessLogic.Services
             oldStudentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
             //Delete old studentSlots
-            var oldSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
+            var oldSlotIds = oldClassInfo.Slots.Select(s => s.Id).ToList();
             var oldStudentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => oldSlotIds.Contains(ss.SlotId));
             foreach (var oldStudentSlot in oldStudentSlots)
             {
@@ -97,6 +110,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
                 await _unitOfWork.AccountRepository.UpdateAsync(student);
                 await _unitOfWork.StudentClassRepository.UpdateAsync(oldStudentClass);
+                await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(existedStudentSlots);
 
                 //Delete
                 await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(oldStudentSlots);
@@ -124,31 +138,35 @@ namespace PhotonPiano.BusinessLogic.Services
             
         }
 
-        public async Task<StudentClassModel> CreateStudentClass(CreateStudentClassModel createStudentClassModel, string accountFirebaseId)
+        public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel, string accountFirebaseId)
         {
-            var student = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == createStudentClassModel.StudentFirebaseId);
-            if (student is null)
+            var students = await _unitOfWork.AccountRepository.FindAsync(a => createStudentClassesModel.StudentFirebaseIds.Contains(a.AccountFirebaseId));
+            if (!students.Any() && !createStudentClassesModel.IsAutoFill)
             {
-                throw new NotFoundException("Student not found");
-            }
-            if (student.StudentStatus != StudentStatus.WaitingForClass)
-            {
-                throw new BadRequestException("Student is already in a class");
+                throw new NotFoundException("No valid students found");
             }
 
+            foreach (var student in students)
+            {
+                if (student.StudentStatus != StudentStatus.WaitingForClass)
+                {
+                    throw new BadRequestException($"Student {student.FullName ?? student.UserName} is already in a class");
+                }
+            }
+
+            
             var classInfo = await _unitOfWork.ClassRepository.Entities
                 .Include(c => c.StudentClasses)
                 .Include(c => c.Slots)
-                .FirstOrDefaultAsync(c => c.Id == createStudentClassModel.ClassId);
+                .FirstOrDefaultAsync(c => c.Id == createStudentClassesModel.ClassId);
             if (classInfo is null)
             {
                 throw new NotFoundException("Class not found");
             }
 
-            var maxStudents =
-                int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+            var maxStudents = int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
 
-            if (classInfo.StudentClasses.Count >= maxStudents)
+            if (classInfo.StudentClasses.Count + students.Count > maxStudents)
             {
                 throw new BadRequestException("Class is full!");
             }
@@ -156,60 +174,97 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Class is finished");
             }
-            //Create student slots
-            var studentSlots = classInfo.Slots.Select(s => new SlotStudent
+            if (createStudentClassesModel.IsAutoFill && maxStudents - classInfo.StudentClasses.Count - students.Count > 0)
             {
-                CreatedById = accountFirebaseId,
-                SlotId = s.Id,
-                StudentFirebaseId = createStudentClassModel.StudentFirebaseId
-            });
-            
+                var otherStudents = await _unitOfWork.AccountRepository.FindAsQueryable(s => s.StudentStatus == StudentStatus.WaitingForClass
+                    && !createStudentClassesModel.StudentFirebaseIds.Contains(s.AccountFirebaseId))
+                    .Take(maxStudents - classInfo.StudentClasses.Count - students.Count)
+                    .ToListAsync();
 
+                students.AddRange(otherStudents);
+            }
 
-            var studentClass = createStudentClassModel.Adapt<StudentClass>();
-            studentClass.CreatedById = accountFirebaseId;
-            studentClass.IsPassed = false;
-            student.StudentStatus = StudentStatus.InClass;
-            student.CurrentClassId = classInfo.Id;
-
+            var receiverIds = new List<string>();
             var result = await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                var addedStudentClass = await _unitOfWork.StudentClassRepository.AddAsync(studentClass);
+                var addedStudentClasses = new List<StudentClass>();
+                var studentSlots = new List<SlotStudent>();
+                var existedSlotStudents = new List<SlotStudent>();
+                var studentClassScores = new List<StudentClassScore>();
 
-                //Create student class score
-                if (classInfo.IsPublic)
+                foreach (var student in students)
                 {
-                    var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
-                    var studentClassScores = criteria.Select(c => new StudentClassScore
+                    var studentClass = new StudentClass
                     {
                         Id = Guid.NewGuid(),
-                        StudentClassId = addedStudentClass.Id,
-                        CriteriaId = c.Id
-                    });
+                        ClassId = classInfo.Id,
+                        StudentFirebaseId = student.AccountFirebaseId,
+                        CreatedById = accountFirebaseId,
+                        IsPassed = false
+                    };
 
-                    await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(studentClassScores);
+                    student.StudentStatus = StudentStatus.InClass;
+                    student.CurrentClassId = classInfo.Id;
+                    addedStudentClasses.Add(studentClass);
+
+                    var classSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
+                    var existedSlots = await _unitOfWork.SlotStudentRepository.FindAsync(s => s.StudentFirebaseId == student.AccountFirebaseId
+                        && classSlotIds.Contains(s.SlotId) && s.RecordStatus == RecordStatus.IsDeleted, false, true);
+
+                    studentSlots.AddRange(classInfo.Slots.Select(s => new SlotStudent
+                    {
+                        CreatedById = accountFirebaseId,
+                        SlotId = s.Id,
+                        StudentFirebaseId = student.AccountFirebaseId
+                    }));
+
+                    studentSlots = studentSlots.Where(ss => !existedSlots.Any(es => es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId)).ToList();
+
+                    foreach (var slot in existedSlotStudents)
+                    {
+                        slot.RecordStatus = RecordStatus.IsActive;
+                    }
+
+                    if (classInfo.IsPublic)
+                    {
+                        var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
+                        studentClassScores.AddRange(criteria.Select(c => new StudentClassScore
+                        {
+                            Id = Guid.NewGuid(),
+                            StudentClassId = studentClass.Id,
+                            CriteriaId = c.Id
+                        }));
+                    }
+                    existedSlotStudents.AddRange(existedSlots);
+                    receiverIds.Add(student.AccountFirebaseId);
                 }
 
+                await _unitOfWork.StudentClassRepository.AddRangeAsync(addedStudentClasses);
                 await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
-                await _unitOfWork.AccountRepository.UpdateAsync(student);
+                await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(studentClassScores);
+                await _unitOfWork.AccountRepository.UpdateRangeAsync(students);
+                await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(existedSlotStudents);
                 await _unitOfWork.SaveChangesAsync();
-                return addedStudentClass;
+
+                return addedStudentClasses;
             });
-            //Notification
+
             if (classInfo.IsPublic)
             {
-                await _serviceFactory.NotificationService.SendNotificationAsync(createStudentClassModel.StudentFirebaseId, "Thông tin lớp mới",
-                    $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
-                
-                var receiverIds = classInfo.StudentClasses.Select(c => c.StudentFirebaseId).ToList();
+                var classReceiverIds = new List<string>();
                 if (classInfo.InstructorId != null)
                 {
-                    receiverIds.Add(classInfo.InstructorId);
+                    classReceiverIds.Add(classInfo.InstructorId);
                 }
-                await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds, 
-                    $"Học sinh mới {student.FullName ?? student.UserName} được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ bạn ấy hết mình!",student.AvatarUrl ?? "");
+                classReceiverIds = classInfo.StudentClasses.Select(sc => sc.StudentFirebaseId).ToList();
+
+                await _serviceFactory.NotificationService.SendNotificationToManyAsync(students.Select(s => s.AccountFirebaseId).ToList(), "Thông tin lớp mới",
+                        $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
+                await _serviceFactory.NotificationService.SendNotificationToManyAsync(classReceiverIds,
+                    $"{students.Count} học sinh mới đã được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ các bạn ấy hết mình!","");
             }
-            return result.Adapt<StudentClassModel>();
+
+            return result.Adapt<List<StudentClassModel>>();
         }
 
         public async Task DeleteStudentClass(string studentId, Guid classId, bool isExpelled, string accountFirebaseId)

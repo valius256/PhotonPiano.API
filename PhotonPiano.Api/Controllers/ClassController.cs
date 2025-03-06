@@ -101,7 +101,7 @@ namespace PhotonPiano.Api.Controllers
 
         [HttpPost("student-class")]
         [FirebaseAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Create a studentClass individually")]
+        [EndpointDescription("Add many students to a class")]
         public async Task<ActionResult<StudentClassModel>> CreateStudentClass(
         [FromBody] CreateStudentClassRequest request)
         {

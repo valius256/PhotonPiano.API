@@ -48,4 +48,6 @@ public interface IServiceFactory
     INotificationServiceHub NotificationServiceHub { get; }
 
     IStudentClassService StudentClassService { get; }
+
+    IDayOffService DayOffService { get; }
 }

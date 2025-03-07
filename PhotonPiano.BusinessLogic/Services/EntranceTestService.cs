@@ -199,6 +199,27 @@ public class EntranceTestService : IEntranceTestService
             entranceTestEntity.RoomName = room.Name;
         }
 
+        if (entranceTestStudentModel.IsAnnouncedScore.HasValue)
+        {
+            bool isFullScoreUpdated = true;
+            var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository.FindProjectedAsync<EntranceTestStudentWithResultsModel>(
+                ets => ets.EntranceTestId == id,
+                hasTrackings: false);
+
+            foreach (var entranceTestStudent in entranceTestStudents)
+            {
+                if (entranceTestStudent.EntranceTestResults.Count == 0 || !entranceTestStudent.TheoraticalScore.HasValue)
+                {
+                    isFullScoreUpdated = false;
+                }
+            }
+
+            if (!isFullScoreUpdated)
+            {
+                throw new BadRequestException("Can't publish the score of this entrance test");
+            }
+        }
+
         entranceTestEntity.UpdateById = currentUserFirebaseId;
         entranceTestEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
@@ -322,7 +343,7 @@ public class EntranceTestService : IEntranceTestService
             switch (transaction.PaymentStatus)
             {
                 case PaymentStatus.Succeed:
-                    
+
                     var entranceTestStudent = new EntranceTestStudent
                     {
                         Id = Guid.CreateVersion7(),
@@ -330,7 +351,7 @@ public class EntranceTestService : IEntranceTestService
                         CreatedAt = DateTime.UtcNow,
                         CreatedById = accountId,
                     };
-                    
+
                     await _unitOfWork.EntranceTestStudentRepository.AddAsync(entranceTestStudent);
 
                     transaction.EntranceTestStudentId = entranceTestStudent.Id;
@@ -569,9 +590,9 @@ public class EntranceTestService : IEntranceTestService
 
             decimal practicalScore = results.Aggregate(decimal.Zero,
                 (current, result) => current + result.Score!.Value * result.Weight!.Value);
-            
-            decimal theoryScore = entranceTestStudent.TheoraticalScore.HasValue 
-                ? Convert.ToDecimal(entranceTestStudent.TheoraticalScore.Value) 
+
+            decimal theoryScore = entranceTestStudent.TheoraticalScore.HasValue
+                ? Convert.ToDecimal(entranceTestStudent.TheoraticalScore.Value)
                 : decimal.Zero;
 
             bandScore = (theoryScore + practicalScore) / 2;
@@ -593,19 +614,20 @@ public class EntranceTestService : IEntranceTestService
 
             if (updateModel.TheoraticalScore.HasValue)
             {
-                var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
+                var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
+                    etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
                     hasTrackings: false);
-                
+
                 decimal practicalScore = dbResults.Aggregate(decimal.Zero,
                     (current, result) => current + result.Score!.Value * result.Weight!.Value);
-                
-                decimal theoryScore = updateModel.TheoraticalScore.HasValue 
-                    ? Convert.ToDecimal(updateModel.TheoraticalScore.Value) 
+
+                decimal theoryScore = updateModel.TheoraticalScore.HasValue
+                    ? Convert.ToDecimal(updateModel.TheoraticalScore.Value)
                     : decimal.Zero;
 
 
                 bandScore = (theoryScore + practicalScore) / 2;
-                
+
                 entranceTestStudent.BandScore = bandScore;
                 entranceTestStudent.Level = GetPianoSkillLevel(bandScore);
             }

@@ -216,7 +216,7 @@ public class ClassService : IClassService
             }
 
             var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == DateTime.UtcNow.AddHours(7).Month 
-                && c.StartTime.Year == DateTime.UtcNow.AddHours(7).Year); 
+                && c.StartTime.Year == DateTime.UtcNow.AddHours(7).Year, false, true); 
             //Great! With number of students each class and number of classes, we can easily fill in students
             for (var i = 0; i < numberOfClasses; i++)
             {

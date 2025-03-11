@@ -28,7 +28,7 @@ services:
          - ASPNETCORE_ENVIRONMENT=Production
          - ASPNETCORE_URLS=http://+:5000
          - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
-  
+    pull_policy: always
   
       
 #  photonpiano.cache:

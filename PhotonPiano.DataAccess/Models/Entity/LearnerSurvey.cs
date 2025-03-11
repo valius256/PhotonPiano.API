@@ -2,12 +2,12 @@
 
 public class LearnerSurvey : BaseEntityWithId
 {
-    public string AccountId { get; set; } = default!;
+    public string? AccountId { get; set; } = default!;
     public required Guid SurveyQuestionId { get; set; }
     public string QuestionContent { get; set; } = default!;
     public List<string> Answers { get; set; } = default!;
     public List<string> Options { get; set; } = default!;
-    
+    public bool AllowMultipleAnswers { get; set; }
     // reference
     public virtual Account Account { get; set; } = default!;
     public virtual SurveyQuestion SurveyQuestion { get; set; } = default!;

@@ -5,6 +5,7 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Account;
 using PhotonPiano.Api.Responses.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -33,6 +34,14 @@ public class AccountsController : BaseController
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
         return pagedResult.Items;
+    }
+
+    [HttpGet("class-waiting")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Get accounts with paging")]
+    public async Task<ActionResult<List<AwaitingLevelsModel>>> GetWaitingStudentOfAllLevels()
+    {
+        return await _serviceFactory.AccountService.GetWaitingStudentOfAllLevels();
     }
 
     [HttpPost]

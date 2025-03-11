@@ -15,6 +15,9 @@ services:
   photonpiano.api:
     image: ${DOCKER_REGISTRY-}photonpianoapi
     container_name: photonpiano.api
+    restart: on-failure
+    depends_on:
+      - photonpiano.cache
     build:
       context: .
       dockerfile: PhotonPiano.Api/Dockerfile
@@ -24,10 +27,20 @@ services:
     environment:
          - ASPNETCORE_ENVIRONMENT=Production
          - ASPNETCORE_URLS=http://+:5000
-
-
-networks:
-  default:
-    name: photonpiano_network
-
-
+         - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
+  
+#  photonpiano.cache:
+#    image: redis:6.2
+#    restart: always
+#    container_name: photonpiano.cache
+#    ports:
+#      - "6379:6379"
+#
+#  photonpiano.jaeger:
+#    image: jaegertracing/all-in-one:latest
+#    container_name: photonpiano.jaeger
+#    environment:
+#      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+#    ports:
+#      - "4317:4317"
+#      - "16686:16686"     # UI port

@@ -4,3 +4,9 @@
     build:
       context: .
       dockerfile: PhotonPiano.Api/Dockerfile
+
+  photonpiano.api-1:
+    image: photonpiano.api-1
+    build:
+      context: .
+      dockerfile: PhotonPiano.Api/Dockerfile

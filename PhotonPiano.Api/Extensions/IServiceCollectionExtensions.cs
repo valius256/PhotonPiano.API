@@ -223,16 +223,24 @@ public static class IServiceCollectionExtensions
 
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
-        if (configuration.GetValue<bool>("IsCacheDeploy"))
-        {
-            var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
-            services.AddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(redisConnectionString!, options =>
-                {
-                    options.ConnectRetry = 5;
-                    options.ConnectTimeout = 5000;
-                }));
-        }
+        // if (configuration.GetValue<bool>("IsCacheDeploy"))
+        // {
+        //     var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
+        //     services.AddSingleton<IConnectionMultiplexer>(_ =>
+        //         ConnectionMultiplexer.Connect(redisConnectionString!, options =>
+        //         {
+        //             options.ConnectRetry = 5;
+        //             options.ConnectTimeout = 5000;
+        //         }));
+        // }
+        
+        var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
+            ConnectionMultiplexer.Connect(redisConnectionString!, options =>
+            {
+                options.ConnectRetry = 5;
+                options.ConnectTimeout = 5000;
+            }));
 
         return services;
     }
@@ -288,12 +296,13 @@ public static class IServiceCollectionExtensions
                 Cron.Monthly(15));
 
             recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
-                x => x.CronJobAutoChangeSlotStatus(),
+                x => x.CronAutoChangeSlotStatus(),
                 Cron.Hourly());
             
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
                 x => x.CronForTuitionOverdue(),
                 Cron.Monthly(28));
+            
         });
 
 

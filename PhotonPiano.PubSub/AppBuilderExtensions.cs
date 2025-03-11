@@ -25,6 +25,7 @@ public static class AppBuilderExtensions
 
         app.MapHub<PubSubHub>("/pubsub");
         app.MapHub<NotificationHub>("/notification");
-        
+        app.MapHub<ProgressHub>("/progress");
+
     }
 }

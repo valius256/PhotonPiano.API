@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
@@ -180,7 +181,7 @@ public class ClassService : IClassService
         if (arrangeClassModel.StartWeek.DayOfWeek != DayOfWeek.Monday)
             throw new BadRequestException("Incorrect start week");
 
-
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Đang lấy dữ liệu học viên", 0);
         //Get awaited students
         var students = await _unitOfWork.AccountRepository.FindAsync(a =>
             a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
@@ -191,11 +192,17 @@ public class ClassService : IClassService
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
 
         var classes = new List<CreateClassAutoModel>();
-
-        //1. FILL IN STUDENTS
+        //1. FILL IN STUDENTS (25%)
         //With each level, fill the students
+        var progressLevel = 25 / (1.0 * Enum.GetValues<Level>().Length);
+        var currentProgress = 5.0;
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Bắt đầu xếp lớp...", currentProgress);
         foreach (var level in Enum.GetValues<Level>())
         {
+            currentProgress += progressLevel;
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Bắt đầu phân bổ học viên cho LEVEL {(int)level + 1}", currentProgress);
+            await Task.Delay(100);
+
             var studentsOfLevel = students.Where(s => s.Level == level).ToList();
             //Find out how many classes should be created to avoid having left over students
             //Using this formular : minStudents <= Number of student need to assign / Number of classes <= maxStudents
@@ -215,8 +222,7 @@ public class ClassService : IClassService
                 numberOfClasses = (int)Math.Floor(studentsOfLevel.Count * 1.0 / maxStudents);
             }
 
-            var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == DateTime.UtcNow.AddHours(7).Month 
-                && c.StartTime.Year == DateTime.UtcNow.AddHours(7).Year, false, true); 
+            
             //Great! With number of students each class and number of classes, we can easily fill in students
             for (var i = 0; i < numberOfClasses; i++)
             {
@@ -225,14 +231,14 @@ public class ClassService : IClassService
                 {
                     Id = Guid.NewGuid(),
                     Level = level,
-                    Name =
-                        $"LEVEL{(int)level + 1}_{classesThisMonth + i + 1}_{DateTime.Now.Month}{DateTime.Now.Year}",
+                    Name = "",
                     StudentIds = selectedStudents.Select(s => s.AccountFirebaseId).ToList()
                 });
             }
         }
-
-        //2. IT's SCHEDULE TIME! 
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đã đến lúc phân bổ lịch học! Đang chuẩn bị cấu hình và ngày nghỉ...", currentProgress);
+        await Task.Delay(500);
+        //2. IT's SCHEDULE TIME!  (30%)
         Random random = new();
         //Get config values
         var levelConfigs = new List<GetSystemConfigOnLevelModel>();
@@ -243,20 +249,29 @@ public class ClassService : IClassService
         }
         //Get day-offs
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
+
         //Initialize a list to store unadded slots (for conflict check)
         var unaddedSlots = new List<Slot>();
+
+        currentProgress += 5;
+
         //With each class, we will pick a random schedule for it!
+        var progressEachClass = 25 / (classes.Count * 1.0);
         foreach (var classDraft in classes)
         {
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang xếp lịch cho lớp {classDraft.Name}", currentProgress);
             var levelConfig = levelConfigs[(int)classDraft.Level];
             var dayFrames = GetRandomDays(levelConfig.NumOfSlotInWeek);
             var slot = await ScheduleAClassAutomatically(arrangeClassModel, dayOffs, dayFrames, levelConfig, unaddedSlots);
             classDraft.Slots.AddRange(slot);
             unaddedSlots.AddRange(slot.Adapt<List<Slot>>());
+            currentProgress += progressEachClass;
         }
 
-        //4. Now save them to database
-        var result = await SaveClasses(classes, students, userId);
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu vào cơ sở dữ liệu...", currentProgress);
+        await Task.Delay(500);
+        //3. Now save them to database (40%)
+        var result = await SaveClasses(classes, students, userId, currentProgress);
 
 
         return result;
@@ -281,27 +296,46 @@ public class ClassService : IClassService
 
     }
     private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, List<Account> students,
-        string userId)
+        string userId, double currentProgress)
     {
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             //Create classes
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu các lớp...", currentProgress);
             var mappedClasses = classes.Adapt<List<Class>>();
-            mappedClasses.ForEach(c =>
+            var monthDict = new Dictionary<int, int>();
+            foreach (var classInfo in mappedClasses)
             {
-                c.CreatedById = userId;
-                c.IsPublic = false;
-                c.IsScorePublished = false;
-                c.Status = ClassStatus.NotStarted;
-                c.StartTime = c.Slots.Count > 0 ? c.Slots.First().Date : DateOnly.MinValue;
-            });
+                classInfo.CreatedById = userId;
+                classInfo.IsPublic = false;
+                classInfo.IsScorePublished = false;
+                classInfo.Status = ClassStatus.NotStarted;
+                classInfo.StartTime = classInfo.Slots.Count > 0 ? classInfo.Slots.First().Date : DateOnly.MinValue;
+
+                var classesThatMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == classInfo.StartTime.Month
+                    && c.StartTime.Year == classInfo.StartTime.Year, false, true);
+
+                if (monthDict.ContainsKey(classInfo.StartTime.Month))
+                {
+                    monthDict[classInfo.StartTime.Month] += 1;  // Increment the value
+                }
+                else
+                {
+                    monthDict[classInfo.StartTime.Month] = 1;  // Initialize if key doesn't exist
+                }
+
+                classInfo.Name = $"LEVEL{(int)classInfo.Level + 1}_{classesThatMonth + monthDict[classInfo.StartTime.Month] + 1}_{classInfo.StartTime.Month}{classInfo.StartTime.Year}";
+            }
+
             await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>
             {
                 c.Slots = [];
                 return c;
             }).ToList());
+            currentProgress += 5;
 
             //Create StudentClasses
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu danh sách học sinh các lớp...", currentProgress);
             var studentClasses = new List<StudentClass>();
             foreach (var c in classes)
                 studentClasses.AddRange(c.StudentIds.Select(s => new StudentClass
@@ -312,8 +346,10 @@ public class ClassService : IClassService
                     ClassId = c.Id
                 }));
             await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
+            currentProgress += 5;
 
             //Create Slots
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu danh sách buổi học các lớp...", currentProgress);
             var slots = new List<Slot>();
             foreach (var c in classes)
                 slots.AddRange(c.Slots.Select(s => new Slot
@@ -326,8 +362,10 @@ public class ClassService : IClassService
                     Status = SlotStatus.NotStarted
                 }));
             await _unitOfWork.SlotRepository.AddRangeAsync(slots);
+            currentProgress += 5;
 
             //Create studentSlots
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu các bảng điểm danh...", currentProgress);
             var studentSlots = new List<SlotStudent>();
             foreach (var studentClass in studentClasses)
             {
@@ -341,16 +379,20 @@ public class ClassService : IClassService
                         AttendanceStatus = AttendanceStatus.NotYet
                     });
             }
-
             await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
+            currentProgress += 5;
 
             //Change student status and current class
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang cập nhật lại trạng thái các học viên...", currentProgress);
             await _unitOfWork.AccountRepository.FindAsQueryable(a =>
                     a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(b => b.StudentStatus, StudentStatus.InClass));
+            currentProgress += 5;
 
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang hoàn tất...", currentProgress);
             await _unitOfWork.SaveChangesAsync();
+            currentProgress += 10;
 
             // Fetch the class capacity
             var capacity =

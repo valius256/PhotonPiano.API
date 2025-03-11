@@ -7,6 +7,7 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.PubSub.Notification;
+using PhotonPiano.PubSub.Progress;
 using Razor.Templating.Core;
 using StackExchange.Redis;
 
@@ -65,8 +66,10 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IDayOffService> _dayOffService;
 
+    private readonly Lazy<IProgressServiceHub> _progressServiceHub;
+
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
-        IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
+        IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext, IHubContext<ProgressHub> progressHubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine)
     {
@@ -93,6 +96,7 @@ public class ServiceFactory : IServiceFactory
         _applicationService = new Lazy<IApplicationService>(() => new ApplicationService(unitOfWork, this));
         _pinataService = new Lazy<IPinataService>(() => new PinataService(configuration, httpClientFactory));
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
+        _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
         _studentClassService = new Lazy<IStudentClassService>(() => new StudentClassService(this, unitOfWork));
         _dayOffService = new Lazy<IDayOffService>(() => new DayOffService(unitOfWork, this));
@@ -144,4 +148,6 @@ public class ServiceFactory : IServiceFactory
     public IStudentClassService StudentClassService => _studentClassService.Value;
 
     public IDayOffService DayOffService => _dayOffService.Value;
+
+    public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
 }

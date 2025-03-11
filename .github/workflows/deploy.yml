@@ -1,21 +1,16 @@
-name: Build and Deploy .NET 9 API
+name: Build and Push Docker Image to GHCR
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  DOTNET_NOLOGO: true
-  DOTNET_CLI_TELEMETRY_OPTOUT: true
-  POSTGRES_CONNECTION: ${{ secrets.POSTGRES_CONNECTION }}
-  ASPNETCORE_ENVIRONMENT: Production
+  IMAGE_NAME: ghcr.io/valius256/photonpiano-api  
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,15 +22,19 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore PhotonPiano.API.sln  # Replace with your actual .sln file name
+        run: dotnet restore PhotonPiano.API.sln
 
       - name: Build
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-#      - name: Test
-#        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
-
       - name: Publish
         run: dotnet publish PhotonPiano.API.sln -c Release -o ./publish --no-restore
 
-  
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+      - name: Build Docker Image
+        run: docker build -t ${{ env.IMAGE_NAME }}:latest -f docker-compose/Dockerfile .
+
+      - name: Push Docker Image
+        run: docker push ${{ env.IMAGE_NAME }}:latest

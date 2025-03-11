@@ -53,6 +53,7 @@ public class SchedulerController : BaseController
         var result = await _serviceFactory.SlotService.GetAttendanceStatusAsync(slotId);
         return Ok(result.Adapt<List<StudentAttendanceResponse>>());
     }
+    
 
     [HttpGet("slot/{id}")]
     [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]

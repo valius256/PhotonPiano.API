@@ -11,10 +11,8 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
     {
         builder.HasKey(x => x.AccountFirebaseId);
 
-
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
-
-
+        
         builder.HasOne(x => x.CurrentClass)
             .WithMany()
             .HasForeignKey(x => x.CurrentClassId)

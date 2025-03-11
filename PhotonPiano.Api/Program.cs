@@ -7,6 +7,8 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -18,6 +20,31 @@ var configuration = builder.Configuration;
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(7777, listenOptions =>
+    {
+        listenOptions.UseHttps();
+    });
+});
+
+
+// Not Done Yet
+// builder.Services
+//     .AddOpenTelemetry()
+//     .ConfigureResource(resource => resource.AddService("PhotonPiano.Api"))
+//     .WithTracing(tracerProviderBuilder =>
+//     {
+//         tracerProviderBuilder
+//             .AddAspNetCoreInstrumentation() // Tracking API request
+//             .AddHttpClientInstrumentation() // Tracking HTTP request
+//             .AddSqlClientInstrumentation();  // Tracking database queries
+//
+//         
+//         tracerProviderBuilder.AddOtlpExporter();
+//     });
+
 
 builder.AddSignalRConfig();
 
@@ -41,7 +68,7 @@ app.UseCors("AllowAll");
 
 // Register and execute PostgresSqlConfiguration
 var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
-sqlConfig.Configure(app, app.Environment);
+sqlConfig.Configure();
 
 app.UseHttpsRedirection();
 

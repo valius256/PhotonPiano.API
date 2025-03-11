@@ -11,7 +11,7 @@ public class PostgresSqlConfiguration
         _serviceScopeFactory = serviceScopeFactory;
     }
 
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    public void Configure()
     {
         using (var scope = _serviceScopeFactory.CreateScope())
         {

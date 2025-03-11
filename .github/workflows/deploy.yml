@@ -1,0 +1,32 @@
+name: Build and Deploy .NET API
+
+on:
+  push:
+    branches:
+      - main  # Trigger khi có thay đổi trên branch main
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted  # Chạy trên runner Windows
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'  # Cập nhật đúng phiên bản .NET của bạn
+
+      - name: Build project
+        run: dotnet build --configuration Release
+
+      - name: Publish project
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Build and Start Services using Docker Compose
+        run: |
+          docker-compose down  # Dừng và xóa container cũ
+          docker-compose up --build -d  # Build và chạy container mới
+
+      - name: Check running containers
+        run: docker ps -a

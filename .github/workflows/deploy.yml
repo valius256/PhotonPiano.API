@@ -1,32 +1,49 @@
-name: Build and Deploy .NET API
+name: Build and Deploy .NET 9 API
 
 on:
   push:
-    branches:
-      - main  # Trigger khi có thay đổi trên branch main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  POSTGRES_CONNECTION: ${{ secrets.POSTGRES_CONNECTION }}
+  ASPNETCORE_ENVIRONMENT: Production
 
 jobs:
-  build-and-deploy:
-    runs-on: self-hosted  # Chạy trên runner Windows
+  build:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'  # Cập nhật đúng phiên bản .NET của bạn
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Build project
-        run: dotnet build --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore
 
-      - name: Publish project
-        run: dotnet publish -c Release -o ./publish
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+          
 
-      - name: Build and Start Services using Docker Compose
-        run: |
-          docker-compose down  # Dừng và xóa container cũ
-          docker-compose up --build -d  # Build và chạy container mới
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
-      - name: Check running containers
-        run: docker ps -a
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Publish
+        run: dotnet publish -c Release -o ./publish --no-restore
+
+  

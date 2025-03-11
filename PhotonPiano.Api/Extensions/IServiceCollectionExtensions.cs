@@ -146,7 +146,7 @@ public static class IServiceCollectionExtensions
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
                 .AllowCredentials()
-                .SetIsOriginAllowed(host => true)
+                .SetIsOriginAllowed(_ => true)
             )
         );
         return services;
@@ -154,13 +154,15 @@ public static class IServiceCollectionExtensions
 
     private static string? GetConnectionString(this IConfiguration configuration)
     {
-        var rs = configuration.GetValue<bool>("IsDeploy")
-            ? configuration.GetConnectionString("PostgresDeployDb")
-            : configuration.GetConnectionString("PostgresLocal");
+        // var rs = configuration.GetValue<bool>("IsDeploy")
+        //     ? configuration.GetConnectionString("PostgresDeployDb")
+        //     : configuration.GetConnectionString("PostgresLocal");
+        //
+        // if (configuration.GetValue<bool>("IsAspireHost"))
+        //     rs = configuration.GetConnectionString("photonpiano");
 
-        if (configuration.GetValue<bool>("IsAspireHost"))
-            rs = configuration.GetConnectionString("photonpiano");
-
+        var rs = configuration.GetConnectionString("PostgresPhotonPiano");
+        
         if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" && !_messagePrinted)
         {
             Console.WriteLine("This running is using connection string: " + rs);

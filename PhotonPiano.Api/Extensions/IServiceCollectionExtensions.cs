@@ -23,6 +23,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
+using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
 
 namespace PhotonPiano.Api.Extensions;
@@ -97,15 +98,17 @@ public static class IServiceCollectionExtensions
             .NewConfig()
             .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
-        TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig()
+            .Map(dest => dest.StaffConfirmNote, src => src.Note);
+
+        TypeAdapterConfig<UpdateApplicationModel, Application>.NewConfig().IgnoreNullValues(true);
+        
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus);
 
-
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
-        
         
         return services;
     }

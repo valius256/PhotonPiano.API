@@ -106,7 +106,7 @@ public class ServiceFactory : IServiceFactory
         _dayOffService = new Lazy<IDayOffService>(() => new DayOffService(unitOfWork, this));
         // _logger.LogInformation("ServiceFactory has been initialized.");
         _learnerSurveyService = new Lazy<ILearnerSurveyService>(() => new LearnerSurveyService(unitOfWork));
-        _surveryQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork));
+        _surveryQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork, this));
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
     }
 
@@ -158,7 +158,7 @@ public class ServiceFactory : IServiceFactory
 
     public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
     
-    public ISurveyQuestionService ISurveyQuestionService => _surveryQuestionService.Value;
+    public ISurveyQuestionService SurveyQuestionService => _surveryQuestionService.Value;
     
     public ILearnerSurveyService LearnerSurveyService => _learnerSurveyService.Value;
 }

@@ -9,6 +9,10 @@ public interface ISurveyQuestionService
 {
     Task<PagedResult<SurveyQuestionModel>> GetPagedSurveyQuestions(QueryPagedSurveyQuestionsModel queryModel);
     
+    Task<List<SurveyQuestionModel>> GetAllSurveyQuestions();
+    
+    Task<List<SurveyQuestionModel>> GetCachedAllSurveyQuestions();
+    
     Task<SurveyQuestionDetailsModel> GetSurveyQuestionDetails(Guid id);
 
     Task<SurveyQuestionModel> CreateSurveyQuestion(CreateSurveyQuestionModel createModel, AccountModel currentAccount);

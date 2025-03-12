@@ -14,9 +14,14 @@ public class SurveyQuestionService : ISurveyQuestionService
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public SurveyQuestionService(IUnitOfWork unitOfWork)
+    private readonly IServiceFactory _serviceFactory;
+    
+    private readonly string questionsCacheKey = "surveyQuestions";
+    
+    public SurveyQuestionService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
+        _serviceFactory = serviceFactory;
     }
 
     public async Task<PagedResult<SurveyQuestionModel>> GetPagedSurveyQuestions(
@@ -26,6 +31,30 @@ public class SurveyQuestionService : ISurveyQuestionService
 
         return await _unitOfWork.SurveyQuestionRepository.GetPaginatedWithProjectionAsync<SurveyQuestionModel>(
             page, size, column, desc);
+    }
+
+    public async Task<List<SurveyQuestionModel>> GetAllSurveyQuestions()
+    {
+        return await _unitOfWork.SurveyQuestionRepository.FindProjectedAsync<SurveyQuestionModel>(q => true,
+            hasTrackings: false);
+    }
+
+    public async Task<List<SurveyQuestionModel>> GetCachedAllSurveyQuestions()
+    {
+        var cacheValue = await _serviceFactory.RedisCacheService.GetAsync<List<SurveyQuestionModel>>(questionsCacheKey);
+
+        Console.WriteLine($"Questions cache: {cacheValue}");
+
+        if (cacheValue is not null)
+        {
+            return cacheValue;
+        }
+
+        var questions = await GetAllSurveyQuestions();
+        
+        await _serviceFactory.RedisCacheService.SaveAsync(questionsCacheKey, questions, TimeSpan.FromDays(7));
+
+        return questions;
     }
 
     public async Task<SurveyQuestionDetailsModel> GetSurveyQuestionDetails(Guid id)
@@ -52,6 +81,8 @@ public class SurveyQuestionService : ISurveyQuestionService
         await _unitOfWork.SurveyQuestionRepository.AddAsync(surveyQuestion);
 
         await _unitOfWork.SaveChangesAsync();
+        
+        await _serviceFactory.RedisCacheService.DeleteAsync(questionsCacheKey);
 
         return surveyQuestion.Adapt<SurveyQuestionModel>();
     }
@@ -71,6 +102,8 @@ public class SurveyQuestionService : ISurveyQuestionService
         surveyQuestion.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.SaveChangesAsync();
+        
+        await _serviceFactory.RedisCacheService.DeleteAsync(questionsCacheKey);
     }
 
     public async Task DeleteSurveyQuestion(Guid id, AccountModel currentAccount)
@@ -86,5 +119,7 @@ public class SurveyQuestionService : ISurveyQuestionService
         surveyQuestion.DeletedAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.SaveChangesAsync();
+        
+        await _serviceFactory.RedisCacheService.DeleteAsync(questionsCacheKey);
     }
 }

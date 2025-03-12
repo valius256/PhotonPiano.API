@@ -21,14 +21,6 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenLocalhost(7777, listenOptions =>
-    {
-        listenOptions.UseHttps();
-    });
-});
-
 
 // Not Done Yet
 // builder.Services

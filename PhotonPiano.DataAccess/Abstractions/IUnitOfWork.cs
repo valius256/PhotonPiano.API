@@ -40,6 +40,10 @@ public interface IUnitOfWork
     IEntranceTestResultRepository EntranceTestResultRepository { get; }
 
     IStudentClassScoreRepository StudentClassScoreRepository { get; }
+    
+    ISurveyQuestionRepository SurveyQuestionRepository { get; }
+    
+    ILearnerSurveyRepository LearnerSurveyRepository { get; }
 
     Task<int> SaveChangesAsync();
 

@@ -12,5 +12,5 @@ public class SurveyQuestion : BaseEntityWithId
     // reference 
     public virtual Account CreatedBy { get; set; } = default!;
     public virtual Account UpdatedBy { get; set; } = default!;
-    public virtual ICollection<SurveyDetails> LearnerSurveys { get; set; } = default!;
+    public virtual ICollection<LearnerSurvey> LearnerSurveys { get; set; } = default!;
 }

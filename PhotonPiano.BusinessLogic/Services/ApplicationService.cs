@@ -97,13 +97,15 @@ public class ApplicationService : IApplicationService
     public async Task<ApplicationDetailsModel> SendRefundApplication(SendRefundApplicationModel sendModel,
         AccountModel currentAccount)
     {
+        var getAmount = await _serviceFactory.TuitionService.GetTuitionRefundAmount(currentAccount.AccountFirebaseId, currentAccount.CurrentClassId);
+        
         // convert to json 
         var bankInformation = new
         {
             sendModel.BankName,
             sendModel.BankAccountName,
             sendModel.BankAccountNumber,
-            sendModel.Amount
+            getAmount
         };
 
         var application = sendModel.Adapt<Application>();

@@ -5,7 +5,7 @@ using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
-public interface ISurveryQuestionService
+public interface ISurveyQuestionService
 {
     Task<PagedResult<SurveyQuestionModel>> GetPagedSurveyQuestions(QueryPagedSurveyQuestionsModel queryModel);
     

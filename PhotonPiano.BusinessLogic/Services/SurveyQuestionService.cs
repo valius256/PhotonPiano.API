@@ -10,7 +10,7 @@ using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
-public class SurveyQuestionService : ISurveryQuestionService
+public class SurveyQuestionService : ISurveyQuestionService
 {
     private readonly IUnitOfWork _unitOfWork;
 

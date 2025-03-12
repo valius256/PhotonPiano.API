@@ -36,7 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IPinataService, PinataService>();
         services.AddScoped<INotificationService, NotificationService>();
-        services.AddScoped<ISurveryQuestionService, SurveyQuestionService>();
+        services.AddScoped<ISurveyQuestionService, SurveyQuestionService>();
         services.AddScoped<ILearnerSurveyService, LearnerSurveyService>();
         services.AddHttpClient();
         services.AddMapsterConfig();

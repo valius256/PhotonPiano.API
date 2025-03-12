@@ -26,7 +26,7 @@ namespace PhotonPiano.Api.Controllers
             [FromQuery] QueryPagedSurveyQuestionRequest request)
         {
             var pagedResult =
-                await _serviceFactory.SurveryQuestionService.GetPagedSurveyQuestions(
+                await _serviceFactory.ISurveyQuestionService.GetPagedSurveyQuestions(
                     request.Adapt<QueryPagedSurveyQuestionsModel>());
 
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
@@ -39,7 +39,7 @@ namespace PhotonPiano.Api.Controllers
         [EndpointDescription("Get Survey Question details")]
         public async Task<ActionResult<SurveyQuestionDetailsModel>> GetSurveyQuestionDetails([FromRoute] Guid id)
         {
-            return await _serviceFactory.SurveryQuestionService.GetSurveyQuestionDetails(id);
+            return await _serviceFactory.ISurveyQuestionService.GetSurveyQuestionDetails(id);
         }
 
         [HttpPost]
@@ -48,7 +48,7 @@ namespace PhotonPiano.Api.Controllers
         public async Task<ActionResult> CreateSurveyQuestion([FromBody] CreateSurveyQuestionRequest request)
         {
             return Created(nameof(CreateSurveyQuestion),
-                await _serviceFactory.SurveryQuestionService.CreateSurveyQuestion(
+                await _serviceFactory.ISurveyQuestionService.CreateSurveyQuestion(
                     request.Adapt<CreateSurveyQuestionModel>(),
                     base.CurrentAccount!
                 ));
@@ -60,7 +60,7 @@ namespace PhotonPiano.Api.Controllers
         public async Task<ActionResult> UpdateSurveyQuestion([FromRoute] Guid id,
             [FromBody] UpdateSurveyQuestionRequest request)
         {
-            await _serviceFactory.SurveryQuestionService.UpdateSurveyQuestion(id,
+            await _serviceFactory.ISurveyQuestionService.UpdateSurveyQuestion(id,
                 request.Adapt<UpdateSurveyQuestionModel>(),
                 base.CurrentAccount!);
             
@@ -72,7 +72,7 @@ namespace PhotonPiano.Api.Controllers
         [EndpointDescription("Delete Survey Question")]
         public async Task<ActionResult> DeleteSurveyQuestion([FromRoute] Guid id)
         {
-            await _serviceFactory.SurveryQuestionService.DeleteSurveyQuestion(id, base.CurrentAccount!);
+            await _serviceFactory.ISurveyQuestionService.DeleteSurveyQuestion(id, base.CurrentAccount!);
             
             return NoContent();
         }

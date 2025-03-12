@@ -130,7 +130,11 @@ public class Account : BaseEntity
     public virtual ICollection<SurveyQuestion> UpdatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
     
     
-    // LearnerSurvey
-    public virtual ICollection<LearnerSurvey> LearnerSurveys { get; set; } = new List<LearnerSurvey>();
+    // SurveyDetails
+    public virtual ICollection<SurveyDetails> LearnerSurveys { get; set; } = new List<SurveyDetails>();
+    
+    // Survey
+    public virtual ICollection<Survey> CreatedSurveys { get; set; } = new List<Survey>();
+    public virtual ICollection<Survey> UpdatedSurveys { get; set; } = new List<Survey>();
     
 }

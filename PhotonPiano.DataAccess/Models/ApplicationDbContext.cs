@@ -34,9 +34,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<DayOff> DayOffs { get; set; }
     public DbSet<AccountNotification> AccountNotifications { get; set; }
     public DbSet<Application> Applications { get; set; }
-    public DbSet<LearnerSurvey> LearnerSurveys { get; set; }
+    public DbSet<SurveyDetails> LearnerSurveys { get; set; }
     public DbSet<SurveyQuestion> SurveyQuestions { get; set; }
-    
+    public DbSet<Survey> Surveys { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,9 +59,12 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new DayOffConfiguration());
         modelBuilder.ApplyConfiguration(new AccountNotificationConfiguration());
         modelBuilder.ApplyConfiguration(new ApplicationConfiguration());
-        modelBuilder.ApplyConfiguration(new LearnerSurveyConfiguration());
+        modelBuilder.ApplyConfiguration(new SurveyDetailsConfiguration());
         modelBuilder.ApplyConfiguration(new SurveyQuestionConfiguration());
+        modelBuilder.ApplyConfiguration(new SurveyConfiguration());
 
+        
+        
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());
 
         // modelBuilder.Seed();

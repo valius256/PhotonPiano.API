@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhotonPiano.DataAccess.Models;
@@ -12,9 +13,11 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250312031533_Adjust_Survey_Module_And_Add_Seed_Data_For_SystemConfig")]
+    partial class Adjust_Survey_Module_And_Add_Seed_Data_For_SystemConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -968,6 +971,44 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.ToTable("StudentClassScore");
                 });
 
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Survey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreateById")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UpdateById")
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreateById");
+
+                    b.HasIndex("UpdateById");
+
+                    b.ToTable("Survey");
+                });
+
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1614,6 +1655,23 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("StudentClass");
                 });
 
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Survey", b =>
+                {
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreateBy")
+                        .WithMany("CreatedSurveys")
+                        .HasForeignKey("CreateById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
+                        .WithMany("UpdatedSurveys")
+                        .HasForeignKey("UpdateById");
+
+                    b.Navigation("CreateBy");
+
+                    b.Navigation("UpdateBy");
+                });
+
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", b =>
                 {
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
@@ -1698,6 +1756,8 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Navigation("CreatedSurveyQuestions");
 
+                    b.Navigation("CreatedSurveys");
+
                     b.Navigation("CreatedTransaction");
 
                     b.Navigation("DeletedApplications");
@@ -1757,6 +1817,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("UpdatedStudentClass");
 
                     b.Navigation("UpdatedSurveyQuestions");
+
+                    b.Navigation("UpdatedSurveys");
 
                     b.Navigation("UpdatednNews");
                 });

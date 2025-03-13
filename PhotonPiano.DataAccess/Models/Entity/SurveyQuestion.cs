@@ -3,8 +3,13 @@
 public class SurveyQuestion : BaseEntityWithId
 {
     public string QuestionContent { get; set; } = default!;
+    
     public List<string> Options { get; set; } = default!;
+    
     public bool AllowMultipleAnswers { get; set; }
+
+    public bool AllowOtherAnswer { get; set; }
+    
     //
     public required string CreatedById { get; set; }
     public string? UpdatedById { get; set; }

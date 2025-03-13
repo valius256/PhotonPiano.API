@@ -10,8 +10,17 @@ public class SurveyQuestionConfiguration : IEntityTypeConfiguration<SurveyQuesti
     public void Configure(EntityTypeBuilder<SurveyQuestion> builder)
     {
         builder.HasKey(x => x.Id);
+
+        builder.Property(q => q.RecordStatus)
+            .HasDefaultValue(RecordStatus.IsActive);
         
         builder.HasQueryFilter(x => x.RecordStatus != RecordStatus.IsDeleted);
+
+        builder.Property(q => q.AllowMultipleAnswers)
+            .HasDefaultValue(false);
+        
+        builder.Property(q => q.AllowOtherAnswer)
+            .HasDefaultValue(false);
         
         builder.HasMany(x => x.LearnerSurveys)
             .WithOne(x => x.SurveyQuestion)

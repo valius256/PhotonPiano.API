@@ -7,4 +7,6 @@ public record UpdateSurveyQuestionRequest
     public List<string>? Options { get; init; } 
     
     public bool? AllowMultipleAnswers { get; init; }
+    
+    public bool? AllowOtherAnswer { get; init; }
 }

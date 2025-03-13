@@ -13,4 +13,6 @@ public record SurveyQuestionModel
     public string? UpdatedById { get; init; }
     
     public bool AllowMultipleAnswers { get; init; }
+    
+    public bool AllowOtherAnswer { get; init; }
 }

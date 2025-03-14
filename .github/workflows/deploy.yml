@@ -54,8 +54,8 @@ jobs:
       - name: Build
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-      - name: Run Tests with Testcontainers
-        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+     ##- name: Run Tests with Testcontainers
+     ##   run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3

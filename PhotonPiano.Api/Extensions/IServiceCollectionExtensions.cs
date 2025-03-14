@@ -160,11 +160,11 @@ public static class IServiceCollectionExtensions
         // var rs = configuration.GetValue<bool>("IsDeploy")
         //     ? configuration.GetConnectionString("PostgresDeployDb")
         //     : configuration.GetConnectionString("PostgresLocal");
-        //
+        
         // if (configuration.GetValue<bool>("IsAspireHost"))
         //     rs = configuration.GetConnectionString("photonpiano");
 
-        var rs = configuration.GetConnectionString("PostgresPhotonPiano");
+         var rs = configuration.GetConnectionString("PostgresPhotonPiano");
         
         if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" && !_messagePrinted)
         {
@@ -303,14 +303,16 @@ public static class IServiceCollectionExtensions
             recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
                 x => x.CronAutoChangeSlotStatus(),
                 Cron.Hourly());
-            
+
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
                 x => x.CronForTuitionOverdue(),
                 Cron.Monthly(28));
-            
+
+            recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
+                x => x.CronJobAutoRemovedOutDateNotifications(),
+                Cron.Hourly(15));
         });
-
-
+            
         return services;
     }
 

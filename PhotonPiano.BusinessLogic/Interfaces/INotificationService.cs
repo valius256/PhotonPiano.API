@@ -17,4 +17,5 @@ public interface INotificationService
     Task ToggleNotificationViewStatus(Guid id, string accountId);
     Task SendNotificationsToAllStaffsAsync(string title, string message);
     Task SendNotificationToManyAsync(List<string> userFirebaseIds, string message, string thumbnail);
+    Task CronJobAutoRemovedOutDateNotifications();
 }

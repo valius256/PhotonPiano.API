@@ -6,7 +6,7 @@ namespace PhotonPiano.Api.Responses.Class
     {
         public string? InstructorId { get; init; }
         public ClassStatus Status { get; init; }
-        public LevelEnum? Level { get; init; }
+        public Guid LevelId { get; init; }
         public bool IsPublic { get; init; }
         public required string Name { get; init; }
         public bool IsScorePublished { get; init; }

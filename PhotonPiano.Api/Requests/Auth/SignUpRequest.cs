@@ -20,7 +20,7 @@ public record SignUpRequest
     public required string Phone { get; init; }
     
     [Required(ErrorMessage = "Level is required.")]
-    public required LevelEnum Level { get; init; }
+    public required Guid Level { get; init; }
     
     [Required(ErrorMessage = "Targets are required.")]
     public required List<string> DesiredTargets { get; init; } 

@@ -5,7 +5,6 @@ namespace PhotonPiano.Api.Requests.Class
 {
     public record CreateClassRequest
     {
-        [EnumDataType(typeof(LevelEnum))]
-        public required LevelEnum Level { get; init; }
+        public required Guid LevelId { get; init; }
     }
 }

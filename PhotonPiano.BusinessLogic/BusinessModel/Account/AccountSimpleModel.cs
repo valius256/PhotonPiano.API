@@ -13,7 +13,7 @@ public record AccountSimpleModel
     public Gender Gender { get; init; }
     public DateTime JoinedDate { get; init; }
     public string? ShortDescription { get; init; }
-    public LevelEnum Level { get; init; }
+    public Guid? LevelId { get; init; }
     public AccountStatus Status { get; init; }
     public DateTime RegistrationDate { get; init; }
 }

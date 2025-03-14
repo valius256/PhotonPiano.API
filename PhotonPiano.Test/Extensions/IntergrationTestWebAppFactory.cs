@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Hangfire;
+using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using PhotonPiano.Api;
 using PhotonPiano.DataAccess.Models;
 using Testcontainers.PostgreSql;
@@ -14,8 +17,8 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithImage("postgres:latest")
         .WithDatabase("photonpiano")
         .WithUsername("postgres")
-        .WithPassword("anhphatdeptrai") 
-        .Build();
+        .WithPassword("postgres") 
+
 
     public async Task InitializeAsync()
     {
@@ -37,9 +40,20 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
 
             if (descriptor is not null) services.Remove(descriptor);
 
+            
+            var connectionString = _dbContainer.GetConnectionString();
+            
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseNpgsql(_dbContainer.GetConnectionString());
+                options.UseNpgsql(connectionString);
+            });
+            
+            services.AddHangfire((_, config) =>
+            {
+                config.UsePostgreSqlStorage(options =>
+                {
+                    options.UseNpgsqlConnection(connectionString);
+                });
             });
         });
 

@@ -14,7 +14,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithImage("postgres:latest")
         .WithDatabase("photonpiano")
         .WithUsername("postgres")
-        .WithPassword("anhphatdeptrai")
+        .WithPassword("anhphatdeptrai") 
         .Build();
 
     public async Task InitializeAsync()

@@ -126,8 +126,8 @@ public class Account : BaseEntity
     public virtual ICollection<Application> DeletedApplications { get; set; } = new List<Application>();
     
     // SurveyQuestion
-    public virtual ICollection<SurveyQuestion> CreatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
-    public virtual ICollection<SurveyQuestion> UpdatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
+    public virtual ICollection<PianoQuestion> CreatedSurveyQuestions { get; set; } = new List<PianoQuestion>();
+    public virtual ICollection<PianoQuestion> UpdatedSurveyQuestions { get; set; } = new List<PianoQuestion>();
     
     
     // SurveyDetails

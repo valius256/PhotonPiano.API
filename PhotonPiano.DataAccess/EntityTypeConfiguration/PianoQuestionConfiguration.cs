@@ -5,9 +5,9 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration;
 
-public class SurveyQuestionConfiguration : IEntityTypeConfiguration<SurveyQuestion>
+public class PianoQuestionConfiguration : IEntityTypeConfiguration<PianoQuestion>
 {
-    public void Configure(EntityTypeBuilder<SurveyQuestion> builder)
+    public void Configure(EntityTypeBuilder<PianoQuestion> builder)
     {
         builder.HasKey(x => x.Id);
 
@@ -15,15 +15,12 @@ public class SurveyQuestionConfiguration : IEntityTypeConfiguration<SurveyQuesti
             .HasDefaultValue(RecordStatus.IsActive);
         
         builder.HasQueryFilter(x => x.RecordStatus != RecordStatus.IsDeleted);
-
-        builder.Property(q => q.AllowMultipleAnswers)
-            .HasDefaultValue(false);
         
         builder.Property(q => q.AllowOtherAnswer)
             .HasDefaultValue(false);
         
         builder.HasMany(x => x.LearnerSurveys)
-            .WithOne(x => x.SurveyQuestion)
+            .WithOne(x => x.PianoQuestion)
             .HasForeignKey(x => x.SurveyQuestionId)
             .OnDelete(DeleteBehavior.NoAction)
             ;

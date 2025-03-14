@@ -1,9 +1,9 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 
-namespace PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
+namespace PhotonPiano.BusinessLogic.BusinessModel.PianoQuestion;
 
-public record SurveyQuestionDetailsModel : SurveyQuestionModel
+public record PianoQuestionDetailsModel : PianoQuestionModel
 {
     public AccountModel CreatedBy { get; init; } = default!;
     

@@ -2,7 +2,7 @@
 
 namespace PhotonPiano.DataAccess.Abstractions;
 
-public interface ISurveyQuestionRepository : IGenericRepository<SurveyQuestion>
+public interface IPianoQuestionRepository : IGenericRepository<PianoQuestion>
 {
     
 }

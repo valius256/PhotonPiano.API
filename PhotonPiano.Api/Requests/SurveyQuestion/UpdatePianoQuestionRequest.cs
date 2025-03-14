@@ -1,6 +1,6 @@
 ﻿namespace PhotonPiano.Api.Requests.SurveyQuestion;
 
-public record UpdateSurveyQuestionRequest
+public record UpdatePianoQuestionRequest
 {
     public string? QuestionContent { get; init; }
 

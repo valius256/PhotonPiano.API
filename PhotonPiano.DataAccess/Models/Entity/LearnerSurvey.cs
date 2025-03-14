@@ -16,5 +16,5 @@ public class LearnerSurvey : BaseEntity
     public bool AllowMultipleAnswers { get; set; }
     // reference
     public virtual Account Account { get; set; } = default!;
-    public virtual SurveyQuestion SurveyQuestion { get; set; } = default!;
+    public virtual PianoQuestion PianoQuestion { get; set; } = default!;
 }

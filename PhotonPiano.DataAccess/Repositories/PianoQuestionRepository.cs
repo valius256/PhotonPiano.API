@@ -4,9 +4,9 @@ using PhotonPiano.DataAccess.Models.Entity;
 
 namespace PhotonPiano.DataAccess.Repositories;
 
-public class SurveyQuestionRepository : GenericRepository<SurveyQuestion>, ISurveyQuestionRepository
+public class PianoQuestionRepository : GenericRepository<PianoQuestion>, IPianoQuestionRepository
 {
-    public SurveyQuestionRepository(ApplicationDbContext context) : base(context)
+    public PianoQuestionRepository(ApplicationDbContext context) : base(context)
     {
     }
 }

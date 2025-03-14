@@ -41,7 +41,7 @@ public interface IUnitOfWork
 
     IStudentClassScoreRepository StudentClassScoreRepository { get; }
     
-    ISurveyQuestionRepository SurveyQuestionRepository { get; }
+    IPianoQuestionRepository PianoQuestionRepository { get; }
     
     ILearnerSurveyRepository LearnerSurveyRepository { get; }
 

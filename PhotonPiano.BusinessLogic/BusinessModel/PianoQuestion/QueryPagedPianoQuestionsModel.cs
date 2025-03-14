@@ -1,8 +1,8 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Query;
 
-namespace PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
+namespace PhotonPiano.BusinessLogic.BusinessModel.PianoQuestion;
 
-public record QueryPagedSurveyQuestionsModel : QueryPagedModel
+public record QueryPagedPianoQuestionsModel : QueryPagedModel
 {
     public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc)
     {

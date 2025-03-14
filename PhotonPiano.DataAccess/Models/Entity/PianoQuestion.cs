@@ -1,15 +1,15 @@
-﻿namespace PhotonPiano.DataAccess.Models.Entity;
+﻿using PhotonPiano.DataAccess.Models.Enum;
 
-public class SurveyQuestion : BaseEntityWithId
+namespace PhotonPiano.DataAccess.Models.Entity;
+
+public class PianoQuestion : BaseEntityWithId
 {
-    public string QuestionContent { get; set; } = default!;
-    
-    public List<string> Options { get; set; } = default!;
-    
-    public bool AllowMultipleAnswers { get; set; }
+    public required string QuestionContent { get; set; }
 
+    public List<string> Options { get; set; } = []; //Only for single/multiple-choice & Likert scale 
+
+    public required QuestionType Type { get; set; }
     public bool AllowOtherAnswer { get; set; }
-    
     //
     public required string CreatedById { get; set; }
     public string? UpdatedById { get; set; }

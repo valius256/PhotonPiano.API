@@ -54,7 +54,7 @@ public interface IServiceFactory
 
     IProgressServiceHub ProgressServiceHub { get; }
     
-    ISurveyQuestionService SurveyQuestionService { get; }
+    IPianoQuestionService PianoQuestionService { get; }
     
     ILearnerSurveyService LearnerSurveyService { get; }
 }

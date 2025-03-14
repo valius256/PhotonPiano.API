@@ -16,7 +16,7 @@ public class LearnerSurveyConfiguration : IEntityTypeConfiguration<LearnerSurvey
         builder.Property(x => x.AllowMultipleAnswers)
             .HasDefaultValue(false);
 
-        builder.HasOne(x => x.SurveyQuestion)
+        builder.HasOne(x => x.PianoQuestion)
             .WithMany(x => x.LearnerSurveys)
             .HasForeignKey(x => x.SurveyQuestionId)
             .OnDelete(DeleteBehavior.NoAction);

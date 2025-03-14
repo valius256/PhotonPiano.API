@@ -1,6 +1,6 @@
-﻿namespace PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
+﻿namespace PhotonPiano.BusinessLogic.BusinessModel.PianoQuestion;
 
-public record CreateSurveyQuestionModel
+public record CreatePianoQuestionModel
 {
     public required string QuestionContent { get; init; } 
     

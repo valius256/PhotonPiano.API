@@ -22,7 +22,8 @@ env:
   Firebase__Auth__Authority: ${{ secrets.FIREBASE_AUTHORITY }}
   Firebase__Auth__Issuer: ${{ secrets.FIREBASE_ISSUER }}
   Firebase__Auth__Audience: ${{ secrets.FIREBASE_AUDIENCE }}
-
+  GITHUB_ACTIONS: "true"
+  TEST_CONNECTION_STRING: "Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=phatdeptrai;"
 
 jobs:
   build:

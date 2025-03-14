@@ -506,11 +506,11 @@ public class EntranceTestService : IEntranceTestService
     private static Level GetPianoSkillLevel(decimal bandScore) =>
         bandScore switch
         {
-            >= 0 and < 2.5m => Level.Beginner,
-            >= 2.5m and < 5.0m => Level.Novice,
-            >= 5.0m and < 7.5m => Level.Intermediate,
-            >= 7.5m and < 9.5m => Level.Advanced,
-            >= 9.5m and <= 10.0m => Level.Virtuoso,
+            //>= 0 and < 2.5m => Level.Beginner,
+            //>= 2.5m and < 5.0m => Level.Novice,
+            //>= 5.0m and < 7.5m => Level.Intermediate,
+            //>= 7.5m and < 9.5m => Level.Advanced,
+            //>= 9.5m and <= 10.0m => Level.Virtuoso,
             _ => throw new BadRequestException("Band score must be between 0 and 10.")
         };
 

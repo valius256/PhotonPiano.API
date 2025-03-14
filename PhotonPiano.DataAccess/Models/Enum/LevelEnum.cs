@@ -1,6 +1,7 @@
 namespace PhotonPiano.DataAccess.Models.Enum;
 
-public enum Level
+[Obsolete]
+public enum LevelEnum
 {
     Beginner,
     Novice,

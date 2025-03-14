@@ -94,8 +94,8 @@ public static class IServiceCollectionExtensions
         TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.Status, src => src.RecordStatus);
 
-        TypeAdapterConfig<SignUpRequest, SignUpModel>.NewConfig()
-            .Map(dest => dest.DesiredLevel, src => src.Level);
+        //TypeAdapterConfig<SignUpRequest, SignUpModel>.NewConfig()
+        //    .Map(dest => dest.DesiredLevel, src => src.Level);
 
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>
             .NewConfig()

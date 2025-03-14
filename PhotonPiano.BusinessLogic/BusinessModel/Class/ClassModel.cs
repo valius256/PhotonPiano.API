@@ -10,7 +10,7 @@ public record ClassModel
     public string? InstructorName { get; init; }
     public ClassStatus Status { get; init; } = ClassStatus.NotStarted;
     public DateOnly StartTime { get; set; }
-    public Level Level { get; init; }
+    public Guid LevelId { get; init; }
     public bool IsPublic { get; init; }
     public required string Name { get; init; }
     public required string CreatedById { get; init; }

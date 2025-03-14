@@ -45,6 +45,8 @@ public interface IUnitOfWork
     
     ILearnerSurveyRepository LearnerSurveyRepository { get; }
 
+    ILevelRepository LevelRepository { get; }
+
     Task<int> SaveChangesAsync();
 
     Task<IDbContextTransaction> BeginTransactionAsync();

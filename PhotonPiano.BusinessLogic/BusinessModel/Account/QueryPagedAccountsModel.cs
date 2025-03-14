@@ -7,7 +7,7 @@ public record QueryPagedAccountsModel : QueryPagedModel
 {
     public string? Keyword { get; init; }
     public List<Role> Roles { get; init; } = [];
-    public List<Level> Levels { get; init; } = [];
+    public List<Guid> Levels { get; init; } = [];
     public List<StudentStatus> StudentStatuses { get; init; } = [];
 
     public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc)
@@ -19,7 +19,7 @@ public record QueryPagedAccountsModel : QueryPagedModel
     }
 
     public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc, out string? keyword, out List<Role> roles, 
-        out List<Level> levels, out List<StudentStatus> studentStatuses)
+        out List<Guid> levels, out List<StudentStatus> studentStatuses)
     {
         page = Page;
         pageSize = PageSize;

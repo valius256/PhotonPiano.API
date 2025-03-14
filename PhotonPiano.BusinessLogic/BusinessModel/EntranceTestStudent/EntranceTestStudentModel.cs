@@ -12,7 +12,7 @@ public record EntranceTestStudentModel
     
     public decimal? BandScore { get; init; }
     
-    public Level? Level { get; init; }
+    public Guid? LevelId { get; init; }
     
     public double? TheoraticalScore { get; init; }
 

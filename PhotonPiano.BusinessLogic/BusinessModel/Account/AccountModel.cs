@@ -30,7 +30,7 @@ public record AccountModel
 
     public string? ShortDescription { get; init; } = string.Empty;
 
-    public Level? Level { get; init; }
+    public LevelEnum? Level { get; init; }
 
     public AccountStatus Status { get; init; }
 

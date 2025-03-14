@@ -49,6 +49,8 @@ public class UnitOfWork : IUnitOfWork
     
     private readonly Lazy<ILearnerSurveyRepository> _learnerSurveyRepository;
 
+    private readonly Lazy<ILevelRepository> _levelRepository;
+
     private IDbContextTransaction? _currentTransaction;
 
     public UnitOfWork(ApplicationDbContext context)
@@ -76,6 +78,7 @@ public class UnitOfWork : IUnitOfWork
         _entranceTestResultRepository = new Lazy<IEntranceTestResultRepository>(() => new EntranceTestResultRepository(context));
         _surveyQuestionRepository = new Lazy<ISurveyQuestionRepository>(() => new SurveyQuestionRepository(context));  
         _learnerSurveyRepository = new Lazy<ILearnerSurveyRepository>(() => new LearnerSurveyRepository(context));
+        _levelRepository = new Lazy<ILevelRepository>(() => new LevelRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -118,6 +121,8 @@ public class UnitOfWork : IUnitOfWork
     public ISurveyQuestionRepository SurveyQuestionRepository => _surveyQuestionRepository.Value;
     
     public ILearnerSurveyRepository LearnerSurveyRepository => _learnerSurveyRepository.Value;
+
+    public ILevelRepository LevelRepository => _levelRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

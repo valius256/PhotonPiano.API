@@ -6,6 +6,6 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 {
     public class CreateClassModel
     {
-        public Level Level { get; init; }
+        public Guid LevelId { get; init; }
     }
 }

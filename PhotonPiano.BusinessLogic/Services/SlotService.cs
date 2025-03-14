@@ -230,9 +230,13 @@ public class SlotService : ISlotService
             throw new NotFoundException("Class not found");
         }
 
-        var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
+        var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classDetail.LevelId);
+        if (level is null)
+        {
+            throw new NotFoundException("Level not found");
+        }
         var slotCount = await _unitOfWork.SlotRepository.CountAsync(c => c.ClassId == classDetail.Id);
-        if (slotCount >= config.TotalSlot)
+        if (slotCount >= level.TotalSlots)
         {
             throw new BadRequestException("This class has enough slots already!");
         }

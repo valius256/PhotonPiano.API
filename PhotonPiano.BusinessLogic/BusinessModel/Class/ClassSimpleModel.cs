@@ -7,6 +7,6 @@ public record ClassSimpleModel
     public required Guid Id { get; init; }
     public string? InstructorId { get; init; }
     public string? InstructorName { get; init; }
-    public Level? Level { get; init; }
+    public LevelEnum? Level { get; init; }
     public required string Name { get; init; }
 }

@@ -24,7 +24,7 @@ public class Account : BaseEntity
     public bool IsEmailVerified { get; set; } = false;
     public DateTime JoinedDate { get; set; } = DateTime.UtcNow.AddHours(7);
     public string? ShortDescription { get; set; } = string.Empty;
-    public Level? Level { get; set; }
+    public Guid? LevelId { get; set; }
     public AccountStatus Status { get; set; } = AccountStatus.Active;
     public StudentStatus? StudentStatus { get; set; }
     public int? DesiredLevel { get; set; }
@@ -35,6 +35,7 @@ public class Account : BaseEntity
 
     public Guid? CurrentClassId { get; set; }
 
+    public virtual Level? Level { get; set; }
 
     public virtual Class? CurrentClass { get; set; }
 

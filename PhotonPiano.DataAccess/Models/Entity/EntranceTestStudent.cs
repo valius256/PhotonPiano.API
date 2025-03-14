@@ -9,7 +9,7 @@ public class EntranceTestStudent : BaseEntityWithId
     public Guid? EntranceTestId { get; set; }
     public decimal? BandScore { get; set; }
     public string? FullName { get; set; }
-    public Level? Level { get; set; }
+    public Guid? LevelId { get; set; }
     public double? TheoraticalScore { get; set; }
 
     public int? Year { get; set; }
@@ -25,6 +25,7 @@ public class EntranceTestStudent : BaseEntityWithId
     public virtual Account CreateBy { get; set; } = default!;
     public virtual Account UpdateBy { get; set; } = default!;
     public virtual Account DeletedBy { get; set; } = default!;
+    public virtual Level? Level { get; set; }
     public virtual EntranceTest EntranceTest { get; set; } = default!;
 
     public virtual ICollection<EntranceTestResult> EntranceTestResults { get; set; } = new List<EntranceTestResult>();

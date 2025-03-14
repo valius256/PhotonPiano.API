@@ -160,11 +160,13 @@ public class TuitionService : ITuitionService
                 ss.StudentFirebaseId == studentId && ss.AttendanceStatus != AttendanceStatus.NotYet));
 
 
-        var systemConfigValue =
-            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(
-                (int)currentStudentClass.Class.Level + 1);
-        var refundAmount = systemConfigValue.PriceOfSlot * numOfSlotHaveAttended;
 
+        var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == currentStudentClass.ClassId);
+        if (level is null)
+        {
+            throw new NotFoundException("Level not found");
+        }
+        var refundAmount = level.PricePerSlot * numOfSlotHaveAttended;
         return currentTuitionHasPaid.Amount - refundAmount;
     }
 
@@ -191,13 +193,11 @@ public class TuitionService : ITuitionService
         );
 
         var tutions = new List<Tuition>();
-
+        var levels = await _unitOfWork.LevelRepository.GetAllAsync();
         foreach (var studentClass in studentClasses)
         {
-            var levelValue = (int)studentClass.Class.Level + 1;
-            var systemConfigLevel = await _serviceFactory.SystemConfigService
-                .GetSystemConfigValueBaseOnLevel(levelValue);
-
+            var level = levels.SingleOrDefault(l => l.Id == studentClass.ClassId) ?? throw new NotFoundException("Level not found");
+            
             var actualSlotsInMonth =
                 studentClass.Class.Slots.Count(sl => sl.Date.Year == utcNow.Year && sl.Date.Month == utcNow.Month);
 
@@ -208,7 +208,7 @@ public class TuitionService : ITuitionService
                 StartDate = utcNow,
                 EndDate = endDate,
                 CreatedAt = utcNow,
-                Amount = systemConfigLevel.PriceOfSlot * actualSlotsInMonth,
+                Amount = level.PricePerSlot * actualSlotsInMonth,
                 PaymentStatus = PaymentStatus.Pending
             };
 
@@ -391,10 +391,11 @@ public class TuitionService : ITuitionService
         var enDateConvert = DateOnly.FromDateTime(endDate);
 
         var tuitions = new List<Tuition>();
+        var levels = await _unitOfWork.LevelRepository.GetAllAsync();
         foreach (var studentClass in classDetailModel.StudentClasses)
         {
-            var sysConfigValue = await _serviceFactory.SystemConfigService
-                .GetSystemConfigValueBaseOnLevel((int)classDetailModel.Level + 1);
+            var level = levels.SingleOrDefault(l => l.Id == studentClass.ClassId) ?? throw new NotFoundException("Level not found");
+
 
             var numOfSlotTillEndMonth =
                 classDetailModel.Slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
@@ -405,7 +406,7 @@ public class TuitionService : ITuitionService
                 StartDate = utcNow,
                 EndDate = endDate,
                 CreatedAt = utcNow,
-                Amount = sysConfigValue.PriceOfSlot * numOfSlotTillEndMonth,
+                Amount = level.PricePerSlot * numOfSlotTillEndMonth,
                 PaymentStatus = PaymentStatus.Pending
             };
 

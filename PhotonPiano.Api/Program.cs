@@ -16,6 +16,8 @@ var configuration = builder.Configuration;
 
 // if (configuration.GetValue<bool  >("IsAspireHost")) builder.AddRedisClient("redis-cache");
 
+
+
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()

@@ -17,9 +17,9 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithPassword("anhphatdeptrai")
         .Build();
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
-        return _dbContainer.StartAsync();
+        await _dbContainer.StartAsync();
     }
 
     Task IAsyncLifetime.DisposeAsync()

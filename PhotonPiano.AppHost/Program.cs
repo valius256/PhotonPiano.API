@@ -9,8 +9,8 @@ var postgres = builder.AddPostgres("postgresDb")
     ;
 
 var database = postgres
-    // .WithPgAdmin()
-    // .WithLifetime(ContainerLifetime.Persistent)
+    .WithPgAdmin()
+    .WithLifetime(ContainerLifetime.Persistent)
     .AddDatabase("photonpiano");
 
 

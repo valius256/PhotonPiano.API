@@ -16,7 +16,7 @@ var configuration = builder.Configuration;
 
 // if (configuration.GetValue<bool  >("IsAspireHost")) builder.AddRedisClient("redis-cache");
 
-
+// hello this line write to proved i am the owner of this project and github is not good for beginner
 
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)

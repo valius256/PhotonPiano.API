@@ -17,7 +17,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithImage("postgres:latest")
         .WithDatabase("photonpiano")
         .WithUsername("postgres")
-        .WithPassword("postgres")
+        .WithPassword("postgres") // This is the default password for the postgres image
         .Build();
 
     public async Task InitializeAsync()

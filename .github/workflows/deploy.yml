@@ -10,6 +10,7 @@ on:
 permissions:
   contents: read
   packages: write
+  checks: write # Quyền để báo cáo trạng thái kiểm tra
 
 env:
   DOTNET_VERSION: '9.0.x'

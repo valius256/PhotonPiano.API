@@ -3,6 +3,7 @@ using Mapster;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -123,8 +124,8 @@ public class AccountService : IAccountService
     {
         return await _unitOfWork.AccountRepository.Entities
             .Where(a => a.StudentStatus == StudentStatus.WaitingForClass)
-            .GroupBy(a => a.LevelId)
-            .Select(g => new AwaitingLevelsModel { Level = g.Key, Count = g.Count() })
+            .GroupBy(a => a.Level)
+            .Select(g => new AwaitingLevelsModel { Level = g.Key.Adapt<LevelModel>(), Count = g.Count() })
             .ToListAsync();
     }
 

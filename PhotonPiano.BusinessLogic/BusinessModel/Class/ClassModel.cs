@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -26,4 +27,6 @@ public record ClassModel
     public DateTime? UpdatedAt { get; init; }
 
     public AccountSimpleModel? Instructor { get; init; }
+
+    public LevelModel? Level { get; init; }
 }

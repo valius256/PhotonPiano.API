@@ -37,6 +37,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Application> Applications { get; set; }
     public DbSet<LearnerSurvey> LearnerSurveys { get; set; }
     public DbSet<SurveyQuestion> SurveyQuestions { get; set; }
+    public DbSet<Level> Levels { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

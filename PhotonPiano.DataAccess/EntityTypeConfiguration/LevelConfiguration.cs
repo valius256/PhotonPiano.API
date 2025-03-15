@@ -11,12 +11,19 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
     {
         public void Configure(EntityTypeBuilder<Level> builder)
         {
+
+            builder.Property(l => l.MinimumTheoreticalScore)
+                .HasDefaultValue(0);
+
+            builder.Property(l => l.MinimumPracticalScore)
+                .HasDefaultValue(0);
+            
             builder.HasOne(l => l.NextLevel)
                 .WithOne() // No inverse navigation needed
                 .HasForeignKey<Level>(l => l.NextLevelId)
                 .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
 
-            builder.HasMany(l => l.Classes)
+            builder.HasMany(l => l.Classes) 
                 .WithOne(c => c.Level)
                 .HasForeignKey(c => c.LevelId)
                 .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes

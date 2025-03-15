@@ -12,15 +12,16 @@ public class LevelService : ILevelService
     {
         _unitOfWork = unitOfWork;
     }
+    
+    public async Task<Guid> GetLevelIdFromScores(decimal theoreticalScore, decimal practicalScore)
+    { 
+        var level = await _unitOfWork.LevelRepository.GetLevelByScoresAsync(theoreticalScore, practicalScore);
 
-    public async Task<Guid> GetLevelIdFromBandScore(decimal bandScore)
-    {
-        var level = await _unitOfWork.LevelRepository.FindFirstAsync(
-            expression: l => Convert.ToDouble(bandScore) >= l.MinimumScore,
-            hasTrackings: false,
-            orderByExpression: l => l.MinimumScore,
-            orderByDescending: true);
-        
-        return level?.Id ?? throw new BadRequestException("Invalid band score");
+        if (level is null)
+        {
+            throw new BadRequestException("Invalid score");
+        }
+
+        return level.Id;
     }
 }

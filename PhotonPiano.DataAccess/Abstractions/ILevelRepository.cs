@@ -1,10 +1,8 @@
-﻿
+﻿using PhotonPiano.DataAccess.Models.Entity;
 
-using PhotonPiano.DataAccess.Models.Entity;
+namespace PhotonPiano.DataAccess.Abstractions;
 
-namespace PhotonPiano.DataAccess.Abstractions
+public interface ILevelRepository : IGenericRepository<Level>
 {
-    public interface ILevelRepository : IGenericRepository<Level>
-    {
-    }
+    Task<Level?> GetLevelByScoresAsync(decimal theoreticalScore, decimal practicalScore);
 }

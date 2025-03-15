@@ -51,31 +51,31 @@ namespace PhotonPiano.DataAccess.Migrations
                 table: "LearnerSurvey",
                 column: "SurveyQuestionId");
             
-            migrationBuilder.InsertData(
-                table: "SystemConfig",
-                columns: new[]
-                {
-                    "Id", "ConfigName", "ConfigValue", "CreatedAt", "DeletedAt", "RecordStatus", "Role", "UpdatedAt"
-                },
-                values: new object[,]
-                {
-                    {
-                        Guid.NewGuid(), "Điểm yêu cầu của level 2", "2.5",
-                        new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
-                    },
-                    {
-                        Guid.NewGuid(), "Điểm yêu cầu của level 3", "5.0",
-                        new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
-                    },
-                    {
-                        Guid.NewGuid(), "Điểm yêu cầu của level 4", "7.5",
-                        new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
-                    },
-                    {
-                    Guid.NewGuid(), "Điểm yêu cầu của level 5", "9.5",
-                    new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
-                    }
-                });
+            // migrationBuilder.InsertData(
+            //     table: "SystemConfig",
+            //     columns: new[]
+            //     {
+            //         "Id", "ConfigName", "ConfigValue", "CreatedAt", "DeletedAt", "RecordStatus", "Role", "UpdatedAt"
+            //     },
+            //     values: new object[,]
+            //     {
+            //         {
+            //             Guid.NewGuid(), "Điểm yêu cầu của level 2", "2.5",
+            //             new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
+            //         },
+            //         {
+            //             Guid.NewGuid(), "Điểm yêu cầu của level 3", "5.0",
+            //             new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
+            //         },
+            //         {
+            //             Guid.NewGuid(), "Điểm yêu cầu của level 4", "7.5",
+            //             new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
+            //         },
+            //         {
+            //         Guid.NewGuid(), "Điểm yêu cầu của level 5", "9.5",
+            //         new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
+            //         }
+            //     });
         }
 
         /// <inheritdoc />

@@ -202,13 +202,15 @@ public class EntranceTestService : IEntranceTestService
         if (entranceTestStudentModel.IsAnnouncedScore.HasValue)
         {
             bool isFullScoreUpdated = true;
-            var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository.FindProjectedAsync<EntranceTestStudentWithResultsModel>(
-                ets => ets.EntranceTestId == id,
-                hasTrackings: false);
+            var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository
+                .FindProjectedAsync<EntranceTestStudentWithResultsModel>(
+                    ets => ets.EntranceTestId == id,
+                    hasTrackings: false);
 
             foreach (var entranceTestStudent in entranceTestStudents)
             {
-                if (entranceTestStudent.EntranceTestResults.Count == 0 || !entranceTestStudent.TheoraticalScore.HasValue)
+                if (entranceTestStudent.EntranceTestResults.Count == 0 ||
+                    !entranceTestStudent.TheoraticalScore.HasValue)
                 {
                     isFullScoreUpdated = false;
                 }
@@ -603,10 +605,18 @@ public class EntranceTestService : IEntranceTestService
         {
             updateModel.Adapt(entranceTestStudent);
 
+            var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
+                etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
+                hasTrackings: false);
+
+            decimal practicalScore = dbResults.Aggregate(decimal.Zero,
+                (current, result) => current + result.Score!.Value * result.Weight!.Value);
+
             if (updateModel.UpdateScoreRequests.Count > 0)
             {
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromBandScore(bandScore);
+                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                    Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
                 await _unitOfWork.EntranceTestResultRepository.ExecuteDeleteAsync(etr =>
@@ -616,13 +626,6 @@ public class EntranceTestService : IEntranceTestService
 
             if (updateModel.TheoraticalScore.HasValue)
             {
-                var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
-                    etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
-                    hasTrackings: false);
-
-                decimal practicalScore = dbResults.Aggregate(decimal.Zero,
-                    (current, result) => current + result.Score!.Value * result.Weight!.Value);
-
                 decimal theoryScore = updateModel.TheoraticalScore.HasValue
                     ? Convert.ToDecimal(updateModel.TheoraticalScore.Value)
                     : decimal.Zero;
@@ -630,7 +633,8 @@ public class EntranceTestService : IEntranceTestService
                 bandScore = (theoryScore + practicalScore) / 2;
 
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromBandScore(bandScore);
+                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                    theoryScore, practicalScore);
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
             }
@@ -638,7 +642,7 @@ public class EntranceTestService : IEntranceTestService
             entranceTestStudent.UpdateById = currentAccount.AccountFirebaseId;
             entranceTestStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
         });
-        
+
 
         // await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
         //     "Điểm thi đầu vào của bạn vừa được cập nhật", "");

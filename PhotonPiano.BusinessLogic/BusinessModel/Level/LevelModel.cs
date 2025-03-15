@@ -13,8 +13,10 @@ public record LevelModel
     public int TotalSlots { get; init; }
 
     public decimal PricePerSlot { get; init; }
-
-    public double MinimumScore { get; init; }
+    
+    public decimal MinimumTheoreticalScore { get; init; }
+        
+    public decimal MinimumPracticalScore { get; init; }
 
     public bool IsGenreDivided { get; init; }
 

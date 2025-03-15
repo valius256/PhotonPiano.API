@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
@@ -142,6 +143,7 @@ public class ClassService : IClassService
                 Capacity = capacity,
                 CreatedById = q.CreatedById,
                 IsPublic = q.IsPublic,
+                Level = q.Level.Adapt<LevelModel>(),
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
                 TotalSlots = q.Slots.Count(),

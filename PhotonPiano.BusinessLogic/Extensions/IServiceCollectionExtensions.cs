@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<ISurveyQuestionService, SurveyQuestionService>();
         services.AddScoped<ILearnerSurveyService, LearnerSurveyService>();
+        services.AddScoped<ILevelService, LevelService>();
         services.AddHttpClient();
         services.AddMapsterConfig();
         return services;

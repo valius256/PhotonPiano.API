@@ -57,4 +57,6 @@ public interface IServiceFactory
     ISurveyQuestionService ISurveyQuestionService { get; }
     
     ILearnerSurveyService LearnerSurveyService { get; }
+    
+    ILevelService LevelService { get; }
 }

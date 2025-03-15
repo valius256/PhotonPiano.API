@@ -1,5 +1,3 @@
-using PhotonPiano.DataAccess.Models.Enum;
-
 namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 
 public record EntranceTestStudentModel

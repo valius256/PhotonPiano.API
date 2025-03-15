@@ -80,14 +80,22 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             : _context.Set<T>().AsNoTracking().Where(predicate);
     }
 
-    public async Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression, bool hasTrackings = true,
-        bool ignoreQueryFilters = false)
+    public async Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression,
+        bool hasTrackings = true,
+        bool ignoreQueryFilters = false,
+        Expression<Func<T, object>>? orderByExpression = default, 
+        bool orderByDescending = true)
     {
         var query = hasTrackings
             ? _context.Set<T>().Where(expression)
             : _context.Set<T>().AsNoTracking().Where(expression);
 
         query = ignoreQueryFilters ? query.IgnoreQueryFilters() : query;
+
+        if (orderByExpression is not null) 
+        {
+            query = orderByDescending ? query.OrderByDescending(orderByExpression) : query.OrderBy(orderByExpression);
+        }
 
         return await query.FirstOrDefaultAsync();
     }

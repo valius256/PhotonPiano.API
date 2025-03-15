@@ -606,7 +606,9 @@ public class EntranceTestService : IEntranceTestService
             if (updateModel.UpdateScoreRequests.Count > 0)
             {
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.Level = GetPianoSkillLevel(bandScore);
+                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromBandScore(bandScore);
+                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
+                    setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
                 await _unitOfWork.EntranceTestResultRepository.ExecuteDeleteAsync(etr =>
                     etr.EntranceTestStudentId == entranceTestStudent.Id);
                 await _unitOfWork.EntranceTestResultRepository.AddRangeAsync(results);
@@ -625,16 +627,18 @@ public class EntranceTestService : IEntranceTestService
                     ? Convert.ToDecimal(updateModel.TheoraticalScore.Value)
                     : decimal.Zero;
 
-
                 bandScore = (theoryScore + practicalScore) / 2;
 
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.Level = GetPianoSkillLevel(bandScore);
+                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromBandScore(bandScore);
+                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
+                    setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
             }
 
             entranceTestStudent.UpdateById = currentAccount.AccountFirebaseId;
             entranceTestStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
         });
+        
 
         // await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
         //     "Điểm thi đầu vào của bạn vừa được cập nhật", "");

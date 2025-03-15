@@ -70,6 +70,8 @@ public class ServiceFactory : IServiceFactory
     
     private readonly Lazy<ISurveyQuestionService> _surveryQuestionService;
     
+    private readonly Lazy<ILevelService> _levelService;
+    
     private readonly Lazy<IProgressServiceHub> _progressServiceHub;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
@@ -108,6 +110,7 @@ public class ServiceFactory : IServiceFactory
         _learnerSurveyService = new Lazy<ILearnerSurveyService>(() => new LearnerSurveyService(unitOfWork));
         _surveryQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork));
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
+        _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -161,4 +164,6 @@ public class ServiceFactory : IServiceFactory
     public ISurveyQuestionService ISurveyQuestionService => _surveryQuestionService.Value;
     
     public ILearnerSurveyService LearnerSurveyService => _learnerSurveyService.Value;
+
+    public ILevelService LevelService => _levelService.Value;
 }

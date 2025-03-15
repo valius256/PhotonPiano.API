@@ -1,3 +1,4 @@
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Account;
@@ -46,6 +47,7 @@ public record AccountModel
     public List<string> PreferredLearningMethods { get; init; } = [];
 
     public RecordStatus RecordStatus { get; init; }
-
-    public Guid? CurrentClassId { get; set; }
+    public Guid? CurrentClassId { get; init; }
+    
+    public LevelModel? Level { get; init; }
 }

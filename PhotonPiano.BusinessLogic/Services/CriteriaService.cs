@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
+using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
 
@@ -55,5 +56,23 @@ public class CriteriaService : ICriteriaService
             .FindSingleProjectedAsync<CriteriaDetailModel>(e => e.Id == id, false);
         if (result is null) throw new NotFoundException("Criteria not found.");
         return result;
+    }
+
+    public async Task<List<CriteriaGradeModel>> GetAllCriteriaDetails(Guid classId,
+        CriteriaFor criteriaType = CriteriaFor.Class)
+    {
+        var query = new QueryMinimalCriteriasModel
+        {
+            CriteriaFor = criteriaType,
+        };
+        
+        var classCriteria = await GetMinimalCriterias(query);
+        return classCriteria.Select(c => new CriteriaGradeModel
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Weight = c.Weight,
+            For = criteriaType
+        }).ToList();
     }
 }

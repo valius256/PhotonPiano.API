@@ -326,142 +326,346 @@ namespace PhotonPiano.BusinessLogic.Services
         //Down excel
         public async Task<byte[]> GenerateGradeTemplate(Guid classId)
         {
-            //fetch class details 
             var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
+            var classCriteria = await _serviceFactory.CriteriaService.GetAllCriteriaDetails(classId);
 
             using var package = new ExcelPackage();
             var worksheet = package.Workbook.Worksheets.Add("Grades");
+            var metadataSheet = package.Workbook.Worksheets.Add("Metadata");
 
-            //Add headers
+            // Configure metadata sheet (hidden from users)
+            metadataSheet.Hidden = eWorkSheetHidden.Hidden;
+            metadataSheet.Cells[1, 1].Value = "ClassId";
+            metadataSheet.Cells[1, 2].Value = classId.ToString();
+
+            // Headers
             worksheet.Cells[1, 1].Value = "Grade book";
+            worksheet.Cells[1, 1, 1, 5].Merge = true;
             worksheet.Cells[1, 1].Style.Font.Bold = true;
-            worksheet.Cells[1, 1].Style.Font.Size = 14;
+            worksheet.Cells[1, 1].Style.Font.Size = 16;
             worksheet.Cells[1, 1].Style.Font.Color.SetColor(Color.FromArgb(139, 69, 19));
+            worksheet.Cells[1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            worksheet.Cells[1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 242, 204));
+
+            // Course and instructor info
             worksheet.Cells[2, 1].Value = $"Course: {classDetails.Name}";
-            worksheet.Cells[3, 1].Value = $"Instructor: {classDetails.Instructor.UserName}";
+            worksheet.Cells[2, 1, 2, 5].Merge = true;
+            worksheet.Cells[2, 1].Style.Font.Bold = true;
+            worksheet.Cells[2, 1].Style.Font.Size = 12;
+
+            worksheet.Cells[3, 1].Value = $"Instructor: {classDetails.Instructor!.UserName}";
+            worksheet.Cells[3, 1, 3, 5].Merge = true;
+            worksheet.Cells[3, 1].Style.Font.Bold = true;
+            worksheet.Cells[3, 1].Style.Font.Size = 12;
+
             worksheet.Cells[4, 1].Value = "Assignments";
+            worksheet.Cells[4, 1, 4, 5].Merge = true;
+            worksheet.Cells[4, 1].Style.Font.Bold = true;
+            worksheet.Cells[4, 1].Style.Font.Size = 12;
+            worksheet.Cells[4, 1].Style.Font.Color.SetColor(Color.FromArgb(0, 112, 192));
+
+            // Add border to header section
+            var headerRange = worksheet.Cells[1, 1, 4, 5];
+            headerRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            headerRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            headerRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            headerRange.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
 
             // Define column headers
-            worksheet.Cells[6, 1].Value = "Student Name";
+            worksheet.Cells[7, 1].Value = "Student Name";
+            worksheet.Cells[7, 1].Style.Font.Bold = true;
+            worksheet.Cells[7, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            worksheet.Cells[7, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(217, 225, 242));
+            worksheet.Cells[7, 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
 
-            var assignmentHeader = worksheet.Cells[6, 1, 6, 15];
-            assignmentHeader.Style.Fill.PatternType = ExcelFillStyle.Solid;
-            assignmentHeader.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(222, 184, 170)); // Light brown
-            assignmentHeader.Style.Font.Bold = true;
-
-            // Column Headers - HW and Exam columns
             int startCol = 2;
-            string[] assignments =
+            var assessments = classCriteria.Select(c => c.Name).ToArray();
+            var weights = classCriteria.Select(c => (double)c.Weight).ToArray();
+            Dictionary<string, int> headerCount = new Dictionary<string, int>();
+            // Assessment headers
+            for (int i = 0; i < assessments.Length; i++)
             {
-                "HW-1", "HW-2", "HW-3", "HW-4", "Exam-1", "HW-5", "HW-6", "HW-7", "HW-8", "Exam-2", "HW-9",
-                "HW-10", "HW-11", "Final"
-            };
+                string assessmentName = assessments[i];
 
-            // Create assignment columns
-            for (int i = 0; i < assignments.Length; i++)
-            {
-                worksheet.Cells[7, startCol + i].Value = assignments[i];
-                worksheet.Cells[8, startCol + i].Value = "50"; // Points/Weighting row
+                // Handle duplicates by appending a number (e.g., "Exam (1)", "Exam (2)")
+                if (headerCount.ContainsKey(assessmentName))
+                {
+                    headerCount[assessmentName]++;
+                    assessmentName = $"{assessmentName} ({headerCount[assessmentName]})";
+                }
+                else
+                {
+                    headerCount[assessmentName] = 1;
+                }
+                
+                var cell = worksheet.Cells[6, startCol + i];
+                var nameCell = worksheet.Cells[7, startCol + i];
+                nameCell.Value = assessmentName;
+                nameCell.Style.Font.Bold = true;
+                nameCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                nameCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(221, 235, 247));
+                nameCell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                nameCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+                // Assign weight to row 8
+                var weightCell = worksheet.Cells[8, startCol + i];
+                weightCell.Value = weights[i];
+                weightCell.Style.Numberformat.Format = "0.0\\%";
+                weightCell.Style.Font.Bold = true;
+                weightCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                weightCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(226, 239, 218));
+                weightCell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                weightCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             }
 
-            // Points/Weighting row styling
-            var pointsRow = worksheet.Cells[8, 2, 8, startCol + assignments.Length - 1];
-            pointsRow.Style.Border.Top.Style = ExcelBorderStyle.Thin;
-            pointsRow.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
-            pointsRow.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-
-            // Student column
-            worksheet.Cells[7, 1].Value = "Student";
-            worksheet.Cells[7, 1].Style.Font.Bold = true;
-
-            // Final columns
-            int finalCol = startCol + assignments.Length;
+            int finalCol = startCol + assessments.Length;
             worksheet.Cells[7, finalCol].Value = "Total";
             worksheet.Cells[7, finalCol + 1].Value = "%";
             worksheet.Cells[7, finalCol + 2].Value = "Grade";
 
-            // Add grade conversion table
-            int gradeStartRow = 7;
-            string[,] gradeConversion =
-            {
-                { "Grade", "Percent", "Performance" },
-                { "A++", "100%", "Perfect (or with extra credit)" },
-                { "A+", "98%", "Excellent" },
-                { "A", "95%", "Excellent" },
-                { "A-", "92%", "Excellent" },
-                { "B+", "89%", "Good" },
-                { "B", "86%", "Good" },
-                { "B-", "83%", "Good" },
-                { "C+", "79%", "Satisfactory" },
-                { "C", "75%", "Satisfactory" },
-                { "C-", "72%", "Satisfactory" },
-                { "D+", "69%", "Passing" },
-                { "D", "65%", "Passing" },
-                { "D-", "62%", "Passing" },
-                { "F", "55%", "Failure" }
-            };
-
-            // Position grade conversion table to the right
-            int gradeTableCol = finalCol + 4;
-            worksheet.Cells[gradeStartRow, gradeTableCol].LoadFromArrays(
-                Enumerable.Range(0, gradeConversion.GetLength(0))
-                    .Select(i => Enumerable.Range(0, gradeConversion.GetLength(1))
-                        .Select(j => (object)gradeConversion[i, j])
-                        .ToArray())
-            );
-
-
-            // Style grade conversion table
-            var gradeTable =
-                worksheet.Cells[gradeStartRow, gradeTableCol, gradeStartRow + 14, gradeTableCol + 2];
-            gradeTable.Style.Border.BorderAround(ExcelBorderStyle.Thin);
-            gradeTable.Style.Border.Top.Style = ExcelBorderStyle.Thin;
-            gradeTable.Style.Border.Left.Style = ExcelBorderStyle.Thin;
-            gradeTable.Style.Border.Right.Style = ExcelBorderStyle.Thin;
-            gradeTable.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
-
-            // Add student rows
             int studentStartRow = 9;
             foreach (var studentClass in classDetails.StudentClasses)
             {
-                worksheet.Cells[studentStartRow, 1].Value = studentClass.Student.UserName;
+                worksheet.Cells[studentStartRow, 1].Value = studentClass.Student.FullName;
 
-                // Add formula for total
+                // Total Score Formula
                 var totalCell = worksheet.Cells[studentStartRow, finalCol];
                 totalCell.Formula =
                     $"SUM({worksheet.Cells[studentStartRow, 2].Address}:{worksheet.Cells[studentStartRow, finalCol - 1].Address})";
-
-                // Add formula for percentage
+                
+                // Weighted Percentage Formula
                 var percentCell = worksheet.Cells[studentStartRow, finalCol + 1];
                 percentCell.Formula =
-                    $"{totalCell.Address}/(SUM({worksheet.Cells[8, 2].Address}:{worksheet.Cells[8, finalCol - 1].Address}))*100";
+                    $"SUMPRODUCT({worksheet.Cells[studentStartRow, 2].Address}:{worksheet.Cells[studentStartRow, finalCol - 1].Address}, {worksheet.Cells[8, 2].Address}:{worksheet.Cells[8, finalCol - 1].Address})/100";
                 percentCell.Style.Numberformat.Format = "0.0\\%";
-
                 studentStartRow++;
             }
 
-            // Add Class Average and Median rows at the bottom
-            int lastRow = studentStartRow + 1;
-            worksheet.Cells[lastRow, 1].Value = "Class Average:";
-            worksheet.Cells[lastRow + 1, 1].Value = "Median:";
-
-            // Style for average and median rows
-            var statsRows = worksheet.Cells[lastRow, 1, lastRow + 1, finalCol + 2];
-            statsRows.Style.Fill.PatternType = ExcelFillStyle.Solid;
-            statsRows.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(222, 184, 170)); // Light brown
-
-            // Auto-fit columns
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-
-            // Freeze panes
             worksheet.View.FreezePanes(9, 2);
 
-            return package.GetAsByteArray();
+            return await package.GetAsByteArrayAsync();
+        }
+
+        public async Task<bool> ImportScores(Guid classId, Stream excelFileStream, AccountModel account)
+        {
+            var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
+
+            var classCriteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
+
+            if (!classCriteria.Any())
+            {
+                throw new BadRequestException("Assessment criteria not found for this class");
+            }
+
+            using var package = new ExcelPackage(excelFileStream);
+            var worksheet = package.Workbook.Worksheets[0];
+
+            //Check valid template
+            ValidateExcelTemplate(worksheet);
+
+            //Get metadata sheet 
+            var metaDataSheet = package.Workbook.Worksheets["Metadata"];
+            if (metaDataSheet == null || metaDataSheet.Cells[1, 2].Text != classId.ToString())
+            {
+                throw new BadRequestException("Invalid template: This template is not for the selected class");
+            }
+
+            // Map criteria names to columns and IDs
+            var criteriaMapping = MapCriteriaToColumns(worksheet, classCriteria);
+
+            // Starting row for student data
+            int studentStartRow = 9;
+            int rows = worksheet.Dimension.Rows;
+
+            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Process each student row
+                for (int row = studentStartRow; row <= rows; row++)
+                {
+                    string studentName = worksheet.Cells[row, 1].Text;
+                    if (string.IsNullOrEmpty(studentName))
+                        continue; // Skip empty rows
+
+                    // Find the student in class details
+                    var studentClass = classDetails.StudentClasses.FirstOrDefault(sc =>
+                        string.Equals(sc.Student.FullName, studentName, StringComparison.OrdinalIgnoreCase));
+
+                    if (studentClass == null)
+                        continue; // Skip if student not found
+
+                    // Calculate total percentage from cell
+                    decimal totalPercentage = ExtractTotalPercentage(worksheet, row);
+
+                    // Update student scores
+                    await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
+                        account.AccountFirebaseId);
+
+                    // Update StudentClass GPA and pass status
+                    await UpdateStudentClassGPA(studentClass.Id, totalPercentage, account.AccountFirebaseId,
+                        classDetails.Name);
+                }
+
+                return true;
+            });
+        }
+
+        private void ValidateExcelTemplate(ExcelWorksheet worksheet)
+        {
+            if (worksheet.Dimension.Columns < 13)
+            {
+                throw new BadRequestException("Invalid Excel template: Missing required columns");
+            }
+
+            string courseName = worksheet.Cells[2, 1].Text;
+            string instructorName = worksheet.Cells[3, 1].Text;
+            string assignmentsHeader = worksheet.Cells[4, 1].Text;
+
+            // if (string.IsNullOrEmpty(courseName) || !courseName.StartsWith("Course:") ||
+            //     string.IsNullOrEmpty(instructorName) || !instructorName.StartsWith("Instructor:") ||
+            //     string.IsNullOrEmpty(assignmentsHeader) ||
+            //     !assignmentsHeader.Equals("Assignments", StringComparison.OrdinalIgnoreCase))
+            // {
+            //     throw new BadRequestException(
+            //         "Invalid Excel template: Header structure does not match required format");
+            // }
+
+            // Check for student column
+            string studentHeader = worksheet.Cells[7, 1].Text;
+            if (string.IsNullOrEmpty(studentHeader) ||
+                !studentHeader.Equals("Student Name", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException("Invalid Excel template: Student column not found");
+            }
+        }
+
+        private Dictionary<string, (int Column, Guid Id)> MapCriteriaToColumns(ExcelWorksheet worksheet,
+            IEnumerable<Criteria> classCriteria)
+        {
+            int startCol = 2;
+            var mapping = new Dictionary<string, (int Column, Guid Id)>(StringComparer.OrdinalIgnoreCase);
+
+            // Map criteria names to column indices (starting from column 2)
+            for (int col = startCol; col < worksheet.Dimension.Columns - 2; col++) {
+                string criteriaName = worksheet.Cells[7, col].Text;
+                if (!string.IsNullOrEmpty(criteriaName))
+                {
+                    // Find matching criteria ID
+                    var matchingCriteria = classCriteria.FirstOrDefault(c =>
+                        string.Equals(c.Name, criteriaName, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchingCriteria != null)
+                    {
+                        mapping[criteriaName] = (col, matchingCriteria.Id);
+                    }
+                }
+            }
+
+            return mapping;
+        }
+
+        private decimal ExtractTotalPercentage(ExcelWorksheet worksheet, int row)
+        {
+            decimal totalPercentage = 0;
+            var percentCell = worksheet.Cells[row, worksheet.Dimension.Columns - 1];
+            if (decimal.TryParse(percentCell.Text.Replace("%", ""), out decimal percentage))
+            {
+                totalPercentage = percentage;
+            }
+            else if (percentCell.Formula != null)
+            {
+                // Try to get calculated value if it's a formula
+                totalPercentage = (decimal)(percentCell.Value != null ? Convert.ToDouble(percentCell.Value) * 100 : 0);
+            }
+
+            return totalPercentage;
+        }
+
+        private async Task UpdateStudentClassScores(Guid studentClassId, ExcelWorksheet worksheet, int row,
+            Dictionary<string, (int Column, Guid Id)> criteriaMapping, string accountFirebaseId)
+        {
+            // Get existing scores for this student class
+            var existingScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
+                scs => scs.StudentClassId == studentClassId
+            );
+
+            List<StudentClassScore> scoresToUpdate = new List<StudentClassScore>();
+            List<StudentClassScore> scoresToAdd = new List<StudentClassScore>();
+
+            // Update individual criteria scores
+            foreach (var criteriaEntry in criteriaMapping)
+            {
+                string criteriaName = criteriaEntry.Key;
+                int col = criteriaEntry.Value.Column;
+                Guid criteriaId = criteriaEntry.Value.Id;
+
+                decimal? score = null;
+                if (decimal.TryParse(worksheet.Cells[row, col].Text, out decimal parsedScore))
+                {
+                    score = parsedScore;
+                }
+
+                // Find existing score record or create new one
+                var scoreRecord = existingScores.FirstOrDefault(s => s.CriteriaId == criteriaId);
+
+                if (scoreRecord != null)
+                {
+                    // Update existing record
+                    scoreRecord.Score = score;
+                    scoreRecord.UpdatedAt = DateTime.UtcNow.AddHours(7);
+                    scoresToUpdate.Add(scoreRecord);
+                }
+                else
+                {
+                    // Create new score record
+                    var newScore = new StudentClassScore
+                    {
+                        Id = Guid.NewGuid(),
+                        StudentClassId = studentClassId,
+                        CriteriaId = criteriaId,
+                        Score = score,
+                    };
+                    scoresToAdd.Add(newScore);
+                }
+            }
+
+            // Update and add scores
+            if (scoresToUpdate.Any())
+            {
+                await _unitOfWork.StudentClassScoreRepository.UpdateRangeAsync(scoresToUpdate);
+            }
+
+            if (scoresToAdd.Any())
+            {
+                await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(scoresToAdd);
+            }
+        }
+
+        private async Task UpdateStudentClassGPA(Guid studentClassId, decimal totalPercentage, string accountFirebaseId,
+            string className)
+        {
+            var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+            if (studentClass != null)
+            {
+                studentClass.GPA = totalPercentage / 10; // Convert percentage to GPA scale (assuming 100% = 10.0)
+                studentClass.UpdateById = accountFirebaseId;
+                studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+                // Determine if passed based on GPA threshold (e.g., 5.0)
+                decimal passThreshold = 5.0m; // This should ideally come from configuration
+                studentClass.IsPassed = studentClass.GPA >= passThreshold;
+
+                await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
+
+                // Send notification to student
+                await _serviceFactory.NotificationService.SendNotificationAsync(
+                    studentClass.StudentFirebaseId,
+                    "Grade Update",
+                    $"Your grades for class {className} have been updated. Please check your performance in the class dashboard."
+                );
+            }
         }
     }
-    
-        // public async Task<bool> ImportScores(Guid classId, Stream excelFileStream, AccountModel account)
-        // {
-        //     
-        // }
 }
+

@@ -31,7 +31,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
     public async Task GetSchedulers_Unauthorized_ReturnsUnauthorized()
     {
         // Act
-        var response = await _client.GetAsync("/api/scheduler/slots?start-time=2025-03-01&end-time=2025-03-10");
+        var response = await _client.GetAsync($"/api/scheduler/slots?start-time={DateTime.UtcNow.Date}&end-time={DateTime.UtcNow.AddDays(7)}");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

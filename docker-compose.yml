@@ -26,27 +26,26 @@ services:
        - ASPNETCORE_Kestrel__Certificates__Default__Password=quangphat12a3
        - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
        - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
+       - ASPNETCORE_URLS=http://+:5000;https://+:5001
        - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;Include Error Detail = true
        - HangfireConnectionString=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;
     volumes:
-       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-       - ${APPDATA}/ASP.NET/Https:/https:ro
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/https:ro
     pull_policy: always
     
-#  photonpiano.frontend:
-#    build:
-#      context: ../Frontend/PhotonPiano_WebApp
-#      dockerfile: Dockerfile
-#    container_name: photonpiano.frontend
-#    ports:
-#      - "5173:5173"
-#    environment:
-#      - API_URL=https://photonpiano.api:7777/scalar/v1
-#    depends_on:
-#      - photonpiano.api
-#    volumes:
-#      - ../Frontend/PhotonPiano_WebApp:/app
-#      - /app/node_modules
+  photonpiano.frontend:
+    build:
+      context: ../Frontend/PhotonPiano_WebApp
+      dockerfile: Dockerfile
+    container_name: photonpiano.frontend
+    ports:
+      - "5173:3000"
+    environment:
+      - API_URL=https://photonpiano.api:7777/scalar/v1
+    depends_on:
+      - photonpiano.api
+
     
 #  photonpiano.cache:
 #    image: redis:6.2

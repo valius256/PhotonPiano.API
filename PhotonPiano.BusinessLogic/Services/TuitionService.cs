@@ -193,26 +193,31 @@ public class TuitionService : ITuitionService
         );
 
         var tutions = new List<Tuition>();
-        var levels = await _unitOfWork.LevelRepository.GetAllAsync();
+
         foreach (var studentClass in studentClasses)
         {
-            var level = levels.SingleOrDefault(l => l.Id == studentClass.ClassId) ?? throw new NotFoundException("Level not found");
+            var level = await _unitOfWork.LevelRepository.FindSingleProjectedAsync<Level>(l => l.Id == studentClass.Class.LevelId);
+                
+                // levels.SingleOrDefault(l => l.Id == studentClass.Class.LevelId) ?? throw new NotFoundException("Level not found");
             
             var actualSlotsInMonth =
                 studentClass.Class.Slots.Count(sl => sl.Date.Year == utcNow.Year && sl.Date.Month == utcNow.Month);
 
-            var tution = new Tuition
+            if (level != null)
             {
-                Id = Guid.NewGuid(),
-                StudentClassId = studentClass.Id,
-                StartDate = utcNow,
-                EndDate = endDate,
-                CreatedAt = utcNow,
-                Amount = level.PricePerSlot * actualSlotsInMonth,
-                PaymentStatus = PaymentStatus.Pending
-            };
+                var tution = new Tuition
+                {
+                    Id = Guid.NewGuid(),
+                    StudentClassId = studentClass.Id,
+                    StartDate = utcNow,
+                    EndDate = endDate,
+                    CreatedAt = utcNow,
+                    Amount = level.PricePerSlot * actualSlotsInMonth,
+                    PaymentStatus = PaymentStatus.Pending
+                };
 
-            if (tution.Amount > 0) tutions.Add(tution);
+                if (tution.Amount > 0) tutions.Add(tution);
+            }
         }
 
         var currentTuition = tutions.Count();

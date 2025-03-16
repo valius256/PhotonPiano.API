@@ -9,147 +9,147 @@ namespace PhotonPiano.DataAccess.SeedData;
 public static class ModelBuilderExtensions
 {
     public static void Seed(this ModelBuilder modelBuilder)
-    {
-        static async Task<string> GetFirebaseIdAsync(string email, string password)
-        {
-            using var client = new HttpClient();
+     {
+    //     static async Task<string> GetFirebaseIdAsync(string email, string password)
+    //     {
+    //         using var client = new HttpClient();
+    //
+    //         var url =
+    //             "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAgjNobHW7j13vXDbjd68ZmcGamsf26Z8c";
+    //
+    //         var jsonRequest = JsonConvert.SerializeObject(new
+    //         {
+    //             email,
+    //             password,
+    //             returnSecureToken = true
+    //         });
+    //
+    //         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+    //
+    //         var response = await client.PostAsync(url, content);
+    //
+    //         if (!response.IsSuccessStatusCode)
+    //         {
+    //             var errorResponse = await response.Content.ReadAsStringAsync();
+    //             throw new Exception("Error occurred while signing in to Firebase account: " + errorResponse);
+    //         }
+    //
+    //         var jsonResponse = await response.Content.ReadAsStringAsync();
+    //         var responseObject = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
+    //
+    //         return responseObject.localId;
+    //     }
+    //     var r = new Random();
 
-            var url =
-                "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAgjNobHW7j13vXDbjd68ZmcGamsf26Z8c";
-
-            var jsonRequest = JsonConvert.SerializeObject(new
-            {
-                email,
-                password,
-                returnSecureToken = true
-            });
-
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(url, content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorResponse = await response.Content.ReadAsStringAsync();
-                throw new Exception("Error occurred while signing in to Firebase account: " + errorResponse);
-            }
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var responseObject = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
-
-            return responseObject.localId;
-        }
-        var r = new Random();
-
-        #region Level Model
-        Guid level1 = Guid.NewGuid();
-        Guid level2 = Guid.NewGuid();
-        Guid level3 = Guid.NewGuid();
-        Guid level4 = Guid.NewGuid();
-        Guid level5 = Guid.NewGuid();
-        Guid[] levels = [level1, level2, level3, level4, level5];
-        modelBuilder.Entity<Level>().HasData(
-            // For EntranceTest
-            new Level
-            {
-                Id = level1,
-                Name = "Sơ cấp (Beginner)",
-                IsGenreDivided = false,
-                Description = "Học viên mới bắt đầu làm quen với piano, nhận biết các phím đàn, nốt nhạc và tư thế ngồi đúng cách",
-                SkillsEarned = [
-                    "Hiểu biết cơ bản về bàn phím piano và vị trí các nốt nhạc.",
-                    "Đọc nốt nhạc trên khóa Sol và khóa Fa.",
-                    "Rèn luyện ngón tay với các bài tập đơn giản.",
-                    "Chơi các giai điệu cơ bản bằng cả hai tay.",
-                    "Nhận biết nhịp điệu đơn giản (2/4, 3/4, 4/4).",
-                    "Áp dụng kỹ thuật legato (chơi liền tiếng) và staccato (chơi ngắt tiếng) cơ bản."
-                ],
-                PricePerSlot = 200000,
-                TotalSlots = 30,
-                SlotPerWeek = 2,
-                NextLevelId = level2
-
-            },
-            new Level
-            {
-                Id = level2,
-                Name = "Tiền trung cấp (Elementary/Pre-Intermediate)",
-                IsGenreDivided = false,
-                Description = "Học viên có thể chơi những bài nhạc đơn giản và bắt đầu làm quen với cách sử dụng pedal.",
-                SkillsEarned = [
-                    "Chơi những bản nhạc có hai tay độc lập với các tiết tấu khác nhau.",
-                    "Hiểu và áp dụng dấu hóa (♯, ♭) vào bài nhạc.",
-                    "Chuyển đổi hợp âm cơ bản và đệm đàn đơn giản.",
-                    "Sử dụng pedal sustain một cách cơ bản.",
-                    "Phát triển khả năng cảm âm và điều chỉnh lực đánh phím."
-                ],
-                PricePerSlot = 250000,
-                TotalSlots = 30,
-                SlotPerWeek = 2,
-                NextLevelId = level3
-
-            },
-            new Level
-            {
-                Id = level3,
-                Name = "Trung cấp (Intermediate)",
-                IsGenreDivided = false,
-                Description = "Học viên đã có nền tảng vững chắc và bắt đầu chơi các bản nhạc phức tạp hơn với nhiều sắc thái biểu cảm.",
-                SkillsEarned = [
-                    "Chơi các bản nhạc có tiết tấu nhanh hơn và nhiều kỹ thuật hơn.",
-                    "Sử dụng pedal một cách linh hoạt để tạo hiệu ứng âm thanh tốt hơn.",
-                    "Thành thạo các quãng (intervals) và hợp âm 7.",
-                    "Chơi các gam (scale) và arpeggio ở nhiều tốc độ khác nhau.",
-                    "Đọc bản nhạc nhanh hơn và luyện tập khả năng thị tấu (sight-reading).",
-                    "Phát triển phong cách biểu diễn cá nhân."
-                ],
-                PricePerSlot = 300000,
-                TotalSlots = 40,
-                SlotPerWeek = 2,
-                NextLevelId = level4
-
-            },
-            new Level
-            {
-                Id = level4,
-                Name = "Cao cấp (Advanced)",
-                IsGenreDivided = false,
-                Description = "Học viên có thể chơi những tác phẩm phức tạp và yêu cầu kỹ thuật cao, đồng thời thể hiện cảm xúc qua từng giai điệu.",
-                SkillsEarned = [
-                    "Chơi các tác phẩm cổ điển của các nhà soạn nhạc như Mozart, Beethoven, Chopin...",
-                    "Kỹ thuật legato, staccato, trill, tremolo ở mức độ cao.",
-                    "Kiểm soát lực đánh phím để tạo độ sâu và sắc thái âm nhạc phong phú.",
-                    "Thị tấu ở tốc độ cao hơn và có độ chính xác cao.",
-                    "Sử dụng pedal một cách chuyên nghiệp để nâng cao hiệu ứng âm thanh.",
-                    "Khả năng chơi piano với nhiều thể loại khác nhau (cổ điển, jazz, pop, đệm hát...)."
-                ],
-                PricePerSlot = 400000,
-                TotalSlots = 40,
-                SlotPerWeek = 2,
-                NextLevelId = level5
-
-            },
-            new Level
-            {
-                Id = level5,
-                Name = "Chuyên nghiệp (Professional/Master Level)",
-                IsGenreDivided = false,
-                Description = "Học viên đạt đến trình độ chuyên nghiệp, có thể biểu diễn trên sân khấu và thể hiện cá tính âm nhạc của mình.\r\n\r\n",
-                SkillsEarned = [
-                    "Chơi những tác phẩm khó và yêu cầu kỹ thuật phức tạp như Rachmaninoff, Liszt, Debussy...",
-                    "Biểu diễn tự tin trên sân khấu với phong cách cá nhân.",
-                    "Ứng biến (improvisation) và sáng tạo trong cách chơi.",
-                    "Phối hợp với các nhạc cụ khác trong một dàn nhạc hoặc ban nhạc.",
-                    "Sáng tác và phối nhạc theo phong cách riêng.",
-                    "Kỹ năng giảng dạy piano cho người khác (nếu theo hướng sư phạm)."
-                ],
-                PricePerSlot = 500000,
-                TotalSlots = 50,
-                SlotPerWeek = 2,
-            }
-        );
-        #endregion
-        
+        // #region Level Model
+        // Guid level1 = Guid.NewGuid();
+        // Guid level2 = Guid.NewGuid();
+        // Guid level3 = Guid.NewGuid();
+        // Guid level4 = Guid.NewGuid();
+        // Guid level5 = Guid.NewGuid();
+        // Guid[] levels = [level1, level2, level3, level4, level5];
+        // modelBuilder.Entity<Level>().HasData(
+        //     // For EntranceTest
+        //     new Level
+        //     {
+        //         Id = level1,
+        //         Name = "Sơ cấp (Beginner)",
+        //         IsGenreDivided = false,
+        //         Description = "Học viên mới bắt đầu làm quen với piano, nhận biết các phím đàn, nốt nhạc và tư thế ngồi đúng cách",
+        //         SkillsEarned = [
+        //             "Hiểu biết cơ bản về bàn phím piano và vị trí các nốt nhạc.",
+        //             "Đọc nốt nhạc trên khóa Sol và khóa Fa.",
+        //             "Rèn luyện ngón tay với các bài tập đơn giản.",
+        //             "Chơi các giai điệu cơ bản bằng cả hai tay.",
+        //             "Nhận biết nhịp điệu đơn giản (2/4, 3/4, 4/4).",
+        //             "Áp dụng kỹ thuật legato (chơi liền tiếng) và staccato (chơi ngắt tiếng) cơ bản."
+        //         ],
+        //         PricePerSlot = 200000,
+        //         TotalSlots = 30,
+        //         SlotPerWeek = 2,
+        //         NextLevelId = level2
+        //
+        //     },
+        //     new Level
+        //     {
+        //         Id = level2,
+        //         Name = "Tiền trung cấp (Elementary/Pre-Intermediate)",
+        //         IsGenreDivided = false,
+        //         Description = "Học viên có thể chơi những bài nhạc đơn giản và bắt đầu làm quen với cách sử dụng pedal.",
+        //         SkillsEarned = [
+        //             "Chơi những bản nhạc có hai tay độc lập với các tiết tấu khác nhau.",
+        //             "Hiểu và áp dụng dấu hóa (♯, ♭) vào bài nhạc.",
+        //             "Chuyển đổi hợp âm cơ bản và đệm đàn đơn giản.",
+        //             "Sử dụng pedal sustain một cách cơ bản.",
+        //             "Phát triển khả năng cảm âm và điều chỉnh lực đánh phím."
+        //         ],
+        //         PricePerSlot = 250000,
+        //         TotalSlots = 30,
+        //         SlotPerWeek = 2,
+        //         NextLevelId = level3
+        //
+        //     },
+        //     new Level
+        //     {
+        //         Id = level3,
+        //         Name = "Trung cấp (Intermediate)",
+        //         IsGenreDivided = false,
+        //         Description = "Học viên đã có nền tảng vững chắc và bắt đầu chơi các bản nhạc phức tạp hơn với nhiều sắc thái biểu cảm.",
+        //         SkillsEarned = [
+        //             "Chơi các bản nhạc có tiết tấu nhanh hơn và nhiều kỹ thuật hơn.",
+        //             "Sử dụng pedal một cách linh hoạt để tạo hiệu ứng âm thanh tốt hơn.",
+        //             "Thành thạo các quãng (intervals) và hợp âm 7.",
+        //             "Chơi các gam (scale) và arpeggio ở nhiều tốc độ khác nhau.",
+        //             "Đọc bản nhạc nhanh hơn và luyện tập khả năng thị tấu (sight-reading).",
+        //             "Phát triển phong cách biểu diễn cá nhân."
+        //         ],
+        //         PricePerSlot = 300000,
+        //         TotalSlots = 40,
+        //         SlotPerWeek = 2,
+        //         NextLevelId = level4
+        //
+        //     },
+        //     new Level
+        //     {
+        //         Id = level4,
+        //         Name = "Cao cấp (Advanced)",
+        //         IsGenreDivided = false,
+        //         Description = "Học viên có thể chơi những tác phẩm phức tạp và yêu cầu kỹ thuật cao, đồng thời thể hiện cảm xúc qua từng giai điệu.",
+        //         SkillsEarned = [
+        //             "Chơi các tác phẩm cổ điển của các nhà soạn nhạc như Mozart, Beethoven, Chopin...",
+        //             "Kỹ thuật legato, staccato, trill, tremolo ở mức độ cao.",
+        //             "Kiểm soát lực đánh phím để tạo độ sâu và sắc thái âm nhạc phong phú.",
+        //             "Thị tấu ở tốc độ cao hơn và có độ chính xác cao.",
+        //             "Sử dụng pedal một cách chuyên nghiệp để nâng cao hiệu ứng âm thanh.",
+        //             "Khả năng chơi piano với nhiều thể loại khác nhau (cổ điển, jazz, pop, đệm hát...)."
+        //         ],
+        //         PricePerSlot = 400000,
+        //         TotalSlots = 40,
+        //         SlotPerWeek = 2,
+        //         NextLevelId = level5
+        //
+        //     },
+        //     new Level
+        //     {
+        //         Id = level5,
+        //         Name = "Chuyên nghiệp (Professional/Master Level)",
+        //         IsGenreDivided = false,
+        //         Description = "Học viên đạt đến trình độ chuyên nghiệp, có thể biểu diễn trên sân khấu và thể hiện cá tính âm nhạc của mình.\r\n\r\n",
+        //         SkillsEarned = [
+        //             "Chơi những tác phẩm khó và yêu cầu kỹ thuật phức tạp như Rachmaninoff, Liszt, Debussy...",
+        //             "Biểu diễn tự tin trên sân khấu với phong cách cá nhân.",
+        //             "Ứng biến (improvisation) và sáng tạo trong cách chơi.",
+        //             "Phối hợp với các nhạc cụ khác trong một dàn nhạc hoặc ban nhạc.",
+        //             "Sáng tác và phối nhạc theo phong cách riêng.",
+        //             "Kỹ năng giảng dạy piano cho người khác (nếu theo hướng sư phạm)."
+        //         ],
+        //         PricePerSlot = 500000,
+        //         TotalSlots = 50,
+        //         SlotPerWeek = 2,
+        //     }
+        // );
+        // #endregion
+        //
         //#region Account Model
 
         //const string admin001 = "admin001";

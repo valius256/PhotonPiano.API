@@ -2,5 +2,5 @@
 
 public interface ILevelService
 {
-    Task<Guid> GetLevelIdFromBandScore(decimal bandScore);
+    Task<Guid> GetLevelIdFromScores(decimal theoreticalScore, decimal practicalScore);
 }

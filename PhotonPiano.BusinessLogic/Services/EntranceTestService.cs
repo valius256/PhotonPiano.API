@@ -202,13 +202,15 @@ public class EntranceTestService : IEntranceTestService
         if (entranceTestStudentModel.IsAnnouncedScore.HasValue)
         {
             bool isFullScoreUpdated = true;
-            var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository.FindProjectedAsync<EntranceTestStudentWithResultsModel>(
-                ets => ets.EntranceTestId == id,
-                hasTrackings: false);
+            var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository
+                .FindProjectedAsync<EntranceTestStudentWithResultsModel>(
+                    ets => ets.EntranceTestId == id,
+                    hasTrackings: false);
 
             foreach (var entranceTestStudent in entranceTestStudents)
             {
-                if (entranceTestStudent.EntranceTestResults.Count == 0 || !entranceTestStudent.TheoraticalScore.HasValue)
+                if (entranceTestStudent.EntranceTestResults.Count == 0 ||
+                    !entranceTestStudent.TheoraticalScore.HasValue)
                 {
                     isFullScoreUpdated = false;
                 }
@@ -381,8 +383,9 @@ public class EntranceTestService : IEntranceTestService
 
     private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(List<AccountDetailModel> students,
         DateTime startDate, DateTime endDate,
-        string staffAccountId, int maxStudentsPerSlot = 10, params List<Shift> shiftOptions)
+        string staffAccountId, params List<Shift> shiftOptions)
     {
+        var maxStudentsPerSlotConfig = await _serviceFactory.SystemConfigService.GetConfig(name: "Số học viên tối đa của ca thi");
         var entranceTests = new List<EntranceTest>();
         var remainingStudents = new List<AccountDetailModel>(students); // Track remaining students globally
 
@@ -397,7 +400,7 @@ public class EntranceTestService : IEntranceTestService
 
                 // Determine the number of students to assign to this test
                 var studentsToAssign =
-                    remainingStudents.Take(Math.Min(room.Capacity ?? 10, maxStudentsPerSlot)).ToList();
+                    remainingStudents.Take(Math.Min(room.Capacity ?? 10, Convert.ToInt32(maxStudentsPerSlotConfig.ConfigValue))).ToList();
 
                 // Create the EntranceTest object
                 var entranceTest = new EntranceTest
@@ -464,7 +467,7 @@ public class EntranceTestService : IEntranceTestService
 
         var entranceTests = await CreateAndAssignStudentsToEntranceTests(students,
             startDate, endDate,
-            currentAccount.AccountFirebaseId, 10, shiftOptions);
+            currentAccount.AccountFirebaseId, shiftOptions);
 
         var conflictGraph = _serviceFactory.SchedulerService.BuildEntranceTestsConflictGraph(entranceTests);
 
@@ -502,18 +505,6 @@ public class EntranceTestService : IEntranceTestService
 
         return entranceTests.Adapt<List<EntranceTestDetailModel>>();
     }
-
-    private static Level GetPianoSkillLevel(decimal bandScore) =>
-        bandScore switch
-        {
-            //>= 0 and < 2.5m => Level.Beginner,
-            //>= 2.5m and < 5.0m => Level.Novice,
-            //>= 5.0m and < 7.5m => Level.Intermediate,
-            //>= 7.5m and < 9.5m => Level.Advanced,
-            //>= 9.5m and <= 10.0m => Level.Virtuoso,
-            _ => throw new BadRequestException("Band score must be between 0 and 10.")
-        };
-
 
     public async Task UpdateStudentEntranceResults(Guid id, string studentId,
         UpdateEntranceTestResultsModel updateModel,
@@ -603,10 +594,18 @@ public class EntranceTestService : IEntranceTestService
         {
             updateModel.Adapt(entranceTestStudent);
 
+            var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
+                etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
+                hasTrackings: false);
+
+            decimal practicalScore = dbResults.Aggregate(decimal.Zero,
+                (current, result) => current + result.Score!.Value * result.Weight!.Value);
+
             if (updateModel.UpdateScoreRequests.Count > 0)
             {
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromBandScore(bandScore);
+                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                    Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
                 await _unitOfWork.EntranceTestResultRepository.ExecuteDeleteAsync(etr =>
@@ -616,13 +615,6 @@ public class EntranceTestService : IEntranceTestService
 
             if (updateModel.TheoraticalScore.HasValue)
             {
-                var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
-                    etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
-                    hasTrackings: false);
-
-                decimal practicalScore = dbResults.Aggregate(decimal.Zero,
-                    (current, result) => current + result.Score!.Value * result.Weight!.Value);
-
                 decimal theoryScore = updateModel.TheoraticalScore.HasValue
                     ? Convert.ToDecimal(updateModel.TheoraticalScore.Value)
                     : decimal.Zero;
@@ -630,7 +622,8 @@ public class EntranceTestService : IEntranceTestService
                 bandScore = (theoryScore + practicalScore) / 2;
 
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromBandScore(bandScore);
+                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                    theoryScore, practicalScore);
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
             }
@@ -638,7 +631,7 @@ public class EntranceTestService : IEntranceTestService
             entranceTestStudent.UpdateById = currentAccount.AccountFirebaseId;
             entranceTestStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
         });
-        
+
 
         // await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
         //     "Điểm thi đầu vào của bạn vừa được cập nhật", "");

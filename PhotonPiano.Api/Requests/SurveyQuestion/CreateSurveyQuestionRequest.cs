@@ -9,6 +9,4 @@ public record CreateSurveyQuestionRequest
     
     [Required]
     public required List<string> Options { get; init; }
-
-    public bool AllowMultipleAnswers { get; init; } = false;
 }

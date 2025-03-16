@@ -43,7 +43,6 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IPaymentService> _paymentService;
 
-
     private readonly Lazy<IPinataService> _pinataService;
 
     private readonly Lazy<IRedisCacheService> _redisCacheService;
@@ -161,7 +160,7 @@ public class ServiceFactory : IServiceFactory
 
     public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
     
-    public ISurveyQuestionService ISurveyQuestionService => _surveryQuestionService.Value;
+    public ISurveyQuestionService SurveyQuestionService => _surveryQuestionService.Value;
     
     public ILearnerSurveyService LearnerSurveyService => _learnerSurveyService.Value;
 

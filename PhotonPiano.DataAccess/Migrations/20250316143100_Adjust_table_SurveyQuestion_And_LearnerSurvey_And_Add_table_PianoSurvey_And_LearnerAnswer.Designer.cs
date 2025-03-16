@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhotonPiano.DataAccess.Models;
@@ -12,9 +13,11 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250316143100_Adjust_table_SurveyQuestion_And_LearnerSurvey_And_Add_table_PianoSurvey_And_LearnerAnswer")]
+    partial class Adjust_table_SurveyQuestion_And_LearnerSurvey_And_Add_table_PianoSurvey_And_LearnerAnswer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

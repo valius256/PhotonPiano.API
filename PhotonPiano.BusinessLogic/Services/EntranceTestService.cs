@@ -385,7 +385,8 @@ public class EntranceTestService : IEntranceTestService
         DateTime startDate, DateTime endDate,
         string staffAccountId, params List<Shift> shiftOptions)
     {
-        var maxStudentsPerSlotConfig = await _serviceFactory.SystemConfigService.GetConfig(name: "Số học viên tối đa của ca thi");
+        var maxStudentsPerSlotConfig =
+            await _serviceFactory.SystemConfigService.GetConfig(name: "Số học viên tối đa của ca thi");
         var entranceTests = new List<EntranceTest>();
         var remainingStudents = new List<AccountDetailModel>(students); // Track remaining students globally
 
@@ -400,7 +401,9 @@ public class EntranceTestService : IEntranceTestService
 
                 // Determine the number of students to assign to this test
                 var studentsToAssign =
-                    remainingStudents.Take(Math.Min(room.Capacity ?? 10, Convert.ToInt32(maxStudentsPerSlotConfig.ConfigValue))).ToList();
+                    remainingStudents
+                        .Take(Math.Min(room.Capacity ?? 10, Convert.ToInt32(maxStudentsPerSlotConfig.ConfigValue)))
+                        .ToList();
 
                 // Create the EntranceTest object
                 var entranceTest = new EntranceTest
@@ -635,5 +638,22 @@ public class EntranceTestService : IEntranceTestService
 
         // await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
         //     "Điểm thi đầu vào của bạn vừa được cập nhật", "");
+    }
+
+    public async Task UpdateEntranceTestsMaxStudents(int maxStudents, AccountModel currentAccount)
+    {
+        var config =
+            await _unitOfWork.SystemConfigRepository.FindSingleAsync(c =>
+                c.ConfigName == "Số học viên tối đa của ca thi");
+
+        if (config is null)
+        {
+            throw new NotFoundException("Config not found.");
+        }
+
+        config.ConfigValue = maxStudents.ToString();
+        config.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+        await _unitOfWork.SaveChangesAsync();
     }
 }

@@ -668,14 +668,10 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<decimal>("MinimumPracticalScore")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric")
-                        .HasDefaultValue(0m);
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("MinimumTheoreticalScore")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric")
-                        .HasDefaultValue(0m);
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Name")
                         .IsRequired()

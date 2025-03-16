@@ -13,7 +13,7 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250315104051_Adjust_Table_Level_And_Fix_Seed_Data_For_Table_Level_And_SystemConfig")]
+    [Migration("20250316033933_Adjust_Table_Level_And_Fix_Seed_Data_For_Table_Level_And_SystemConfig")]
     partial class Adjust_Table_Level_And_Fix_Seed_Data_For_Table_Level_And_SystemConfig
     {
         /// <inheritdoc />
@@ -671,14 +671,10 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<decimal>("MinimumPracticalScore")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric")
-                        .HasDefaultValue(0m);
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("MinimumTheoreticalScore")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric")
-                        .HasDefaultValue(0m);
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Name")
                         .IsRequired()

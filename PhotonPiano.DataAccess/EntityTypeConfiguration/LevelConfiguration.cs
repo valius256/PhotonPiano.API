@@ -12,11 +12,11 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
         public void Configure(EntityTypeBuilder<Level> builder)
         {
 
-            builder.Property(l => l.MinimumTheoreticalScore)
-                .HasDefaultValue(0);
-
-            builder.Property(l => l.MinimumPracticalScore)
-                .HasDefaultValue(0);
+            // builder.Property(l => l.MinimumTheoreticalScore)
+            //     .HasDefaultValue(0);
+            //
+            // builder.Property(l => l.MinimumPracticalScore)
+            //     .HasDefaultValue(0);
             
             builder.HasOne(l => l.NextLevel)
                 .WithOne() // No inverse navigation needed

@@ -17,9 +17,9 @@ namespace PhotonPiano.DataAccess.Models.Entity
 
         public decimal PricePerSlot { get; set; }
 
-        public decimal MinimumTheoreticalScore { get; set; }
-        
-        public decimal MinimumPracticalScore { get; set; }
+        public decimal MinimumTheoreticalScore { get; set; } = 0.0m;
+
+        public decimal MinimumPracticalScore { get; set; } = 0.0m;
 
         public bool IsGenreDivided { get; set; }
 

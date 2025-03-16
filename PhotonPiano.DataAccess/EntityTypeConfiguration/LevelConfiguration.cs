@@ -11,6 +11,10 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
     {
         public void Configure(EntityTypeBuilder<Level> builder)
         {
+            builder.Property(x => x.MinimumPracticalScore).HasDefaultValue(0.0);
+            
+            builder.Property(x => x.MinimumTheoreticalScore).HasDefaultValue(0.0);
+
             builder.HasOne(l => l.NextLevel)
                 .WithOne() // No inverse navigation needed
                 .HasForeignKey<Level>(l => l.NextLevelId)

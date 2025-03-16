@@ -50,6 +50,8 @@ builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration
 // add mapster 
 TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
+builder.Configuration.AddUserSecrets<Program>();
+
 var app = builder.Build();
 app.UseRouting();
 //app.MapDefaultEndpoints();

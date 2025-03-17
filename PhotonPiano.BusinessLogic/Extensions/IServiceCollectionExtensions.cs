@@ -5,6 +5,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
+using PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -35,6 +36,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IPinataService, PinataService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<ISurveyQuestionService, SurveyQuestionService>();
+        services.AddScoped<ILearnerSurveyService, LearnerSurveyService>();
+        services.AddScoped<ILevelService, LevelService>();
         services.AddHttpClient();
         services.AddMapsterConfig();
         return services;
@@ -59,6 +63,7 @@ public static class ServiceCollectionExtensions
         TypeAdapterConfig<UpdateAccountModel, Account>.NewConfig().IgnoreNullValues(true);
         TypeAdapterConfig<UpdateSlotModel, Slot>.NewConfig().IgnoreNullValues(true);
         TypeAdapterConfig<UpdateEntranceTestResultsModel, EntranceTestStudent>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<UpdateSurveyQuestionModel, SurveyQuestion>.NewConfig().IgnoreNullValues(true);
         return services;
     }
 }

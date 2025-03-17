@@ -1,5 +1,6 @@
 ﻿using PhotonPiano.BackgroundJob;
 using PhotonPiano.PubSub.Notification;
+using PhotonPiano.PubSub.Progress;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
@@ -48,4 +49,14 @@ public interface IServiceFactory
     INotificationServiceHub NotificationServiceHub { get; }
 
     IStudentClassService StudentClassService { get; }
+
+    IDayOffService DayOffService { get; }
+
+    IProgressServiceHub ProgressServiceHub { get; }
+    
+    ISurveyQuestionService ISurveyQuestionService { get; }
+    
+    ILearnerSurveyService LearnerSurveyService { get; }
+    
+    ILevelService LevelService { get; }
 }

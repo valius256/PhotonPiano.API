@@ -10,7 +10,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 
         public string? Name { get; init; }
 
-        public Level? Level { get; init; }
+        public Guid? LevelId { get; init; }
 
         public string? InstructorId { get; init; }
 

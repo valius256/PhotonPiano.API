@@ -1,6 +1,5 @@
 using Hangfire;
 using Mapster;
-using OfficeOpenXml;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
@@ -9,12 +8,16 @@ using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
 using LicenseContext = OfficeOpenXml.LicenseContext;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
 var configuration = builder.Configuration;
 
 // if (configuration.GetValue<bool  >("IsAspireHost")) builder.AddRedisClient("redis-cache");
+
+// hello this line write to proved i am the owner of this project and github is not good for beginner
 
 // EPPlus Configuration
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -23,6 +26,23 @@ ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
+
+
+// Not Done Yet
+// builder.Services
+//     .AddOpenTelemetry()
+//     .ConfigureResource(resource => resource.AddService("PhotonPiano.Api"))
+//     .WithTracing(tracerProviderBuilder =>
+//     {
+//         tracerProviderBuilder
+//             .AddAspNetCoreInstrumentation() // Tracking API request
+//             .AddHttpClientInstrumentation() // Tracking HTTP request
+//             .AddSqlClientInstrumentation();  // Tracking database queries
+//
+//         
+//         tracerProviderBuilder.AddOtlpExporter();
+//     });
+
 
 builder.AddSignalRConfig();
 
@@ -46,7 +66,7 @@ app.UseCors("AllowAll");
 
 // Register and execute PostgresSqlConfiguration
 var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
-sqlConfig.Configure(app, app.Environment);
+sqlConfig.Configure();
 
 app.UseHttpsRedirection();
 

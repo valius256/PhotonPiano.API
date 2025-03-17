@@ -19,8 +19,8 @@ public record SignUpRequest
     [MinLength(10, ErrorMessage = "Phone number must be at least 10 characters.")]
     public required string Phone { get; init; }
     
-    [Required(ErrorMessage = "Level is required.")]
-    public required Level Level { get; init; }
+    // [Required(ErrorMessage = "Level is required.")]
+    // public required Guid Level { get; init; }
     
     [Required(ErrorMessage = "Targets are required.")]
     public required List<string> DesiredTargets { get; init; } 

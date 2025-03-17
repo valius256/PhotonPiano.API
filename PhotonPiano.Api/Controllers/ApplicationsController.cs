@@ -64,7 +64,6 @@ public class ApplicationsController : BaseController
                     BankName = refundRequest.BankName,
                     BankAccountName = refundRequest.BankAccountName,
                     BankAccountNumber = refundRequest.BankAccountNumber,
-                    Amount = refundRequest.Amount
                 },
                 CurrentAccount!));
     }

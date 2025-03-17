@@ -65,10 +65,15 @@ public class ApplicationService : IApplicationService
     {
         var application = await _unitOfWork.ApplicationRepository.FindSingleAsync(a => a.Id == id);
 
-        if (application is null) throw new NotFoundException("Application not found");
+        if (application is null)
+        {
+            throw new NotFoundException("Application not found");
+        }
 
         if (application.Status == ApplicationStatus.Approved)
+        {
             throw new BadRequestException("Application is already approved");
+        }
 
         updateModel.Adapt(application);
         application.UpdatedAt = DateTime.UtcNow;
@@ -92,13 +97,15 @@ public class ApplicationService : IApplicationService
     public async Task<ApplicationDetailsModel> SendRefundApplication(SendRefundApplicationModel sendModel,
         AccountModel currentAccount)
     {
+        var getAmount = await _serviceFactory.TuitionService.GetTuitionRefundAmount(currentAccount.AccountFirebaseId, currentAccount.CurrentClassId);
+        
         // convert to json 
         var bankInformation = new
         {
             sendModel.BankName,
             sendModel.BankAccountName,
             sendModel.BankAccountNumber,
-            sendModel.Amount
+            getAmount
         };
 
         var application = sendModel.Adapt<Application>();

@@ -42,6 +42,15 @@ namespace PhotonPiano.Api.Controllers
             return pagedResult.Items.Adapt<List<ClassModel>>();
         }
 
+        [HttpPost("auto-arrangement")]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Arrange classes to students who are waiting for a class")]
+        public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
+         [FromBody] ArrangeClassModel arrangeClassModel)
+        {
+            return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
+        }
+
         [HttpGet("{id}")]
         [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
         [EndpointDescription("Get Class detail by Id")]
@@ -60,14 +69,7 @@ namespace PhotonPiano.Api.Controllers
             return await _serviceFactory.ClassService.GetClassScoreboard(id);
         }
 
-        [HttpPost("auto-arrangement")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Arrange classes to students who are waiting for a class")]
-        public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
-         [FromBody] ArrangeClassModel arrangeClassModel)
-        {
-            return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
-        }
+        
 
         [HttpPost]
         [FirebaseAuthorize(Roles = [Role.Staff])]
@@ -103,7 +105,7 @@ namespace PhotonPiano.Api.Controllers
 
         [HttpPost("student-class")]
         [FirebaseAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Create a studentClass individually")]
+        [EndpointDescription("Add many students to a class")]
         public async Task<ActionResult<StudentClassModel>> CreateStudentClass(
         [FromBody] CreateStudentClassRequest request)
         {

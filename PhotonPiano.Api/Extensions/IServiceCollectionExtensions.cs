@@ -25,6 +25,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
+using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
 
 namespace PhotonPiano.Api.Extensions;
@@ -91,23 +92,28 @@ public static class IServiceCollectionExtensions
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus);
+        
+        TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestResponse>.NewConfig()
+            .Map(dest => dest.Status, src => src.RecordStatus);
 
-        TypeAdapterConfig<SignUpRequest, SignUpModel>.NewConfig()
-            .Map(dest => dest.DesiredLevel, src => src.Level);
+        //TypeAdapterConfig<SignUpRequest, SignUpModel>.NewConfig()
+        //    .Map(dest => dest.DesiredLevel, src => src.Level);
 
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>
             .NewConfig()
             .Map(dest => dest.ShiftOptions, src => src.ShiftOptions.OrderBy(s => (int)s));
 
-        TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<UpdateApplicationRequest, UpdateApplicationModel>.NewConfig()
+            .Map(dest => dest.StaffConfirmNote, src => src.Note);
+
+        TypeAdapterConfig<UpdateApplicationModel, Application>.NewConfig().IgnoreNullValues(true);
+        
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus);
 
-
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
-        
         
         return services;
     }
@@ -148,7 +154,7 @@ public static class IServiceCollectionExtensions
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
                 .AllowCredentials()
-                .SetIsOriginAllowed(host => true)
+                .SetIsOriginAllowed(_ => true)
             )
         );
         return services;
@@ -156,13 +162,15 @@ public static class IServiceCollectionExtensions
 
     private static string? GetConnectionString(this IConfiguration configuration)
     {
-        var rs = configuration.GetValue<bool>("IsDeploy")
-            ? configuration.GetConnectionString("PostgresDeployDb")
-            : configuration.GetConnectionString("PostgresLocal");
+        // var rs = configuration.GetValue<bool>("IsDeploy")
+        //     ? configuration.GetConnectionString("PostgresDeployDb")
+        //     : configuration.GetConnectionString("PostgresLocal");
+        
+        // if (configuration.GetValue<bool>("IsAspireHost"))
+        //     rs = configuration.GetConnectionString("photonpiano");
 
-        if (configuration.GetValue<bool>("IsAspireHost"))
-            rs = configuration.GetConnectionString("photonpiano");
-
+         var rs = configuration.GetConnectionString("PostgresPhotonPiano");
+        
         if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" && !_messagePrinted)
         {
             Console.WriteLine("This running is using connection string: " + rs);
@@ -225,16 +233,24 @@ public static class IServiceCollectionExtensions
 
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
-        if (configuration.GetValue<bool>("IsCacheDeploy"))
-        {
-            var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
-            services.AddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(redisConnectionString!, options =>
-                {
-                    options.ConnectRetry = 5;
-                    options.ConnectTimeout = 5000;
-                }));
-        }
+        // if (configuration.GetValue<bool>("IsCacheDeploy"))
+        // {
+        //     var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
+        //     services.AddSingleton<IConnectionMultiplexer>(_ =>
+        //         ConnectionMultiplexer.Connect(redisConnectionString!, options =>
+        //         {
+        //             options.ConnectRetry = 5;
+        //             options.ConnectTimeout = 5000;
+        //         }));
+        // }
+        
+        var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
+            ConnectionMultiplexer.Connect(redisConnectionString!, options =>
+            {
+                options.ConnectRetry = 5;
+                options.ConnectTimeout = 5000;
+            }));
 
         return services;
     }
@@ -290,11 +306,18 @@ public static class IServiceCollectionExtensions
                 Cron.Monthly(15));
 
             recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
-                x => x.CronJobAutoChangeSlotStatus(),
+                x => x.CronAutoChangeSlotStatus(),
                 Cron.Hourly());
+
+            recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
+                x => x.CronForTuitionOverdue(),
+                Cron.Monthly(28));
+
+            recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
+                x => x.CronJobAutoRemovedOutDateNotifications(),
+                Cron.Hourly(15));
         });
-
-
+            
         return services;
     }
 

@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -10,7 +11,7 @@ public record ClassModel
     public string? InstructorName { get; init; }
     public ClassStatus Status { get; init; } = ClassStatus.NotStarted;
     public DateOnly StartTime { get; set; }
-    public Level Level { get; init; }
+    public Guid LevelId { get; init; }
     public bool IsPublic { get; init; }
     public required string Name { get; init; }
     public required string CreatedById { get; init; }
@@ -26,4 +27,6 @@ public record ClassModel
     public DateTime? UpdatedAt { get; init; }
 
     public AccountSimpleModel? Instructor { get; init; }
+
+    public LevelModel? Level { get; init; }
 }

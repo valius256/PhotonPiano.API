@@ -25,13 +25,15 @@ public class SlotStudentService : ISlotStudentService
 
         if (slotEntity.Class.InstructorId != teacherId)
             throw new IllegalArgumentException("You are not allowed to update attendance for this slot.");
-
-
+        
+        if(model.StudentAttentIds.Count == 0 && model.StudentAbsentIds != null && model.StudentAbsentIds.Count == 0)
+            throw new IllegalArgumentException("Student list sending cannot be empty.");
+        
         if (slotEntity == null) throw new IllegalArgumentException("The specified slot does not exist.");
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
 
-        var teacherName = await _serviceFactory.AccountService.GetAccountById(teacherId);
+        var teacherAccount = await _serviceFactory.AccountService.GetAccountById(teacherId);
 
         var slotDateTime = slotEntity.Date.ToDateTime(shiftStartTime);
         var currentDateTime = DateTime.UtcNow.AddHours(7);
@@ -46,16 +48,18 @@ public class SlotStudentService : ISlotStudentService
                 .FindFirstProjectedAsync<SlotStudent>(x =>
                     x.SlotId == model.SlotId && x.StudentFirebaseId == studentId);
 
-            if (slotStudent != null)
+            if (slotStudent is null)
             {
-                slotStudent.AttendanceStatus = AttendanceStatus.Attended;
-                slotStudent.UpdateById = teacherId;
-                slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
-                await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
-
-                await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
-                    $"Đã điểm danh cho lớp {slotEntity.Class.Name}", $"trạng thái: {AttendanceStatus.Attended}");
+                throw new IllegalArgumentException("The specified student does not exist in this slot.");
             }
+            
+            slotStudent.AttendanceStatus = AttendanceStatus.Attended;
+            slotStudent.UpdateById = teacherId;
+            slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
+
+            await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
+                $"Bạn {slotStudent.StudentAccount.FullName ?? slotStudent.StudentAccount.UserName} đã { ConvertAttendanceStatusToVietnamese(slotStudent.AttendanceStatus)} lớp {slotEntity.Class.Name} ngày {DateTime.UtcNow.AddHours(7)}", "");
         }
 
         if (model.StudentAbsentIds is not null)
@@ -65,7 +69,7 @@ public class SlotStudentService : ISlotStudentService
                     throw new BadRequestException("Student cannot be both present and absent at the same time.");
 
                 var slotStudent = await _unitOfWork.SlotStudentRepository
-                    .FindFirstAsync(x => x.SlotId == model.SlotId && x.StudentFirebaseId == studentId);
+                    .FindFirstProjectedAsync<SlotStudent>(x => x.SlotId == model.SlotId && x.StudentFirebaseId == studentId);
 
                 if (slotStudent != null)
                 {
@@ -75,12 +79,22 @@ public class SlotStudentService : ISlotStudentService
                     await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
 
                     await _serviceFactory.NotificationService.SendNotificationAsync(studentId,
-                        $"Đã điểm danh cho lớp {slotEntity.Class.Name}", $"trạng thái: {AttendanceStatus.Absent}");
+                        $"Bạn {slotStudent.StudentAccount.FullName ?? slotStudent.StudentAccount.UserName} đã {ConvertAttendanceStatusToVietnamese(slotStudent.AttendanceStatus)} lớp {slotEntity.Class.Name} ngày {DateTime.UtcNow.AddHours(7)}", "");
                 }
             }
 
         await _unitOfWork.SaveChangesAsync();
 
         return true;
+    }
+    
+    private string ConvertAttendanceStatusToVietnamese(AttendanceStatus status)
+    {
+        return status switch
+        {
+            AttendanceStatus.Attended => "đã có mặt",
+            AttendanceStatus.Absent => "vắng mặt",
+            _ => "chưa tham gia"
+        };
     }
 }

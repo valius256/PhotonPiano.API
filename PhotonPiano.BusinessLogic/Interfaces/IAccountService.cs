@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
@@ -6,6 +7,8 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 public interface IAccountService
 {
     Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model);
+
+    Task<List<AwaitingLevelsModel>> GetWaitingStudentOfAllLevels();
 
     Task<AccountModel> GetAndCreateAccountIfNotExistsCredentials(string firebaseId, string email,
         bool isEmailVerified = false,

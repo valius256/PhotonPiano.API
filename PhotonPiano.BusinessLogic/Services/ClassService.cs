@@ -2,11 +2,13 @@ using System.Drawing;
 using Mapster;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
@@ -16,6 +18,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -41,16 +44,18 @@ public class ClassService : IClassService
         var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id);
         if (classDetail is null) throw new NotFoundException("Class not found");
 
-        var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
+        var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classDetail.LevelId)
+            ?? throw new NotFoundException("Level not found");
 
         return classDetail with { 
             MinimumStudents = minStudents,
             Capacity = maxStudents,
             InstructorName = classDetail.Instructor?.FullName,
-            RequiredSlots = config.TotalSlot,
+            RequiredSlots = level.TotalSlots,
             StudentNumber = classDetail.StudentClasses.Count,     
-            SlotsPerWeek = config.NumOfSlotInWeek,
-            PricePerSlots = config.PriceOfSlot,
+            SlotsPerWeek = level.SlotPerWeek,
+            PricePerSlots = level.PricePerSlot,
+            TotalSlots = classDetail.Slots.Count,
         };
     }
 
@@ -65,15 +70,16 @@ public class ClassService : IClassService
         var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassScoreboardModel>(c => c.Id == id);
         if (classDetail is null) throw new NotFoundException("Class not found");
 
-        var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
+        var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classDetail.LevelId)
+            ?? throw new NotFoundException("Level not found");
 
         return classDetail with
         {
             MinimumStudents = minStudents,
             Capacity = maxStudents,
             InstructorName = classDetail.Instructor?.FullName,
-            RequiredSlots = config.TotalSlot,
-            StudentNumber = classDetail.StudentClasses.Count,
+            RequiredSlots = level.TotalSlots,
+            StudentNumber = classDetail.StudentClasses.Count
         };
     }
 
@@ -97,7 +103,8 @@ public class ClassService : IClassService
         return result;
     }
 
-    public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass, AccountModel account)
+
+    public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass)
     {
         var (page, pageSize, sortColumn, orderByDesc,
             classStatus, level, keyword, isScorePublished, teacherId, studentId) = queryClass;
@@ -110,10 +117,10 @@ public class ClassService : IClassService
             [  
                 q => account.Role == Role.Staff || q.InstructorId == account.AccountFirebaseId,
                 q => classStatus.Count == 0 || classStatus.Contains(q.Status),
-                q => level.Count == 0 || level.Contains(q.Level),
+                q => level.Count == 0 || level.Contains(q.LevelId),
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
                 q => teacherId == null || q.InstructorId == teacherId,
-                q => studentId == null || Enumerable.Any(q.StudentClasses, sc => sc.StudentFirebaseId == studentId),
+                q => studentId == null || q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId),
                 q =>
                     string.IsNullOrEmpty(keyword) ||
                     EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword)
@@ -125,15 +132,7 @@ public class ClassService : IClassService
         var minStudents =
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
 
-        var levelConfigs = new List<GetSystemConfigOnLevelModel>
-        {
-            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(1),
-            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(2),
-            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(3),
-            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(4),
-            await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel(5),
-
-        };
+        var levels = await _unitOfWork.LevelRepository.GetAllAsync();
 
         // Perform the paged query with projections
         var result = await query
@@ -143,12 +142,14 @@ public class ClassService : IClassService
             {
                 Id = q.Id,
                 Name = q.Name,
-                Level = q.Level,
+                LevelId = q.LevelId,
                 Status = q.Status,
                 InstructorId = q.InstructorId,
                 IsScorePublished = q.IsScorePublished,
                 Capacity = capacity,
                 CreatedById = q.CreatedById,
+                IsPublic = q.IsPublic,
+                Level = q.Level.Adapt<LevelModel>(),
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
                 TotalSlots = q.Slots.Count(),
@@ -159,7 +160,7 @@ public class ClassService : IClassService
 
         result = result.Select(item => item with
         {
-            RequiredSlots = levelConfigs[(int)item.Level].TotalSlot
+            RequiredSlots = levels.FirstOrDefault(l => l.Id == item.LevelId)?.TotalSlots ?? 0
         }).ToList();
 
         return new PagedResult<ClassModel>
@@ -184,7 +185,7 @@ public class ClassService : IClassService
         if (arrangeClassModel.StartWeek.DayOfWeek != DayOfWeek.Monday)
             throw new BadRequestException("Incorrect start week");
 
-
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Đang lấy dữ liệu học viên", 0);
         //Get awaited students
         var students = await _unitOfWork.AccountRepository.FindAsync(a =>
             a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
@@ -195,11 +196,18 @@ public class ClassService : IClassService
             int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
 
         var classes = new List<CreateClassAutoModel>();
-
-        //1. FILL IN STUDENTS
+        //1. FILL IN STUDENTS (25%)
         //With each level, fill the students
-        foreach (var level in Enum.GetValues<Level>())
+        var levels = await _unitOfWork.LevelRepository.GetAllAsync();
+        var progressLevel = 25 / (1.0 * levels.Count);
+        var currentProgress = 5.0;
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Bắt đầu xếp lớp...", currentProgress);
+        foreach (var level in levels)
         {
+            currentProgress += progressLevel;
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Bắt đầu phân bổ học viên cho LEVEL {level.Name}", currentProgress);
+            await Task.Delay(100);
+
             var studentsOfLevel = students.Where(s => s.Level == level).ToList();
             //Find out how many classes should be created to avoid having left over students
             //Using this formular : minStudents <= Number of student need to assign / Number of classes <= maxStudents
@@ -219,8 +227,7 @@ public class ClassService : IClassService
                 numberOfClasses = (int)Math.Floor(studentsOfLevel.Count * 1.0 / maxStudents);
             }
 
-            var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == DateTime.UtcNow.AddHours(7).Month 
-                && c.StartTime.Year == DateTime.UtcNow.AddHours(7).Year); 
+            
             //Great! With number of students each class and number of classes, we can easily fill in students
             for (var i = 0; i < numberOfClasses; i++)
             {
@@ -228,39 +235,43 @@ public class ClassService : IClassService
                 classes.Add(new CreateClassAutoModel
                 {
                     Id = Guid.NewGuid(),
-                    Level = level,
-                    Name =
-                        $"LEVEL{(int)level + 1}_{classesThisMonth + i + 1}_{DateTime.Now.Month}{DateTime.Now.Year}",
+                    LevelId = level.Id,
+                    Name = "",
                     StudentIds = selectedStudents.Select(s => s.AccountFirebaseId).ToList()
                 });
             }
         }
-
-        //2. IT's SCHEDULE TIME! 
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đã đến lúc phân bổ lịch học! Đang chuẩn bị cấu hình và ngày nghỉ...", currentProgress);
+        await Task.Delay(500);
+        //2. IT's SCHEDULE TIME!  (30%)
         Random random = new();
         //Get config values
-        var levelConfigs = new List<GetSystemConfigOnLevelModel>();
-        foreach (var level in Enum.GetValues<Level>())
-        {
-            var config = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)level + 1);
-            levelConfigs.Add(config);
-        }
         //Get day-offs
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
+
         //Initialize a list to store unadded slots (for conflict check)
         var unaddedSlots = new List<Slot>();
+
+        currentProgress += 5;
+
         //With each class, we will pick a random schedule for it!
+        var progressEachClass = 25 / (classes.Count * 1.0);
         foreach (var classDraft in classes)
         {
-            var levelConfig = levelConfigs[(int)classDraft.Level];
-            var dayFrames = GetRandomDays(levelConfig.NumOfSlotInWeek);
-            var slot = await ScheduleAClassAutomatically(arrangeClassModel, dayOffs, dayFrames, levelConfig, unaddedSlots);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang xếp lịch cho lớp {classDraft.Name}", currentProgress);
+            var level = levels.FirstOrDefault(l => l.Id == classDraft.LevelId) ?? throw new NotFoundException("Level not found");
+            var dayFrames = GetRandomDays(level.SlotPerWeek);
+            var slot = await ScheduleAClassAutomatically(arrangeClassModel, dayOffs, dayFrames, level, unaddedSlots);
             classDraft.Slots.AddRange(slot);
-            unaddedSlots.AddRange(slot.Adapt<Slot>());
+            unaddedSlots.AddRange(slot.Adapt<List<Slot>>());
+            currentProgress += progressEachClass;
         }
 
-        //4. Now save them to database
-        var result = await SaveClasses(classes, students, userId);
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu vào cơ sở dữ liệu...", currentProgress);
+        await Task.Delay(500);
+        //3. Now save them to database (40%)
+        var result = await SaveClasses(classes, students, userId, currentProgress, levels);
+
 
         return result;
     }
@@ -284,23 +295,47 @@ public class ClassService : IClassService
 
     }
     private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, List<Account> students,
-        string userId)
+        string userId, double currentProgress, List<Level> levels)
     {
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             //Create classes
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu các lớp...", currentProgress);
             var mappedClasses = classes.Adapt<List<Class>>();
-            mappedClasses.ForEach(c =>
+            var monthDict = new Dictionary<int, int>();
+            foreach (var classInfo in mappedClasses)
             {
-                c.CreatedById = userId;
-                c.IsPublic = false;
-                c.IsScorePublished = false;
-                c.Status = ClassStatus.NotStarted;
-                c.StartTime = c.Slots.Count > 0 ? c.Slots.First().Date : DateOnly.MinValue;
-            });
-            await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses);
+                var level = levels.FirstOrDefault(l => l.Id == classInfo.LevelId) ?? throw new NotFoundException("Level not found");
+                classInfo.CreatedById = userId;
+                classInfo.IsPublic = false;
+                classInfo.IsScorePublished = false;
+                classInfo.Status = ClassStatus.NotStarted;
+                classInfo.StartTime = classInfo.Slots.Count > 0 ? classInfo.Slots.First().Date : DateOnly.MinValue;
+
+                var classesThatMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == classInfo.StartTime.Month
+                    && c.StartTime.Year == classInfo.StartTime.Year, false, true);
+
+                if (monthDict.ContainsKey(classInfo.StartTime.Month))
+                {
+                    monthDict[classInfo.StartTime.Month] += 1;  // Increment the value
+                }
+                else
+                {
+                    monthDict[classInfo.StartTime.Month] = 1;  // Initialize if key doesn't exist
+                }
+
+                classInfo.Name = $"{level.Name.Split('(')[0]}_{classesThatMonth + monthDict[classInfo.StartTime.Month] + 1}_{classInfo.StartTime.Month}{classInfo.StartTime.Year}";
+            }
+
+            await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>
+            {
+                c.Slots = [];
+                return c;
+            }).ToList());
+            currentProgress += 5;
 
             //Create StudentClasses
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu danh sách học sinh các lớp...", currentProgress);
             var studentClasses = new List<StudentClass>();
             foreach (var c in classes)
                 studentClasses.AddRange(c.StudentIds.Select(s => new StudentClass
@@ -311,8 +346,10 @@ public class ClassService : IClassService
                     ClassId = c.Id
                 }));
             await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
+            currentProgress += 5;
 
             //Create Slots
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu danh sách buổi học các lớp...", currentProgress);
             var slots = new List<Slot>();
             foreach (var c in classes)
                 slots.AddRange(c.Slots.Select(s => new Slot
@@ -325,8 +362,10 @@ public class ClassService : IClassService
                     Status = SlotStatus.NotStarted
                 }));
             await _unitOfWork.SlotRepository.AddRangeAsync(slots);
+            currentProgress += 5;
 
             //Create studentSlots
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu các bảng điểm danh...", currentProgress);
             var studentSlots = new List<SlotStudent>();
             foreach (var studentClass in studentClasses)
             {
@@ -340,16 +379,20 @@ public class ClassService : IClassService
                         AttendanceStatus = AttendanceStatus.NotYet
                     });
             }
-
             await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
+            currentProgress += 5;
 
             //Change student status and current class
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang cập nhật lại trạng thái các học viên...", currentProgress);
             await _unitOfWork.AccountRepository.FindAsQueryable(a =>
                     a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(b => b.StudentStatus, StudentStatus.InClass));
+            currentProgress += 5;
 
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang hoàn tất...", currentProgress);
             await _unitOfWork.SaveChangesAsync();
+            currentProgress += 10;
 
             // Fetch the class capacity
             var capacity =
@@ -450,6 +493,9 @@ public class ClassService : IClassService
 
     public async Task<ClassModel> CreateClass(CreateClassModel model, string accountFirebaseId)
     {
+        var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == model.LevelId)
+            ?? throw new NotFoundException("Level not found");
+
         var mappedClass = model.Adapt<Class>();
         mappedClass.CreatedById = accountFirebaseId;
         mappedClass.IsPublic = false;
@@ -458,9 +504,9 @@ public class ClassService : IClassService
 
         var now = DateTime.UtcNow.AddHours(7);
         var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.CreatedAt.Month == now.Month
-                && c.CreatedAt.Year == now.Year && c.Level == model.Level);
+                && c.CreatedAt.Year == now.Year && c.LevelId == model.LevelId);
 
-        mappedClass.Name = $"LEVEL{(int)mappedClass.Level + 1}_{classesThisMonth + 1}_{now.Month}{now.Year}";
+        mappedClass.Name = $"{level.Name.Split('(')[0]}_{classesThisMonth + 1}_{now.Month}{now.Year}";
 
         var addedClass = await _unitOfWork.ClassRepository.AddAsync(mappedClass);
         await _unitOfWork.SaveChangesAsync();
@@ -469,12 +515,13 @@ public class ClassService : IClassService
 
     public async Task UpdateClass(UpdateClassModel model, string accountFirebaseId)
     {
+
         var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(model.Id);
         if (classInfo is null)
         {
             throw new NotFoundException("Class not found");
         }
-        if (classInfo.Status != ClassStatus.NotStarted && (model.Level.HasValue))
+        if (classInfo.Status != ClassStatus.NotStarted && (model.LevelId.HasValue))
         {
             throw new BadRequestException("Cannot update level of classes that are started");
         }
@@ -494,9 +541,12 @@ public class ClassService : IClassService
         string oldTeacherMessage = $"Bạn đã không còn phụ trách lớp {classInfo.Name} nữa.";
         string? newTeacherMessage = null;
 
-        if (model.Level.HasValue)
+        if (model.LevelId.HasValue)
         {
-            classInfo.Level = model.Level.Value;
+            var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == model.LevelId)
+                ?? throw new NotFoundException("Level not found");
+
+            classInfo.LevelId = model.LevelId.Value;
         }
         if (model.InstructorId != null && model.InstructorId != classInfo.InstructorId)
         {
@@ -644,6 +694,9 @@ public class ClassService : IClassService
     {
         var classDetail = await GetClassDetailById(classId);
         var classInfo = (await _unitOfWork.ClassRepository.GetByIdAsync(classId));
+
+       
+
         if (classDetail is null || classInfo is null)
         {
             throw new NotFoundException("Class not found");
@@ -652,6 +705,9 @@ public class ClassService : IClassService
         {
             throw new BadRequestException("Class is already announced!");
         }
+
+        var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == classInfo.LevelId)
+           ?? throw new NotFoundException("Level not found or removed!");
 
         classInfo.IsPublic = true;
         classInfo.UpdateById = accountFirebaseId;
@@ -690,10 +746,10 @@ public class ClassService : IClassService
             if (classInfo.InstructorId != null)
             {
                 await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, "Thông tin lớp mới",
-                $"Bạn đã được giao cho phụ trách lớp mới {classInfo.Name}, LEVEL {classInfo.Level + 1}. Vui lòng kiểm tra lại lịch học. Chúc bạn và lớp làm việc hiệu quả và thành công!");
+                $"Bạn đã được giao cho phụ trách lớp mới {classInfo.Name}, LEVEL {level.Name}. Vui lòng kiểm tra lại lịch học. Chúc bạn và lớp làm việc hiệu quả và thành công!");
             }
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(classDetail.StudentClasses.Select(c => c.StudentFirebaseId).ToList(),
-                $"Chúc mừng bạn đã được xếp vào lớp {classInfo.Name}, LEVEL {classInfo.Level + 1}. Vui lòng kiểm tra lại lịch học. Chúc bạn đạt được nhiều thành công!", "");
+                $"Chúc mừng bạn đã được xếp vào lớp {classInfo.Name}, LEVEL {level.Name}. Vui lòng kiểm tra lại lịch học. Chúc bạn đạt được nhiều thành công!", "");
         }
     }
 
@@ -728,9 +784,11 @@ public class ClassService : IClassService
             throw new BadRequestException("Class must not have any slots to use this feature");
         }
 
+        var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == classDetail.LevelId)
+          ?? throw new NotFoundException("Level not found or removed!");
+
         //Construct slots and check for conflicts
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
-        var levelConfig = await _serviceFactory.SystemConfigService.GetSystemConfigValueBaseOnLevel((int)classDetail.Level + 1);
         var slots = (await ScheduleAClassAutomatically(new ArrangeClassModel
         {
             AllowedShifts = [scheduleClassModel.Shift],
@@ -787,7 +845,7 @@ public class ClassService : IClassService
     private async Task<List<CreateSlotThroughArrangementModel>> ScheduleAClassAutomatically(
         ArrangeClassModel arrangeClassModel, 
         List<DayOff> dayOffs, List<DayOfWeek> dayFrames, 
-        GetSystemConfigOnLevelModel levelConfig,
+        Level level,
         List<Slot>? otherSlots = null)
     {
         otherSlots ??= [];
@@ -801,7 +859,7 @@ public class ClassService : IClassService
         var dates = new HashSet<DateOnly>();
         var currentDate = arrangeClassModel.StartWeek;
         int slotCount = 0;
-        while (slotCount < levelConfig.TotalSlot)
+        while (slotCount < level.TotalSlots)
         {
             foreach (var frame in dayFrames)
             {
@@ -815,7 +873,7 @@ public class ClassService : IClassService
                     dates.Add(date);
                     slotCount++;
 
-                    if (slotCount >= levelConfig.TotalSlot)
+                    if (slotCount >= level.TotalSlots)
                         break;
                 }
             }

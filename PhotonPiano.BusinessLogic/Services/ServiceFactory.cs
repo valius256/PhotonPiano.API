@@ -7,6 +7,7 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.PubSub.Notification;
+using PhotonPiano.PubSub.Progress;
 using Razor.Templating.Core;
 using StackExchange.Redis;
 
@@ -63,8 +64,19 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IStudentClassService> _studentClassService;
 
+    private readonly Lazy<IDayOffService> _dayOffService;
+    
+    private readonly Lazy<ILearnerSurveyService> _learnerSurveyService;
+    
+    private readonly Lazy<ISurveyQuestionService> _surveryQuestionService;
+    
+    private readonly Lazy<ILevelService> _levelService;
+    
+    private readonly Lazy<IProgressServiceHub> _progressServiceHub;
+
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
+        IHubContext<ProgressHub> progressHubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine)
     {
@@ -93,7 +105,12 @@ public class ServiceFactory : IServiceFactory
         _notificationServiceHub = new Lazy<INotificationServiceHub>(() => new NotificationServiceHub(hubContext));
         _notificationService = new Lazy<INotificationService>(() => new NotificationService(this, unitOfWork));
         _studentClassService = new Lazy<IStudentClassService>(() => new StudentClassService(this, unitOfWork));
+        _dayOffService = new Lazy<IDayOffService>(() => new DayOffService(unitOfWork, this));
         // _logger.LogInformation("ServiceFactory has been initialized.");
+        _learnerSurveyService = new Lazy<ILearnerSurveyService>(() => new LearnerSurveyService(unitOfWork));
+        _surveryQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork));
+        _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
+        _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -139,4 +156,14 @@ public class ServiceFactory : IServiceFactory
     public INotificationServiceHub NotificationServiceHub => _notificationServiceHub.Value;
 
     public IStudentClassService StudentClassService => _studentClassService.Value;
+
+    public IDayOffService DayOffService => _dayOffService.Value;
+
+    public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
+    
+    public ISurveyQuestionService ISurveyQuestionService => _surveryQuestionService.Value;
+    
+    public ILearnerSurveyService LearnerSurveyService => _learnerSurveyService.Value;
+
+    public ILevelService LevelService => _levelService.Value;
 }

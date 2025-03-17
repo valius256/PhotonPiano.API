@@ -18,7 +18,7 @@ public interface ISlotService
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId);
     
-    Task CronJobAutoChangeSlotStatus();
+    Task CronAutoChangeSlotStatus();
 
     Task<SlotModel> CreateSlot(CreateSlotModel createSlotModel, string accountFirebaseId);
 

@@ -1,6 +1,9 @@
 using System.Linq.Expressions;
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -108,13 +111,22 @@ public class AccountService : IAccountService
                 GetAccountsFilterExpression(currentAccount.Role),
                 a => roles.Count == 0 || roles.Contains(a.Role),
                 a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
-                a => levels.Count == 0 || !a.Level.HasValue || levels.Contains(a.Level.Value),
+                a => levels.Count == 0 || !a.LevelId.HasValue || levels.Contains(a.LevelId.Value),
                 a => studentStatuses.Count == 0 ||
                      a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)
             ]
         );
 
         return pagedResult;
+    }
+
+    public async Task<List<AwaitingLevelsModel>> GetWaitingStudentOfAllLevels()
+    {
+        return await _unitOfWork.AccountRepository.Entities
+            .Where(a => a.StudentStatus == StudentStatus.WaitingForClass)
+            .GroupBy(a => a.Level)
+            .Select(g => new AwaitingLevelsModel { Level = g.Key.Adapt<LevelModel>(), Count = g.Count() })
+            .ToListAsync();
     }
 
     public async Task<AccountModel> GetAndCreateAccountIfNotExistsCredentials(string firebaseId, string email,

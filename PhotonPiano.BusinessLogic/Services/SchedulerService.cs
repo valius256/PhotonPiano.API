@@ -162,6 +162,7 @@ public class SchedulerService : ISchedulerService
             if (availableLecturer is not null)
             {
                 entranceTest.InstructorId = availableLecturer.AccountFirebaseId;
+                entranceTest.InstructorName = availableLecturer.FullName;
 
                 // Mark this slot as booked
                 bookedSlots.Add(new SlotWithClassModel
@@ -207,6 +208,7 @@ public class SchedulerService : ISchedulerService
                 if (availableLecturer is not null)
                 {
                     test.InstructorId = availableLecturer.AccountFirebaseId;
+                    test.InstructorName = availableLecturer.FullName;
 
                     assignedTests.Add(test);
 

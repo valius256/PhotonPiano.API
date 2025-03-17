@@ -86,6 +86,16 @@ public class EntranceTestsController : BaseController
         return NoContent();
     }
 
+    [HttpPut("max-students-per-test")]
+    [EndpointDescription("Update entrance tests max students")]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    public async Task<ActionResult> UpdateEntranceTestMaxStudentsPerTest([FromBody] UpdateEntranceTestsMaxStudentsRequest request)
+    {
+        await _serviceFactory.EntranceTestService.UpdateEntranceTestsMaxStudents(request.MaxStudents, base.CurrentAccount!);
+        
+        return NoContent();
+    }
+
     [HttpGet("{id}/students")]
     [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance tests students")]
@@ -104,12 +114,14 @@ public class EntranceTestsController : BaseController
     [HttpGet("{id}/students/{student-id}")]
     [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance test student details")]
-    public async Task<ActionResult<EntranceTestStudentDetail>> GetEntranceTestStudentDetails(
+    public async Task<ActionResult<EntranceTestStudentDetailResponse>> GetEntranceTestStudentDetails(
         [FromRoute(Name = "id")] Guid id,
         [FromRoute(Name = "student-id")] string studentId)
     {
-        return await _serviceFactory.EntranceTestService.GetEntranceTestStudentDetail(id, studentId,
+        var result = await _serviceFactory.EntranceTestService.GetEntranceTestStudentDetail(id, studentId,
             base.CurrentAccount!);
+
+        return result.Adapt<EntranceTestStudentDetailResponse>();
     }
 
     [HttpPost("enrollment-requests")]

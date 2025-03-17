@@ -17,6 +17,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.BackgroundJob",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.PubSub", "PhotonPiano.PubSub\PhotonPiano.PubSub.csproj", "{12EF58F9-A619-4F10-AE02-9AFBF8E6B0A2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.AppHost", "PhotonPiano.AppHost\PhotonPiano.AppHost.csproj", "{65DC4A70-993A-31B3-61DD-E98AFC8F8C4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotonPiano.ServiceDefaults", "PhotonPiano.ServiceDefaults\PhotonPiano.ServiceDefaults.csproj", "{6D9B969F-0CF9-6D98-E1EF-74A8B77263F2}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,8 +57,23 @@ Global
 		{12EF58F9-A619-4F10-AE02-9AFBF8E6B0A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12EF58F9-A619-4F10-AE02-9AFBF8E6B0A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12EF58F9-A619-4F10-AE02-9AFBF8E6B0A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65DC4A70-993A-31B3-61DD-E98AFC8F8C4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65DC4A70-993A-31B3-61DD-E98AFC8F8C4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65DC4A70-993A-31B3-61DD-E98AFC8F8C4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65DC4A70-993A-31B3-61DD-E98AFC8F8C4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D9B969F-0CF9-6D98-E1EF-74A8B77263F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D9B969F-0CF9-6D98-E1EF-74A8B77263F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D9B969F-0CF9-6D98-E1EF-74A8B77263F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D9B969F-0CF9-6D98-E1EF-74A8B77263F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C580208F-AA36-43DB-A90A-1A060BC962F0}
 	EndGlobalSection
 EndGlobal

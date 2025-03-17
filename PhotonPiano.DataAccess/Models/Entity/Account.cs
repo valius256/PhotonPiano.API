@@ -24,7 +24,7 @@ public class Account : BaseEntity
     public bool IsEmailVerified { get; set; } = false;
     public DateTime JoinedDate { get; set; } = DateTime.UtcNow.AddHours(7);
     public string? ShortDescription { get; set; } = string.Empty;
-    public Level? Level { get; set; }
+    public Guid? LevelId { get; set; }
     public AccountStatus Status { get; set; } = AccountStatus.Active;
     public StudentStatus? StudentStatus { get; set; }
     public int? DesiredLevel { get; set; }
@@ -35,6 +35,7 @@ public class Account : BaseEntity
 
     public Guid? CurrentClassId { get; set; }
 
+    public virtual Level? Level { get; set; }
 
     public virtual Class? CurrentClass { get; set; }
 
@@ -124,4 +125,14 @@ public class Account : BaseEntity
     public virtual ICollection<Application> UpdatedApplications { get; set; } = new List<Application>();
     public virtual ICollection<Application> ApprovedApplications { get; set; } = new List<Application>();
     public virtual ICollection<Application> DeletedApplications { get; set; } = new List<Application>();
+    
+    // SurveyQuestion
+    public virtual ICollection<SurveyQuestion> CreatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
+    public virtual ICollection<SurveyQuestion> UpdatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
+    
+    
+    // SurveyDetails
+    public virtual ICollection<LearnerSurvey> LearnerSurveys { get; set; } = new List<LearnerSurvey>();
+    
+    
 }

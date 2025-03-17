@@ -1112,7 +1112,9 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("AllowOtherAnswer")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1123,6 +1125,11 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRequired")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.PrimitiveCollection<List<string>>("Options")
                         .IsRequired()
@@ -1298,7 +1305,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.ToTable("Tuition");
                 });
 
-            modelBuilder.Entity("SurveyQuestion", b =>
+            modelBuilder.Entity("PianoSurveyQuestion", b =>
                 {
                     b.Property<Guid>("QuestionId")
                         .HasColumnType("uuid");
@@ -1310,7 +1317,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("SurveyId");
 
-                    b.ToTable("SurveyQuestion (Dictionary<string, object>)");
+                    b.ToTable("PianoSurveyQuestion (Dictionary<string, object>)");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Account", b =>
@@ -1895,7 +1902,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("StudentClass");
                 });
 
-            modelBuilder.Entity("SurveyQuestion", b =>
+            modelBuilder.Entity("PianoSurveyQuestion", b =>
                 {
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", null)
                         .WithMany()

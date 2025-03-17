@@ -12,6 +12,12 @@ public class SurveyQuestionConfiguration : IEntityTypeConfiguration<SurveyQuesti
         builder.HasKey(x => x.Id);
         
         builder.HasQueryFilter(x => x.RecordStatus != RecordStatus.IsDeleted);
+
+        builder.Property(x => x.AllowOtherAnswer)
+            .HasDefaultValue(true);
+        
+        builder.Property(x => x.IsRequired)
+            .HasDefaultValue(true);
         
         builder.HasOne(x => x.CreatedBy)
             .WithMany(x => x.CreatedSurveyQuestions)

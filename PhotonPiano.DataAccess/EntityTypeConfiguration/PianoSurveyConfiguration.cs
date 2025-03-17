@@ -13,10 +13,10 @@ public class PianoSurveyConfiguration : IEntityTypeConfiguration<PianoSurvey>
         
         builder.HasQueryFilter(x => x.RecordStatus != RecordStatus.IsDeleted);
 
-        builder.HasMany(s => s.SurveyQuestions)
+        builder.HasMany(s => s.Questions)
             .WithMany(q => q.PianoSurveys)
             .UsingEntity(
-                "SurveyQuestion",
+                "PianoSurveyQuestion",
                 l => l.HasOne(typeof(SurveyQuestion))
                     .WithMany()
                     .HasForeignKey("QuestionId")

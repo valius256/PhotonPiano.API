@@ -48,6 +48,10 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<ISurveyQuestionRepository> _surveyQuestionRepository;
     
     private readonly Lazy<ILearnerSurveyRepository> _learnerSurveyRepository;
+    
+    private readonly Lazy<IPianoSurveyRepository> _pianoSurveyRepository;
+    
+    private readonly Lazy<ILearnerAnswerRepository> _learnerAnswerRepository;
 
     private readonly Lazy<ILevelRepository> _levelRepository;
 
@@ -78,6 +82,8 @@ public class UnitOfWork : IUnitOfWork
         _entranceTestResultRepository = new Lazy<IEntranceTestResultRepository>(() => new EntranceTestResultRepository(context));
         _surveyQuestionRepository = new Lazy<ISurveyQuestionRepository>(() => new SurveyQuestionRepository(context));  
         _learnerSurveyRepository = new Lazy<ILearnerSurveyRepository>(() => new LearnerSurveyRepository(context));
+        _pianoSurveyRepository = new Lazy<IPianoSurveyRepository>(() => new PianoSurveyRepository(context));
+        _learnerAnswerRepository = new Lazy<ILearnerAnswerRepository>(() => new LearnerAnswerRepository(context));
         _levelRepository = new Lazy<ILevelRepository>(() => new LevelRepository(context));
     }
 
@@ -121,6 +127,10 @@ public class UnitOfWork : IUnitOfWork
     public ISurveyQuestionRepository SurveyQuestionRepository => _surveyQuestionRepository.Value;
     
     public ILearnerSurveyRepository LearnerSurveyRepository => _learnerSurveyRepository.Value;
+    
+    public IPianoSurveyRepository PianoSurveyRepository => _pianoSurveyRepository.Value;
+    
+    public ILearnerAnswerRepository LearnerAnswerRepository => _learnerAnswerRepository.Value;
 
     public ILevelRepository LevelRepository => _levelRepository.Value;
 

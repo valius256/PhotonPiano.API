@@ -22,6 +22,10 @@ namespace PhotonPiano.DataAccess.Migrations
 
             migrationBuilder.DropColumn(
                 name: "AllowMultipleAnswers",
+                table: "SurveyQuestion");
+
+            migrationBuilder.DropColumn(
+                name: "AllowMultipleAnswers",
                 table: "LearnerSurvey");
 
             migrationBuilder.DropColumn(
@@ -37,11 +41,6 @@ namespace PhotonPiano.DataAccess.Migrations
                 table: "LearnerSurvey");
 
             migrationBuilder.RenameColumn(
-                name: "AllowMultipleAnswers",
-                table: "SurveyQuestion",
-                newName: "AllowOtherAnswer");
-
-            migrationBuilder.RenameColumn(
                 name: "SurveyQuestionId",
                 table: "LearnerSurvey",
                 newName: "PianoSurveyId");
@@ -50,6 +49,20 @@ namespace PhotonPiano.DataAccess.Migrations
                 name: "IX_LearnerSurvey_SurveyQuestionId",
                 table: "LearnerSurvey",
                 newName: "IX_LearnerSurvey_PianoSurveyId");
+
+            migrationBuilder.AddColumn<bool>(
+                name: "AllowOtherAnswer",
+                table: "SurveyQuestion",
+                type: "boolean",
+                nullable: false,
+                defaultValue: true);
+
+            migrationBuilder.AddColumn<bool>(
+                name: "IsRequired",
+                table: "SurveyQuestion",
+                type: "boolean",
+                nullable: false,
+                defaultValue: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "OrderIndex",
@@ -135,7 +148,7 @@ namespace PhotonPiano.DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SurveyQuestion (Dictionary<string, object>)",
+                name: "PianoSurveyQuestion (Dictionary<string, object>)",
                 columns: table => new
                 {
                     QuestionId = table.Column<Guid>(type: "uuid", nullable: false),
@@ -143,15 +156,15 @@ namespace PhotonPiano.DataAccess.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SurveyQuestion (Dictionary<string, object>)", x => new { x.QuestionId, x.SurveyId });
+                    table.PrimaryKey("PK_PianoSurveyQuestion (Dictionary<string, object>)", x => new { x.QuestionId, x.SurveyId });
                     table.ForeignKey(
-                        name: "FK_SurveyQuestion (Dictionary<string, object>)_PianoSurvey_Sur~",
+                        name: "FK_PianoSurveyQuestion (Dictionary<string, object>)_PianoSurve~",
                         column: x => x.SurveyId,
                         principalTable: "PianoSurvey",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_SurveyQuestion (Dictionary<string, object>)_SurveyQuestion_~",
+                        name: "FK_PianoSurveyQuestion (Dictionary<string, object>)_SurveyQues~",
                         column: x => x.QuestionId,
                         principalTable: "SurveyQuestion",
                         principalColumn: "Id",
@@ -184,8 +197,8 @@ namespace PhotonPiano.DataAccess.Migrations
                 column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SurveyQuestion (Dictionary<string, object>)_SurveyId",
-                table: "SurveyQuestion (Dictionary<string, object>)",
+                name: "IX_PianoSurveyQuestion (Dictionary<string, object>)_SurveyId",
+                table: "PianoSurveyQuestion (Dictionary<string, object>)",
                 column: "SurveyId");
 
             migrationBuilder.AddForeignKey(
@@ -207,7 +220,7 @@ namespace PhotonPiano.DataAccess.Migrations
                 name: "LearnerAnswer");
 
             migrationBuilder.DropTable(
-                name: "SurveyQuestion (Dictionary<string, object>)");
+                name: "PianoSurveyQuestion (Dictionary<string, object>)");
 
             migrationBuilder.DropTable(
                 name: "PianoSurvey");
@@ -219,6 +232,14 @@ namespace PhotonPiano.DataAccess.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_LearnerSurvey_LearnerId",
                 table: "LearnerSurvey");
+
+            migrationBuilder.DropColumn(
+                name: "AllowOtherAnswer",
+                table: "SurveyQuestion");
+
+            migrationBuilder.DropColumn(
+                name: "IsRequired",
+                table: "SurveyQuestion");
 
             migrationBuilder.DropColumn(
                 name: "OrderIndex",
@@ -233,11 +254,6 @@ namespace PhotonPiano.DataAccess.Migrations
                 table: "LearnerSurvey");
 
             migrationBuilder.RenameColumn(
-                name: "AllowOtherAnswer",
-                table: "SurveyQuestion",
-                newName: "AllowMultipleAnswers");
-
-            migrationBuilder.RenameColumn(
                 name: "PianoSurveyId",
                 table: "LearnerSurvey",
                 newName: "SurveyQuestionId");
@@ -246,6 +262,13 @@ namespace PhotonPiano.DataAccess.Migrations
                 name: "IX_LearnerSurvey_PianoSurveyId",
                 table: "LearnerSurvey",
                 newName: "IX_LearnerSurvey_SurveyQuestionId");
+
+            migrationBuilder.AddColumn<bool>(
+                name: "AllowMultipleAnswers",
+                table: "SurveyQuestion",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
 
             migrationBuilder.AddColumn<bool>(
                 name: "AllowMultipleAnswers",

@@ -16,5 +16,5 @@ public class PianoSurvey : BaseEntityWithId
     public virtual Account CreatedBy { get; set; } = default!;
     public virtual Account UpdatedBy { get; set; } = default!;
     public virtual ICollection<LearnerSurvey> LearnerSurveys { get; set; } = [];
-    public virtual ICollection<SurveyQuestion> SurveyQuestions { get; set; } = [];
+    public virtual ICollection<SurveyQuestion> Questions { get; set; } = [];
 }

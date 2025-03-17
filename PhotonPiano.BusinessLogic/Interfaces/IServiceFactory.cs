@@ -59,4 +59,6 @@ public interface IServiceFactory
     ILevelService LevelService { get; }
     
     ISurveyQuestionService SurveyQuestionService { get; }
+    
+    IPianoSurveyService PianoSurveyService { get; }
 }

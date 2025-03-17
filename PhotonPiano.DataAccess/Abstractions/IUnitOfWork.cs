@@ -44,6 +44,10 @@ public interface IUnitOfWork
     ISurveyQuestionRepository SurveyQuestionRepository { get; }
     
     ILearnerSurveyRepository LearnerSurveyRepository { get; }
+    
+    IPianoSurveyRepository PianoSurveyRepository { get; }
+    
+    ILearnerAnswerRepository LearnerAnswerRepository { get; }
 
     ILevelRepository LevelRepository { get; }
 

@@ -690,13 +690,12 @@ public class ClassService : IClassService
     {
         var classDetail = await GetClassDetailById(classId);
         var classInfo = (await _unitOfWork.ClassRepository.GetByIdAsync(classId));
-
-       
-
+        
         if (classDetail is null || classInfo is null)
         {
             throw new NotFoundException("Class not found");
         }
+        
         if (classDetail.IsPublic)
         {
             throw new BadRequestException("Class is already announced!");

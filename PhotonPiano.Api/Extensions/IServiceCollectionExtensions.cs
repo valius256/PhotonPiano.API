@@ -152,12 +152,12 @@ public static class IServiceCollectionExtensions
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
                 .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173")
+                .WithOrigins("http://localhost:5173", "http://photonpiano.frontend:3000", "https://photonpiano.api:5001")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
                 .AllowCredentials()
-                .SetIsOriginAllowed(_ => true)
+                // .SetIsOriginAllowed(_ => true)
             )
         );
         return services;
@@ -174,7 +174,8 @@ public static class IServiceCollectionExtensions
 
          var rs = configuration.GetConnectionString("PostgresPhotonPiano");
         
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" && !_messagePrinted)
+         //Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
+        if (!_messagePrinted)
         {
             Console.WriteLine("This running is using connection string: " + rs);
             _messagePrinted = true;

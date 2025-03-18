@@ -318,7 +318,7 @@ public class ClassService : IClassService
                     monthDict[classInfo.StartTime.Month] = 1;  // Initialize if key doesn't exist
                 }
 
-                classInfo.Name = $"{level.Name.Split('(')[0]}_{classesThatMonth + monthDict[classInfo.StartTime.Month] + 1}_{classInfo.StartTime.Month}{classInfo.StartTime.Year}";
+                classInfo.Name = $"{level.Name.Split('(')[0]} {classesThatMonth + monthDict[classInfo.StartTime.Month] + 1} {classInfo.StartTime.Month}/{classInfo.StartTime.Year}";
             }
 
             await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>
@@ -500,7 +500,7 @@ public class ClassService : IClassService
         var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.CreatedAt.Month == now.Month
                 && c.CreatedAt.Year == now.Year && c.LevelId == model.LevelId);
 
-        mappedClass.Name = $"{level.Name.Split('(')[0]}_{classesThisMonth + 1}_{now.Month}{now.Year}";
+        mappedClass.Name = $"{level.Name.Split('(')[0]} {classesThisMonth + 1} {now.Month}/{now.Year}";
 
         var addedClass = await _unitOfWork.ClassRepository.AddAsync(mappedClass);
         await _unitOfWork.SaveChangesAsync();
@@ -648,19 +648,21 @@ public class ClassService : IClassService
             var studentClasses = classDetail.StudentClasses.Adapt<List<StudentClass>>();
             foreach (var studentClass in studentClasses)
             {
+                //studentClass.Student = default;
                 studentClass.DeletedAt = DateTime.UtcNow.AddHours(7);
                 studentClass.RecordStatus = RecordStatus.IsDeleted;
             }
             await _unitOfWork.StudentClassRepository.UpdateRangeAsync(studentClasses);
 
             //Update student
-            var students = studentClasses.Select(sc => sc.Student).ToList();
+            var students = classDetail.StudentClasses.Select(sc => sc.Student.Adapt<Account>()).ToList();
             foreach (var student in students)
             {
                 if (student.CurrentClassId == classDetail.Id)
                 {
                     student.CurrentClassId = null;
                 }
+                student.Level = null;//detach
                 student.StudentStatus = StudentStatus.WaitingForClass;
                 student.UpdatedAt = DateTime.UtcNow.AddHours(7);
             }
@@ -861,8 +863,7 @@ public class ClassService : IClassService
 
                 if (!dayOffs.Any(dayOff =>
                         date.ToDateTime(TimeOnly.MinValue) >= dayOff.StartTime &&
-                        date.ToDateTime(TimeOnly.MaxValue) <= dayOff.EndTime)
-                    && !otherSlots.Any(s => s.Shift == pickedShift && s.Date == date))
+                        date.ToDateTime(TimeOnly.MaxValue) <= dayOff.EndTime))
                 {
                     dates.Add(date);
                     slotCount++;
@@ -877,7 +878,7 @@ public class ClassService : IClassService
         //Check available rooms -- If not, iterate
         while (availableRooms.Count == 0 && attempt < maxAttempt)
         {
-            availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates);
+            availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates, otherSlots);
             attempt++;
             if (attempt >= maxAttempt)
                 throw new ConflictException(

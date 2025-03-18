@@ -19,6 +19,7 @@ using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.Services;
@@ -112,7 +113,11 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
-        
+
+
+        TypeAdapterConfig<StudentClassModel, StudentClass>.NewConfig()
+            .Map(dest => dest.Student, src => (StudentClassModel?) null);
+
         return services;
     }
 

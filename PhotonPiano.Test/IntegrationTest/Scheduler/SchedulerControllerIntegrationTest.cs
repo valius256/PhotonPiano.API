@@ -195,7 +195,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var request = new AttendanceRequest
         {
             SlotId = firstSlotId,
-            StudentAttentIds = studentIds,
+            // StudentAttentModels = studentIds,
         };
         
         
@@ -223,8 +223,8 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var request = new AttendanceRequest
         {
             SlotId = firstSlotId,
-            StudentAttentIds = new List<string>(),
-            StudentAbsentIds = new List<string>()
+            // StudentAttentModels = new List<string>(),
+            // StudentAbsentIds = new List<string>()
         };
 
         // Act
@@ -245,8 +245,8 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var request = new AttendanceRequest
         {
             SlotId = Guid.NewGuid(), // Invalid slot ID
-            StudentAttentIds = new List<string> { "student1" },
-            StudentAbsentIds = new List<string> { "student2" }
+            // StudentAttentModels = new List<string> { "student1" },
+            // StudentAbsentIds = new List<string> { "student2" }
         };
 
         // Act
@@ -274,8 +274,8 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var request = new AttendanceRequest
         {
             SlotId = firstSlotId,
-            StudentAttentIds = studentIds,
-            StudentAbsentIds = studentIds 
+            // StudentAttentModels = studentIds,
+            // StudentAbsentIds = studentIds 
         };
 
         // Act
@@ -299,8 +299,8 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var request = new AttendanceRequest
         {
             SlotId = firstSlotId,
-            StudentAttentIds = new List<string> { $"{Guid.NewGuid()}" },
-            StudentAbsentIds = new List<string> { $"{Guid.NewGuid()}" }
+            // StudentAttentModels = new List<string> { $"{Guid.NewGuid()}" },
+            // StudentAbsentIds = new List<string> { $"{Guid.NewGuid()}" }
         };
 
         // Act

@@ -1,0 +1,9 @@
+version: 0.1
+storage:
+  filesystem:
+    rootdirectory: /var/lib/registry
+http:
+  addr: 0.0.0.0:5000
+  tls: 
+    certificate: /cert/registry.crt
+    key: /cert/registry.key

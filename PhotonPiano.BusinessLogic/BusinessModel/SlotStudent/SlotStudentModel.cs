@@ -5,10 +5,20 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 
 public record SlotStudentModel
 {
-    public required Guid SlotId { get; set; }
-    public required string StudentFirebaseId { get; set; }
+    public required Guid SlotId { get; init; }
+    public required string StudentFirebaseId { get; init; }
 
-    public AttendanceStatus AttendanceStatus { get; set; }
+    public AttendanceStatus AttendanceStatus { get; init; }
 
-    public AccountModel StudentAccount { get; set; } = default!;
+    public AccountModel StudentAccount { get; init; } = default!;
+    
+    public string? AttendanceComment { get; init; } 
+    
+    public string? GestureComment { get; init; }
+    
+    public string? GestureUrl { get; init; } 
+    
+    public string? FingerNoteComment { get; init; } 
+
+    public string? PedalComment { get; init; } 
 }

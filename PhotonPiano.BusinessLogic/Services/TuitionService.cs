@@ -329,6 +329,8 @@ public class TuitionService : ITuitionService
             {
                 { "studentName", studentClass.Student.Email },
                 { "className", studentClass.Class.Name },
+                { "dueDate" , studentClass.Class.Slots.MaxBy(x => x.Date).Date.ToString("dd-MM-yyyy") },
+                { "amount", $"{tuition.Amount}" }
             };
 
             await _serviceFactory.EmailService.SendAsync(

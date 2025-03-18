@@ -575,7 +575,14 @@ namespace PhotonPiano.BusinessLogic.Services
         {
             int startCol = 2;
             var mapping = new Dictionary<string, (int Column, Guid Id)>(StringComparer.OrdinalIgnoreCase);
+    
+            Console.WriteLine("Available criteria:");
+            foreach (var criteria in classCriteria)
+            {
+                Console.WriteLine($"- {criteria.Name} (ID: {criteria.Id})");
+            }
 
+            Console.WriteLine("Mapping columns to criteria:");
             // Map criteria names to column indices (starting from column 2)
             for (int col = startCol; col < worksheet.Dimension.Columns - 2; col++) {
                 string criteriaName = worksheet.Cells[7, col].Text;
@@ -588,6 +595,11 @@ namespace PhotonPiano.BusinessLogic.Services
                     if (matchingCriteria != null)
                     {
                         mapping[criteriaName] = (col, matchingCriteria.Id);
+                        Console.WriteLine($"- Column {col}: {criteriaName} -> ID {matchingCriteria.Id}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"- Warning: No matching criteria found for '{criteriaName}' at column {col}");
                     }
                 }
             }
@@ -598,15 +610,28 @@ namespace PhotonPiano.BusinessLogic.Services
         private decimal ExtractTotalPercentage(ExcelWorksheet worksheet, int row)
         {
             decimal totalPercentage = 0;
-            var percentCell = worksheet.Cells[row, worksheet.Dimension.Columns - 1];
+            // Get the percentage column (second to last column)
+            var percentCell = worksheet.Cells[row, worksheet.Dimension.Columns - 2];
+    
+            // Try to get value directly if it's a number
             if (decimal.TryParse(percentCell.Text.Replace("%", ""), out decimal percentage))
             {
                 totalPercentage = percentage;
             }
-            else if (percentCell.Formula != null)
+            else if (percentCell.Value != null)
             {
-                // Try to get calculated value if it's a formula
-                totalPercentage = (decimal)(percentCell.Value != null ? Convert.ToDouble(percentCell.Value) * 100 : 0);
+                // If it's a formula or a calculated value, use the Value property
+                double doubleValue = Convert.ToDouble(percentCell.Value);
+        
+                // Check if the value is already a percentage (e.g., 0.75 for 75%)
+                if (doubleValue < 1.0)
+                {
+                    totalPercentage = (decimal)(doubleValue * 100);
+                }
+                else
+                {
+                    totalPercentage = (decimal)doubleValue;
+                }
             }
 
             return totalPercentage;
@@ -678,13 +703,11 @@ namespace PhotonPiano.BusinessLogic.Services
             var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
             if (studentClass != null)
             {
-                studentClass.GPA = totalPercentage / 10; // Convert percentage to GPA scale (assuming 100% = 10.0)
+                totalPercentage = Math.Max(0, Math.Min(100, totalPercentage)); 
+                studentClass.GPA = totalPercentage / 10;
+                Console.WriteLine($"Student: {studentClassId}, Total %: {totalPercentage}, GPA: {studentClass.GPA}");
                 studentClass.UpdateById = accountFirebaseId;
                 studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
-
-                // Determine if passed based on GPA threshold (e.g., 5.0)
-                decimal passThreshold = 5.0m; // This should ideally come from configuration
-                studentClass.IsPassed = studentClass.GPA >= passThreshold;
 
                 await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
 

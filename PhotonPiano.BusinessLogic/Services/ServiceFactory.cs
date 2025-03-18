@@ -110,7 +110,7 @@ public class ServiceFactory : IServiceFactory
         _learnerSurveyService = new Lazy<ILearnerSurveyService>(() => new LearnerSurveyService(unitOfWork));
         _surveryQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork));
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
-        _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork));
+        _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
     }
 
     public IAccountService AccountService => _accountService.Value;

@@ -90,7 +90,7 @@ public static class IServiceCollectionExtensions
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus);
-        
+
         TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.Status, src => src.RecordStatus);
 
@@ -105,14 +105,16 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.StaffConfirmNote, src => src.Note);
 
         TypeAdapterConfig<UpdateApplicationModel, Application>.NewConfig().IgnoreNullValues(true);
-        
+
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus);
 
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
-        
+        TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>.NewConfig()
+            .Map(dest => dest.StartDate, src => DateTime.SpecifyKind(src.StartDate, DateTimeKind.Unspecified))
+            .Map(dest => dest.EndDate, src => DateTime.SpecifyKind(src.EndDate, DateTimeKind.Unspecified));
         return services;
     }
 
@@ -163,13 +165,14 @@ public static class IServiceCollectionExtensions
         // var rs = configuration.GetValue<bool>("IsDeploy")
         //     ? configuration.GetConnectionString("PostgresDeployDb")
         //     : configuration.GetConnectionString("PostgresLocal");
-        
+
         // if (configuration.GetValue<bool>("IsAspireHost"))
         //     rs = configuration.GetConnectionString("photonpiano");
 
+
          var rs = configuration.GetConnectionString("PostgresPhotonPiano");
         
-         //Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"
+
         if (!_messagePrinted)
         {
             Console.WriteLine("This running is using connection string: " + rs);
@@ -242,7 +245,7 @@ public static class IServiceCollectionExtensions
         //             options.ConnectTimeout = 5000;
         //         }));
         // }
-        
+
         var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString!, options =>
@@ -316,7 +319,7 @@ public static class IServiceCollectionExtensions
                 x => x.CronJobAutoRemovedOutDateNotifications(),
                 Cron.Hourly(15));
         });
-            
+
         return services;
     }
 

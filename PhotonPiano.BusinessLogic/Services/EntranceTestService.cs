@@ -380,15 +380,26 @@ public class EntranceTestService : IEntranceTestService
             throw;
         }
     }
-
-    private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(List<AccountDetailModel> students,
+    
+    private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(
+        List<AccountDetailModel> students,
         DateTime startDate, DateTime endDate,
         string staffAccountId, params List<Shift> shiftOptions)
     {
         var maxStudentsPerSlotConfig =
             await _serviceFactory.SystemConfigService.GetConfig(name: "Số học viên tối đa của ca thi");
+        int maxStudentsPerSlot = Convert.ToInt32(maxStudentsPerSlotConfig.ConfigValue);
+
         var entranceTests = new List<EntranceTest>();
-        var remainingStudents = new List<AccountDetailModel>(students); // Track remaining students globally
+        var remainingStudents = new List<AccountDetailModel>(students);
+        var addingEntranceTestStudents = new List<EntranceTestStudent>();
+
+        var existingTests = await _unitOfWork.EntranceTestRepository.FindProjectedAsync<EntranceTestWithStudentsModel>(
+            e => e.Date >= DateOnly.FromDateTime(startDate) && e.Date <= DateOnly.FromDateTime(endDate),
+            hasTrackings: false
+        );
+
+        var assignedStudents = new HashSet<string>(); // Track globally to prevent multiple assignments
 
         await foreach (var room in _unitOfWork.RoomRepository
                            .FindAsQueryable(r => r.Status == RoomStatus.Opened, hasTrackings: false)
@@ -396,17 +407,52 @@ public class EntranceTestService : IEntranceTestService
         {
             while (remainingStudents.Count > 0)
             {
-                // Create a unique EntranceTest ID
-                var entranceTestId = Guid.CreateVersion7();
+                //Step 1: Try to assign students to existing entrance tests
+                foreach (var entranceTest in existingTests)
+                {
+                    if (entranceTest.RoomId == room.Id && entranceTest.EntranceTestStudents.Count < maxStudentsPerSlot)
+                    {
+                        foreach (var student in remainingStudents.ToList()) // Ensure modifications to list
+                        {
+                            if (entranceTest.EntranceTestStudents.Count >= maxStudentsPerSlot)
+                                break; // Test is full
 
-                // Determine the number of students to assign to this test
-                var studentsToAssign =
-                    remainingStudents
-                        .Take(Math.Min(room.Capacity ?? 10, Convert.ToInt32(maxStudentsPerSlotConfig.ConfigValue)))
-                        .ToList();
+                            if (assignedStudents.Contains(student.AccountFirebaseId))
+                                continue; // Prevent multiple assignments
 
-                // Create the EntranceTest object
-                var entranceTest = new EntranceTest
+                            var newEntranceTestStudent = new EntranceTestStudent
+                            {
+                                Id = Guid.NewGuid(),
+                                StudentFirebaseId = student.AccountFirebaseId,
+                                EntranceTestId = entranceTest.Id,
+                                CreatedById = staffAccountId,
+                                FullName = student.FullName,
+                                CreatedAt = DateTime.UtcNow,
+                            };
+
+                            entranceTest.EntranceTestStudents.Add(
+                                newEntranceTestStudent.Adapt<EntranceTestStudentModel>());
+                            addingEntranceTestStudents.Add(newEntranceTestStudent);
+                            assignedStudents.Add(student.AccountFirebaseId);
+                        }
+                    }
+                }
+
+                //Remove assigned students from the remaining list
+                remainingStudents.RemoveAll(s => assignedStudents.Contains(s.AccountFirebaseId));
+
+                //Step 2: If there are still unassigned students, create a new entrance test
+                if (remainingStudents.Count == 0) break;
+
+                var entranceTestId = Guid.NewGuid();
+                var studentsToAssign = remainingStudents
+                    .Take(Math.Min(room.Capacity ?? 10, maxStudentsPerSlot))
+                    .ToList();
+
+                foreach (var student in studentsToAssign)
+                    assignedStudents.Add(student.AccountFirebaseId); // Prevent future assignments
+
+                var newEntranceTest = new EntranceTest
                 {
                     Id = entranceTestId,
                     Name = $"THI DAU VAO_{entranceTestId}",
@@ -417,30 +463,31 @@ public class EntranceTestService : IEntranceTestService
                     Date = DateOnly.FromDateTime(startDate),
                     CreatedById = staffAccountId,
                     CreatedAt = DateTime.UtcNow,
-                    EntranceTestStudents = studentsToAssign.Select(student =>
-                        new EntranceTestStudent
-                        {
-                            Id = Guid.CreateVersion7(),
-                            StudentFirebaseId = student.AccountFirebaseId,
-                            CreatedById = staffAccountId,
-                            FullName = student.FullName,
-                            CreatedAt = DateTime.UtcNow,
-                        }).ToList()
+                    EntranceTestStudents = studentsToAssign.Select(student => new EntranceTestStudent
+                    {
+                        Id = Guid.NewGuid(),
+                        StudentFirebaseId = student.AccountFirebaseId,
+                        CreatedById = staffAccountId,
+                        FullName = student.FullName,
+                        CreatedAt = DateTime.UtcNow,
+                    }).ToList()
                 };
 
-                // Add the entrance test to the list
-                entranceTests.Add(entranceTest);
-
-                // Remove the assigned students from the remaining list
-                remainingStudents = remainingStudents.Skip(studentsToAssign.Count).ToList();
+                entranceTests.Add(newEntranceTest);
+                remainingStudents.RemoveAll(s => assignedStudents.Contains(s.AccountFirebaseId));
             }
+        }
+
+        if (addingEntranceTestStudents.Count > 0)
+        {
+            await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(addingEntranceTestStudents);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return entranceTests;
     }
-
-
-    public async Task<List<EntranceTestDetailModel>> AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
+    
+    public async Task AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
         AccountModel currentAccount)
     {
         var (studentIds, startDate, endDate, shiftOptions) = model;
@@ -467,10 +514,19 @@ public class EntranceTestService : IEntranceTestService
             throw new ConflictException(
                 $"Students: {string.Join(", ", arrangedStudents.Select(s => $"{s.AccountFirebaseId}-{s.Email}"))} are already arranged.");
         }
+        
+        var existingEntranceTests = await _unitOfWork.EntranceTestRepository
+            .FindAsync(e => e.Date >= DateOnly.FromDateTime(startDate) && e.Date <= DateOnly.FromDateTime(endDate),
+                hasTrackings: false);
 
         var entranceTests = await CreateAndAssignStudentsToEntranceTests(students,
             startDate, endDate,
             currentAccount.AccountFirebaseId, shiftOptions);
+
+        if (entranceTests.Count == 0)
+        {
+            return;
+        }
 
         var conflictGraph = _serviceFactory.SchedulerService.BuildEntranceTestsConflictGraph(entranceTests);
 
@@ -485,12 +541,13 @@ public class EntranceTestService : IEntranceTestService
         }
 
         var validSlots =
-            _serviceFactory.SchedulerService.GenerateValidTimeSlots(startDate, endDate, holidays, shiftOptions);
+            await _serviceFactory.SchedulerService.GenerateValidTimeSlots(existingEntranceTests, startDate, endDate,
+                holidays, shiftOptions);
 
         entranceTests = await _serviceFactory.SchedulerService.AssignTimeSlotsToEntranceTests(entranceTests,
             conflictGraph,
             startDate, endDate,
-            validSlots);
+            validSlots, existingEntranceTests);
 
         entranceTests =
             await _serviceFactory.SchedulerService.AssignInstructorsToEntranceTests(entranceTests, validSlots);
@@ -505,8 +562,6 @@ public class EntranceTestService : IEntranceTestService
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
         });
-
-        return entranceTests.Adapt<List<EntranceTestDetailModel>>();
     }
 
     public async Task UpdateStudentEntranceResults(Guid id, string studentId,

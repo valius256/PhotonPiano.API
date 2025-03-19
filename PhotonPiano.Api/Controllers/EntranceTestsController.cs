@@ -89,10 +89,12 @@ public class EntranceTestsController : BaseController
     [HttpPut("max-students-per-test")]
     [EndpointDescription("Update entrance tests max students")]
     [FirebaseAuthorize(Roles = [Role.Administrator])]
-    public async Task<ActionResult> UpdateEntranceTestMaxStudentsPerTest([FromBody] UpdateEntranceTestsMaxStudentsRequest request)
+    public async Task<ActionResult> UpdateEntranceTestMaxStudentsPerTest(
+        [FromBody] UpdateEntranceTestsMaxStudentsRequest request)
     {
-        await _serviceFactory.EntranceTestService.UpdateEntranceTestsMaxStudents(request.MaxStudents, base.CurrentAccount!);
-        
+        await _serviceFactory.EntranceTestService.UpdateEntranceTestsMaxStudents(request.MaxStudents,
+            base.CurrentAccount!);
+
         return NoContent();
     }
 
@@ -158,14 +160,12 @@ public class EntranceTestsController : BaseController
     [HttpPost("auto-arrangement")]
     [EndpointDescription("Auto arrange entrance tests")]
     [FirebaseAuthorize(Roles = [Role.Staff])]
-    public async Task<ActionResult<List<EntranceTestDetailResponse>>> AutoArrangeEntranceTests(
+    public async Task<ActionResult> AutoArrangeEntranceTests(
         [FromBody] AutoArrangeEntranceTestsRequest request)
     {
-        var result =
-            await _serviceFactory.EntranceTestService.AutoArrangeEntranceTests(
-                request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!);
-
-        return Created(nameof(AutoArrangeEntranceTests), result.Adapt<List<EntranceTestDetailResponse>>());
+        await _serviceFactory.EntranceTestService.AutoArrangeEntranceTests(
+            request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!);
+        return Created();
     }
 
     [HttpPut("{id}/students/{student-id}/results")]

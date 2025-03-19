@@ -294,9 +294,13 @@ public class EntranceTestService : IEntranceTestService
                 "Student is must be in DropOut or Unregistered in order to be accepted to enroll in entrance test.");
         }
 
+        var transactionId = Guid.NewGuid();
+
         var transaction = new Transaction
         {
-            Id = Guid.CreateVersion7(),
+            Id = transactionId,
+            TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.EntranceTestFee,
+                DateTime.UtcNow, transactionId),
             Amount = 100_000,
             CreatedAt = DateTime.UtcNow,
             CreatedById = currentAccount.AccountFirebaseId,
@@ -380,7 +384,7 @@ public class EntranceTestService : IEntranceTestService
             throw;
         }
     }
-    
+
     private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(
         List<AccountDetailModel> students,
         DateTime startDate, DateTime endDate,
@@ -486,7 +490,7 @@ public class EntranceTestService : IEntranceTestService
 
         return entranceTests;
     }
-    
+
     public async Task AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
         AccountModel currentAccount)
     {
@@ -514,7 +518,7 @@ public class EntranceTestService : IEntranceTestService
             throw new ConflictException(
                 $"Students: {string.Join(", ", arrangedStudents.Select(s => $"{s.AccountFirebaseId}-{s.Email}"))} are already arranged.");
         }
-        
+
         var existingEntranceTests = await _unitOfWork.EntranceTestRepository
             .FindAsync(e => e.Date >= DateOnly.FromDateTime(startDate) && e.Date <= DateOnly.FromDateTime(endDate),
                 hasTrackings: false);

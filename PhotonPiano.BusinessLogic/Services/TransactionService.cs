@@ -2,8 +2,8 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Transaction;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
+using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
-using StackExchange.Redis;
 using Role = PhotonPiano.DataAccess.Models.Enum.Role;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -38,5 +38,15 @@ public class TransactionService : ITransactionService
                 t => currentAccount.Role != Role.Student || t.CreatedById == currentAccount.AccountFirebaseId,
             ]
         );
+    }
+
+    public string GetTransactionCode(TransactionType type, DateTime createDate, Guid? id = default)
+    {
+        var typeOfTransaction = type == TransactionType.EntranceTestFee
+            ? "THANH TOAN LE PHI THI DAU VAO"
+            : "THANH TOAN PHI DAY HOC";
+        
+        return id.HasValue ? $"[{typeOfTransaction}] [{createDate.Year}/{createDate.Month}] [{id}]"
+                : $"[{typeOfTransaction}] [{createDate.Year}/{createDate.Month}]";
     }
 }

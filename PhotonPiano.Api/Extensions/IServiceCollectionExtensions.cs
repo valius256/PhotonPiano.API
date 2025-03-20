@@ -327,9 +327,11 @@ public static class IServiceCollectionExtensions
     {
         services.AddRateLimiter(options =>
         {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            // GlobalLimiter is used for all controllers
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, IPAddress>(context =>
             {
-                var ipAddress = context.Connection.RemoteIpAddress;
+                var ipAddress = context.Connection.RemoteIpAddress ?? IPAddress.Loopback; // Sử dụng localhost nếu null
                 return RateLimitPartition.GetFixedWindowLimiter(ipAddress,
                     _ => new FixedWindowRateLimiterOptions
                     {
@@ -337,7 +339,7 @@ public static class IServiceCollectionExtensions
                         Window = TimeSpan.FromMinutes(1), // Per 1 minute window
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
-                    })!;
+                    });
             });
         });
         return services;

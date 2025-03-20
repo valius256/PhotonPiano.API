@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhotonPiano.DataAccess.Models;
@@ -12,9 +13,11 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250318080030_Add_Additional_Properties_For_Table_SlotStudent_To_Tutor_Flow")]
+    partial class Add_Additional_Properties_For_Table_SlotStudent_To_Tutor_Flow
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -600,11 +603,18 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.ToTable("EntranceTestStudent");
                 });
 
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerAnswer", b =>
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerSurvey", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("LearnerId")
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("SurveyQuestionId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowMultipleAnswers")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.PrimitiveCollection<List<string>>("Answers")
                         .IsRequired()
@@ -616,49 +626,17 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("LearnerSurveyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("RecordStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SurveyQuestionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LearnerSurveyId");
-
-                    b.HasIndex("SurveyQuestionId");
-
-                    b.ToTable("LearnerAnswer");
-                });
-
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerSurvey", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("LearnerEmail")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("LearnerId")
+                    b.PrimitiveCollection<List<string>>("Options")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text[]");
 
-                    b.Property<Guid>("PianoSurveyId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("QuestionContent")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
@@ -666,11 +644,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                    b.HasKey("LearnerId", "SurveyQuestionId");
 
-                    b.HasIndex("LearnerId");
-
-                    b.HasIndex("PianoSurveyId");
+                    b.HasIndex("SurveyQuestionId");
 
                     b.ToTable("LearnerSurvey");
                 });
@@ -825,47 +801,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("Id");
 
                     b.ToTable("Notification");
-                });
-
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.PianoSurvey", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("RecordStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedById")
-                        .HasColumnType("character varying(30)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("UpdatedById");
-
-                    b.ToTable("PianoSurvey");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Room", b =>
@@ -1123,10 +1058,8 @@ namespace PhotonPiano.DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("AllowOtherAnswer")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                    b.Property<bool>("AllowMultipleAnswers")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1138,26 +1071,15 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsRequired")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
                     b.PrimitiveCollection<List<string>>("Options")
                         .IsRequired()
                         .HasColumnType("text[]");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("integer");
 
                     b.Property<string>("QuestionContent")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("RecordStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Type")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1315,21 +1237,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("StudentClassId");
 
                     b.ToTable("Tuition");
-                });
-
-            modelBuilder.Entity("PianoSurveyQuestion", b =>
-                {
-                    b.Property<Guid>("QuestionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SurveyId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("QuestionId", "SurveyId");
-
-                    b.HasIndex("SurveyId");
-
-                    b.ToTable("PianoSurveyQuestion (Dictionary<string, object>)");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Account", b =>
@@ -1618,42 +1525,23 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("UpdateBy");
                 });
 
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerAnswer", b =>
-                {
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.LearnerSurvey", "LearnerSurvey")
-                        .WithMany("LearnerAnswers")
-                        .HasForeignKey("LearnerSurveyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", "SurveyQuestion")
-                        .WithMany("LearnerAnswers")
-                        .HasForeignKey("SurveyQuestionId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("LearnerSurvey");
-
-                    b.Navigation("SurveyQuestion");
-                });
-
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerSurvey", b =>
                 {
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Learner")
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Account")
                         .WithMany("LearnerSurveys")
                         .HasForeignKey("LearnerId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.PianoSurvey", "PianoSurvey")
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", "SurveyQuestion")
                         .WithMany("LearnerSurveys")
-                        .HasForeignKey("PianoSurveyId")
+                        .HasForeignKey("SurveyQuestionId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Learner");
+                    b.Navigation("Account");
 
-                    b.Navigation("PianoSurvey");
+                    b.Navigation("SurveyQuestion");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Level", b =>
@@ -1696,24 +1584,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", null)
                         .WithMany("ReceiverNotifications")
                         .HasForeignKey("AccountFirebaseId");
-                });
-
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.PianoSurvey", b =>
-                {
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
-                        .WithMany("CreatedPianoSurveys")
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdatedBy")
-                        .WithMany("UpdatedPianoSurveys")
-                        .HasForeignKey("UpdatedById")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Room", b =>
@@ -1914,21 +1784,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("StudentClass");
                 });
 
-            modelBuilder.Entity("PianoSurveyQuestion", b =>
-                {
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", null)
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.PianoSurvey", null)
-                        .WithMany()
-                        .HasForeignKey("SurveyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Account", b =>
                 {
                     b.Navigation("AccountNotifications");
@@ -1950,8 +1805,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("CreatedEntrancesTest");
 
                     b.Navigation("CreatedNews");
-
-                    b.Navigation("CreatedPianoSurveys");
 
                     b.Navigation("CreatedRoom");
 
@@ -2013,8 +1866,6 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Navigation("UpdatedEntrancesTest");
 
-                    b.Navigation("UpdatedPianoSurveys");
-
                     b.Navigation("UpdatedRoom");
 
                     b.Navigation("UpdatedSlotStudents");
@@ -2052,11 +1903,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerSurvey", b =>
-                {
-                    b.Navigation("LearnerAnswers");
-                });
-
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Level", b =>
                 {
                     b.Navigation("Accounts");
@@ -2069,11 +1915,6 @@ namespace PhotonPiano.DataAccess.Migrations
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Notification", b =>
                 {
                     b.Navigation("AccountNotifications");
-                });
-
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.PianoSurvey", b =>
-                {
-                    b.Navigation("LearnerSurveys");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Room", b =>
@@ -2097,7 +1938,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", b =>
                 {
-                    b.Navigation("LearnerAnswers");
+                    b.Navigation("LearnerSurveys");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Tuition", b =>

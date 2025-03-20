@@ -92,7 +92,7 @@ public class ServiceFactory : IServiceFactory
         _roomService = new Lazy<IRoomService>(() => new RoomService(unitOfWork));
         _criteriaService = new Lazy<ICriteriaService>(() => new CriteriaService(unitOfWork, this));
         _slotService = new Lazy<ISlotService>(() => new SlotService(this, unitOfWork));
-        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
+        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay, this));
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
         _slotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
@@ -112,7 +112,7 @@ public class ServiceFactory : IServiceFactory
         _pianoSurveyService = new Lazy<IPianoSurveyService>(() => new PianoSurveyService(unitOfWork));
         _surveyQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork));
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
-        _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork));
+        _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
     }
 
     public IAccountService AccountService => _accountService.Value;

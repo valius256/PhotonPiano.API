@@ -77,6 +77,8 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 });
 
 
+app.UseRateLimiter();
+
 app.UseExceptionHandler();
 
 app.UseAuthorization();

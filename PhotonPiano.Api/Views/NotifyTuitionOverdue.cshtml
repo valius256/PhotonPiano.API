@@ -1,0 +1,109 @@
+﻿@{
+    var studentName = Model["studentName"];
+    var className = Model["className"];
+    var dueDate = Model["dueDate"];
+    var amount = Model["amount"];
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Báo Quá Hạn Học Phí</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .email-container {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 20px auto;
+            width: 600px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .email-header {
+            background-color: #d9534f;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .email-content {
+            font-size: 16px;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .details-table th, .details-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 20px;
+            color: #777;
+        }
+
+        .footer a {
+            color: #d9534f;
+            text-decoration: none;
+        }
+
+        .footer p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header">
+        Thông Báo Quá Hạn Học Phí
+    </div>
+
+    <div class="email-content">
+        <p>Xin chào @studentName,</p>
+
+        <p>Chúng tôi nhận thấy rằng học phí của bạn cho lớp <strong>@className</strong> đã quá hạn thanh toán. Vì chưa thanh toán đúng hạn, bạn đã bị xóa khỏi lớp học.</p>
+
+        <table class="details-table">
+            <tr>
+                <th>Tên lớp:</th>
+                <td>@className</td>
+            </tr>
+            <tr>
+                <th>Hạn thanh toán:</th>
+                <td>@dueDate</td>
+            </tr>
+            <tr>
+                <th>Số tiền:</th>
+                <td>@amount VND</td>
+            </tr>
+        </table>
+
+        <p>Nếu bạn muốn tiếp tục khóa học, vui lòng hoàn tất thanh toán và liên hệ với chúng tôi để được hỗ trợ đăng ký lại.</p>
+        <p>Nếu bạn đã thanh toán hoặc có thắc mắc, xin vui lòng liên hệ với chúng tôi.</p>
+    </div>
+
+    <div class="footer">
+        <p>Liên hệ hỗ trợ: <a href="mailto:support@photonpiano.com">support@photonpiano.com</a></p>
+    </div>
+</div>
+</body>
+</html>

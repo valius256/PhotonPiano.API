@@ -327,6 +327,8 @@ public static class IServiceCollectionExtensions
     {
         services.AddRateLimiter(options =>
         {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            // GlobalLimiter is used for all controllers
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, IPAddress>(context =>
             {
                 var ipAddress = context.Connection.RemoteIpAddress;

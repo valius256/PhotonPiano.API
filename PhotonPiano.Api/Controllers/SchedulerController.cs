@@ -1,5 +1,6 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Scheduler;
@@ -17,6 +18,7 @@ using PhotonPiano.Shared.Models;
 namespace PhotonPiano.Api.Controllers;
 
 [ApiController]
+
 [Route("api/scheduler")]
 public class SchedulerController : BaseController
 {
@@ -26,6 +28,7 @@ public class SchedulerController : BaseController
     {
         _serviceFactory = serviceFactory;
     }
+
 
     [HttpGet("slots")]
     [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]

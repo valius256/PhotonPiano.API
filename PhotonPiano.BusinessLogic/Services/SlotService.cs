@@ -20,7 +20,9 @@ public class SlotService : ISlotService
 {
     private readonly IServiceFactory _serviceFactory;
     private readonly IUnitOfWork _unitOfWork;
-
+    private const string CacheVersionKey = "schedule:cacheVersion";
+    private const int DefaultCacheDurationMinutes = 1440; // Cache 1 ngày (24 giờ)
+    
     public SlotService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork)
     {
         _serviceFactory = serviceFactory;
@@ -82,90 +84,107 @@ public class SlotService : ISlotService
 
     public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
-        string cacheKey = GenerateCacheKey(slotModel, accountModel);
-        bool shouldUseCache = ShouldUseCache(slotModel, accountModel.Role);
+        // Xác định tuần từ StartTime (lấy ngày đầu tuần - thứ 2)
+        DateOnly startOfWeek = GetStartOfWeek(slotModel.StartTime);
 
-        if (shouldUseCache)
+        // Tạo danh sách các ClassId cần truy vấn
+        List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
+
+        // Tạo danh sách kết quả
+        var result = new List<SlotSimpleModel>();
+
+        // Duyệt qua từng ClassId để lấy slot
+        foreach (var classId in classIds)
         {
-            var cachedResult = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
-            if (cachedResult != null) return cachedResult;
+            string cacheKey = GenerateCacheKey(classId, startOfWeek, accountModel.Role);
+
+            // Kiểm tra cache
+            var cachedSlots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
+            if (cachedSlots != null)
+            {
+                result.AddRange(cachedSlots);
+                continue;
+            }
+
+            // Nếu không có trong cache, truy vấn database
+            var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(
+                s => s.ClassId == classId &&
+                     s.Date >= startOfWeek &&
+                     s.Date < startOfWeek.AddDays(7) // Lấy slot trong 1 tuần
+            );
+
+            // Lưu vào cache
+            await _serviceFactory.RedisCacheService.SaveAsync(
+                cacheKey,
+                slots,
+                TimeSpan.FromMinutes(DefaultCacheDurationMinutes)
+            );
+
+            result.AddRange(slots);
         }
 
-        var result = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(
-            BuildFilterExpression(slotModel, accountModel)
-        );
-
-        if (shouldUseCache)
-            await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, GetCacheDuration(result));
+        // Lọc thêm nếu có các bộ lọc khác
+        result = ApplyAdditionalFilters(result, slotModel);
 
         return result;
     }
 
-    private static bool ShouldUseCache(GetSlotModel slotModel, Role role) =>
-        role == Role.Staff ? !slotModel.IsFilterEmpty() : slotModel.IsFilterEmpty();
-
-    private Expression<Func<Slot, bool>> BuildFilterExpression(GetSlotModel slotModel, AccountModel accountModel)
+    private async Task<List<Guid>> GetClassIdsForUser(AccountModel accountModel, GetSlotModel slotModel)
     {
         Expression<Func<Slot, bool>> filter = s =>
             s.Date >= slotModel.StartTime && s.Date <= slotModel.EndTime;
-        
+
         filter = accountModel.Role switch
         {
             Role.Instructor => filter.AndAlso(s => s.Class.InstructorId == accountModel.AccountFirebaseId),
             Role.Student => filter.AndAlso(s => s.SlotStudents.Any(ss => ss.StudentFirebaseId == accountModel.AccountFirebaseId)),
             _ => filter
         };
-        
+
         if (slotModel.InstructorFirebaseIds.Any())
             filter = filter.AndAlso(s => s.Class.InstructorId != null && slotModel.InstructorFirebaseIds.Contains(s.Class.InstructorId));
-
-        if (slotModel.Shifts.Any())
-            filter = filter.AndAlso(s => slotModel.Shifts.Contains(s.Shift));
-
-        if (slotModel.SlotStatuses.Any())
-            filter = filter.AndAlso(s => slotModel.SlotStatuses.Contains(s.Status));
 
         if (slotModel.ClassIds.Any())
             filter = filter.AndAlso(s => slotModel.ClassIds.Contains(s.ClassId));
 
-        return filter;
+        // Truy vấn danh sách ClassId duy nhất
+        var slots = await _unitOfWork.SlotRepository.FindAsync(filter);
+        return slots.Select(s => s.ClassId).Distinct().ToList();
     }
 
-    private TimeSpan GetCacheDuration(List<SlotSimpleModel> slots)
+    private List<SlotSimpleModel> ApplyAdditionalFilters(List<SlotSimpleModel> slots, GetSlotModel slotModel)
     {
-        if (!slots.Any()) return TimeSpan.Zero;
+        if (slotModel.Shifts.Any())
+            slots = slots.Where(s => slotModel.Shifts.Contains(s.Shift)).ToList();
 
-        var minDate = slots.Min(s => s.Date);
-        var maxDate = slots.Max(s => s.Date);
+        if (slotModel.SlotStatuses.Any())
+            slots = slots.Where(s => slotModel.SlotStatuses.Contains(s.Status)).ToList();
 
-        return maxDate.ToDateTime(TimeOnly.MinValue) - minDate.ToDateTime(TimeOnly.MinValue);
+        return slots;
     }
 
-    private string GenerateCacheKey(GetSlotModel slotModel, AccountModel accountModel)
+    private DateOnly GetStartOfWeek(DateOnly date)
     {
-        string baseKey = $"schedule:{accountModel.Role}:{accountModel.AccountFirebaseId}";
-
-        return slotModel.IsFilterEmpty()
-            ? $"{baseKey}:{slotModel.StartTime:yyyyMMdd}-{slotModel.EndTime:yyyyMMdd}"
-            : $"{baseKey}:filtered:{ComputeFilterHash(slotModel)}";
+        int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+        return date.AddDays(-1 * diff);
     }
 
-    private string ComputeFilterHash(GetSlotModel slotModel)
+    private string GenerateCacheKey(Guid classId, DateOnly startOfWeek, Role role)
     {
-        using var md5 = MD5.Create();
-        string filterString = JsonConvert.SerializeObject(new
+        return $"schedule:{role}:class:{classId}:week:{startOfWeek:yyyyMMdd}";
+    }
+
+
+    public async Task InvalidateCacheForClassAsync(Guid classId, DateOnly slotDate)
+    {
+        DateOnly startOfWeek = GetStartOfWeek(slotDate);
+        foreach (Role role in Enum.GetValues(typeof(Role)))
         {
-            slotModel.Shifts,
-            slotModel.SlotStatuses,
-            slotModel.InstructorFirebaseIds,
-            slotModel.StudentFirebaseId,
-            slotModel.ClassIds
-        });
-
-        byte[] hashBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(filterString));
-        return Convert.ToBase64String(hashBytes);
+            string cacheKey = GenerateCacheKey(classId, startOfWeek, role);
+            await _serviceFactory.RedisCacheService.DeleteAsync(cacheKey);
+        }
     }
-
+    
     public async Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId)
     {
         var slot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(s => s.Id == slotId);
@@ -179,32 +198,56 @@ public class SlotService : ISlotService
         return attendanceStatuses;
     }
 
-    public async Task CronAutoChangeSlotStatus()
+  public async Task CronAutoChangeSlotStatus()
     {
         var currentDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var currentTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
 
-        var pastSlots = await _unitOfWork.SlotRepository.FindAsync(s => s.Date < currentDate);
+        // Tập hợp để lưu các ClassId và tuần bị ảnh hưởng
+        var affectedClassesAndWeeks = new HashSet<(Guid ClassId, DateOnly StartOfWeek)>();
 
-        foreach (var slot in pastSlots) slot.Status = SlotStatus.Finished;
+        // 1. Cập nhật slot trong quá khứ (chỉ lấy slot chưa Finished)
+        var pastSlots = await _unitOfWork.SlotRepository.FindAsync(
+            s => s.Date < currentDate && s.Status != SlotStatus.Finished
+        );
 
-        var todaySlots = await _unitOfWork.SlotRepository.FindAsync(s => s.Date == currentDate);
+        foreach (var slot in pastSlots)
+        {
+            slot.Status = SlotStatus.Finished;
+            // Thêm ClassId và tuần của slot vào tập hợp
+            affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
+        }
+
+        // 2. Cập nhật slot trong ngày hiện tại (chỉ lấy slot có khả năng thay đổi trạng thái)
+        var todaySlots = await _unitOfWork.SlotRepository.FindAsync(
+            s => s.Date == currentDate && s.Status != SlotStatus.Finished
+        );
 
         foreach (var slot in todaySlots)
         {
             var shiftStartTime = GetShiftStartTime(slot.Shift);
             var shiftEndTime = GetShiftEndTime(slot.Shift);
-            if (currentTime >=  shiftStartTime)
-            {
-                slot.Status = SlotStatus.Ongoing;
-            }
-            if (currentTime > shiftEndTime)
+
+            if (currentTime > shiftEndTime && slot.Status != SlotStatus.Finished)
             {
                 slot.Status = SlotStatus.Finished;
+                affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
+            }
+            else if (currentTime >= shiftStartTime && slot.Status != SlotStatus.Ongoing)
+            {
+                slot.Status = SlotStatus.Ongoing;
+                affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
             }
         }
 
+        // 3. Lưu thay đổi vào database
         await _unitOfWork.SaveChangesAsync();
+
+        // 4. Invalidation cache có chọn lọc
+        foreach (var (classId, startOfWeek) in affectedClassesAndWeeks)
+        {
+            await InvalidateCacheForClassAsync(classId, startOfWeek);
+        }
     }
 
     public async Task<SlotModel> CreateSlot(CreateSlotModel createSlotModel, string accountFirebaseId)

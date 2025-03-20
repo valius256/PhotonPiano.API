@@ -97,8 +97,8 @@ public class SchedulerController : BaseController
     [EndpointDescription("Delete a slot")]
     public async Task<ActionResult> DeleteSlot([FromRoute] Guid id)
     {
-        await _serviceFactory.SlotService.DeleteSlot(id, CurrentUserFirebaseId);
-        return NoContent();
+        // await _serviceFactory.SlotService.DeleteSlot(id, CurrentUserFirebaseId);
+        // return NoContent();
     }
 
     [HttpPut]
@@ -111,4 +111,8 @@ public class SchedulerController : BaseController
 
         return NoContent();
     }
+    
+    // [HttpPost]
+    // [FirebaseAuthorize(Roles = [Role.Staff])]
+    // [EndpointDescription()]
 }

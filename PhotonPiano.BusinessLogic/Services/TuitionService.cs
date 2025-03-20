@@ -41,9 +41,13 @@ public class TuitionService : ITuitionService
 
         ValidateTuition(paymentTuition, currentAccount.AccountFirebaseId);
 
+        var transactionId = Guid.NewGuid();
+
         var transaction = new Transaction
         {
-            Id = Guid.NewGuid(),
+            Id = transactionId,
+            TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.TutionFee, DateTime.UtcNow,
+                transactionId),
             TutionId = tuitionId,
             TaxRate = currentTaxRate,
             TaxAmount = currentTaxAmount,
@@ -160,12 +164,12 @@ public class TuitionService : ITuitionService
                 ss.StudentFirebaseId == studentId && ss.AttendanceStatus == AttendanceStatus.Attended));
 
 
-
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == currentStudentClass.Class.LevelId);
         if (level is null)
         {
             throw new NotFoundException("Level not found");
         }
+
         var refundAmount = level.PricePerSlot * numOfSlotHaveAttended;
         return currentTuitionHasPaid.Amount - refundAmount;
     }
@@ -185,7 +189,8 @@ public class TuitionService : ITuitionService
 
         // Get all ongoing classes
         var ongoingClasses =
-            await _unitOfWork.ClassRepository.FindProjectedAsync<Class>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true);
+            await _unitOfWork.ClassRepository.FindProjectedAsync<Class>(c =>
+                c.Status == ClassStatus.Ongoing && c.IsPublic == true);
         var ongoingClassIds = ongoingClasses.Select(x => x.Id).ToList();
 
         var studentClasses = await _unitOfWork.StudentClassRepository.FindProjectedAsync<StudentClass>(
@@ -196,10 +201,11 @@ public class TuitionService : ITuitionService
 
         foreach (var studentClass in studentClasses)
         {
-            var level = await _unitOfWork.LevelRepository.FindSingleProjectedAsync<Level>(l => l.Id == studentClass.Class.LevelId);
-                
-                // levels.SingleOrDefault(l => l.Id == studentClass.Class.LevelId) ?? throw new NotFoundException("Level not found");
-            
+            var level = await _unitOfWork.LevelRepository.FindSingleProjectedAsync<Level>(l =>
+                l.Id == studentClass.Class.LevelId);
+
+            // levels.SingleOrDefault(l => l.Id == studentClass.Class.LevelId) ?? throw new NotFoundException("Level not found");
+
             var actualSlotsInMonth =
                 studentClass.Class.Slots.Count(sl => sl.Date.Year == utcNow.Year && sl.Date.Month == utcNow.Month);
 
@@ -307,7 +313,8 @@ public class TuitionService : ITuitionService
 
         foreach (var tuition in overdueTuitions)
         {
-            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
+            var studentClass =
+                await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
@@ -324,11 +331,13 @@ public class TuitionService : ITuitionService
                     account => account.SetProperty(a => a.StudentStatus, StudentStatus.DropOut)
                 );
             });
-            
+
             var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "studentName", studentClass.Student.Email },
                 { "className", studentClass.Class.Name },
+                { "dueDate", studentClass.Class.Slots.MaxBy(x => x.Date).Date.ToString("dd-MM-yyyy") },
+                { "amount", $"{tuition.Amount}" }
             };
 
             await _serviceFactory.EmailService.SendAsync(
@@ -398,7 +407,8 @@ public class TuitionService : ITuitionService
         foreach (var studentClass in classDetailModel.StudentClasses)
         {
             var numOfSlotTillEndMonth =
-                classDetailModel.Slots.Count(x => x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
+                classDetailModel.Slots.Count(x =>
+                    x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
             if (classDetailModel.Level != null)
             {
                 var tuition = new Tuition

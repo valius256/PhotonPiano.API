@@ -16,11 +16,13 @@ public class PaymentService : IPaymentService
 {
     private readonly IConfiguration _configuration;
     private readonly VnPay _vnPay;
+    private readonly IServiceFactory _serviceFactory;
 
 
-    public PaymentService(IConfiguration configuration, IOptions<VnPay> vnpay)
+    public PaymentService(IConfiguration configuration, IOptions<VnPay> vnpay, IServiceFactory serviceFactory)
     {
         _configuration = configuration;
+        _serviceFactory = serviceFactory;
         _vnPay = vnpay.Value;
     }
 

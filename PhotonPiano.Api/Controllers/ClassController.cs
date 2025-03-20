@@ -150,5 +150,14 @@ namespace PhotonPiano.Api.Controllers
             await _serviceFactory.ClassService.ScheduleClass(scheduleClassRequest.Adapt<ScheduleClassModel>(), CurrentUserFirebaseId);
             return NoContent();
         }
+
+        [HttpDelete("{id}/schedule")]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Delete entire schedule a class")]
+        public async Task<ActionResult> DeleteClassSchedule([FromRoute] Guid id)
+        {
+            await _serviceFactory.ClassService.ClearClassSchedule(id, CurrentUserFirebaseId);
+            return NoContent();
+        }
     }
 }

@@ -13,7 +13,6 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -498,7 +497,7 @@ public class ClassService : IClassService
 
         var now = DateTime.UtcNow.AddHours(7);
         var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.CreatedAt.Month == now.Month
-                && c.CreatedAt.Year == now.Year && c.LevelId == model.LevelId);
+                && c.CreatedAt.Year == now.Year && c.LevelId == model.LevelId, false, true);
 
         mappedClass.Name = $"{level.Name.Split('(')[0]} {classesThisMonth + 1} {now.Month}/{now.Year}";
 
@@ -537,6 +536,10 @@ public class ClassService : IClassService
 
         if (model.LevelId.HasValue)
         {
+            if (await _unitOfWork.StudentClassRepository.AnyAsync(sc => sc.ClassId == classInfo.Id))
+            {
+                throw new BadRequestException("Can't update level of this class because there are students in it!");
+            }
             var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == model.LevelId)
                 ?? throw new NotFoundException("Level not found");
 
@@ -896,5 +899,46 @@ public class ClassService : IClassService
         }).OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList();
 
         return result;
+    }
+
+    public async Task ClearClassSchedule(Guid classId, string accountFirebaseId)
+    {
+        var classDetail = await _unitOfWork.ClassRepository.Entities
+            .Include(c => c.Slots)
+                .ThenInclude(s => s.SlotStudents)
+            .SingleOrDefaultAsync(c => c.Id == classId);
+
+        if (classDetail is null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        if (classDetail.Status != ClassStatus.NotStarted)
+        {
+            throw new BadRequestException("Cannot clear schedule of classes that are started");
+        }
+        if (classDetail.IsPublic)
+        {
+            throw new BadRequestException("Cannot clear schedule of classes that are announced");
+        }
+        var deleteSlots = new List<Slot>();
+        var deleteStudentSlots = new List<SlotStudent>();
+        foreach (var slot in classDetail.Slots)
+        {
+            if (slot.Status == SlotStatus.NotStarted)
+            {
+                deleteSlots.Add(slot);
+                deleteStudentSlots.AddRange(slot.SlotStudents);
+            }
+        }
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId) ?? throw new NotFoundException("Class not found");
+        classInfo.UpdateById = accountFirebaseId;
+        classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.SlotStudentRepository.DeleteRangeAsync(deleteStudentSlots);
+            await _unitOfWork.SlotRepository.DeleteRangeAsync(deleteSlots);
+            await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+        });
     }
 }

@@ -13,7 +13,6 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -318,7 +317,7 @@ public class ClassService : IClassService
                     monthDict[classInfo.StartTime.Month] = 1;  // Initialize if key doesn't exist
                 }
 
-                classInfo.Name = $"{level.Name.Split('(')[0]}_{classesThatMonth + monthDict[classInfo.StartTime.Month] + 1}_{classInfo.StartTime.Month}{classInfo.StartTime.Year}";
+                classInfo.Name = $"{level.Name.Split('(')[0]} {classesThatMonth + monthDict[classInfo.StartTime.Month] + 1} {classInfo.StartTime.Month}/{classInfo.StartTime.Year}";
             }
 
             await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>
@@ -498,9 +497,9 @@ public class ClassService : IClassService
 
         var now = DateTime.UtcNow.AddHours(7);
         var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.CreatedAt.Month == now.Month
-                && c.CreatedAt.Year == now.Year && c.LevelId == model.LevelId);
+                && c.CreatedAt.Year == now.Year && c.LevelId == model.LevelId, false, true);
 
-        mappedClass.Name = $"{level.Name.Split('(')[0]}_{classesThisMonth + 1}_{now.Month}{now.Year}";
+        mappedClass.Name = $"{level.Name.Split('(')[0]} {classesThisMonth + 1} {now.Month}/{now.Year}";
 
         var addedClass = await _unitOfWork.ClassRepository.AddAsync(mappedClass);
         await _unitOfWork.SaveChangesAsync();
@@ -537,6 +536,10 @@ public class ClassService : IClassService
 
         if (model.LevelId.HasValue)
         {
+            if (await _unitOfWork.StudentClassRepository.AnyAsync(sc => sc.ClassId == classInfo.Id))
+            {
+                throw new BadRequestException("Can't update level of this class because there are students in it!");
+            }
             var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == model.LevelId)
                 ?? throw new NotFoundException("Level not found");
 
@@ -648,19 +651,21 @@ public class ClassService : IClassService
             var studentClasses = classDetail.StudentClasses.Adapt<List<StudentClass>>();
             foreach (var studentClass in studentClasses)
             {
+                //studentClass.Student = default;
                 studentClass.DeletedAt = DateTime.UtcNow.AddHours(7);
                 studentClass.RecordStatus = RecordStatus.IsDeleted;
             }
             await _unitOfWork.StudentClassRepository.UpdateRangeAsync(studentClasses);
 
             //Update student
-            var students = studentClasses.Select(sc => sc.Student).ToList();
+            var students = classDetail.StudentClasses.Select(sc => sc.Student.Adapt<Account>()).ToList();
             foreach (var student in students)
             {
                 if (student.CurrentClassId == classDetail.Id)
                 {
                     student.CurrentClassId = null;
                 }
+                student.Level = null;//detach
                 student.StudentStatus = StudentStatus.WaitingForClass;
                 student.UpdatedAt = DateTime.UtcNow.AddHours(7);
             }
@@ -860,8 +865,7 @@ public class ClassService : IClassService
 
                 if (!dayOffs.Any(dayOff =>
                         date.ToDateTime(TimeOnly.MinValue) >= dayOff.StartTime &&
-                        date.ToDateTime(TimeOnly.MaxValue) <= dayOff.EndTime)
-                    && !otherSlots.Any(s => s.Shift == pickedShift && s.Date == date))
+                        date.ToDateTime(TimeOnly.MaxValue) <= dayOff.EndTime))
                 {
                     dates.Add(date);
                     slotCount++;
@@ -876,7 +880,7 @@ public class ClassService : IClassService
         //Check available rooms -- If not, iterate
         while (availableRooms.Count == 0 && attempt < maxAttempt)
         {
-            availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates);
+            availableRooms = await _serviceFactory.RoomService.GetAvailableRooms(pickedShift, dates, otherSlots);
             attempt++;
             if (attempt >= maxAttempt)
                 throw new ConflictException(
@@ -895,5 +899,46 @@ public class ClassService : IClassService
         }).OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList();
 
         return result;
+    }
+
+    public async Task ClearClassSchedule(Guid classId, string accountFirebaseId)
+    {
+        var classDetail = await _unitOfWork.ClassRepository.Entities
+            .Include(c => c.Slots)
+                .ThenInclude(s => s.SlotStudents)
+            .SingleOrDefaultAsync(c => c.Id == classId);
+
+        if (classDetail is null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        if (classDetail.Status != ClassStatus.NotStarted)
+        {
+            throw new BadRequestException("Cannot clear schedule of classes that are started");
+        }
+        if (classDetail.IsPublic)
+        {
+            throw new BadRequestException("Cannot clear schedule of classes that are announced");
+        }
+        var deleteSlots = new List<Slot>();
+        var deleteStudentSlots = new List<SlotStudent>();
+        foreach (var slot in classDetail.Slots)
+        {
+            if (slot.Status == SlotStatus.NotStarted)
+            {
+                deleteSlots.Add(slot);
+                deleteStudentSlots.AddRange(slot.SlotStudents);
+            }
+        }
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId) ?? throw new NotFoundException("Class not found");
+        classInfo.UpdateById = accountFirebaseId;
+        classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.SlotStudentRepository.DeleteRangeAsync(deleteStudentSlots);
+            await _unitOfWork.SlotRepository.DeleteRangeAsync(deleteSlots);
+            await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+        });
     }
 }

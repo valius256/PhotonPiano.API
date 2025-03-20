@@ -39,14 +39,37 @@ public class RoomService : IRoomService
 
         return result;
     }
-    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates)
+    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates, List<Slot> otherSlots)
     {
-        
 
-        // Fetch all available rooms in a single query
-        var availableRooms = await _unitOfWork.RoomRepository.FindAsync(r =>
-            !r.Slots.Any(s => s.Shift != shift && dates.Contains(s.Date))
-        );
+        var bookedRoomIds = await _unitOfWork.SlotRepository.Entities
+            .Where(s => dates.Contains(s.Date) && s.Shift == shift)
+            .Select(s => s.RoomId)
+            .Distinct()
+            .ToListAsync();
+
+        // Get booked room IDs from the additional (in-memory) slots
+        var newlyBookedRoomIds = otherSlots
+            .Where(s => dates.Contains(s.Date) && s.Shift == shift)
+            .Select(s => s.RoomId)
+            .Distinct()
+            .ToList();
+
+        var bookRoomIdsForEntranceTest = await _unitOfWork.EntranceTestRepository.Entities
+            .Where(et => dates.Contains(et.Date) && et.Shift == shift)
+            .Select(et => (Guid?) et.RoomId)
+            .Distinct()
+            .ToListAsync();
+
+        var allBookedRoomIds = bookedRoomIds
+            .Union(newlyBookedRoomIds)
+            .Union(bookRoomIdsForEntranceTest)
+            .ToHashSet();
+
+        // Get available rooms (not in booked room IDs)
+        var availableRooms = await _unitOfWork.RoomRepository.Entities
+            .Where(r => !allBookedRoomIds.Contains(r.Id))
+            .ToListAsync();
 
         // Convert to RoomModel, ensuring unique rooms using HashSet
         return availableRooms

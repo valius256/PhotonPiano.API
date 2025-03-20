@@ -49,6 +49,8 @@ public interface IGenericRepository<T> where T : BaseEntity
 
     Task DeleteAsync(T TEntity);
 
+    Task DeleteRangeAsync(IEnumerable<T> entities);
+
     Task<bool> AnyAsync(Expression<Func<T, bool>> expression);
 
     Task AddRangeAsync(IEnumerable<T> entities);

@@ -84,9 +84,7 @@ public class SlotService : ISlotService
 
     public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
-        // Xác định tuần từ StartTime (lấy ngày đầu tuần - thứ 2)
-        DateOnly startOfWeek = GetStartOfWeek(slotModel.StartTime);
-
+  
         // Tạo danh sách các ClassId cần truy vấn
         List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
 
@@ -96,7 +94,7 @@ public class SlotService : ISlotService
         // Duyệt qua từng ClassId để lấy slot
         foreach (var classId in classIds)
         {
-            string cacheKey = GenerateCacheKey(classId, startOfWeek, accountModel.Role);
+            string cacheKey = GenerateCacheKey(classId, slotModel.StartTime, accountModel.Role);
 
             // Kiểm tra cache
             var cachedSlots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
@@ -109,8 +107,8 @@ public class SlotService : ISlotService
             // Nếu không có trong cache, truy vấn database
             var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(
                 s => s.ClassId == classId &&
-                     s.Date >= startOfWeek &&
-                     s.Date < startOfWeek.AddDays(7) // Lấy slot trong 1 tuần
+                     s.Date >= slotModel.StartTime &&
+                     s.Date < slotModel.EndTime 
             );
 
             // Lưu vào cache

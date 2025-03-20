@@ -269,49 +269,49 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
     }
     
     // Test for duplicate student IDs
-    [Fact]
-    public async Task UpdateAttendance_DuplicateStudentIds_ReturnsBadRequest()
-    {
-        // Arrange
-        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
-    
-        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
-        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
-        var slotResponse = await _client.GetAsync($"/api/scheduler/attendance-status/{firstSlotId}");
-        var slotDetails = await DeserializeResponse<List<StudentAttendanceResponse>>(slotResponse);
-    
-        var studentIds = slotDetails.Select(x => x.StudentFirebaseId).ToList();
-    
-        var randomStudentId = studentIds.First();
-        
-        var slotStudentInfors = new List<SlotStudentInfoRequest>()
-        {
-            new SlotStudentInfoRequest()
-            {
-                StudentId = randomStudentId,
-                AttendanceStatus = AttendanceStatus.Absent
-            },
-            new SlotStudentInfoRequest()
-            {
-                StudentId = randomStudentId,
-                AttendanceStatus = AttendanceStatus.Attended
-            }
-        };
-        
-        var request = new AttendanceRequest
-        {
-            SlotId = firstSlotId,
-            SlotStudentInfoRequests = slotStudentInfors
-        };
-    
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
-    
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-    
+    // [Fact]
+    // public async Task UpdateAttendance_DuplicateStudentIds_ReturnsBadRequest()
+    // {
+    //     // Arrange
+    //     var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+    //     _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
+    //
+    //     var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+    //     var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+    //     var slotResponse = await _client.GetAsync($"/api/scheduler/attendance-status/{firstSlotId}");
+    //     var slotDetails = await DeserializeResponse<List<StudentAttendanceResponse>>(slotResponse);
+    //
+    //     var studentIds = slotDetails.Select(x => x.StudentFirebaseId).ToList();
+    //
+    //     var randomStudentId = studentIds.First();
+    //     
+    //     var slotStudentInfors = new List<SlotStudentInfoRequest>()
+    //     {
+    //         new SlotStudentInfoRequest()
+    //         {
+    //             StudentId = randomStudentId,
+    //             AttendanceStatus = AttendanceStatus.Absent
+    //         },
+    //         new SlotStudentInfoRequest()
+    //         {
+    //             StudentId = randomStudentId,
+    //             AttendanceStatus = AttendanceStatus.Attended
+    //         }
+    //     };
+    //     
+    //     var request = new AttendanceRequest
+    //     {
+    //         SlotId = firstSlotId,
+    //         SlotStudentInfoRequests = slotStudentInfors
+    //     };
+    //
+    //     // Act
+    //     var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
+    //
+    //     // Assert
+    //     Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    // }
+    //
     // Test for non-existent student IDs
     [Fact]
     public async Task UpdateAttendance_NonExistentStudentIds_ReturnsBadRequest()

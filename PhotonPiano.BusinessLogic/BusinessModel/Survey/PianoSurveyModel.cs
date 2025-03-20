@@ -1,6 +1,6 @@
 ﻿namespace PhotonPiano.BusinessLogic.BusinessModel.Survey;
 
-public record PianoSurveyModel
+public record PianoSurveyModel : BaseModel
 {
     public required Guid Id { get; init; }
     
@@ -12,7 +12,7 @@ public record PianoSurveyModel
 
     public string? UpdatedById { get; init; } = default;
     
-    public DateTime CreatedAt { get; init; } 
-    
-    public DateTime? UpdatedAt { get; init; }
+    public int MinAge { get; init; }
+
+    public int? MaxAge { get; init; }
 }

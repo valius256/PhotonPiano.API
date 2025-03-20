@@ -2,7 +2,7 @@
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
 
-public record SurveyQuestionModel
+public record SurveyQuestionModel : BaseModel
 {
     public required Guid Id { get; init; }
     
@@ -21,4 +21,8 @@ public record SurveyQuestionModel
     public required string CreatedById { get; init; }
     
     public string? UpdatedById { get; init; }
+    
+    public int MinAge { get; init; }
+
+    public int? MaxAge { get; init; }
 }

@@ -15,4 +15,8 @@ public record CreateSurveyQuestionModel
     public bool AllowOtherAnswer { get; init; } = true;
     
     public bool IsRequired { get; init; } = true;
+    
+    public int MinAge { get; init; }
+
+    public int? MaxAge { get; init; }
 }

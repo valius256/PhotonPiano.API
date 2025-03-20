@@ -77,6 +77,11 @@ public class PianoSurveyService : IPianoSurveyService
         updateModel.Adapt(survey);
         survey.UpdatedAt = DateTime.UtcNow.AddHours(7);
         survey.UpdatedById = currentAccount.AccountFirebaseId;
+        
+        if (updateModel.RecordStatus is RecordStatus.IsDeleted)
+        {
+            survey.DeletedAt = DateTime.UtcNow.AddHours(7);
+        }
 
         await _unitOfWork.SaveChangesAsync();
     }

@@ -15,9 +15,12 @@ public class SurveyQuestionService : ISurveyQuestionService
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public SurveyQuestionService(IUnitOfWork unitOfWork)
+    private readonly IServiceFactory _serviceFactory;
+
+    public SurveyQuestionService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
+        _serviceFactory = serviceFactory;
     }
 
     public async Task<PagedResult<SurveyQuestionModel>> GetPagedSurveyQuestions(
@@ -50,12 +53,26 @@ public class SurveyQuestionService : ISurveyQuestionService
         if (createModel is
             {
                 Type: QuestionType.MultipleChoice or QuestionType.LikertScale or QuestionType.SingleChoice,
-                Options.Count: 0
             })
         {
-            throw new BadRequestException("Options can't be empty for this question type");
+            if (createModel.Options.Count == 0)
+            {
+                throw new BadRequestException("Options can't be empty for this question type");
+            }
+
+            var minPianoKeywordFrequencyInOptionsConfig =
+                await _serviceFactory.SystemConfigService.GetConfig("Số lần xuất hiện từ piano trong câu trả lời");
+
+            int minPianoKeywordFrequencyInOptions =
+                Convert.ToInt32(minPianoKeywordFrequencyInOptionsConfig.ConfigValue);
+
+            if (createModel.Options.Count(o => o.ToLower().Contains("piano")) < minPianoKeywordFrequencyInOptions)
+            {
+                throw new BadRequestException(
+                    $"Options must include piano keyword for at least {minPianoKeywordFrequencyInOptions} times");
+            }
         }
-        
+
         var survey =
             await _unitOfWork.PianoSurveyRepository.GetPianoSurveyWithQuestionsAsync(createModel.SurveyId);
 
@@ -69,8 +86,13 @@ public class SurveyQuestionService : ISurveyQuestionService
             throw new ConflictException("This order index is already in use");
         }
 
+        if (createModel.MinAge < survey.MinAge || createModel.MaxAge > survey.MaxAge)
+        {
+            throw new BadRequestException("This question has invalid age for this survey");
+        }
+
         var question = createModel.Adapt<SurveyQuestion>();
-        
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             question.CreatedById = currentAccount.AccountFirebaseId;
@@ -78,10 +100,10 @@ public class SurveyQuestionService : ISurveyQuestionService
             await _unitOfWork.SurveyQuestionRepository.AddAsync(question);
 
             await _unitOfWork.SaveChangesAsync();
-            
+
             survey.Questions.Add(question);
         });
-        
+
         return question.Adapt<SurveyQuestionModel>();
     }
 

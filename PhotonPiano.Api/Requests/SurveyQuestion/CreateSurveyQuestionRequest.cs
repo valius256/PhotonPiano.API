@@ -3,7 +3,7 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Requests.SurveyQuestion;
 
-public record CreateSurveyQuestionRequest
+public record CreateSurveyQuestionRequest : IValidatableObject
 {
     [Required] 
     public required QuestionType Type { get; init; }
@@ -22,4 +22,18 @@ public record CreateSurveyQuestionRequest
     public bool AllowOtherAnswer { get; init; } = true;
 
     public bool IsRequired { get; init; } = true;
+    
+    [Range(1, int.MaxValue, ErrorMessage = "Min age must >= 1")]
+    public int MinAge { get; init; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Max age must >= 1")]
+    public int? MaxAge { get; init; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (MinAge >= MaxAge)
+        {
+            yield return new ValidationResult("Max age must be greater than Min age");
+        }
+    }
 }

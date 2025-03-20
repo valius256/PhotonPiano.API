@@ -11,6 +11,10 @@ public class PianoSurvey : BaseEntityWithId
     public string CreatedById { get; set; } = default!;
 
     public string? UpdatedById { get; set; } = default;
+
+    public int MinAge { get; set; }
+
+    public int? MaxAge { get; set; }
     
     //Navigators
     public virtual Account CreatedBy { get; set; } = default!;

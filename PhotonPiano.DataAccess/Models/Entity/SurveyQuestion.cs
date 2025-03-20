@@ -10,8 +10,11 @@ public class SurveyQuestion : BaseEntityWithId
     
     public List<string> Options { get; set; } = default!;
     public int OrderIndex { get; set; }
-    
     public bool AllowOtherAnswer { get; set; }
+    
+    public int MinAge { get; set; }
+
+    public int? MaxAge { get; set; }
 
     public bool IsRequired { get; set; }
     public required string CreatedById { get; set; }

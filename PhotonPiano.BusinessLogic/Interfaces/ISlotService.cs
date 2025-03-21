@@ -25,4 +25,10 @@ public interface ISlotService
     Task<SlotModel> UpdateSlot(UpdateSlotModel updateSlotModel, string accountFirebaseId);
 
     Task DeleteSlot(Guid slotId, string accountFirebaseId);
+
+    Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate);
+    
+    Task<bool> CancelSlot(CancelSlotModel model, string accountFirebaseId);
+    
+    Task<SlotDetailModel> PublicNewSlot(PublicNewSlotModel model, string accountFirebaseId);
 }

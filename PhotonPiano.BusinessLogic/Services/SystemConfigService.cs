@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Mapster;
+using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -16,11 +17,17 @@ public class SystemConfigService : ISystemConfigService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<SystemConfig> GetConfig(string name)
+    public async Task<List<SystemConfigModel>> GetAllConfigs()
+    {
+        var configs = await _unitOfWork.SystemConfigRepository.GetAllAsync();
+        return configs.Adapt<List<SystemConfigModel>>();
+    }
+
+    public async Task<SystemConfigModel> GetConfig(string name)
     {
         var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == name);
         if (config is null) throw new NotFoundException("Config not found");
-        return config;
+        return config.Adapt<SystemConfigModel>();
     }
 
     public async Task SetConfigValue(UpdateSystemConfigModel updateSystemConfigModel)
@@ -28,10 +35,11 @@ public class SystemConfigService : ISystemConfigService
         var config = await GetConfig(updateSystemConfigModel.ConfigName);
         config.ConfigValue = updateSystemConfigModel.ConfigValue;
 
-        await _unitOfWork.SystemConfigRepository.UpdateAsync(config);
+        await _unitOfWork.SystemConfigRepository.UpdateAsync(config.Adapt<SystemConfig>());
         await _unitOfWork.SaveChangesAsync();
     }
 
+    [Obsolete]
     public async Task<GetSystemConfigOnLevelModel> GetSystemConfigValueBaseOnLevel(int level)
     {
         var searchTerm = $" LEVEL {level}";
@@ -61,14 +69,14 @@ public class SystemConfigService : ISystemConfigService
         return result;
     }
 
-    public async Task<SystemConfig?> GetTaxesRateConfig(int year)
+    public async Task<SystemConfigModel?> GetTaxesRateConfig(int year)
     {
         while (year >= 2000)
         {
             var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(
                 x => x.ConfigName == $"Thuế suất năm {year}");
 
-            if (config != null) return config;
+            if (config != null) return config.Adapt<SystemConfigModel>();
 
             year--;
         }

@@ -61,7 +61,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     public async Task ExecuteDeleteAsync(Expression<Func<T, bool>> expression)
     {
         await _context.Set<T>().Where(expression)
-            .ExecuteUpdateAsync(set => set
+                .ExecuteUpdateAsync(set => set
                 .SetProperty(e => e.DeletedAt, e => DateTime.UtcNow.AddHours(7))
                 .SetProperty(e => e.RecordStatus, e => RecordStatus.IsDeleted));
     }

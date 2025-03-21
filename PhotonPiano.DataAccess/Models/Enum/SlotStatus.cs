@@ -4,5 +4,6 @@ public enum SlotStatus
 {
     NotStarted,
     Ongoing,
-    Finished
+    Finished,
+    Cancelled,
 }

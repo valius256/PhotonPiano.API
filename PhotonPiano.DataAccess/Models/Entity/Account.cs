@@ -134,5 +134,7 @@ public class Account : BaseEntity
     // SurveyDetails
     public virtual ICollection<LearnerSurvey> LearnerSurveys { get; set; } = new List<LearnerSurvey>();
     
-    
+    // Slot 
+    public virtual ICollection<Slot> UpdatedSlots { get; set; } = new List<Slot>();
+    public virtual ICollection<Slot> CanceledSlots { get; set; } = new List<Slot>();
 }

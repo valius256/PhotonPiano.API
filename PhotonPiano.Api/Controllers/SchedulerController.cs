@@ -111,4 +111,33 @@ public class SchedulerController : BaseController
 
         return NoContent();
     }
+        
+    [HttpPost("blank-slot")]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Get All Blank Class and Shift in current Week")]
+    public async Task<ActionResult> GetBlankClassAndShift([FromBody] BlankSlotAndShiftRequest request)
+    {
+        var result = await _serviceFactory.SlotService.GetAllBlankSlotInWeeks(request.StartDate, request.EndDate);
+        return Ok(result);
+    }
+    
+    [HttpPost("cancel-slot")]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Cancel a slot")]
+    public async Task<ActionResult> CancelSlot([FromBody] CancelSlotRequest request)
+    {
+        await _serviceFactory.SlotService.CancelSlot(request.Adapt<CancelSlotModel>(), CurrentUserFirebaseId);
+        return NoContent();
+    }
+    
+    [HttpPost("public-new-slot")]
+    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Public a new slot")]
+    public async Task<ActionResult> PublicNewSlot([FromBody] PublicNewSlotRequest request)
+    {
+        var result =  await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentUserFirebaseId);
+        return Ok(result);
+    }
+    
+    
 }

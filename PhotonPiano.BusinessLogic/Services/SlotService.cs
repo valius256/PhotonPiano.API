@@ -336,7 +336,8 @@ public class SlotService : ISlotService
         {
             return false;
         }
-        return await _unitOfWork.SlotRepository.AnyAsync(s => s.RoomId == roomId && s.Shift == shift && s.Date == date);
+        return (await _unitOfWork.SlotRepository.AnyAsync(s => s.RoomId == roomId && s.Shift == shift && s.Date == date)
+            || await _unitOfWork.EntranceTestRepository.AnyAsync(s => s.RoomId == roomId && s.Shift == shift && s.Date == date));
     }
     public async Task<SlotModel> UpdateSlot(UpdateSlotModel updateSlotModel, string accountFirebaseId)
     {
@@ -373,10 +374,10 @@ public class SlotService : ISlotService
                 throw new NotFoundException("Room not found");
             }
             slot.RoomId = updateSlotModel.RoomId;
-            notiMessage += $" Cập nhật phòng học từ phòng {oldRoom?.Name} sang {room.Name}";
+            notiMessage += $" Cập nhật phòng học từ phòng {oldRoom?.Name} sang {room.Name}.";
         }
 
-        if (updateSlotModel.Date != null || updateSlotModel.Shift != null)
+        if ((updateSlotModel.Date != null && updateSlotModel.Date != slot.Date) || (updateSlotModel.Shift != null && updateSlotModel.Shift != slot.Shift))
         {
             notiMessage += $" Cập nhật thời gian học từ phòng ngày {slot.Date}, ca {(int)slot.Shift + 1} " +
                 $"sang ngày {updateSlotModel.Date ?? slot.Date}, ca {(int)(updateSlotModel.Shift ?? slot.Shift) + 1}.";
@@ -407,12 +408,18 @@ public class SlotService : ISlotService
 
 
         //Notification
+        
         var classDetail = await _unitOfWork.ClassRepository.Entities.Include(c => c.StudentClasses)
             .FirstOrDefaultAsync(c => c.Id == slot.ClassId);
 
+        
         if (classDetail != null && classDetail.IsPublic)
         {
-            notiMessage = $"Một buổi học mới đã được cập nhật tại lớp ${classDetail.Name} của bạn." + notiMessage;
+            if (updateSlotModel.Reason != null)
+            {
+                notiMessage += " Lí do: " + updateSlotModel.Reason;
+            }
+            notiMessage = $"Một buổi học đã được cập nhật tại lớp {classDetail.Name} của bạn." + notiMessage;
             var studentSlots = classDetail.StudentClasses.Select(sc => new SlotStudent
             {
                 CreatedById = accountFirebaseId,

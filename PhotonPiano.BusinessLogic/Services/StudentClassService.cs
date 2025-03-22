@@ -8,6 +8,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services
 {
@@ -72,7 +73,7 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Student is not in the same level as the class");
             }
-            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig("Được phép học vượt level")).ConfigValue ?? "0");
+            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AllowSkippingLevel)).ConfigValue ?? "0");
             if (!allowSkipLevel && student.LevelId != classInfo.LevelId)
             {
                 throw new BadRequestException("Skipping level is not allowed. Student need to be in the same level as the class!");
@@ -173,7 +174,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new NotFoundException("Class not found");
             }
 
-            var maxStudents = int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+            var maxStudents = int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
 
             if (classInfo.StudentClasses.Count + students.Count > maxStudents)
             {
@@ -188,7 +189,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new BadRequestException("Class is finished");
             }
 
-            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig("Được phép học vượt level")).ConfigValue ?? "0");
+            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AllowSkippingLevel)).ConfigValue ?? "0");
             if (!allowSkipLevel && students.Any(s => s.LevelId != classInfo.LevelId))
             {
                 throw new BadRequestException("Skipping level is not allowed. All student need to be in the same level as the class!");

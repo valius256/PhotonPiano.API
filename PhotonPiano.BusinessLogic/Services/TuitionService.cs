@@ -1,3 +1,4 @@
+using Mapster;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
@@ -434,18 +435,24 @@ public class TuitionService : ITuitionService
         // Send emails in parallel
         var emailTasks = tuitions.Select(async result =>
         {
-            var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            var student = classDetailModel.StudentClasses.Where(sc => sc.Id == result.StudentClassId).FirstOrDefault();
+
+            if (student != null)
             {
-                { "customerName", $"{result.StudentClass.Student.Email}" },
-                { "className", $"{result.StudentClass.Class.Name}" },
+                var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "studentName", $"{student.StudentFullName}" },
+                { "className", $"{classDetailModel.Name}" },
                 { "amount", $"{result.Amount}" },
-                { "paymentStatus", $"{result.PaymentStatus}" },
-                { "validFromTo", $"{result.StartDate:yyyy-MM-dd} to {result.EndDate:yyyy-MM-dd}" }
+                { "endDate", $"{result.EndDate:dd/MM/yyyy}" },
+                { "startDate", $"{result.StartDate:dd/MM/yyyy}"}
             };
 
-            await _serviceFactory.EmailService.SendAsync("PaymentSuccess",
-                new List<string> { result.StudentClass.Student.Email, "quangphat7a1@gmail.com" },
-                null, emailParam);
+                await _serviceFactory.EmailService.SendAsync("NotifyTuitionCreated",
+                    [student.Student.Email, "quangphat7a1@gmail.com"],
+                    null, emailParam);
+            }
+           
         });
 
         await Task.WhenAll(emailTasks);

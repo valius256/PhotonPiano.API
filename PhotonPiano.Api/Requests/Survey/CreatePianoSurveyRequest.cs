@@ -16,7 +16,7 @@ public record CreatePianoSurveyRequest : IValidatableObject
     [Range(1, int.MaxValue, ErrorMessage = "Max age must >= 1")]
     public int? MaxAge { get; init; }
 
-    public HashSet<CreateQuestionInSurveyRequest> CreateQuestionRequests { get; init; } = [];
+    public HashSet<CreateQuestionInSurveyRequest> Questions { get; init; } = [];
     
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

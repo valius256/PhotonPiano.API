@@ -1,6 +1,5 @@
 ﻿using Mapster;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
-using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -26,10 +25,13 @@ public class SurveyQuestionService : ISurveyQuestionService
     public async Task<PagedResult<SurveyQuestionModel>> GetPagedSurveyQuestions(
         QueryPagedSurveyQuestionsModel queryModel)
     {
-        var (page, size, column, desc) = queryModel;
+        var (page, size, column, desc, keyword) = queryModel;
 
         return await _unitOfWork.SurveyQuestionRepository.GetPaginatedWithProjectionAsync<SurveyQuestionModel>(
-            page, size, column, desc);
+            page, size, column, desc, expressions:
+            [
+                q => string.IsNullOrEmpty(keyword) || q.QuestionContent.ToLower().Contains(keyword.ToLower())
+            ]);
     }
 
     public async Task<SurveyQuestionDetailsModel> GetSurveyQuestionDetails(Guid id)
@@ -100,7 +102,7 @@ public class SurveyQuestionService : ISurveyQuestionService
             await _unitOfWork.SurveyQuestionRepository.AddAsync(question);
 
             await _unitOfWork.SaveChangesAsync();
-            
+
             //Add to PianoSurveyQuestion table
             await _unitOfWork.PianoSurveyQuestionRepository.AddAsync(new PianoSurveyQuestion
             {
@@ -109,7 +111,6 @@ public class SurveyQuestionService : ISurveyQuestionService
                 OrderIndex = createModel.OrderIndex,
                 IsRequired = createModel.IsRequired
             });
-
         });
 
         return question.Adapt<SurveyQuestionModel>();

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using PhotonPiano.Api.Requests.SurveyQuestion;
 
 namespace PhotonPiano.Api.Requests.Survey;
 
@@ -10,10 +11,13 @@ public record CreatePianoSurveyRequest : IValidatableObject
     public string? Description { get; init; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Min age must >= 1")]
-    public int MinAge { get; init; }
+    public int? MinAge { get; init; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Max age must >= 1")]
     public int? MaxAge { get; init; }
+
+    public HashSet<CreateQuestionInSurveyRequest> CreateQuestionRequests { get; init; } = [];
+    
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (!Name.Contains("piano", StringComparison.CurrentCultureIgnoreCase))

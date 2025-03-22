@@ -45,7 +45,7 @@ namespace PhotonPiano.Api.Controllers
         [HttpPost]
         [FirebaseAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create piano survey")]
-        public async Task<ActionResult<PianoSurveyModel>> CreatePianoSurvey([FromBody] CreatePianoSurveyRequest request)
+        public async Task<ActionResult<PianoSurveyDetailsModel>> CreatePianoSurvey([FromBody] CreatePianoSurveyRequest request)
         {
             return Created(nameof(CreatePianoSurvey),
                 await _serviceFactory.PianoSurveyService.CreatePianoSurvey(request.Adapt<CreatePianoSurveyModel>(),

@@ -16,9 +16,6 @@ public class SurveyQuestionConfiguration : IEntityTypeConfiguration<SurveyQuesti
         builder.Property(x => x.AllowOtherAnswer)
             .HasDefaultValue(true);
         
-        builder.Property(x => x.IsRequired)
-            .HasDefaultValue(true);
-        
         builder.HasOne(x => x.CreatedBy)
             .WithMany(x => x.CreatedSurveyQuestions)
             .HasForeignKey(x => x.CreatedById)

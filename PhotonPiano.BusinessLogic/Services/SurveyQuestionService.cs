@@ -81,7 +81,7 @@ public class SurveyQuestionService : ISurveyQuestionService
             throw new NotFoundException("Survey not found");
         }
 
-        if (survey.Questions.Any(q => q.OrderIndex == createModel.OrderIndex))
+        if (survey.PianoSurveyQuestions.Any(q => q.OrderIndex == createModel.OrderIndex))
         {
             throw new ConflictException("This order index is already in use");
         }
@@ -100,8 +100,16 @@ public class SurveyQuestionService : ISurveyQuestionService
             await _unitOfWork.SurveyQuestionRepository.AddAsync(question);
 
             await _unitOfWork.SaveChangesAsync();
+            
+            //Add to PianoSurveyQuestion table
+            await _unitOfWork.PianoSurveyQuestionRepository.AddAsync(new PianoSurveyQuestion
+            {
+                QuestionId = question.Id,
+                SurveyId = survey.Id,
+                OrderIndex = createModel.OrderIndex,
+                IsRequired = createModel.IsRequired
+            });
 
-            survey.Questions.Add(question);
         });
 
         return question.Adapt<SurveyQuestionModel>();

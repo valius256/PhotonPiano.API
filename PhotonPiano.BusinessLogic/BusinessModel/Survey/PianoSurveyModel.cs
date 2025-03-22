@@ -12,7 +12,7 @@ public record PianoSurveyModel : BaseModel
 
     public string? UpdatedById { get; init; } = default;
     
-    public int MinAge { get; init; }
+    public int? MinAge { get; init; }
 
     public int? MaxAge { get; init; }
 }

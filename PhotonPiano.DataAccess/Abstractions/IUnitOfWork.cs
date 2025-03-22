@@ -50,6 +50,8 @@ public interface IUnitOfWork
     ILearnerAnswerRepository LearnerAnswerRepository { get; }
 
     ILevelRepository LevelRepository { get; }
+    
+    IPianoSurveyQuestionRepository PianoSurveyQuestionRepository { get; }
 
     Task<int> SaveChangesAsync();
 

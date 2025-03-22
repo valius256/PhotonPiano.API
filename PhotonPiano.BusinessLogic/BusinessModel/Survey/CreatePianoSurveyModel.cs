@@ -1,4 +1,6 @@
-﻿namespace PhotonPiano.BusinessLogic.BusinessModel.Survey;
+﻿using PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
+
+namespace PhotonPiano.BusinessLogic.BusinessModel.Survey;
 
 public record CreatePianoSurveyModel
 {
@@ -6,7 +8,9 @@ public record CreatePianoSurveyModel
 
     public string? Description { get; init; }
     
-    public int MinAge { get; init; }
+    public int? MinAge { get; init; }
 
     public int? MaxAge { get; init; }
+    
+    public HashSet<CreateQuestionInSurveyModel> CreateQuestionRequests { get; init; } = [];
 }

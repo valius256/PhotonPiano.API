@@ -12,7 +12,7 @@ public class PianoSurvey : BaseEntityWithId
 
     public string? UpdatedById { get; set; } = default;
 
-    public int MinAge { get; set; }
+    public int? MinAge { get; set; }
 
     public int? MaxAge { get; set; }
     
@@ -20,5 +20,5 @@ public class PianoSurvey : BaseEntityWithId
     public virtual Account CreatedBy { get; set; } = default!;
     public virtual Account UpdatedBy { get; set; } = default!;
     public virtual ICollection<LearnerSurvey> LearnerSurveys { get; set; } = [];
-    public virtual ICollection<SurveyQuestion> Questions { get; set; } = [];
+    public virtual ICollection<PianoSurveyQuestion> PianoSurveyQuestions { get; set; } = [];
 }

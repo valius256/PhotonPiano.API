@@ -51,18 +51,85 @@ public class PianoSurveyService : IPianoSurveyService
         return survey;
     }
 
-    public async Task<PianoSurveyModel> CreatePianoSurvey(CreatePianoSurveyModel createModel,
+    public async Task<PianoSurveyDetailsModel> CreatePianoSurvey(CreatePianoSurveyModel createModel,
         AccountModel currentAccount)
     {
         var survey = createModel.Adapt<PianoSurvey>();
 
+        survey.Id = Guid.NewGuid();
         survey.CreatedById = currentAccount.AccountFirebaseId;
 
-        await _unitOfWork.PianoSurveyRepository.AddAsync(survey);
+        List<SurveyQuestion> surveyQuestionsToAdd = [];
+        List<SurveyQuestion> dbQuestions = [];
+        List<PianoSurveyQuestion> pianoSurveyQuestions = [];
 
-        await _unitOfWork.SaveChangesAsync();
+        if (createModel.CreateQuestionRequests.Count > 0)
+        {
+            var dbQuestionIds = new List<Guid>();
 
-        return survey.Adapt<PianoSurveyModel>();
+            int index = 0;
+
+            foreach (var request in createModel.CreateQuestionRequests)
+            {
+                if (request.Id.HasValue)
+                {
+                    dbQuestionIds.Add(request.Id.Value);
+                    pianoSurveyQuestions.Add(new PianoSurveyQuestion
+                    {
+                        QuestionId = request.Id.Value,
+                        SurveyId = survey.Id,
+                        OrderIndex = index,
+                        IsRequired = request.IsRequired,
+                    });
+                }
+                else
+                {
+                    var newQuestion = request.Adapt<SurveyQuestion>();
+                    newQuestion.Id = Guid.NewGuid();
+                    newQuestion.CreatedById = currentAccount.AccountFirebaseId;
+                    newQuestion.MinAge = survey.MinAge;
+                    newQuestion.MaxAge = survey.MaxAge;
+                    surveyQuestionsToAdd.Add(newQuestion);
+                    pianoSurveyQuestions.Add(new PianoSurveyQuestion
+                    {
+                        QuestionId = newQuestion.Id,
+                        SurveyId = survey.Id,
+                        OrderIndex = index,
+                        IsRequired = request.IsRequired,
+                    });
+                }
+
+                ++index;
+            }
+
+            dbQuestions = await _unitOfWork.SurveyQuestionRepository.FindAsync(q => dbQuestionIds.Contains(q.Id),
+                hasTrackings: false);
+
+            if (dbQuestionIds.Count != dbQuestions.Count)
+            {
+                throw new BadRequestException("Some of questions are not found");
+            }
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.PianoSurveyRepository.AddAsync(survey);
+
+            if (createModel.CreateQuestionRequests.Count > 0)
+            {
+                if (surveyQuestionsToAdd.Count > 0)
+                {
+                    await _unitOfWork.SurveyQuestionRepository.AddRangeAsync(surveyQuestionsToAdd);
+                }
+
+                if (pianoSurveyQuestions.Count > 0)
+                {
+                    await _unitOfWork.PianoSurveyQuestionRepository.AddRangeAsync(pianoSurveyQuestions);
+                }
+            }
+        });
+
+        return await GetSurveyDetails(survey.Id, currentAccount);
     }
 
     public async Task UpdatePianoSurvey(Guid id, UpdatePianoSurveyModel updateModel, AccountModel currentAccount)
@@ -77,7 +144,7 @@ public class PianoSurveyService : IPianoSurveyService
         updateModel.Adapt(survey);
         survey.UpdatedAt = DateTime.UtcNow.AddHours(7);
         survey.UpdatedById = currentAccount.AccountFirebaseId;
-        
+
         if (updateModel.RecordStatus is RecordStatus.IsDeleted)
         {
             survey.DeletedAt = DateTime.UtcNow.AddHours(7);
@@ -112,7 +179,7 @@ public class PianoSurveyService : IPianoSurveyService
         {
             throw new BadRequestException("Some of the questions are not found");
         }
-        
+
         var learnerAnswers = new List<LearnerAnswer>();
 
         foreach (var request in createModel.CreateAnswerRequests)

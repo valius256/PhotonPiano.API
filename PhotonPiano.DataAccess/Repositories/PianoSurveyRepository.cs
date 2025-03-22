@@ -17,7 +17,7 @@ public class PianoSurveyRepository : GenericRepository<PianoSurvey>, IPianoSurve
     public async Task<PianoSurvey?> GetPianoSurveyWithQuestionsAsync(Guid id)
     {
         return await _context.PianoSurveys
-            .Include(ps => ps.Questions)
+            .Include(ps => ps.PianoSurveyQuestions)
             .SingleOrDefaultAsync(ps => ps.Id == id);
     }
 }

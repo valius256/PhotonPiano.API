@@ -5,6 +5,8 @@ namespace PhotonPiano.Api.Requests.SurveyQuestion;
 
 public record CreateSurveyQuestionRequest : IValidatableObject
 {
+    public Guid? Id { get; init; }
+    
     [Required] 
     public required QuestionType Type { get; init; }
     
@@ -19,9 +21,9 @@ public record CreateSurveyQuestionRequest : IValidatableObject
 
     public Guid SurveyId { get; init; }
     
-    public bool AllowOtherAnswer { get; init; } = true;
-
     public bool IsRequired { get; init; } = true;
+    
+    public bool AllowOtherAnswer { get; init; } = true;
     
     [Range(1, int.MaxValue, ErrorMessage = "Min age must >= 1")]
     public int MinAge { get; init; }

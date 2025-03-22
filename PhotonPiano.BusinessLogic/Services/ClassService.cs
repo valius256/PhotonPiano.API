@@ -13,6 +13,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -30,9 +31,9 @@ public class ClassService : IClassService
     public async Task<ClassDetailModel> GetClassDetailById(Guid id)
     {
         var minStudents =
-            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MinimumStudents)).ConfigValue ?? "0");
         var maxStudents =
-           int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+           int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
 
 
         var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id);
@@ -56,9 +57,9 @@ public class ClassService : IClassService
     public async Task<ClassScoreboardModel> GetClassScoreboard(Guid id)
     {
         var minStudents =
-            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MinimumStudents)).ConfigValue ?? "0");
         var maxStudents =
-           int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+           int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
 
 
         var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassScoreboardModel>(c => c.Id == id);
@@ -121,9 +122,9 @@ public class ClassService : IClassService
         );
         // Fetch the class capacity
         var capacity =
-            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
         var minStudents =
-            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MinimumStudents)).ConfigValue ?? "0");
 
         var levels = await _unitOfWork.LevelRepository.GetAllAsync();
 
@@ -184,9 +185,9 @@ public class ClassService : IClassService
             a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass);
 
         var maxStudents =
-            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
         var minStudents =
-            int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối thiểu")).ConfigValue ?? "0");
+            int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MinimumStudents)).ConfigValue ?? "0");
 
         var classes = new List<CreateClassAutoModel>();
         //1. FILL IN STUDENTS (25%)
@@ -389,7 +390,7 @@ public class ClassService : IClassService
 
             // Fetch the class capacity
             var capacity =
-                int.Parse((await _serviceFactory.SystemConfigService.GetConfig("Sĩ số lớp tối đa")).ConfigValue ?? "0");
+                int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
 
             
 

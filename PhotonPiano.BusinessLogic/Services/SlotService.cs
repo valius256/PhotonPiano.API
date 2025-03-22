@@ -9,6 +9,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -212,9 +213,19 @@ public class SlotService : ISlotService
         }
 
         // Cập nhật slot trong ngày hiện tại (chỉ lấy slot có khả năng thay đổi trạng thái)
-        var todaySlots = await _unitOfWork.SlotRepository.FindAsync(
+        var todaySlots = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class).Where(
             s => s.Date == currentDate && s.Status != SlotStatus.Finished
-        );
+        ).ToListAsync();
+
+        var classSlotGroups = todaySlots.GroupBy(s => s.ClassId)
+            .Select(g => new
+            {
+                First = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).First(),
+                Last = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).First()
+            })
+            .ToDictionary(x => x.First.ClassId); // Use a dictionary for quick lookup
+
+        var classesToUpdate = new List<Class>();
 
         foreach (var slot in todaySlots)
         {
@@ -225,14 +236,32 @@ public class SlotService : ISlotService
             {
                 slot.Status = SlotStatus.Finished;
                 affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
+                //If this is the last slot - change the class status to Finish
+                if (classSlotGroups.TryGetValue(slot.ClassId, out var classSlots))
+                {
+                    if (slot.Id == classSlots.Last.Id) 
+                    {
+                        slot.Class.Status = ClassStatus.Finished;
+                        classesToUpdate.Add(slot.Class);
+                    }
+                }
             }
             else if (currentTime >= shiftStartTime && slot.Status != SlotStatus.Ongoing)
             {
                 slot.Status = SlotStatus.Ongoing;
                 affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
+                //If this is the first slot - change the class status to OnGoing
+                if (classSlotGroups.TryGetValue(slot.ClassId, out var classSlots))
+                {
+                    if (slot.Id == classSlots.First.Id) 
+                    {
+                        slot.Class.Status = ClassStatus.Ongoing;
+                        classesToUpdate.Add(slot.Class);
+                    }
+                }
             }
         }
-
+        await _unitOfWork.ClassRepository.UpdateRangeAsync(classesToUpdate);
         //  Lưu thay đổi vào database
         await _unitOfWork.SaveChangesAsync();
 

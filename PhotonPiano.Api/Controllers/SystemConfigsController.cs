@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.Api.Attributes;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -15,7 +18,32 @@ public class SystemConfigsController : BaseController
     {
         _serviceFactory = serviceFactory;
     }
-    
+
+    [HttpGet]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Get all system configs")]
+    public async Task<ActionResult<List<SystemConfigModel>>> GetAll()
+    {
+        return await _serviceFactory.SystemConfigService.GetAllConfigs();
+    }
+
+    [HttpGet("{name}")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Get system config by name")]
+    public async Task<ActionResult<SystemConfigModel>> GetByName([FromRoute] string name)
+    {
+        return await _serviceFactory.SystemConfigService.GetConfig(name);
+    }
+
+    [HttpPut]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [EndpointDescription("Set a system config")]
+    public async Task<IActionResult> SetConfig(UpdateSystemConfigModel updateSystemConfigModel)
+    {
+        await _serviceFactory.SystemConfigService.SetConfigValue(updateSystemConfigModel);
+        return NoContent();
+    }
+
     [HttpGet("attendance-deadline")]
     [EndpointDescription("Get system configs of attendance deadline")]
     public async Task<ActionResult> GetSystemConfigs()

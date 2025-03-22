@@ -9,7 +9,6 @@ public record QueryPagedAccountsModel : QueryPagedModel
     public List<Role> Roles { get; init; } = [];
     public List<Guid> Levels { get; init; } = [];
     public List<StudentStatus> StudentStatuses { get; init; } = [];
-
     public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc)
     {
         page = Page;

@@ -68,6 +68,15 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Class is finished");
             }
+            if (classInfo.LevelId != student.LevelId)
+            {
+                throw new BadRequestException("Student is not in the same level as the class");
+            }
+            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig("Được phép học vượt level")).ConfigValue ?? "0");
+            if (!allowSkipLevel && student.LevelId != classInfo.LevelId)
+            {
+                throw new BadRequestException("Skipping level is not allowed. Student need to be in the same level as the class!");
+            }
 
             //Create student slots
             var classSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
@@ -170,14 +179,26 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Class is full!");
             }
+            if (students.Any(s => s.LevelId != classInfo.LevelId))
+            {
+                throw new BadRequestException("Some of students is not in the same level as the class");
+            }
             if (classInfo.Status == ClassStatus.Finished)
             {
                 throw new BadRequestException("Class is finished");
             }
+
+            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig("Được phép học vượt level")).ConfigValue ?? "0");
+            if (!allowSkipLevel && students.Any(s => s.LevelId != classInfo.LevelId))
+            {
+                throw new BadRequestException("Skipping level is not allowed. All student need to be in the same level as the class!");
+            }
+
             if (createStudentClassesModel.IsAutoFill && maxStudents - classInfo.StudentClasses.Count - students.Count > 0)
             {
                 var otherStudents = await _unitOfWork.AccountRepository.FindAsQueryable(s => s.StudentStatus == StudentStatus.WaitingForClass
-                    && !createStudentClassesModel.StudentFirebaseIds.Contains(s.AccountFirebaseId))
+                    && !createStudentClassesModel.StudentFirebaseIds.Contains(s.AccountFirebaseId)
+                    && (allowSkipLevel || (!allowSkipLevel && s.LevelId == classInfo.LevelId)))
                     .Take(maxStudents - classInfo.StudentClasses.Count - students.Count)
                     .ToListAsync();
 

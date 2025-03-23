@@ -76,8 +76,8 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     TimeZoneResolver = new DefaultTimeZoneResolver()
 });
 
-
-app.UseRateLimiter();
+// uncomment to active Rate limiter
+// app.UseRateLimiter();
 
 app.UseExceptionHandler();
 

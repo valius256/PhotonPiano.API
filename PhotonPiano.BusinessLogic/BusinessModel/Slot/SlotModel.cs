@@ -11,4 +11,5 @@ public record SlotModel
     public DateOnly Date { get; init; }
     public SlotStatus Status { get; init; }
     public string? SlotNote { get; init; }
+    
 }

@@ -9,5 +9,6 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Slot
         public required Shift? Shift { get; init; }
         public required DateOnly? Date { get; init; }
         public required Guid? RoomId { get; init; }
+        public string? Reason { get; init; }
     }
 }

@@ -7,6 +7,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -14,9 +15,12 @@ public class PianoSurveyService : IPianoSurveyService
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public PianoSurveyService(IUnitOfWork unitOfWork)
+    private readonly IServiceFactory _serviceFactory;
+
+    public PianoSurveyService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
+        _serviceFactory = serviceFactory;
     }
 
     public async Task<PagedResult<PianoSurveyModel>> GetSurveys(QueryPagedSurveysModel query,
@@ -148,6 +152,18 @@ public class PianoSurveyService : IPianoSurveyService
         if (updateModel.RecordStatus is RecordStatus.IsDeleted)
         {
             survey.DeletedAt = DateTime.UtcNow.AddHours(7);
+        }
+
+        if (updateModel.IsEntranceSurvey.HasValue)
+        {
+            var entranceSurveyConfig =
+                await _unitOfWork.SystemConfigRepository.FindSingleAsync(
+                    c => c.ConfigName == ConfigNames.EntranceSurvey && c.RecordStatus == RecordStatus.IsActive);
+            
+            if (entranceSurveyConfig is not null)
+            {
+                entranceSurveyConfig.ConfigValue = updateModel.IsEntranceSurvey == true ? id.ToString() : null;
+            }
         }
 
         await _unitOfWork.SaveChangesAsync();

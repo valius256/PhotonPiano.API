@@ -20,11 +20,6 @@ public record CreatePianoSurveyRequest : IValidatableObject
     
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!Name.Contains("piano", StringComparison.CurrentCultureIgnoreCase))
-        {
-            yield return new ValidationResult("Survey name must contains piano keyword");
-        }
-
         if (MinAge >= MaxAge)
         {
             yield return new ValidationResult("Max age must be greater than Min age");

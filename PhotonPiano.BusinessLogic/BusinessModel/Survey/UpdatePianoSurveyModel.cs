@@ -9,4 +9,6 @@ public record UpdatePianoSurveyModel
     public string? Description { get; init; }
     
     public RecordStatus? RecordStatus { get; init; }
+    
+    public bool? IsEntranceSurvey { get; init; }
 }

@@ -691,9 +691,17 @@ public class SlotService : ISlotService
             }
             await _unitOfWork.SlotStudentRepository.AddRangeAsync(slotStudents);
         });
-        
+
+
+        var classInDb = await _serviceFactory.ClassService.GetClassDetailById(newSlot.ClassId);
+        var slotInDb = await _serviceFactory.SlotService.GetSLotDetailById(newSlot.Id);
         //Notification
-        await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds, $"Một buổi học khác đã được mở tại lớp {model.ClassId} của bạn", "");
+        await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+            studentIds,
+            $"Lớp {classInDb.Name} sẽ có một buổi học mới vào ngày {newSlot.Date}, tại phòng {slotInDb.Room.Name}.",
+            ""
+        );
+
         // await InvalidateCacheForClassAsync(newSlot.ClassId, newSlot.Date);
     
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");

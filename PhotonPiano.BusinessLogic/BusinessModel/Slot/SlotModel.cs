@@ -10,4 +10,6 @@ public record SlotModel
     public Shift Shift { get; init; }
     public DateOnly Date { get; init; }
     public SlotStatus Status { get; init; }
+    public string? SlotNote { get; init; }
+    
 }

@@ -210,4 +210,9 @@ public class UnitOfWork : IUnitOfWork
             throw;
         }
     }
+    
+    public void ClearChangeTracker()
+    {
+        _context.ChangeTracker.Clear();
+    }
 }

@@ -23,16 +23,37 @@ public class PianoSurveyService : IPianoSurveyService
         _serviceFactory = serviceFactory;
     }
 
+    private async Task<Guid?> GetEntranceSurveyConfigId()
+    {
+        var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey);
+
+        return entranceSurveyConfig.ConfigValue is null ? null : Guid.Parse(entranceSurveyConfig.ConfigValue);
+    }
+
     public async Task<PagedResult<PianoSurveyModel>> GetSurveys(QueryPagedSurveysModel query,
         AccountModel currentAccount)
     {
         var (page, size, column, desc) = query;
 
-        return await _unitOfWork.PianoSurveyRepository.GetPaginatedWithProjectionAsync<PianoSurveyModel>(page, size,
+        var entranceSurveyId = await GetEntranceSurveyConfigId();
+
+        var pagedResult = await _unitOfWork.PianoSurveyRepository.GetPaginatedWithProjectionAsync<PianoSurveyModel>(
+            page, size,
             column, desc, expressions:
             [
                 s => string.IsNullOrEmpty(query.Keyword) || s.Name.ToLower().Contains(query.Keyword.ToLower())
             ]);
+
+        if (entranceSurveyId is not null)
+        {
+            foreach (var survey in pagedResult.Items.Where(survey => survey.Id == entranceSurveyId.Value))
+            {
+                survey.IsEntranceSurvey = true;
+                break;
+            }
+        }
+
+        return pagedResult;
     }
 
     public async Task<PianoSurveyDetailsModel> GetSurveyDetails(Guid id, AccountModel currentAccount)
@@ -50,6 +71,13 @@ public class PianoSurveyService : IPianoSurveyService
             survey.LearnerSurveys.All(ls => ls.LearnerId != currentAccount.AccountFirebaseId))
         {
             throw new ForbiddenMethodException("You do not have access to this survey");
+        }
+
+        var entranceSurveyId = await GetEntranceSurveyConfigId();
+
+        if (entranceSurveyId is not null)
+        {
+            survey.IsEntranceSurvey = true;
         }
 
         return survey;
@@ -154,19 +182,122 @@ public class PianoSurveyService : IPianoSurveyService
             survey.DeletedAt = DateTime.UtcNow.AddHours(7);
         }
 
+
         if (updateModel.IsEntranceSurvey.HasValue)
         {
             var entranceSurveyConfig =
                 await _unitOfWork.SystemConfigRepository.FindSingleAsync(
                     c => c.ConfigName == ConfigNames.EntranceSurvey && c.RecordStatus == RecordStatus.IsActive);
-            
+
             if (entranceSurveyConfig is not null)
             {
-                entranceSurveyConfig.ConfigValue = updateModel.IsEntranceSurvey == true ? id.ToString() : null;
+                entranceSurveyConfig.ConfigValue = updateModel.IsEntranceSurvey == true
+                    ? id.ToString()
+                    : entranceSurveyConfig.ConfigValue;
             }
         }
 
-        await _unitOfWork.SaveChangesAsync();
+        List<SurveyQuestion> surveyQuestionsToAdd = [];
+        List<SurveyQuestion> dbQuestions = [];
+        List<PianoSurveyQuestion> pianoSurveyQuestions = [];
+
+        if (updateModel.Questions.Count > 0)
+        {
+            var dbQuestionIds = new List<Guid>();
+            int index = 0;
+
+            foreach (var request in updateModel.Questions)
+            {
+                if (request.Id.HasValue)
+                {
+                    dbQuestionIds.Add(request.Id.Value);
+                    pianoSurveyQuestions.Add(new PianoSurveyQuestion
+                    {
+                        QuestionId = request.Id.Value,
+                        SurveyId = survey.Id,
+                        OrderIndex = index,
+                        IsRequired = request.IsRequired,
+                    });
+                }
+                else
+                {
+                    var newQuestion = request.Adapt<SurveyQuestion>();
+                    newQuestion.Id = Guid.NewGuid();
+                    newQuestion.CreatedById = currentAccount.AccountFirebaseId;
+                    newQuestion.MinAge = survey.MinAge;
+                    newQuestion.MaxAge = survey.MaxAge;
+                    surveyQuestionsToAdd.Add(newQuestion);
+                    pianoSurveyQuestions.Add(new PianoSurveyQuestion
+                    {
+                        QuestionId = newQuestion.Id,
+                        SurveyId = survey.Id,
+                        OrderIndex = index,
+                        IsRequired = request.IsRequired,
+                    });
+                }
+
+                ++index;
+            }
+
+            dbQuestions =
+                await _unitOfWork.SurveyQuestionRepository.FindAsync(q => dbQuestionIds.Contains(q.Id),
+                    hasTrackings: false);
+
+            if (dbQuestionIds.Count != dbQuestions.Count)
+            {
+                throw new BadRequestException("Some of questions are not found");
+            }
+        }
+
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.Questions.Count > 0)
+            {
+                // await _unitOfWork.PianoSurveyRepository.UpdateAsync(survey);
+                // await _unitOfWork.SaveChangesAsync();
+                // // survey.PianoSurveyQuestions.Clear();
+                //
+                //
+                // _unitOfWork.PianoSurveyRepository.Detach(survey);
+                //
+                if (surveyQuestionsToAdd.Count > 0)
+                {
+                    await _unitOfWork.SurveyQuestionRepository.AddRangeAsync(surveyQuestionsToAdd);
+                }
+
+                if (pianoSurveyQuestions.Count > 0)
+                {
+                    await _unitOfWork.PianoSurveyQuestionRepository.ExecuteDeleteAsync(x => x.SurveyId == survey.Id);
+                    // await _unitOfWork.SaveChangesAsync();
+                    
+                    await _unitOfWork.PianoSurveyQuestionRepository.AddRangeAsync(pianoSurveyQuestions);
+                }
+            }
+        });
+    }
+
+    public async Task<PianoSurveyDetailsModel> GetEntranceSurvey()
+    {
+        var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey);
+
+        if (entranceSurveyConfig?.ConfigValue is null)
+        {
+            throw new NotFoundException("Entrance survey not found");
+        }
+
+        Guid surveyId = Guid.Parse(entranceSurveyConfig.ConfigValue);
+
+        var survey =
+            await _unitOfWork.PianoSurveyRepository.FindSingleProjectedAsync<PianoSurveyDetailsModel>(
+                s => s.Id == surveyId, hasTrackings: false);
+
+        if (survey is null)
+        {
+            throw new NotFoundException("Survey not found");
+        }
+
+        return survey;
     }
 
     public async Task<PianoSurveyDetailsModel> CreatePianoSurveyAnswers(Guid surveyId,

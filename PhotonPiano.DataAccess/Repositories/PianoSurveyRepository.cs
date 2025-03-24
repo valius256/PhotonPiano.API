@@ -18,6 +18,7 @@ public class PianoSurveyRepository : GenericRepository<PianoSurvey>, IPianoSurve
     {
         return await _context.PianoSurveys
             .Include(ps => ps.PianoSurveyQuestions)
-            .SingleOrDefaultAsync(ps => ps.Id == id);
+            .ThenInclude(ps => ps.Question)
+            .FirstOrDefaultAsync(ps => ps.Id == id);
     }
 }

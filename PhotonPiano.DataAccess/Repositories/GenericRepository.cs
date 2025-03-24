@@ -325,4 +325,18 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         // Paginate and return results
         return query;
     }
+    
+    public void Detach(T entity)
+    {
+        var entry = _context.Entry(entity);
+        if (entry != null)
+        {
+            entry.State = EntityState.Detached;
+        }
+    }
+    
+    public void ClearChangeTracker()
+    {
+        _context.ChangeTracker.Clear();
+    }
 }

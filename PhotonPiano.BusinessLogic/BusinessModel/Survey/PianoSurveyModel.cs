@@ -15,4 +15,6 @@ public record PianoSurveyModel : BaseModel
     public int? MinAge { get; init; }
 
     public int? MaxAge { get; init; }
+
+    public bool IsEntranceSurvey { get; set; } = false;
 }

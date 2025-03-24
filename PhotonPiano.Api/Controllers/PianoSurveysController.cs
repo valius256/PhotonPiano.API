@@ -42,6 +42,13 @@ namespace PhotonPiano.Api.Controllers
             return await _serviceFactory.PianoSurveyService.GetSurveyDetails(id, base.CurrentAccount!);
         }
 
+        [HttpGet("/entrance-survey")]
+        [EndpointDescription("Get entrance survey")]
+        public async Task<ActionResult<PianoSurveyDetailsModel>> GetEntranceSurveyInfo()
+        {
+            return await _serviceFactory.PianoSurveyService.GetEntranceSurvey();
+        }
+
         [HttpPost]
         [FirebaseAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create piano survey")]

@@ -1,4 +1,5 @@
-﻿using PhotonPiano.DataAccess.Models.Enum;
+﻿using PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Survey;
 
@@ -11,4 +12,6 @@ public record UpdatePianoSurveyModel
     public RecordStatus? RecordStatus { get; init; }
     
     public bool? IsEntranceSurvey { get; init; }
+    
+    public HashSet<UpdateSurveyQuestionInSurveyModel> Questions { get; init; } = [];
 }

@@ -52,6 +52,10 @@ namespace PhotonPiano.DataAccess.Migrations
                     {
                         Guid.NewGuid(), "Cho phép học vượt level",5, "1",
                         new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
+                    },
+                    {
+                        Guid.NewGuid(), "Bài khảo sát đầu vào",0, null,
+                        new DateTime(2025, 3, 11, 16, 25, 36, 433, DateTimeKind.Utc).AddTicks(4189), null, 1, 3, null
                     }
                 });
         }

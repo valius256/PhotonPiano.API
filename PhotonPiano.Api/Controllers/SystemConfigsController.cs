@@ -65,5 +65,22 @@ public class SystemConfigsController : BaseController
         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
         return Ok(result);
     }
+    
+    [HttpGet("cancel-slot-reason")]
+    [EndpointDescription("Get system configs of cancel slot reason")]
+    public async Task<ActionResult> GetSystemConfigsOfCancelSlotReason()
+    {
+        var cacheKey = "CancelSlotReason";
+        var cacheValue = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigModel>(cacheKey);
+        if (cacheValue != null)
+        {
+            return Ok(cacheValue);
+        }
+
+        var result = await _serviceFactory.SystemConfigService.GetConfig("Lý do hủy tiết");
+        
+        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
+        return Ok(result);
+    }
 
 }

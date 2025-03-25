@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -82,5 +83,23 @@ public class SystemConfigService : ISystemConfigService
         }
 
         return null;
+    }
+
+    public async Task<SystemConfigsModel> GetSystemConfigs(string name)
+    {
+        var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == name);
+        if (config is null) throw new NotFoundException("Config not found");
+
+        List<string>? configValues = null;
+        if (!string.IsNullOrEmpty(config.ConfigValue))
+        {
+            configValues = JsonConvert.DeserializeObject<List<string>>(config.ConfigValue);
+
+        }
+        
+        var configModel = config.Adapt<SystemConfigsModel>();
+        configModel.ConfigValue = configValues;
+
+        return configModel;
     }
 }

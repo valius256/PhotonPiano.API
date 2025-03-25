@@ -10,8 +10,8 @@ public record CreateSurveyQuestionModel
     public required string QuestionContent { get; init; }
     public List<string> Options { get; init; } = [];
     
-    public int OrderIndex { get; init; }
-    public Guid SurveyId { get; init; }
+    public int? OrderIndex { get; init; }
+    public Guid? SurveyId { get; init; }
 
     public bool IsRequired { get; init; } = true;
 

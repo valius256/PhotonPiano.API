@@ -62,35 +62,38 @@ public class SurveyQuestionService : ISurveyQuestionService
                 throw new BadRequestException("Options can't be empty for this question type");
             }
 
-            var minPianoKeywordFrequencyInOptionsConfig =
-                await _serviceFactory.SystemConfigService.GetConfig("Số lần xuất hiện từ piano trong câu trả lời");
+            // var minPianoKeywordFrequencyInOptionsConfig =
+            //     await _serviceFactory.SystemConfigService.GetConfig("Số lần xuất hiện từ piano trong câu trả lời");
+            //
+            // int minPianoKeywordFrequencyInOptions =
+            //     Convert.ToInt32(minPianoKeywordFrequencyInOptionsConfig.ConfigValue);
+            //
+            // if (createModel.Options.Count(o => o.ToLower().Contains("piano")) < minPianoKeywordFrequencyInOptions)
+            // {
+            //     throw new BadRequestException(
+            //         $"Options must include piano keyword for at least {minPianoKeywordFrequencyInOptions} times");
+            // }
+        }
 
-            int minPianoKeywordFrequencyInOptions =
-                Convert.ToInt32(minPianoKeywordFrequencyInOptionsConfig.ConfigValue);
+        if (createModel.SurveyId.HasValue)
+        {
+            var survey =
+                await _unitOfWork.PianoSurveyRepository.GetPianoSurveyWithQuestionsAsync(createModel.SurveyId.Value);
 
-            if (createModel.Options.Count(o => o.ToLower().Contains("piano")) < minPianoKeywordFrequencyInOptions)
+            if (survey is null)
             {
-                throw new BadRequestException(
-                    $"Options must include piano keyword for at least {minPianoKeywordFrequencyInOptions} times");
+                throw new NotFoundException("Survey not found");
             }
-        }
 
-        var survey =
-            await _unitOfWork.PianoSurveyRepository.GetPianoSurveyWithQuestionsAsync(createModel.SurveyId);
+            if (survey.PianoSurveyQuestions.Any(q => q.OrderIndex == createModel.OrderIndex))
+            {
+                throw new ConflictException("This order index is already in use");
+            }
 
-        if (survey is null)
-        {
-            throw new NotFoundException("Survey not found");
-        }
-
-        if (survey.PianoSurveyQuestions.Any(q => q.OrderIndex == createModel.OrderIndex))
-        {
-            throw new ConflictException("This order index is already in use");
-        }
-
-        if (createModel.MinAge < survey.MinAge || createModel.MaxAge > survey.MaxAge)
-        {
-            throw new BadRequestException("This question has invalid age for this survey");
+            if (createModel.MinAge < survey.MinAge || createModel.MaxAge > survey.MaxAge)
+            {
+                throw new BadRequestException("This question has invalid age for this survey");
+            }
         }
 
         var question = createModel.Adapt<SurveyQuestion>();
@@ -103,14 +106,18 @@ public class SurveyQuestionService : ISurveyQuestionService
 
             await _unitOfWork.SaveChangesAsync();
 
-            //Add to PianoSurveyQuestion table
-            await _unitOfWork.PianoSurveyQuestionRepository.AddAsync(new PianoSurveyQuestion
+
+            if (createModel.SurveyId.HasValue && createModel.OrderIndex.HasValue)
             {
-                QuestionId = question.Id,
-                SurveyId = survey.Id,
-                OrderIndex = createModel.OrderIndex,
-                IsRequired = createModel.IsRequired
-            });
+                //Add to PianoSurveyQuestion table
+                await _unitOfWork.PianoSurveyQuestionRepository.AddAsync(new PianoSurveyQuestion
+                {
+                    QuestionId = question.Id,
+                    SurveyId = createModel.SurveyId.Value,
+                    OrderIndex = createModel.OrderIndex.Value,
+                    IsRequired = createModel.IsRequired
+                });
+            }
         });
 
         return question.Adapt<SurveyQuestionModel>();

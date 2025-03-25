@@ -15,18 +15,17 @@ public record CreateSurveyQuestionRequest : IValidatableObject
 
     public List<string> Options { get; init; } = [];
     
-    [Required]
     [Range(0, int.MaxValue, ErrorMessage = "Order index must be >= 0")]
-    public int OrderIndex { get; init; }
+    public int? OrderIndex { get; init; }
 
-    public Guid SurveyId { get; init; }
+    public Guid? SurveyId { get; init; }
     
     public bool IsRequired { get; init; } = true;
     
     public bool AllowOtherAnswer { get; init; } = true;
     
     [Range(1, int.MaxValue, ErrorMessage = "Min age must >= 1")]
-    public int MinAge { get; init; }
+    public int? MinAge { get; init; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Max age must >= 1")]
     public int? MaxAge { get; init; }

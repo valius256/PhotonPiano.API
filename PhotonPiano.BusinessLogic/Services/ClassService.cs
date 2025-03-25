@@ -535,7 +535,7 @@ public class ClassService : IClassService
         string oldTeacherMessage = $"Bạn đã không còn phụ trách lớp {classInfo.Name} nữa.";
         string? newTeacherMessage = null;
 
-        if (model.LevelId.HasValue)
+        if (model.LevelId.HasValue && model.LevelId.Value != classInfo.LevelId)
         {
             if (await _unitOfWork.StudentClassRepository.AnyAsync(sc => sc.ClassId == classInfo.Id))
             {

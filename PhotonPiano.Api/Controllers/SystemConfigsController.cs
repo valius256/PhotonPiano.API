@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
-using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -61,11 +59,11 @@ public class SystemConfigsController : BaseController
         {
             result.ConfigValue = DateTime.UtcNow.Date.AddDays(1).AddTicks(-1).ToString("o"); // ISO 8601 format
         }
-        
+
         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
         return Ok(result);
     }
-    
+
     [HttpGet("cancel-slot-reason")]
     [EndpointDescription("Get system configs of cancel slot reason")]
     public async Task<ActionResult> GetSystemConfigsOfCancelSlotReason()
@@ -78,7 +76,7 @@ public class SystemConfigsController : BaseController
         }
 
         var result = await _serviceFactory.SystemConfigService.GetConfig("Lý do hủy tiết");
-        
+
         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
         return Ok(result);
     }

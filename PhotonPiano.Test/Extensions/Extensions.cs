@@ -1,10 +1,10 @@
-﻿using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.DataAccess.Models;
+using System.Text;
 
 namespace PhotonPiano.Test.Extensions;
 

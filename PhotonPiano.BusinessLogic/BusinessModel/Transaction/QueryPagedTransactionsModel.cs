@@ -12,9 +12,9 @@ public record QueryPagedTransactionsModel : QueryPagedModel
     public string? Code { get; init; }
 
     public Guid? Id { get; init; }
-    
+
     public List<PaymentStatus> PaymentStatuses { get; init; } = [];
-    
+
     public List<PaymentMethod> PaymentMethods { get; set; } = [];
 
     public void Deconstruct(out DateTime? startDate, out DateTime? endDate, out string? code, out Guid? id, out List<PaymentStatus> paymentStatuses, out List<PaymentMethod> paymentMethods)

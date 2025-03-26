@@ -1,13 +1,9 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using PhotonPiano.Api.Attributes;
-using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Scheduler;
-using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.Api.Responses.Scheduler;
 using PhotonPiano.Api.Responses.Slot;
-using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -56,7 +52,7 @@ public class SchedulerController : BaseController
         var result = await _serviceFactory.SlotService.GetAttendanceStatusAsync(slotId);
         return Ok(result.Adapt<List<StudentAttendanceResponse>>());
     }
-    
+
 
     [HttpGet("slot/{id}")]
     [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
@@ -64,7 +60,7 @@ public class SchedulerController : BaseController
     public async Task<ActionResult> GetSlotById([FromRoute] Guid id)
     {
         var result = await _serviceFactory.SlotService.GetSLotDetailById(id, CurrentAccount);
-        return Ok(result.Adapt<SlotDetailModel>());
+            return Ok(result.Adapt<SlotDetailModel>());
     }
 
     [HttpPost("update-attendance")]
@@ -111,7 +107,7 @@ public class SchedulerController : BaseController
 
         return NoContent();
     }
-        
+
     [HttpPost("blank-slot")]
     [FirebaseAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Get All Blank Class and Shift in current Week")]
@@ -120,7 +116,7 @@ public class SchedulerController : BaseController
         var result = await _serviceFactory.SlotService.GetAllBlankSlotInWeeks(request.StartDate, request.EndDate);
         return Ok(result);
     }
-    
+
     [HttpPost("cancel-slot")]
     [FirebaseAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Cancel a slot")]
@@ -129,15 +125,15 @@ public class SchedulerController : BaseController
         await _serviceFactory.SlotService.CancelSlot(request.Adapt<CancelSlotModel>(), CurrentUserFirebaseId);
         return NoContent();
     }
-    
+
     [HttpPost("public-new-slot")]
     [FirebaseAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Public a new slot")]
     public async Task<ActionResult> PublicNewSlot([FromBody] PublicNewSlotRequest request)
     {
-        var result =  await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentUserFirebaseId);
+        var result = await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentUserFirebaseId);
         return Ok(result);
     }
-    
-    
+
+
 }

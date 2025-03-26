@@ -72,7 +72,7 @@ public class AccountsController : BaseController
         string idToken = bearerToken.Replace("Bearer ", "");
         await _serviceFactory.AccountService.UpdateAccount(request.Adapt<UpdateAccountModel>(),
             base.CurrentAccount!, idToken);
-        
+
         return NoContent();
     }
 

@@ -9,7 +9,7 @@ namespace PhotonPiano.DataAccess.Models.Entity
 
         public string Description { get; set; } = string.Empty;
 
-        public List<string> SkillsEarned {  get; set; } = new List<string>();
+        public List<string> SkillsEarned { get; set; } = new List<string>();
 
         public int SlotPerWeek { get; set; }
 

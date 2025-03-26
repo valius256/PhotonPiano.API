@@ -1,5 +1,5 @@
-using System.ComponentModel;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel;
 
 namespace PhotonPiano.Api.Requests.Auth;
 

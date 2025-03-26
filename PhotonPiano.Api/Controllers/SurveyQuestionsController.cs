@@ -63,7 +63,7 @@ namespace PhotonPiano.Api.Controllers
             await _serviceFactory.ISurveyQuestionService.UpdateSurveyQuestion(id,
                 request.Adapt<UpdateSurveyQuestionModel>(),
                 base.CurrentAccount!);
-            
+
             return NoContent();
         }
 
@@ -73,7 +73,7 @@ namespace PhotonPiano.Api.Controllers
         public async Task<ActionResult> DeleteSurveyQuestion([FromRoute] Guid id)
         {
             await _serviceFactory.ISurveyQuestionService.DeleteSurveyQuestion(id, base.CurrentAccount!);
-            
+
             return NoContent();
         }
     }

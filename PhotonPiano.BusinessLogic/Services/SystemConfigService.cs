@@ -96,7 +96,7 @@ public class SystemConfigService : ISystemConfigService
             configValues = JsonConvert.DeserializeObject<List<string>>(config.ConfigValue);
 
         }
-        
+
         var configModel = config.Adapt<SystemConfigsModel>();
         configModel.ConfigValue = configValues;
 

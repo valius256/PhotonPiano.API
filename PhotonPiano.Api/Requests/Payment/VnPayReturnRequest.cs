@@ -18,5 +18,5 @@ public record VnPayReturnRequest
 
     [FromQuery(Name = "vnp_SecureHash")]
     public required string VnpSecureHash { get; init; } // Secure Hash to validate response
-    
+
 }

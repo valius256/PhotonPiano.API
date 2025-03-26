@@ -24,7 +24,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
         }
 
         public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc,
-            out List<ClassStatus> classStatus, out List<Guid> level, out string? keyword,  out bool? isScorePublished,
+            out List<ClassStatus> classStatus, out List<Guid> level, out string? keyword, out bool? isScorePublished,
             out string? teacherId, out string? studentId)
         {
             page = Page;

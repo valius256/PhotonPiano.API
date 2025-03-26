@@ -8,7 +8,7 @@ public class SurveyQuestion : BaseEntityWithId
     //
     public required string CreatedById { get; set; }
     public string? UpdatedById { get; set; }
-    
+
     // reference 
     public virtual Account CreatedBy { get; set; } = default!;
     public virtual Account UpdatedBy { get; set; } = default!;

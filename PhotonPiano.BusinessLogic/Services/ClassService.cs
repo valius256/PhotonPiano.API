@@ -1,12 +1,10 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
-using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -42,12 +40,13 @@ public class ClassService : IClassService
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classDetail.LevelId)
             ?? throw new NotFoundException("Level not found");
 
-        return classDetail with { 
+        return classDetail with
+        {
             MinimumStudents = minStudents,
             Capacity = maxStudents,
             InstructorName = classDetail.Instructor?.FullName,
             RequiredSlots = level.TotalSlots,
-            StudentNumber = classDetail.StudentClasses.Count,     
+            StudentNumber = classDetail.StudentClasses.Count,
             SlotsPerWeek = level.SlotPerWeek,
             PricePerSlots = level.PricePerSlot,
             TotalSlots = classDetail.Slots.Count,
@@ -78,7 +77,7 @@ public class ClassService : IClassService
         };
     }
 
-    
+
     public async Task<List<ClassModel>> GetClassByUserFirebaseId(string userFirebaseId, Role role)
     {
         List<ClassModel> result;
@@ -222,7 +221,7 @@ public class ClassService : IClassService
                 numberOfClasses = (int)Math.Floor(studentsOfLevel.Count * 1.0 / maxStudents);
             }
 
-            
+
             //Great! With number of students each class and number of classes, we can easily fill in students
             for (var i = 0; i < numberOfClasses; i++)
             {
@@ -402,7 +401,7 @@ public class ClassService : IClassService
             var capacity =
                 int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
 
-            
+
 
 
             return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with
@@ -571,7 +570,7 @@ public class ClassService : IClassService
 
             //Check instructor conflicts..
             var slotOfTeacher = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class)
-                .Where(s => s.Class.InstructorId == model.InstructorId 
+                .Where(s => s.Class.InstructorId == model.InstructorId
                     && s.Class.Status != ClassStatus.Finished
                     && s.ClassId != model.Id).ToListAsync();
 
@@ -579,7 +578,7 @@ public class ClassService : IClassService
 
             foreach (var teacherSlot in slotOfTeacher)
             {
-                foreach(var classSlot in slotOfClass)
+                foreach (var classSlot in slotOfClass)
                 {
                     if (teacherSlot.Shift == classSlot.Shift && teacherSlot.Date == classSlot.Date)
                     {
@@ -593,7 +592,7 @@ public class ClassService : IClassService
         }
         classInfo.UpdateById = accountFirebaseId;
         classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
-        
+
         await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
         await _unitOfWork.SaveChangesAsync();
 
@@ -605,11 +604,12 @@ public class ClassService : IClassService
                 if (newTeacherMessage != null)
                 {
                     await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, newTeacherMessage, "");
-                } else
+                }
+                else
                 {
                     await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, message, "");
                 }
-            }           
+            }
             if (oldTeacherId != null)
             {
                 await _serviceFactory.NotificationService.SendNotificationAsync(oldTeacherId, oldTeacherMessage, "");
@@ -709,12 +709,12 @@ public class ClassService : IClassService
     {
         var classDetail = await GetClassDetailById(classId);
         var classInfo = (await _unitOfWork.ClassRepository.GetByIdAsync(classId));
-        
+
         if (classDetail is null || classInfo is null)
         {
             throw new NotFoundException("Class not found");
         }
-        
+
         if (classDetail.IsPublic)
         {
             throw new BadRequestException("Class is already announced!");
@@ -807,7 +807,7 @@ public class ClassService : IClassService
         {
             AllowedShifts = [scheduleClassModel.Shift],
             StartWeek = scheduleClassModel.StartWeek,
-            
+
         }, dayOffs, scheduleClassModel.DayOfWeeks, level));
 
         var mappedSlots = slots.Select(s => new Slot
@@ -865,7 +865,7 @@ public class ClassService : IClassService
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
                 $"Lớp {classDetail.Name} đã cập nhật lịch học mới. Vui lòng kiểm tra lại. Chúc bạn đạt được nhiều thành công!", "");
         }
-        
+
     }
 
     private async Task<(List<CreateSlotThroughArrangementModel>, Shift)> ScheduleAClassAutomatically(
@@ -914,8 +914,8 @@ public class ClassService : IClassService
                 throw new ConflictException(
                     "Unable to complete arranging classes! No available rooms found! Consider different start week or change the shift range");
         }
-        
-        
+
+
 
         //Pick a room
         var room = availableRooms[r.Next(availableRooms.Count - 1)];

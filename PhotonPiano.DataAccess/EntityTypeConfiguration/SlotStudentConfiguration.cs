@@ -10,10 +10,10 @@ public class SlotStudentConfiguration : IEntityTypeConfiguration<SlotStudent>
     public void Configure(EntityTypeBuilder<SlotStudent> builder)
     {
         builder.HasKey(x => new
-            {
-                x.SlotId,
-                x.StudentFirebaseId
-            }
+        {
+            x.SlotId,
+            x.StudentFirebaseId
+        }
         );
 
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);

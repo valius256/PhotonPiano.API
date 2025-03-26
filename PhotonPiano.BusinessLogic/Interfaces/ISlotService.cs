@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.DataAccess.Models.Enum;
+using System.ComponentModel.DataAnnotations;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
@@ -17,7 +17,7 @@ public interface ISlotService
     Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, [Required] AccountModel accountModel);
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId);
-    
+
     Task CronAutoChangeSlotStatus();
 
     Task<SlotModel> CreateSlot(CreateSlotModel createSlotModel, string accountFirebaseId);
@@ -27,8 +27,8 @@ public interface ISlotService
     Task DeleteSlot(Guid slotId, string accountFirebaseId);
 
     Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate);
-    
+
     Task<bool> CancelSlot(CancelSlotModel model, string accountFirebaseId);
-    
+
     Task<SlotDetailModel> PublicNewSlot(PublicNewSlotModel model, string accountFirebaseId);
 }

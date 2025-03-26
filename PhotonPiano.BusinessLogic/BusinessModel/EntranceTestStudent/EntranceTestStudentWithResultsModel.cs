@@ -9,6 +9,6 @@ public record EntranceTestStudentWithResultsModel : EntranceTestStudentModel
     public ICollection<EntranceTestResultModel> EntranceTestResults { get; init; } = [];
 
     public LevelModel? Level { get; init; }
-    
+
     public AccountModel Student { get; init; } = default!;
 }

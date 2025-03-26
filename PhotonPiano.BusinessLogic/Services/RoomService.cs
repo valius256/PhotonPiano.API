@@ -57,7 +57,7 @@ public class RoomService : IRoomService
 
         var bookRoomIdsForEntranceTest = await _unitOfWork.EntranceTestRepository.Entities
             .Where(et => dates.Contains(et.Date) && et.Shift == shift)
-            .Select(et => (Guid?) et.RoomId)
+            .Select(et => (Guid?)et.RoomId)
             .Distinct()
             .ToListAsync();
 

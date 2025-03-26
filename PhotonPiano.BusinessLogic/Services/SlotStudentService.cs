@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -25,10 +26,10 @@ public class SlotStudentService : ISlotStudentService
 
         if (slotEntity.Class.InstructorId != teacherId)
             throw new IllegalArgumentException("You are not allowed to update attendance for this slot.");
-        
-        if(model.SlotStudentInfoRequests.Count == 0 || model.SlotStudentInfoRequests == null)
+
+        if (model.SlotStudentInfoRequests.Count == 0 || model.SlotStudentInfoRequests == null)
             throw new IllegalArgumentException("Student list sending cannot be empty.");
-        
+
         if (slotEntity == null) throw new IllegalArgumentException("The specified slot does not exist.");
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
@@ -61,7 +62,10 @@ public class SlotStudentService : ISlotStudentService
             slotStudent.AttendanceComment = studentModel.AttendanceComment;
             slotStudent.PedalComment = studentModel.PedalComment;
             slotStudent.FingerNoteComment = studentModel.FingerNoteComment;
-            slotStudent.GestureUrl = studentModel.GestureUrl;
+            if (studentModel.GestureUrls != null)
+            {
+                slotStudent.GestureUrl = JsonConvert.SerializeObject(studentModel.GestureUrls);
+            }
             slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
             await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
@@ -75,7 +79,7 @@ public class SlotStudentService : ISlotStudentService
 
         return true;
     }
-    
+
     private string ConvertAttendanceStatusToVietnamese(AttendanceStatus status)
     {
         return status switch

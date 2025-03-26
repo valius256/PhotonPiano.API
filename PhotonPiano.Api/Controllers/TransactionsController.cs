@@ -19,7 +19,7 @@ namespace PhotonPiano.Api.Controllers
         {
             _serviceFactory = serviceFactory;
         }
-        
+
         [HttpGet]
         [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
         [EndpointDescription("Get transactions with paging")]
@@ -28,9 +28,9 @@ namespace PhotonPiano.Api.Controllers
             var pagedResult =
                 await _serviceFactory.TransactionService.GetPagedTransactions(
                     request.Adapt<QueryPagedTransactionsModel>(), base.CurrentAccount!);
-            
+
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
-            
+
             return pagedResult.Items;
         }
     }

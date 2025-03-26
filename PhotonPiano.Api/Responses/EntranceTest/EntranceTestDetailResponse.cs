@@ -1,5 +1,4 @@
 using PhotonPiano.Api.Responses.Account;
-using PhotonPiano.Api.Responses.EntranceTestStudent;
 using PhotonPiano.Api.Responses.Room;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 

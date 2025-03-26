@@ -36,7 +36,7 @@ public class PostgresSqlConfiguration
                     context.Database.ExecuteSqlRaw(
                         "UPDATE \"Account\" SET \"CurrentClassId\" = (SELECT \"ClassId\" FROM \"StudentClass\" WHERE \"StudentClass\".\"StudentFirebaseId\" = \"Account\".\"AccountFirebaseId\" LIMIT 1) WHERE \"Role\" = 1"
                     );
-                    
+
                     // do here to update level 
 
                     context.Database.ExecuteSqlRaw(GetLevelUpdateQuery(Guid.Parse("8fb54d6e-315c-470d-825e-91b8314134f7"), 0.0m, 0.0m));

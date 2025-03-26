@@ -1,45 +1,41 @@
-﻿using System.Text;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-using PhotonPiano.DataAccess.Models.Entity;
-using PhotonPiano.DataAccess.Models.Enum;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace PhotonPiano.DataAccess.SeedData;
 
 public static class ModelBuilderExtensions
 {
     public static void Seed(this ModelBuilder modelBuilder)
-     {
-    //     static async Task<string> GetFirebaseIdAsync(string email, string password)
-    //     {
-    //         using var client = new HttpClient();
-    //
-    //         var url =
-    //             "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAgjNobHW7j13vXDbjd68ZmcGamsf26Z8c";
-    //
-    //         var jsonRequest = JsonConvert.SerializeObject(new
-    //         {
-    //             email,
-    //             password,
-    //             returnSecureToken = true
-    //         });
-    //
-    //         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-    //
-    //         var response = await client.PostAsync(url, content);
-    //
-    //         if (!response.IsSuccessStatusCode)
-    //         {
-    //             var errorResponse = await response.Content.ReadAsStringAsync();
-    //             throw new Exception("Error occurred while signing in to Firebase account: " + errorResponse);
-    //         }
-    //
-    //         var jsonResponse = await response.Content.ReadAsStringAsync();
-    //         var responseObject = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
-    //
-    //         return responseObject.localId;
-    //     }
-    //     var r = new Random();
+    {
+        //     static async Task<string> GetFirebaseIdAsync(string email, string password)
+        //     {
+        //         using var client = new HttpClient();
+        //
+        //         var url =
+        //             "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAgjNobHW7j13vXDbjd68ZmcGamsf26Z8c";
+        //
+        //         var jsonRequest = JsonConvert.SerializeObject(new
+        //         {
+        //             email,
+        //             password,
+        //             returnSecureToken = true
+        //         });
+        //
+        //         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+        //
+        //         var response = await client.PostAsync(url, content);
+        //
+        //         if (!response.IsSuccessStatusCode)
+        //         {
+        //             var errorResponse = await response.Content.ReadAsStringAsync();
+        //             throw new Exception("Error occurred while signing in to Firebase account: " + errorResponse);
+        //         }
+        //
+        //         var jsonResponse = await response.Content.ReadAsStringAsync();
+        //         var responseObject = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
+        //
+        //         return responseObject.localId;
+        //     }
+        //     var r = new Random();
 
         // #region Level Model
         // Guid level1 = Guid.NewGuid();
@@ -978,6 +974,6 @@ public static class ModelBuilderExtensions
         //modelBuilder.Entity<DayOff>().HasData(dayOffs);
 
         //#endregion
-        
+
     }
 }

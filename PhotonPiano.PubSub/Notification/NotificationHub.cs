@@ -5,7 +5,7 @@ namespace PhotonPiano.PubSub.Notification;
 public class NotificationHub : Hub
 {
     private static readonly HashSet<string> _connectedClients = new();
-    
+
     public async Task SendNotification(string user, string message)
     {
         await Clients.Group(user).SendAsync("ReceiveNotification", message);

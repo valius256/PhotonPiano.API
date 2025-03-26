@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
-using PhotonPiano.DataAccess.Models.Enum;
 
 #nullable disable
 
@@ -12,13 +11,13 @@ namespace PhotonPiano.DataAccess.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.InsertData(
-                table: "SystemConfig",  
-                columns: new[] { "Id", "ConfigName", "ConfigValue", "Role" , "CreatedAt", "RecordStatus" }, 
-                values: new object[] 
+                table: "SystemConfig",
+                columns: new[] { "Id", "ConfigName", "ConfigValue", "Role", "CreatedAt", "RecordStatus" },
+                values: new object[]
                 {
                     Guid.NewGuid(),
-                    "Lý do hủy tiết", 
-                    "[\"Giáo viên bận\", \"Diễn tập phòng cháy, chữa cháy\", \"Phòng bị hỏng\"]", 
+                    "Lý do hủy tiết",
+                    "[\"Giáo viên bận\", \"Diễn tập phòng cháy, chữa cháy\", \"Phòng bị hỏng\"]",
                     3,
                     DateTime.UtcNow.AddHours(7),
                     1

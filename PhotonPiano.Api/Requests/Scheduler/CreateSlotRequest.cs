@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using PhotonPiano.DataAccess.Models.Enum;
+﻿using PhotonPiano.DataAccess.Models.Enum;
 using System.ComponentModel.DataAnnotations;
 
 namespace PhotonPiano.Api.Requests.Scheduler

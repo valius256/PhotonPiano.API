@@ -112,7 +112,7 @@ public class SchedulerService : ISchedulerService
                 if (existingTest.RoomId == entranceTest.RoomId && existingTest.Date == entranceTest.Date)
                 {
                     usedSlots.Add(new TimeSlot
-                        { Date = existingTest.Date.ToDateTime(TimeOnly.MinValue), Shift = existingTest.Shift });
+                    { Date = existingTest.Date.ToDateTime(TimeOnly.MinValue), Shift = existingTest.Shift });
                 }
             }
 

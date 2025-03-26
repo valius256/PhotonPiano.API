@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
 
 namespace PhotonPiano.PubSub.Pubsub;
 

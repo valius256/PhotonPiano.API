@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using Mapster;
+﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
@@ -9,7 +8,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
-using static System.Reflection.Metadata.BlobBuilder;
+using System.Linq.Expressions;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -18,7 +17,7 @@ public class SlotService : ISlotService
     private readonly IServiceFactory _serviceFactory;
     private readonly IUnitOfWork _unitOfWork;
     private const int DefaultCacheDurationMinutes = 1440; // Cache 1 ngày (24 giờ)
-    
+
     public SlotService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork)
     {
         _serviceFactory = serviceFactory;
@@ -80,7 +79,7 @@ public class SlotService : ISlotService
 
     public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
     {
-  
+
         // Tạo danh sách các ClassId cần truy vấn
         List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
 
@@ -104,7 +103,7 @@ public class SlotService : ISlotService
             var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(
                 s => s.ClassId == classId &&
                      s.Date >= slotModel.StartTime &&
-                     s.Date < slotModel.EndTime 
+                     s.Date < slotModel.EndTime
             );
 
             // Lưu vào cache
@@ -178,11 +177,11 @@ public class SlotService : ISlotService
             await _serviceFactory.RedisCacheService.DeleteAsync(cacheKey);
         }
     }
-    
+
     public async Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId)
     {
         var slot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(s => s.Id == slotId);
-        if (slot == null) throw new NotFoundException("Slot not found");
+        if (slot is null) throw new NotFoundException("Slot not found");
 
         var attendanceStatuses = slot.SlotStudents.Select(ss => new StudentAttendanceModel
         {
@@ -192,7 +191,7 @@ public class SlotService : ISlotService
         return attendanceStatuses;
     }
 
-  public async Task CronAutoChangeSlotStatus()
+    public async Task CronAutoChangeSlotStatus()
     {
         var currentDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var currentTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
@@ -239,7 +238,7 @@ public class SlotService : ISlotService
                 //If this is the last slot - change the class status to Finish
                 if (classSlotGroups.TryGetValue(slot.ClassId, out var classSlots))
                 {
-                    if (slot.Id == classSlots.Last.Id) 
+                    if (slot.Id == classSlots.Last.Id)
                     {
                         slot.Class.Status = ClassStatus.Finished;
                         classesToUpdate.Add(slot.Class);
@@ -253,7 +252,7 @@ public class SlotService : ISlotService
                 //If this is the first slot - change the class status to OnGoing
                 if (classSlotGroups.TryGetValue(slot.ClassId, out var classSlots))
                 {
-                    if (slot.Id == classSlots.First.Id) 
+                    if (slot.Id == classSlots.First.Id)
                     {
                         slot.Class.Status = ClassStatus.Ongoing;
                         classesToUpdate.Add(slot.Class);
@@ -275,7 +274,7 @@ public class SlotService : ISlotService
     public async Task<SlotModel> CreateSlot(CreateSlotModel createSlotModel, string accountFirebaseId)
     {
         var slotStartTime = GetShiftStartTime(createSlotModel.Shift);
-        var slotStartDate = new DateTime(createSlotModel.Date.Year,createSlotModel.Date.Month,createSlotModel.Date.Day,slotStartTime.Hour,slotStartTime.Minute,0);
+        var slotStartDate = new DateTime(createSlotModel.Date.Year, createSlotModel.Date.Month, createSlotModel.Date.Day, slotStartTime.Hour, slotStartTime.Minute, 0);
         if (slotStartDate <= DateTime.UtcNow.AddHours(7))
         {
             throw new BadRequestException("Can not add slots in the past");
@@ -312,13 +311,13 @@ public class SlotService : ISlotService
         }
 
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
-        if(dayOffs.Any(dayOff =>
+        if (dayOffs.Any(dayOff =>
                 dayOff.StartTime <= slotStartDate &&
                 dayOff.EndTime >= slotStartDate))
         {
             throw new ConflictException("Can not add slot in day offs period");
         }
-        
+
         var slot = createSlotModel.Adapt<Slot>();
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -382,9 +381,9 @@ public class SlotService : ISlotService
         }
         var slotStartTime = GetShiftStartTime(updateSlotModel.Shift ?? slot.Shift);
         var slotStartDate = new DateTime(
-            updateSlotModel.Date?.Year ?? slot.Date.Year, 
-            updateSlotModel.Date?.Month ?? slot.Date.Month, 
-            updateSlotModel.Date?.Day ?? slot.Date.Day, 
+            updateSlotModel.Date?.Year ?? slot.Date.Year,
+            updateSlotModel.Date?.Month ?? slot.Date.Month,
+            updateSlotModel.Date?.Day ?? slot.Date.Day,
             slotStartTime.Hour,
             slotStartTime.Minute, 0);
 
@@ -396,7 +395,7 @@ public class SlotService : ISlotService
         var notiMessage = "";
         if (updateSlotModel.RoomId != null)
         {
-            var oldRoom = slot.RoomId != null ? (await  _unitOfWork.RoomRepository.GetByIdAsync(slot.RoomId.Value)) : null;
+            var oldRoom = slot.RoomId != null ? (await _unitOfWork.RoomRepository.GetByIdAsync(slot.RoomId.Value)) : null;
             var room = await _unitOfWork.RoomRepository.GetByIdAsync(updateSlotModel.RoomId.Value);
             if (room is null)
             {
@@ -437,11 +436,11 @@ public class SlotService : ISlotService
 
 
         //Notification
-        
+
         var classDetail = await _unitOfWork.ClassRepository.Entities.Include(c => c.StudentClasses)
             .FirstOrDefaultAsync(c => c.Id == slot.ClassId);
 
-        
+
         if (classDetail != null && classDetail.IsPublic)
         {
             if (updateSlotModel.Reason != null)
@@ -491,7 +490,7 @@ public class SlotService : ISlotService
             await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(slotStudents);
             await _unitOfWork.SlotRepository.UpdateAsync(slot);
             await _unitOfWork.SaveChangesAsync();
-            
+
         });
         await _serviceFactory.ClassService.UpdateClassStartTime(slot.ClassId);
 
@@ -510,7 +509,7 @@ public class SlotService : ISlotService
         }
 
     }
-    
+
     public async Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate)
     {
         var vietnamTime = DateTime.UtcNow.AddHours(7);
@@ -522,7 +521,7 @@ public class SlotService : ISlotService
 
         if (endDate == null)
         {
-            var futureDate = vietnamTime.AddDays(7); 
+            var futureDate = vietnamTime.AddDays(7);
             endDate = DateOnly.FromDateTime(futureDate);
         }
 
@@ -531,10 +530,10 @@ public class SlotService : ISlotService
 
         // Get all existing slots with rooms (without date filtering)
         var existingSlots = await _unitOfWork.SlotRepository.FindAsync(s => s.RoomId != null);
-        
+
         // Filter in memory to avoid PostgreSQL date conversion issues
-        var filteredSlots = existingSlots.Where(s => 
-            s.Date >= startDate.Value && 
+        var filteredSlots = existingSlots.Where(s =>
+            s.Date >= startDate.Value &&
             s.Date <= endDate.Value).ToList();
 
         var blankSlots = new List<BlankSlotModel>();
@@ -581,7 +580,7 @@ public class SlotService : ISlotService
                                 RoomId = room.Id,
                                 RoomName = room.Name
                             });
-                            
+
                             if (blankSlots.Count >= maxResults)
                                 return blankSlots;
                         }
@@ -589,14 +588,14 @@ public class SlotService : ISlotService
                 }
             }
         }
-        
+
         return blankSlots;
     }
 
     public async Task<bool> CancelSlot(CancelSlotModel model, string accountFirebaseId)
     {
         var slotInDb = await _unitOfWork.SlotRepository.FindFirstProjectedAsync<Slot>(s => s.Id == model.SlotId, hasTrackings: false);
-        
+
         if (slotInDb == null)
         {
             throw new NotFoundException("Slot not found");
@@ -606,29 +605,29 @@ public class SlotService : ISlotService
         {
             throw new IllegalArgumentException("Slot has already been cancelled");
         }
-        
+
         if (slotInDb.Status == SlotStatus.Finished)
         {
             throw new IllegalArgumentException("Can not cancel a finished slot");
         }
-        
+
         if (slotInDb.Status == SlotStatus.Ongoing)
         {
             throw new IllegalArgumentException("Can not cancel an ongoing slot");
         }
-        
+
         // mark slot to be canceled 
         slotInDb.Status = SlotStatus.Cancelled;
         slotInDb.SlotNote = model.CancelReason;
         slotInDb.UpdatedAt = DateTime.UtcNow.AddHours(7);
         slotInDb.CancelById = accountFirebaseId;
-        
-        
+
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.SlotRepository.UpdateAsync(slotInDb);
         });
-        
+
         // removed all slotstudent of that slo
         await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(ss => ss.SlotId == model.SlotId);
 
@@ -645,14 +644,14 @@ public class SlotService : ISlotService
         {
             throw new IllegalArgumentException("Room is closed");
         }
-        
+
         var isConflict = await _unitOfWork.SlotRepository.AnyAsync(s => s.RoomId == model.RoomId && s.Shift == model.Shift && s.Date == model.Date);
 
         if (isConflict)
         {
             throw new IllegalArgumentException("Room is already open for another class");
         }
-        
+
         // new slot in same class 
         var newSlot = new Slot
         {
@@ -663,14 +662,14 @@ public class SlotService : ISlotService
             Date = model.Date,
             Status = SlotStatus.NotStarted,
         };
-        
+
         var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == model.ClassId);
         var studentIds = studentClasses.Select(x => x.StudentFirebaseId).ToList();
 
         var numOfStudent = studentIds.Count;
-        
+
         var slotStudents = new List<SlotStudent>();
-        
+
         foreach (var studentId in studentIds)
         {
             slotStudents.Add(new SlotStudent
@@ -680,7 +679,7 @@ public class SlotService : ISlotService
                 CreatedById = accountFirebaseId,
             });
         }
-        
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.SlotRepository.AddAsync(newSlot);
@@ -703,7 +702,7 @@ public class SlotService : ISlotService
         );
 
         // await InvalidateCacheForClassAsync(newSlot.ClassId, newSlot.Date);
-    
+
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
         return await GetSLotDetailById(newSlot.Id);
 

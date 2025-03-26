@@ -10,21 +10,21 @@ public class SurveyQuestionConfiguration : IEntityTypeConfiguration<SurveyQuesti
     public void Configure(EntityTypeBuilder<SurveyQuestion> builder)
     {
         builder.HasKey(x => x.Id);
-        
+
         builder.HasQueryFilter(x => x.RecordStatus != RecordStatus.IsDeleted);
-        
+
         builder.HasMany(x => x.LearnerSurveys)
             .WithOne(x => x.SurveyQuestion)
             .HasForeignKey(x => x.SurveyQuestionId)
             .OnDelete(DeleteBehavior.NoAction)
             ;
-        
+
         builder.HasOne(x => x.CreatedBy)
             .WithMany(x => x.CreatedSurveyQuestions)
             .HasForeignKey(x => x.CreatedById)
             .OnDelete(DeleteBehavior.NoAction)
             ;
-        
+
         builder.HasOne(x => x.UpdatedBy)
             .WithMany(x => x.UpdatedSurveyQuestions)
             .HasForeignKey(x => x.UpdatedById)

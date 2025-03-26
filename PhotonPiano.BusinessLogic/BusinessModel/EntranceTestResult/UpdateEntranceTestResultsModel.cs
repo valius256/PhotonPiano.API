@@ -12,6 +12,6 @@ public record UpdateEntranceTestResultsModel
 public record UpdateEntranceTestScoreModel
 {
     public required Guid CriteriaId { get; init; }
-    
+
     public required decimal Score { get; init; }
 }

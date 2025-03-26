@@ -15,7 +15,7 @@ namespace PhotonPiano.DataAccess.Migrations
                 table: "EntranceTestResult",
                 type: "numeric",
                 nullable: true);
-            
+
         }
 
         /// <inheritdoc />

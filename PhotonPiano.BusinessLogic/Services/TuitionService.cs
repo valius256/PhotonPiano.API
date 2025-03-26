@@ -1,4 +1,3 @@
-using Mapster;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
@@ -452,7 +451,7 @@ public class TuitionService : ITuitionService
                     [student.Student.Email, "quangphat7a1@gmail.com"],
                     null, emailParam);
             }
-           
+
         });
 
         await Task.WhenAll(emailTasks);

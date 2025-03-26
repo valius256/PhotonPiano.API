@@ -8,7 +8,7 @@ namespace PhotonPiano.DataAccess.Repositories
     public class LevelRepository : GenericRepository<Level>, ILevelRepository
     {
         private readonly ApplicationDbContext _context;
-    
+
         public LevelRepository(ApplicationDbContext context) : base(context)
         {
             _context = context;

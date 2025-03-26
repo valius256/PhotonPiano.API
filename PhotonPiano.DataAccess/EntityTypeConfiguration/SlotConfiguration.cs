@@ -33,10 +33,10 @@ public class SlotConfiguration : IEntityTypeConfiguration<Slot>
         builder.HasOne(x => x.UpdateBy)
             .WithMany(x => x.UpdatedSlots)
             .HasForeignKey(x => x.UpdateById);
-        
+
         builder.HasOne(x => x.CancelBy)
             .WithMany(x => x.CanceledSlots)
             .HasForeignKey(x => x.CancelById);
-         
+
     }
 }

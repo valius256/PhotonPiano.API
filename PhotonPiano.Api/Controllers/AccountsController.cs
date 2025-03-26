@@ -63,6 +63,17 @@ public class AccountsController : BaseController
         return Ok(result.Adapt<AccountDetailResponse>());
     }
 
+    [HttpGet("{firebase-id}/teacher")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor])]
+    [EndpointDescription("Get teacher detail by id")]
+    public async Task<ActionResult<TeacherDetailModel>> GetTeacherDetailById(
+        [FromRoute(Name = "firebase-id")] string accountFirebaseId)
+    {
+        var result = await _serviceFactory.AccountService.GetTeacherDetailById(accountFirebaseId);
+
+        return Ok(result.Adapt<TeacherDetailModel>());
+    }
+
     [HttpPut]
     [FirebaseAuthorize]
     [EndpointDescription("Update account info")]

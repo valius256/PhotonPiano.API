@@ -18,6 +18,8 @@ public interface IAccountService
 
     Task<AccountDetailModel> GetAccountById(string firebaseId);
 
+    Task<TeacherDetailModel> GetTeacherDetailById(string firebaseId);
+
     Task<bool> IsAccountExist(string firebaseId);
 
     Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount, string idToken);

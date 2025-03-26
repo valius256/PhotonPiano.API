@@ -13,6 +13,7 @@ public record ClassModel
     public DateOnly StartTime { get; set; }
     public Guid LevelId { get; init; }
     public bool IsPublic { get; init; }
+    public string? ScheduleDescription { get; set; }
     public required string Name { get; init; }
     public required string CreatedById { get; init; }
     public bool IsScorePublished { get; init; }

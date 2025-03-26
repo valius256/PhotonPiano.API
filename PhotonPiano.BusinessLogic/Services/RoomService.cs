@@ -68,7 +68,7 @@ public class RoomService : IRoomService
 
         // Get available rooms (not in booked room IDs)
         var availableRooms = await _unitOfWork.RoomRepository.Entities
-            .Where(r => !allBookedRoomIds.Contains(r.Id))
+            .Where(r => !allBookedRoomIds.Contains(r.Id) && r.Status == RoomStatus.Opened)
             .ToListAsync();
 
         // Convert to RoomModel, ensuring unique rooms using HashSet

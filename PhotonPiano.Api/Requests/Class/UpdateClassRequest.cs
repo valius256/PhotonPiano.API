@@ -8,6 +8,8 @@ namespace PhotonPiano.Api.Requests.Class
 
         public string? Name { get; init; }
 
+        public string? ScheduleDescription { get; init; }
+
         public Guid? LevelId { get; init; }
 
         public string? InstructorId { get; init; }

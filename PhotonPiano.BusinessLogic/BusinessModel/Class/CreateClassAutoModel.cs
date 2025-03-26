@@ -11,6 +11,8 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 
         public required string Name { get; init; }
 
+        public string? ScheduleDescription { get; init; }
+
         public List<string> StudentIds { get; init; } = [];
 
         public List<CreateSlotThroughArrangementModel> Slots { get; init; } = [];

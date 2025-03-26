@@ -33,7 +33,7 @@ public interface IEntranceTestService
     Task HandleEnrollmentPaymentCallback(VnPayCallbackModel callbackModel, string accountId);
 
     Task AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model, AccountModel currentAccount);
-    
+
     Task UpdateStudentEntranceResults(Guid id, string studentId, UpdateEntranceTestResultsModel updateModel, AccountModel currentAccount);
 
     Task UpdateEntranceTestsMaxStudents(int maxStudents, AccountModel currentAccount);

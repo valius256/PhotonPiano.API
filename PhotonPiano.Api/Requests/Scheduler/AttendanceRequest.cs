@@ -13,7 +13,7 @@ public record AttendanceRequest
 public record SlotStudentInfoRequest : TutorModel
 {
     public required string StudentId { get; init; }
-    public string? AttendanceComment  { get; init; }
+    public string? AttendanceComment { get; init; }
     public AttendanceStatus AttendanceStatus { get; init; }
 }
 

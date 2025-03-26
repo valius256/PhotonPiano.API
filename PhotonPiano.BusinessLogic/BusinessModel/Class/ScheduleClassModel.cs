@@ -7,7 +7,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
     {
         public required Guid Id { get; init; }
 
-        public DateOnly StartWeek {  get; init; }
+        public DateOnly StartWeek { get; init; }
 
         public List<DayOfWeek> DayOfWeeks { get; init; } = [];
 

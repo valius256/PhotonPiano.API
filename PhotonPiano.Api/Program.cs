@@ -7,8 +7,6 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();

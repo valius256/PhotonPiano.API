@@ -114,15 +114,15 @@ public class NotificationService : INotificationService
     public async Task CronJobAutoRemovedOutDateNotifications()
     {
         // && x.CreatedAt.Date < DateTime.Now.Date.AddDays(15)
-        
-        var notificationRemovedList = await _unitOfWork.AccountNotificationRepository.FindAsync(x => x.IsViewed == true);
-        
-        var notificationIds = notificationRemovedList.Select(x => x.NotificationId).ToList();
-        
-         await _unitOfWork.AccountNotificationRepository
-            .ExecuteDeleteAsync(x => notificationIds.Contains(x.NotificationId));
 
-         await _unitOfWork.NotificationRepository.ExecuteDeleteAsync(x => notificationIds.Contains(x.Id));
+        var notificationRemovedList = await _unitOfWork.AccountNotificationRepository.FindAsync(x => x.IsViewed == true);
+
+        var notificationIds = notificationRemovedList.Select(x => x.NotificationId).ToList();
+
+        await _unitOfWork.AccountNotificationRepository
+           .ExecuteDeleteAsync(x => notificationIds.Contains(x.NotificationId));
+
+        await _unitOfWork.NotificationRepository.ExecuteDeleteAsync(x => notificationIds.Contains(x.Id));
     }
 
     public async Task<List<AccountNotification>> GetUserNotificationsAsync(string userId)

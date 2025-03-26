@@ -14,7 +14,7 @@ public class ApplicationConfiguration : IEntityTypeConfiguration<Application>
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
 
         builder.Property(ap => ap.AdditionalData).HasColumnType("json");
-        
+
         builder.HasOne(x => x.CreatedBy)
             .WithMany(x => x.CreatedApplications)
             .HasForeignKey(x => x.CreatedById)

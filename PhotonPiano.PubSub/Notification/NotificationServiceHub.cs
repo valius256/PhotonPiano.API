@@ -15,6 +15,6 @@ public class NotificationServiceHub : INotificationServiceHub
     {
         await _hubContext.Clients.Group(userFirebaseId).SendAsync("ReceiveNotification",
             new { UserName = userName, Title = title, Message = message });
-        
+
     }
 }

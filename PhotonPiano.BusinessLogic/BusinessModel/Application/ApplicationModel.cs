@@ -13,9 +13,9 @@ public record ApplicationModel
     public required string Reason { get; init; }
 
     public string? FileUrl { get; init; }
-    
+
     public string? AdditionalData { get; init; }
-    
+
     public string? StaffConfirmNote { get; set; }
 
     // Denormalized  

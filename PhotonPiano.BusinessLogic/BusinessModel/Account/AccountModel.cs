@@ -48,6 +48,6 @@ public record AccountModel
 
     public RecordStatus RecordStatus { get; init; }
     public Guid? CurrentClassId { get; init; }
-    
+
     public LevelModel? Level { get; init; }
 }

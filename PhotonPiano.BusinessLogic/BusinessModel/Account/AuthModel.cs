@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
 using PhotonPiano.DataAccess.Models.Enum;
+using System.Text.Json.Serialization;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Account;
 

@@ -42,11 +42,11 @@ public class ApplicationsController : BaseController
     {
         return Created(nameof(SendApplication),
             await _serviceFactory.ApplicationService.SendAnApplication(new SendApplicationModel
-                {
-                    File = request.File,
-                    Reason = request.Reason,
-                    Type = request.Type
-                },
+            {
+                File = request.File,
+                Reason = request.Reason,
+                Type = request.Type
+            },
                 CurrentAccount!));
     }
 
@@ -57,14 +57,14 @@ public class ApplicationsController : BaseController
     {
         return Created(nameof(SendApplication),
             await _serviceFactory.ApplicationService.SendRefundApplication(new SendRefundApplicationModel
-                {
-                    File = refundRequest.File,
-                    Reason = refundRequest.Reason,
-                    Type = refundRequest.Type,
-                    BankName = refundRequest.BankName,
-                    BankAccountName = refundRequest.BankAccountName,
-                    BankAccountNumber = refundRequest.BankAccountNumber,
-                },
+            {
+                File = refundRequest.File,
+                Reason = refundRequest.Reason,
+                Type = refundRequest.Type,
+                BankName = refundRequest.BankName,
+                BankAccountName = refundRequest.BankAccountName,
+                BankAccountNumber = refundRequest.BankAccountNumber,
+            },
                 CurrentAccount!));
     }
 

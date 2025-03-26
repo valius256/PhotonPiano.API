@@ -1,8 +1,8 @@
-﻿using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore.Query;
+﻿using Microsoft.EntityFrameworkCore.Query;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
+using System.Linq.Expressions;
 
 namespace PhotonPiano.DataAccess.Abstractions;
 
@@ -18,7 +18,7 @@ public interface IGenericRepository<T> where T : BaseEntity
     Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression,
         bool hasTrackings = true,
         bool ignoreQueryFilters = false,
-        Expression<Func<T, object>>? orderByExpression = default, 
+        Expression<Func<T, object>>? orderByExpression = default,
         bool orderByDescending = true);
 
     Task<T?> FindSingleAsync(Expression<Func<T, bool>> expression, bool hasTrackings = true,
@@ -79,4 +79,5 @@ public interface IGenericRepository<T> where T : BaseEntity
         bool hasTrackings = false,
         bool ignoreQueryFilters = false,
         params List<Expression<Func<T, bool>>?> expressions);
+    
 }

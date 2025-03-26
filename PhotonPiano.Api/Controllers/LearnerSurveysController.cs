@@ -27,9 +27,9 @@ namespace PhotonPiano.Api.Controllers
         {
             var pagedResult =
                 await _serviceFactory.LearnerSurveyService.GetPagedSurveys(request.Adapt<QueryPagedSurveysModel>());
-            
+
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
-            
+
             return pagedResult.Items;
         }
 

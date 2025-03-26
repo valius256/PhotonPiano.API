@@ -1,6 +1,4 @@
-﻿using PhotonPiano.DataAccess.Models.Enum;
-
-namespace PhotonPiano.Api.Requests.Class
+﻿namespace PhotonPiano.Api.Requests.Class
 {
     public record UpdateClassRequest
     {

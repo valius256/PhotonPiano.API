@@ -65,13 +65,13 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IStudentClassService> _studentClassService;
 
     private readonly Lazy<IDayOffService> _dayOffService;
-    
+
     private readonly Lazy<ILearnerSurveyService> _learnerSurveyService;
-    
+
     private readonly Lazy<ISurveyQuestionService> _surveryQuestionService;
-    
+
     private readonly Lazy<ILevelService> _levelService;
-    
+
     private readonly Lazy<IProgressServiceHub> _progressServiceHub;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
@@ -160,9 +160,9 @@ public class ServiceFactory : IServiceFactory
     public IDayOffService DayOffService => _dayOffService.Value;
 
     public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
-    
+
     public ISurveyQuestionService ISurveyQuestionService => _surveryQuestionService.Value;
-    
+
     public ILearnerSurveyService LearnerSurveyService => _learnerSurveyService.Value;
 
     public ILevelService LevelService => _levelService.Value;

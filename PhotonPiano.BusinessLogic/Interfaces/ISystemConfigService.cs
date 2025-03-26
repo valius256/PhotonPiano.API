@@ -1,5 +1,4 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
-using PhotonPiano.DataAccess.Models.Entity;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 

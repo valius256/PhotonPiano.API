@@ -1,9 +1,7 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
-using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
-using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -23,5 +21,5 @@ public class LearnerSurveyService : ILearnerSurveyService
         return await _unitOfWork.LearnerSurveyRepository.GetPaginatedWithProjectionAsync<LearnerSurveyModel>(page, size,
             column, desc);
     }
-    
+
 }

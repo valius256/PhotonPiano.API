@@ -1,17 +1,9 @@
 ﻿using Mapster;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Class;
-using PhotonPiano.Api.Requests.Criteria;
-using PhotonPiano.Api.Requests.Scheduler;
-using PhotonPiano.Api.Responses.Class;
-using PhotonPiano.Api.Responses.Criteria;
-using PhotonPiano.Api.Responses.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
-using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
-using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -67,7 +59,7 @@ namespace PhotonPiano.Api.Controllers
             return await _serviceFactory.ClassService.GetClassScoreboard(id);
         }
 
-        
+
 
         [HttpPost]
         [FirebaseAuthorize(Roles = [Role.Staff])]
@@ -138,7 +130,7 @@ namespace PhotonPiano.Api.Controllers
         [EndpointDescription("Publish a class")]
         public async Task<ActionResult> PublishClass([FromRoute] Guid classId)
         {
-            await _serviceFactory.ClassService.PublishClass(classId,CurrentUserFirebaseId);
+            await _serviceFactory.ClassService.PublishClass(classId, CurrentUserFirebaseId);
             return NoContent();
         }
 

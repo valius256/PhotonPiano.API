@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using PhotonPiano.DataAccess.Models.Enum;
+﻿using PhotonPiano.DataAccess.Models.Enum;
+using System.ComponentModel.DataAnnotations;
 
 namespace PhotonPiano.Api.Requests.Application;
 

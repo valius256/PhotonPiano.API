@@ -42,9 +42,9 @@ public class TuitionController : BaseController
             ipAddress, apiBaseUrl);
 
         return Ok(new PaymentUrlResponse
-            {
-                Url = url
-            }
+        {
+            Url = url
+        }
         );
     }
 

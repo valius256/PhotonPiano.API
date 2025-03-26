@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -32,7 +30,7 @@ namespace PhotonPiano.DataAccess.Migrations
                 type: "numeric",
                 nullable: false,
                 defaultValue: 0m);
-            
+
             migrationBuilder.InsertData(
                 table: "SystemConfig",
                 columns: new[]
@@ -65,7 +63,7 @@ namespace PhotonPiano.DataAccess.Migrations
                 type: "double precision",
                 nullable: false,
                 defaultValue: 0.0);
-            
+
         }
     }
 }

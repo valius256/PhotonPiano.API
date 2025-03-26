@@ -116,7 +116,7 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
-            {                
+            {
                 await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
                 await _unitOfWork.AccountRepository.UpdateAsync(student);
                 await _unitOfWork.StudentClassRepository.UpdateAsync(oldStudentClass);
@@ -127,7 +127,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _unitOfWork.SaveChangesAsync();
             });
             //Notification
-            
+
             await _serviceFactory.NotificationService.SendNotificationAsync(changeClassModel.StudentFirebaseId, "Thông tin lớp mới",
                 $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
 
@@ -145,7 +145,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 $"Học sinh {student.FullName ?? student.UserName} đã chuyển ra khỏi lớp {oldClassInfo.Name}. Nếu có thắc mắc hoặc báo cáo nhầm lẫn, vui lòng nộp đơn khiếu nại hoặc liên hệ bộ phận hỗ trợ!", student.AvatarUrl ?? "");
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(newClassReceiverIds,
                 $"Học sinh mới {student.FullName ?? student.UserName} được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ bạn ấy hết mình!", student.AvatarUrl ?? "");
-            
+
         }
 
         public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel, string accountFirebaseId)
@@ -164,7 +164,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 }
             }
 
-            
+
             var classInfo = await _unitOfWork.ClassRepository.Entities
                 .Include(c => c.StudentClasses)
                 .Include(c => c.Slots)
@@ -283,7 +283,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(students.Select(s => s.AccountFirebaseId).ToList(), "Thông tin lớp mới",
                         $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(classReceiverIds,
-                    $"{students.Count} học sinh mới đã được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ các bạn ấy hết mình!","");
+                    $"{students.Count} học sinh mới đã được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ các bạn ấy hết mình!", "");
             }
 
             return result.Adapt<List<StudentClassModel>>();
@@ -333,7 +333,7 @@ namespace PhotonPiano.BusinessLogic.Services
             //Delete studentSlots
             var slotIds = classInfo.Slots.Select(s => s.Id).ToList();
             var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => slotIds.Contains(ss.SlotId));
-            foreach (var studentSlot in studentSlots) 
+            foreach (var studentSlot in studentSlots)
             {
                 studentSlot.RecordStatus = RecordStatus.IsDeleted;
                 studentSlot.DeletedAt = DateTime.UtcNow.AddHours(7);

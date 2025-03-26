@@ -17,7 +17,7 @@ public record QueryPagedAccountsModel : QueryPagedModel
         orderByDesc = OrderByDesc;
     }
 
-    public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc, out string? keyword, out List<Role> roles, 
+    public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc, out string? keyword, out List<Role> roles,
         out List<Guid> levels, out List<StudentStatus> studentStatuses)
     {
         page = Page;

@@ -9,9 +9,9 @@ public record QueryPagedApplicationsRequest : QueryPagedRequest
     [FromQuery(Name = "q")]
     public string? Keyword { get; init; }
 
-    [FromQuery(Name = "types")] 
+    [FromQuery(Name = "types")]
     public List<ApplicationType> Types { get; init; } = [];
-    
+
     [FromQuery(Name = "statuses")]
     public List<ApplicationStatus> Statuses { get; init; } = [];
 }

@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using PhotonPiano.DataAccess.EntityTypeConfiguration;
 using PhotonPiano.DataAccess.Models.Entity;
-using PhotonPiano.DataAccess.SeedData;
 
 namespace PhotonPiano.DataAccess.Models;
 

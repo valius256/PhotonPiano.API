@@ -213,16 +213,21 @@ public class SlotService : ISlotService
 
         // Cập nhật slot trong ngày hiện tại (chỉ lấy slot có khả năng thay đổi trạng thái)
         var todaySlots = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class).Where(
-            s => s.Date == currentDate && s.Status != SlotStatus.Finished
+            s => s.Date == currentDate && s.Status != SlotStatus.Finished && s.Status != SlotStatus.Cancelled
         ).ToListAsync();
 
-        var classSlotGroups = todaySlots.GroupBy(s => s.ClassId)
+        var classIds = todaySlots.Select(s => s.ClassId).Distinct().ToList();
+
+        var firstLastSlots = await _unitOfWork.SlotRepository.Entities
+            .Where(s => classIds.Contains(s.ClassId))
+            .GroupBy(s => s.ClassId)
             .Select(g => new
             {
-                First = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).First(),
-                Last = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).First()
+                ClassId = g.Key,
+                FirstSlot = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).FirstOrDefault(),
+                LastSlot = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).FirstOrDefault()
             })
-            .ToDictionary(x => x.First.ClassId); // Use a dictionary for quick lookup
+            .ToDictionaryAsync(x => x.ClassId);
 
         var classesToUpdate = new List<Class>();
 
@@ -236,9 +241,9 @@ public class SlotService : ISlotService
                 slot.Status = SlotStatus.Finished;
                 affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
                 //If this is the last slot - change the class status to Finish
-                if (classSlotGroups.TryGetValue(slot.ClassId, out var classSlots))
+                if (firstLastSlots.TryGetValue(slot.ClassId, out var classSlots))
                 {
-                    if (slot.Id == classSlots.Last.Id)
+                    if (slot.Id == classSlots.LastSlot?.Id) 
                     {
                         slot.Class.Status = ClassStatus.Finished;
                         classesToUpdate.Add(slot.Class);
@@ -250,9 +255,9 @@ public class SlotService : ISlotService
                 slot.Status = SlotStatus.Ongoing;
                 affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
                 //If this is the first slot - change the class status to OnGoing
-                if (classSlotGroups.TryGetValue(slot.ClassId, out var classSlots))
+                if (firstLastSlots.TryGetValue(slot.ClassId, out var classSlots))
                 {
-                    if (slot.Id == classSlots.First.Id)
+                    if (slot.Id == classSlots.FirstSlot?.Id) 
                     {
                         slot.Class.Status = ClassStatus.Ongoing;
                         classesToUpdate.Add(slot.Class);

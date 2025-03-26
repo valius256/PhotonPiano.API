@@ -143,6 +143,7 @@ public class ClassService : IClassService
                 CreatedById = q.CreatedById,
                 IsPublic = q.IsPublic,
                 Level = q.Level.Adapt<LevelModel>(),
+                ScheduleDescription = q.ScheduleDescription,
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
                 TotalSlots = q.Slots.Count(),
@@ -249,14 +250,23 @@ public class ClassService : IClassService
 
         //With each class, we will pick a random schedule for it!
         var progressEachClass = 25 / (classes.Count * 1.0);
-        foreach (var classDraft in classes)
+        for (int i = 0; i < classes.Count; i++)
         {
+            var classDraft = classes[i];
+
             await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang xếp lịch cho lớp {classDraft.Name}", currentProgress);
             var level = levels.FirstOrDefault(l => l.Id == classDraft.LevelId) ?? throw new NotFoundException("Level not found");
             var dayFrames = GetRandomDays(level.SlotPerWeek);
-            var slot = await ScheduleAClassAutomatically(arrangeClassModel, dayOffs, dayFrames, level, unaddedSlots);
+            var (slot, shift) = await ScheduleAClassAutomatically(arrangeClassModel, dayOffs, dayFrames, level, unaddedSlots);
             classDraft.Slots.AddRange(slot);
             unaddedSlots.AddRange(slot.Adapt<List<Slot>>());
+
+            string scheduleDescription = string.Join(" ,", dayFrames.Select(d => Constants.VietnameseDaysOfTheWeek[(int)d]));
+            scheduleDescription += $" Ca {(int)shift + 1} ({Constants.Shifts[(int)shift]})";
+
+            // Assign the modified instance back to the list
+            classes[i] = classDraft with { ScheduleDescription = scheduleDescription };
+
             currentProgress += progressEachClass;
         }
 
@@ -530,6 +540,11 @@ public class ClassService : IClassService
             classInfo.Name = model.Name;
         }
 
+        if (model.ScheduleDescription != null)
+        {
+            classInfo.ScheduleDescription = model.ScheduleDescription;
+        }
+
         string? oldTeacherId = null;
         string oldTeacherMessage = $"Bạn đã không còn phụ trách lớp {classInfo.Name} nữa.";
         string? newTeacherMessage = null;
@@ -788,7 +803,7 @@ public class ClassService : IClassService
 
         //Construct slots and check for conflicts
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
-        var slots = (await ScheduleAClassAutomatically(new ArrangeClassModel
+        var (slots,pickedShift) = (await ScheduleAClassAutomatically(new ArrangeClassModel
         {
             AllowedShifts = [scheduleClassModel.Shift],
             StartWeek = scheduleClassModel.StartWeek,
@@ -818,10 +833,22 @@ public class ClassService : IClassService
                 });
             }
         }
+        //Update schedule description
+        string scheduleDescription = "";
+        foreach (var day in scheduleClassModel.DayOfWeeks)
+        {
+            scheduleDescription += Constants.VietnameseDaysOfTheWeek[(int)day] + " ,";
+        }
+        scheduleDescription += $" Ca {(int)pickedShift + 1} ({Constants.Shifts[(int)pickedShift]})";
+        //Save change
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.SlotRepository.AddRangeAsync(mappedSlots);
             await _unitOfWork.SlotStudentRepository.AddRangeAsync(slotStudents);
+            await _unitOfWork.ClassRepository.ExecuteUpdateAsync(
+                    c => c.Id == classDetail.Id,
+                    set => set.SetProperty(c => c.ScheduleDescription, scheduleDescription)
+                );
             await _unitOfWork.SaveChangesAsync();
         });
 
@@ -841,9 +868,9 @@ public class ClassService : IClassService
 
     }
 
-    private async Task<List<CreateSlotThroughArrangementModel>> ScheduleAClassAutomatically(
-        ArrangeClassModel arrangeClassModel,
-        List<DayOff> dayOffs, List<DayOfWeek> dayFrames,
+    private async Task<(List<CreateSlotThroughArrangementModel>, Shift)> ScheduleAClassAutomatically(
+        ArrangeClassModel arrangeClassModel, 
+        List<DayOff> dayOffs, List<DayOfWeek> dayFrames, 
         Level level,
         List<Slot>? otherSlots = null)
     {
@@ -899,7 +926,7 @@ public class ClassService : IClassService
             RoomId = room.Id
         }).OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList();
 
-        return result;
+        return (result, pickedShift);
     }
 
     public async Task ClearClassSchedule(Guid classId, string accountFirebaseId)

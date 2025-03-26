@@ -9,6 +9,7 @@ public class Class : BaseEntityWithId
     public DateOnly StartTime { get; set; } = DateOnly.MaxValue;
     public Guid LevelId { get; set; }
     public bool IsPublic { get; set; }
+    public string? ScheduleDescription { get; set; }
     public required string Name { get; set; }
     public required string CreatedById { get; set; }
     public bool IsScorePublished { get; set; }

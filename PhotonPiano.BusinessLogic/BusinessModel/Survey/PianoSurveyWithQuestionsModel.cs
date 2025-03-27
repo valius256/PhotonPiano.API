@@ -4,5 +4,5 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Survey;
 
 public record PianoSurveyWithQuestionsModel : PianoSurveyModel
 {
-    public ICollection<SurveyQuestionModel> SurveyQuestions { get; init; } = [];
+    public ICollection<PianoSurveyQuestionModel> PianoSurveyQuestions { get; init; } = [];
 }

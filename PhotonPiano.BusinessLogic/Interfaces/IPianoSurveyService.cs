@@ -13,6 +13,8 @@ public interface IPianoSurveyService
 
     Task<PianoSurveyDetailsModel> GetEntranceSurvey();
 
+    Task SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model);
+
     Task<PianoSurveyDetailsModel> CreatePianoSurveyAnswers(Guid surveyId, CreateSurveyAnswersModel createModel,
         AccountModel currentAccount);
 }

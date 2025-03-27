@@ -284,7 +284,7 @@ public class AuthService : IAuthService
         return responseObject;
     }
 
-    private async Task<string> SignUpOnFirebase(string email, string password)
+    public async Task<string> SignUpOnFirebase(string email, string password)
     {
         using var client = _httpClientFactory.CreateClient();
 

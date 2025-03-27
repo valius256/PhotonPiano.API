@@ -13,5 +13,6 @@ public interface IAuthService
 
     Task SendPasswordResetEmail(string email);
     Task<OAuthCredentialsModel> HandleGoogleAuthCallback(string code, string redirectUrl);
+    Task<string> SignUpOnFirebase(string email, string password);
     Task UpdateFirebaseEmail(string idToken, string newEmail);
 }

@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -270,7 +271,7 @@ public class PianoSurveyService : IPianoSurveyService
                 {
                     await _unitOfWork.PianoSurveyQuestionRepository.ExecuteDeleteAsync(x => x.SurveyId == survey.Id);
                     // await _unitOfWork.SaveChangesAsync();
-                    
+
                     await _unitOfWork.PianoSurveyQuestionRepository.AddRangeAsync(pianoSurveyQuestions);
                 }
             }
@@ -298,6 +299,77 @@ public class PianoSurveyService : IPianoSurveyService
         }
 
         return survey;
+    }
+
+    public async Task SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model)
+    {
+        var (email, password, fullName, phone, answers) = model;
+
+        var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey);
+
+        if (entranceSurveyConfig?.ConfigValue is null)
+        {
+            throw new NotFoundException("Entrance survey not found");
+        }
+
+        var surveyId = Guid.Parse(entranceSurveyConfig.ConfigValue);
+
+        var survey =
+            await _unitOfWork.PianoSurveyRepository.FindSingleProjectedAsync<PianoSurveyWithQuestionsModel>(
+                s => s.Id == surveyId, hasTrackings: false);
+
+        if (survey is null)
+        {
+            throw new NotFoundException("Entrance survey not found");
+        }
+
+        var learnerAnswers = new List<LearnerAnswer>();
+
+        foreach (var question in survey.PianoSurveyQuestions)
+        {
+            if (question.IsRequired && answers.All(a => a.SurveyQuestionId != question.QuestionId))
+            {
+                throw new BadRequestException("Some required questions are not answered");
+            }
+
+            var questionAnswers = answers.FirstOrDefault(a => a.SurveyQuestionId == question.QuestionId);
+
+            learnerAnswers.Add(new LearnerAnswer
+            {
+                Id = Guid.NewGuid(),
+                SurveyQuestionId = question.QuestionId,
+                Answers = questionAnswers is not null ? questionAnswers.Answers : [],
+            });
+        }
+
+        var account = await _serviceFactory.AuthService.SignUp(new SignUpModel
+        {
+            Email = email,
+            Password = password,
+            FullName = fullName,
+            Phone = phone
+        });
+
+        var learnerSurvey = new LearnerSurvey
+        {
+            Id = Guid.NewGuid(),
+            LearnerId = account.AccountFirebaseId,
+            PianoSurveyId = surveyId,
+            LearnerEmail = account.Email,
+            LearnerAnswers = learnerAnswers,
+        };
+
+        foreach (var learnerAnswer in learnerAnswers)
+        {
+            learnerAnswer.LearnerSurveyId = learnerSurvey.Id;
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.LearnerSurveyRepository.AddAsync(learnerSurvey);
+            
+            await _unitOfWork.LearnerAnswerRepository.AddRangeAsync(learnerAnswers);
+        });
     }
 
     public async Task<PianoSurveyDetailsModel> CreatePianoSurveyAnswers(Guid surveyId,

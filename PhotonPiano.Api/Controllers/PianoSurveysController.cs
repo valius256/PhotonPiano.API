@@ -42,7 +42,7 @@ namespace PhotonPiano.Api.Controllers
             return await _serviceFactory.PianoSurveyService.GetSurveyDetails(id, base.CurrentAccount!);
         }
 
-        [HttpGet("/entrance-survey")]
+        [HttpGet("entrance-survey")]
         [EndpointDescription("Get entrance survey")]
         public async Task<ActionResult<PianoSurveyDetailsModel>> GetEntranceSurveyInfo()
         {
@@ -52,7 +52,8 @@ namespace PhotonPiano.Api.Controllers
         [HttpPost]
         [FirebaseAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create piano survey")]
-        public async Task<ActionResult<PianoSurveyDetailsModel>> CreatePianoSurvey([FromBody] CreatePianoSurveyRequest request)
+        public async Task<ActionResult<PianoSurveyDetailsModel>> CreatePianoSurvey(
+            [FromBody] CreatePianoSurveyRequest request)
         {
             return Created(nameof(CreatePianoSurvey),
                 await _serviceFactory.PianoSurveyService.CreatePianoSurvey(request.Adapt<CreatePianoSurveyModel>(),
@@ -67,19 +68,18 @@ namespace PhotonPiano.Api.Controllers
         {
             await _serviceFactory.PianoSurveyService.UpdatePianoSurvey(id, request.Adapt<UpdatePianoSurveyModel>(),
                 base.CurrentAccount!);
-            
+
             return NoContent();
         }
 
-        [HttpPost("{id}/learner-answers")]
-        [FirebaseAuthorize(Roles = [Role.Student])]
-        [EndpointDescription("Send learner answers for piano survey")]
-        public async Task<ActionResult<PianoSurveyDetailsModel>> CreateAnswersForPianoSurvey([FromRoute] Guid id,
-            [FromBody] CreateSurveyAnswersRequest request)
+        [HttpPost("entrance-survey/answers")]
+        [EndpointDescription("Send learner answers for entrance survey")]
+        public async Task<ActionResult<PianoSurveyDetailsModel>> CreateAnswersForPianoSurvey(
+            [FromBody] SendEntranceSurveyAnswersRequest request)
         {
-            return Created(nameof(CreateAnswersForPianoSurvey),
-                await _serviceFactory.PianoSurveyService.CreatePianoSurveyAnswers(id,
-                    request.Adapt<CreateSurveyAnswersModel>(), base.CurrentAccount!));
+            await _serviceFactory.PianoSurveyService.SendEntranceSurveyAnswers(
+                request.Adapt<SendEntranceSurveyAnswersModel>());
+            return Ok();
         }
     }
 }

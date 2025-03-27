@@ -7,6 +7,7 @@ using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using System.Linq.Expressions;
 
 namespace PhotonPiano.DataAccess.Repositories;
 
@@ -96,7 +97,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     public async Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression,
         bool hasTrackings = true,
         bool ignoreQueryFilters = false,
-        Expression<Func<T, object>>? orderByExpression = default, 
+        Expression<Func<T, object>>? orderByExpression = default,
         bool orderByDescending = true)
     {
         var query = hasTrackings
@@ -105,7 +106,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 
         query = ignoreQueryFilters ? query.IgnoreQueryFilters() : query;
 
-        if (orderByExpression is not null) 
+        if (orderByExpression is not null)
         {
             query = orderByDescending ? query.OrderByDescending(orderByExpression) : query.OrderBy(orderByExpression);
         }

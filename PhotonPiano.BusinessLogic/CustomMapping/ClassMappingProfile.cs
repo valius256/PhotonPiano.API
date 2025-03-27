@@ -1,8 +1,8 @@
 ﻿
 using Mapster;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
-using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models.Entity;
 
 namespace PhotonPiano.BusinessLogic.CustomMapping
@@ -13,12 +13,15 @@ namespace PhotonPiano.BusinessLogic.CustomMapping
         {
             config.NewConfig<Class, ClassModel>()
                .Map(dest => dest.StudentNumber, src => src.StudentClasses.Count);
-            
+
             //config.NewConfig<StudentClass, StudentClassModel>()
             //    .Map(dest => dest.C, src => src.Class.Name);
 
             config.NewConfig<Tuition, TuitionWithStudentClassModel>()
                 .Map(dest => dest.StudentClass.StudentFullName, src => src.StudentClass.Student.FullName);
+
+            config.NewConfig<SystemConfigsModel, SystemConfig>()
+                .Map(dest => dest.ConfigValue, String.Empty);
         }
     }
 }

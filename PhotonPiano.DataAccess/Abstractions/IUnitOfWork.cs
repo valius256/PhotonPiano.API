@@ -36,13 +36,13 @@ public interface IUnitOfWork
     INotificationRepository NotificationRepository { get; }
 
     IAccountNotificationRepository AccountNotificationRepository { get; }
-    
+
     IEntranceTestResultRepository EntranceTestResultRepository { get; }
 
     IStudentClassScoreRepository StudentClassScoreRepository { get; }
-    
+
     ISurveyQuestionRepository SurveyQuestionRepository { get; }
-    
+
     ILearnerSurveyRepository LearnerSurveyRepository { get; }
     
     IPianoSurveyRepository PianoSurveyRepository { get; }

@@ -1,9 +1,7 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Extensions;
-using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.DayOff;
-using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.DayOff;
 using PhotonPiano.BusinessLogic.Interfaces;
 

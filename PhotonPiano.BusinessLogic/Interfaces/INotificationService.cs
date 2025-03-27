@@ -9,7 +9,7 @@ public interface INotificationService
 {
     Task<PagedResult<NotificationDetailsModel>> GetPagedNotifications(QueryPagedNotificationsModel queryModel,
         AccountModel currentAccount);
-    
+
     Task ToggleBatchViewStatus(AccountModel currentAccount, params List<Guid> notificationIds);
 
     Task SendNotificationAsync(string userFirebaseId, string title, string message);

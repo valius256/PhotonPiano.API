@@ -9,9 +9,9 @@ public class Slot : BaseEntityWithId
     public Shift Shift { get; set; }
     public DateOnly Date { get; set; }
     public SlotStatus Status { get; set; } = SlotStatus.NotStarted;
-    
+
     public string? SlotNote { get; set; }
-    
+
     public string? UpdateById { get; set; }
     public string? CancelById { get; set; }
 

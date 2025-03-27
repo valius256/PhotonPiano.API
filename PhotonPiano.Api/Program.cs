@@ -7,8 +7,6 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -76,8 +74,8 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     TimeZoneResolver = new DefaultTimeZoneResolver()
 });
 
-
-app.UseRateLimiter();
+// uncomment to active Rate limiter
+// app.UseRateLimiter();
 
 app.UseExceptionHandler();
 

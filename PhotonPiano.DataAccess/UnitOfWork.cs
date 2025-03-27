@@ -39,14 +39,14 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<ITransactionRepository> _transactionRepository;
 
     private readonly Lazy<ITuitionRepository> _tuitionRepository;
-    
+
     private readonly Lazy<IEntranceTestResultRepository> _entranceTestResultRepository;
 
 
     private readonly Lazy<IStudentClassScoreRepository> _studentClassScoreRepository;
-    
+
     private readonly Lazy<ISurveyQuestionRepository> _surveyQuestionRepository;
-    
+
     private readonly Lazy<ILearnerSurveyRepository> _learnerSurveyRepository;
     
     private readonly Lazy<IPianoSurveyRepository> _pianoSurveyRepository;
@@ -82,7 +82,7 @@ public class UnitOfWork : IUnitOfWork
             new Lazy<IAccountNotificationRepository>(() => new AccountNotificationRepository(context));
         _studentClassScoreRepository = new Lazy<IStudentClassScoreRepository>(() => new StudentClassScoreRepository(context));
         _entranceTestResultRepository = new Lazy<IEntranceTestResultRepository>(() => new EntranceTestResultRepository(context));
-        _surveyQuestionRepository = new Lazy<ISurveyQuestionRepository>(() => new SurveyQuestionRepository(context));  
+        _surveyQuestionRepository = new Lazy<ISurveyQuestionRepository>(() => new SurveyQuestionRepository(context));
         _learnerSurveyRepository = new Lazy<ILearnerSurveyRepository>(() => new LearnerSurveyRepository(context));
         _pianoSurveyRepository = new Lazy<IPianoSurveyRepository>(() => new PianoSurveyRepository(context));
         _learnerAnswerRepository = new Lazy<ILearnerAnswerRepository>(() => new LearnerAnswerRepository(context));
@@ -121,14 +121,14 @@ public class UnitOfWork : IUnitOfWork
     public INotificationRepository NotificationRepository => _notificationRepository.Value;
 
     public IAccountNotificationRepository AccountNotificationRepository => _accountNotificationRepository.Value;
-    
+
     public IEntranceTestResultRepository EntranceTestResultRepository => _entranceTestResultRepository.Value;
 
 
     public IStudentClassScoreRepository StudentClassScoreRepository => _studentClassScoreRepository.Value;
-    
+
     public ISurveyQuestionRepository SurveyQuestionRepository => _surveyQuestionRepository.Value;
-    
+
     public ILearnerSurveyRepository LearnerSurveyRepository => _learnerSurveyRepository.Value;
     
     public IPianoSurveyRepository PianoSurveyRepository => _pianoSurveyRepository.Value;

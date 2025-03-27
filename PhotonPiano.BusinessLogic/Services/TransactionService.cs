@@ -45,7 +45,7 @@ public class TransactionService : ITransactionService
         var typeOfTransaction = type == TransactionType.EntranceTestFee
             ? "THANH TOAN LE PHI THI DAU VAO"
             : "THANH TOAN PHI DAY HOC";
-        
+
         return id.HasValue ? $"[{typeOfTransaction}] [{createDate.Year}/{createDate.Month}] [{id}]"
                 : $"[{typeOfTransaction}] [{createDate.Year}/{createDate.Month}]";
     }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -50,7 +48,7 @@ namespace PhotonPiano.DataAccess.Migrations
                 name: "IX_LearnerSurvey_SurveyQuestionId",
                 table: "LearnerSurvey",
                 column: "SurveyQuestionId");
-            
+
             migrationBuilder.InsertData(
                 table: "SystemConfig",
                 columns: new[]

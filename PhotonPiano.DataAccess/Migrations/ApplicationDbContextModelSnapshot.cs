@@ -264,6 +264,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ScheduleDescription")
+                        .HasColumnType("text");
+
                     b.Property<DateOnly>("StartTime")
                         .HasColumnType("date");
 

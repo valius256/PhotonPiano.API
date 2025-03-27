@@ -1,12 +1,12 @@
-﻿using PhotonPiano.DataAccess.Models.Enum;
-
-namespace PhotonPiano.Api.Requests.Class
+﻿namespace PhotonPiano.Api.Requests.Class
 {
     public record UpdateClassRequest
     {
         public required Guid Id { get; init; }
 
         public string? Name { get; init; }
+
+        public string? ScheduleDescription { get; init; }
 
         public Guid? LevelId { get; init; }
 

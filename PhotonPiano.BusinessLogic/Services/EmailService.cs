@@ -1,12 +1,12 @@
-using System.Net;
-using System.Net.Mail;
-using System.Text;
 using Microsoft.Extensions.Options;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Email;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models;
 using Razor.Templating.Core;
+using System.Net;
+using System.Net.Mail;
+using System.Text;
 
 namespace PhotonPiano.BusinessLogic.Services;
 

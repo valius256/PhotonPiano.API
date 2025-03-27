@@ -3,7 +3,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PhotonPiano.DataAccess.Models.Entity;
-using System.Reflection.Emit;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration
 {
@@ -12,7 +11,7 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
         public void Configure(EntityTypeBuilder<Level> builder)
         {
             builder.Property(x => x.MinimumPracticalScore).HasDefaultValue(0.0);
-            
+
             builder.Property(x => x.MinimumTheoreticalScore).HasDefaultValue(0.0);
 
             builder.HasOne(l => l.NextLevel)
@@ -26,7 +25,7 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
                 .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
 
             builder.HasMany(l => l.Accounts)
-               .WithOne(a => a.Level) 
+               .WithOne(a => a.Level)
                .HasForeignKey(a => a.LevelId)
                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
 

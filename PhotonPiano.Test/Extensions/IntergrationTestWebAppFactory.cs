@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using PhotonPiano.Api;
 using PhotonPiano.DataAccess.Models;
 using Testcontainers.PostgreSql;
@@ -40,14 +39,14 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
 
             if (descriptor is not null) services.Remove(descriptor);
 
-            
+
             var connectionString = _dbContainer.GetConnectionString();
-            
+
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseNpgsql(connectionString);
             });
-            
+
             services.AddHangfire((_, config) =>
             {
                 config.UsePostgreSqlStorage(options =>

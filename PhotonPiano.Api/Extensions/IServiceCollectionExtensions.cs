@@ -1,8 +1,4 @@
-﻿using System.Globalization;
-using System.IO.Compression;
-using System.Net;
-using System.Threading.RateLimiting;
-using Hangfire;
+﻿using Hangfire;
 using Hangfire.PostgreSql;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,13 +9,11 @@ using Newtonsoft.Json.Serialization;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Middlewares;
 using PhotonPiano.Api.Requests.Application;
-using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Survey;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
-using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
@@ -28,6 +22,10 @@ using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
+using System.Globalization;
+using System.IO.Compression;
+using System.Net;
+using System.Threading.RateLimiting;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -117,8 +115,8 @@ public static class IServiceCollectionExtensions
             .IgnoreNullValues(true);
 
         TypeAdapterConfig<StudentClassModel, StudentClass>.NewConfig()
-            .Map(dest => dest.Student, src => (StudentClassModel?) null);
-      
+            .Map(dest => dest.Student, src => (StudentClassModel?)null);
+
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>.NewConfig()
             .Map(dest => dest.StartDate, src => DateTime.SpecifyKind(src.StartDate, DateTimeKind.Unspecified))
             .Map(dest => dest.EndDate, src => DateTime.SpecifyKind(src.EndDate, DateTimeKind.Unspecified));
@@ -165,7 +163,7 @@ public static class IServiceCollectionExtensions
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
                 .AllowCredentials()
-                // .SetIsOriginAllowed(_ => true)
+            // .SetIsOriginAllowed(_ => true)
             )
         );
         return services;
@@ -181,8 +179,8 @@ public static class IServiceCollectionExtensions
         //     rs = configuration.GetConnectionString("photonpiano");
 
 
-         var rs = configuration.GetConnectionString("PostgresPhotonPiano");
-        
+        var rs = configuration.GetConnectionString("PostgresPhotonPiano");
+
 
         if (!_messagePrinted)
         {

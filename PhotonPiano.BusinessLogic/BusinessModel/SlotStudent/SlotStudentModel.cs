@@ -11,14 +11,14 @@ public record SlotStudentModel
     public AttendanceStatus AttendanceStatus { get; init; }
 
     public AccountModel StudentAccount { get; init; } = default!;
-    
-    public string? AttendanceComment { get; init; } 
-    
-    public string? GestureComment { get; init; }
-    
-    public string? GestureUrl { get; init; } 
-    
-    public string? FingerNoteComment { get; init; } 
 
-    public string? PedalComment { get; init; } 
+    public string? AttendanceComment { get; init; }
+
+    public string? GestureComment { get; init; }
+
+    public string? GestureUrl { get; init; }
+
+    public string? FingerNoteComment { get; init; }
+
+    public string? PedalComment { get; init; }
 }

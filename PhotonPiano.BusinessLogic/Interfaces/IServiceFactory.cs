@@ -54,8 +54,11 @@ public interface IServiceFactory
 
     IProgressServiceHub ProgressServiceHub { get; }
     
+
+    ISurveyQuestionService ISurveyQuestionService { get; }
+
     ILearnerSurveyService LearnerSurveyService { get; }
-    
+
     ILevelService LevelService { get; }
     
     ISurveyQuestionService SurveyQuestionService { get; }

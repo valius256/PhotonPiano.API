@@ -1,6 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using PhotonPiano.DataAccess.Models.Enum;
-
 namespace PhotonPiano.DataAccess.Models.Entity;
 
 public class EntranceTestStudent : BaseEntityWithId

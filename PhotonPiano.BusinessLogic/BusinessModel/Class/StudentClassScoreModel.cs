@@ -1,7 +1,6 @@
 ﻿
 
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
-using PhotonPiano.DataAccess.Models.Entity;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 {

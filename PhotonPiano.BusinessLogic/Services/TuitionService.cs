@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
@@ -314,7 +315,12 @@ public class TuitionService : ITuitionService
         foreach (var tuition in overdueTuitions)
         {
             var studentClass =
-                await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
+                await _unitOfWork.StudentClassRepository.Entities
+                .Include(sc => sc.Student)
+                .Include(sc => sc.Class)
+                .SingleOrDefaultAsync(sc => sc.Id == tuition.StudentClassId);
+
+            if (studentClass is null) continue;
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
@@ -336,7 +342,7 @@ public class TuitionService : ITuitionService
             {
                 { "studentName", studentClass.Student.Email },
                 { "className", studentClass.Class.Name },
-                { "dueDate", studentClass.Class.Slots.MaxBy(x => x.Date).Date.ToString("dd-MM-yyyy") },
+                { "dueDate", tuition.EndDate.ToString("dd-MM-yyyy") },
                 { "amount", $"{tuition.Amount}" }
             };
 

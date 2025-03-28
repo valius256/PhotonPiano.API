@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.SurveyQuestion;
+using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -42,10 +43,25 @@ namespace PhotonPiano.Api.Controllers
             return await _serviceFactory.SurveyQuestionService.GetSurveyQuestionDetails(id);
         }
 
+        [HttpGet("{id}/answers")]
+        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+        [EndpointDescription("Get answers of a question")]
+        public async Task<ActionResult<List<LearnerAnswerWithLearnerModel>>> GetAnswersOfQuestion([FromRoute] Guid id,
+            [FromQuery] QueryPagedAnswersRequest request)
+        {
+            var pagedResult = await _serviceFactory.SurveyQuestionService.GetQuestionAnswers(id,
+                request.Adapt<QueryPagedAnswersModel>(), base.CurrentAccount!);
+            
+            HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+            
+            return pagedResult.Items;
+        }
+        
         [HttpPost]
         [FirebaseAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create Survey Question")]
-        public async Task<ActionResult<SurveyQuestionModel>> CreateSurveyQuestion([FromBody] CreateSurveyQuestionRequest request)
+        public async Task<ActionResult<SurveyQuestionModel>> CreateSurveyQuestion(
+            [FromBody] CreateSurveyQuestionRequest request)
         {
             return Created(nameof(CreateSurveyQuestion),
                 await _serviceFactory.SurveyQuestionService.CreateSurveyQuestion(
@@ -63,7 +79,7 @@ namespace PhotonPiano.Api.Controllers
             await _serviceFactory.SurveyQuestionService.UpdateSurveyQuestion(id,
                 request.Adapt<UpdateSurveyQuestionModel>(),
                 base.CurrentAccount!);
-            
+
             return NoContent();
         }
 
@@ -73,7 +89,7 @@ namespace PhotonPiano.Api.Controllers
         public async Task<ActionResult> DeleteSurveyQuestion([FromRoute] Guid id)
         {
             await _serviceFactory.SurveyQuestionService.DeleteSurveyQuestion(id, base.CurrentAccount!);
-            
+
             return NoContent();
         }
     }

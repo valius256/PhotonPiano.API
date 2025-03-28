@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -47,6 +48,29 @@ public class SurveyQuestionService : ISurveyQuestionService
         }
 
         return surveyQuestion;
+    }
+
+    public async Task<PagedResult<LearnerAnswerWithLearnerModel>> GetQuestionAnswers(Guid id,
+        QueryPagedAnswersModel queryModel,
+        AccountModel currentAccount)
+    {
+        if (!await _unitOfWork.SurveyQuestionRepository.AnyAsync(q => q.Id == id))
+        {
+            throw new NotFoundException("Survey question not found");
+        }
+
+        var (page, size, column, desc, keyword) = queryModel;
+
+        var answers = await _unitOfWork.LearnerAnswerRepository
+            .GetPaginatedWithProjectionAsync<LearnerAnswerWithLearnerModel>(
+                page, size, column, desc, expressions:
+                [
+                    a => a.SurveyQuestionId == id,
+                    q => currentAccount.Role == Role.Staff ||
+                         q.LearnerSurvey.LearnerId == currentAccount.AccountFirebaseId,
+                ]);
+
+        return answers;
     }
 
     public async Task<SurveyQuestionModel> CreateSurveyQuestion(CreateSurveyQuestionModel createModel,

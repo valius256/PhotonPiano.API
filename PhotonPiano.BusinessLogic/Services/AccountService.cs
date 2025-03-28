@@ -49,9 +49,16 @@ public class AccountService : IAccountService
 
     public async Task<AccountDetailModel> GetAccountById(string firebaseId)
     {
-        var result = await _unitOfWork.AccountRepository.FindFirstAsync(x => x.AccountFirebaseId == firebaseId);
+        var result = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountDetailModel>(x => x.AccountFirebaseId == firebaseId);
         if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
-        return result.Adapt<AccountDetailModel>();
+        return result;
+    }
+
+    public async Task<TeacherDetailModel> GetTeacherDetailById(string firebaseId)
+    {
+        var result = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<TeacherDetailModel>(x => x.AccountFirebaseId == firebaseId);
+        if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
+        return result;
     }
 
     public async Task<bool> IsAccountExist(string firebaseId)
@@ -99,7 +106,7 @@ public class AccountService : IAccountService
 
     public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {
-        var (page, size, column, desc, q, roles, levels, studentStatuses) = model;
+        var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses) = model;
 
         var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
             page,
@@ -113,7 +120,29 @@ public class AccountService : IAccountService
                 a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
                 a => levels.Count == 0 || !a.LevelId.HasValue || levels.Contains(a.LevelId.Value),
                 a => studentStatuses.Count == 0 ||
-                     a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)
+                     (a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)),
+                a => accountStatuses.Count == 0 || accountStatuses.Contains(a.Status)
+            ]
+        );
+
+        return pagedResult;
+    }
+
+    public async Task<PagedResult<AccountModel>> GetTeachers(QueryPagedAccountsModel model)
+    {
+        var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses) = model;
+
+        var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
+            page,
+            size,
+            column == "Id" ? "AccountFirebaseId" : column,
+            desc,
+            expressions:
+            [
+                a => a.Role == Role.Instructor,
+                a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
+                a => levels.Count == 0 || !a.LevelId.HasValue || levels.Contains(a.LevelId.Value),
+                a => accountStatuses.Count == 0 || accountStatuses.Contains(a.Status)
             ]
         );
 

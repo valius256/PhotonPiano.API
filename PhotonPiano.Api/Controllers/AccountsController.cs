@@ -36,6 +36,17 @@ public class AccountsController : BaseController
         return pagedResult.Items;
     }
 
+    [HttpGet("teachers")]
+    [EndpointDescription("Get teachers with paging")]
+    public async Task<ActionResult<List<AccountModel>>> GetTeachers([FromQuery] QueryPagedAccountsRequest request)
+    {
+        var pagedResult =
+            await _serviceFactory.AccountService.GetTeachers(request.Adapt<QueryPagedAccountsModel>());
+
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+        return pagedResult.Items;
+    }
+
     [HttpGet("class-waiting")]
     [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get accounts with paging")]

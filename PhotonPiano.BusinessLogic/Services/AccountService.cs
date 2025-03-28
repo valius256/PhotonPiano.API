@@ -128,6 +128,27 @@ public class AccountService : IAccountService
         return pagedResult;
     }
 
+    public async Task<PagedResult<AccountModel>> GetTeachers(QueryPagedAccountsModel model)
+    {
+        var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses) = model;
+
+        var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
+            page,
+            size,
+            column == "Id" ? "AccountFirebaseId" : column,
+            desc,
+            expressions:
+            [
+                a => a.Role == Role.Instructor,
+                a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
+                a => levels.Count == 0 || !a.LevelId.HasValue || levels.Contains(a.LevelId.Value),
+                a => accountStatuses.Count == 0 || accountStatuses.Contains(a.Status)
+            ]
+        );
+
+        return pagedResult;
+    }
+
     public async Task<List<AwaitingLevelsModel>> GetWaitingStudentOfAllLevels()
     {
         return await _unitOfWork.AccountRepository.Entities

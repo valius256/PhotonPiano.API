@@ -8,6 +8,8 @@ public interface IAccountService
 {
     Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model);
 
+    Task<PagedResult<AccountModel>> GetTeachers(QueryPagedAccountsModel model);
+
     Task<List<AwaitingLevelsModel>> GetWaitingStudentOfAllLevels();
 
     Task<AccountModel> GetAndCreateAccountIfNotExistsCredentials(string firebaseId, string email,

@@ -9,21 +9,18 @@ public class LearnerSurveyConfiguration : IEntityTypeConfiguration<LearnerSurvey
 {
     public void Configure(EntityTypeBuilder<LearnerSurvey> builder)
     {
-        builder.HasKey(x => new { x.LearnerId, x.SurveyQuestionId });
+        builder.HasKey(x => x.Id);
 
         builder.HasQueryFilter(x => x.RecordStatus != RecordStatus.IsDeleted);
 
-        builder.Property(x => x.AllowMultipleAnswers)
-            .HasDefaultValue(false);
-
-        builder.HasOne(x => x.SurveyQuestion)
-            .WithMany(x => x.LearnerSurveys)
-            .HasForeignKey(x => x.SurveyQuestionId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.HasOne(x => x.Account)
+        builder.HasOne(x => x.Learner)
             .WithMany(x => x.LearnerSurveys)
             .HasForeignKey(x => x.LearnerId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(x => x.PianoSurvey)
+            .WithMany(ps => ps.LearnerSurveys)
+            .HasForeignKey(x => x.PianoSurveyId)
             .OnDelete(DeleteBehavior.NoAction);
     }
 }

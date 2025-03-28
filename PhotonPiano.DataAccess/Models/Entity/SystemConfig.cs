@@ -6,5 +6,8 @@ public class SystemConfig : BaseEntityWithId
 {
     public required string ConfigName { get; set; }
     public string? ConfigValue { get; set; }
+    
     public Role Role { get; set; }
+
+    public SystemConfigType Type { get; set; }
 }

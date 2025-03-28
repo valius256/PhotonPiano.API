@@ -129,6 +129,14 @@ public class Account : BaseEntity
     // SurveyQuestion
     public virtual ICollection<SurveyQuestion> CreatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
     public virtual ICollection<SurveyQuestion> UpdatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
+    
+    
+    // PianoSurvey
+    public virtual ICollection<PianoSurvey> CreatedPianoSurveys { get; set; } = [];
+    
+    public virtual ICollection<PianoSurvey> UpdatedPianoSurveys { get; set; } = [];
+    
+    
 
 
     // SurveyDetails

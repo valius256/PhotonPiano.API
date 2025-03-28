@@ -79,5 +79,8 @@ public interface IGenericRepository<T> where T : BaseEntity
         bool hasTrackings = false,
         bool ignoreQueryFilters = false,
         params List<Expression<Func<T, bool>>?> expressions);
-    
+
+    void Detach(T entity);
+
+    void ClearChangeTracker();
 }

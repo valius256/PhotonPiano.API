@@ -53,10 +53,15 @@ public interface IServiceFactory
     IDayOffService DayOffService { get; }
 
     IProgressServiceHub ProgressServiceHub { get; }
+    
 
     ISurveyQuestionService ISurveyQuestionService { get; }
 
     ILearnerSurveyService LearnerSurveyService { get; }
 
     ILevelService LevelService { get; }
+    
+    ISurveyQuestionService SurveyQuestionService { get; }
+    
+    IPianoSurveyService PianoSurveyService { get; }
 }

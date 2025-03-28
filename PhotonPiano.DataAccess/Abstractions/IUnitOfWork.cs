@@ -44,8 +44,14 @@ public interface IUnitOfWork
     ISurveyQuestionRepository SurveyQuestionRepository { get; }
 
     ILearnerSurveyRepository LearnerSurveyRepository { get; }
+    
+    IPianoSurveyRepository PianoSurveyRepository { get; }
+    
+    ILearnerAnswerRepository LearnerAnswerRepository { get; }
 
     ILevelRepository LevelRepository { get; }
+    
+    IPianoSurveyQuestionRepository PianoSurveyQuestionRepository { get; }
 
     Task<int> SaveChangesAsync();
 
@@ -58,4 +64,6 @@ public interface IUnitOfWork
     Task ExecuteInTransactionAsync(Func<Task> action);
 
     Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action);
+
+    void ClearChangeTracker();
 }

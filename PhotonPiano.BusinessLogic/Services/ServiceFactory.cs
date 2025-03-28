@@ -43,7 +43,6 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IPaymentService> _paymentService;
 
-
     private readonly Lazy<IPinataService> _pinataService;
 
     private readonly Lazy<IRedisCacheService> _redisCacheService;
@@ -67,6 +66,11 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IDayOffService> _dayOffService;
 
     private readonly Lazy<ILearnerSurveyService> _learnerSurveyService;
+    
+    private readonly Lazy<ISurveyQuestionService> _surveyQuestionService;
+    
+    private readonly Lazy<IPianoSurveyService> _pianoSurveyService;
+    
 
     private readonly Lazy<ISurveyQuestionService> _surveryQuestionService;
 
@@ -108,7 +112,8 @@ public class ServiceFactory : IServiceFactory
         _dayOffService = new Lazy<IDayOffService>(() => new DayOffService(unitOfWork, this));
         // _logger.LogInformation("ServiceFactory has been initialized.");
         _learnerSurveyService = new Lazy<ILearnerSurveyService>(() => new LearnerSurveyService(unitOfWork));
-        _surveryQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork));
+        _pianoSurveyService = new Lazy<IPianoSurveyService>(() => new PianoSurveyService(unitOfWork, this));
+        _surveyQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork, this));
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
     }
@@ -160,6 +165,11 @@ public class ServiceFactory : IServiceFactory
     public IDayOffService DayOffService => _dayOffService.Value;
 
     public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
+    
+    public ISurveyQuestionService SurveyQuestionService => _surveyQuestionService.Value;
+
+    public IPianoSurveyService PianoSurveyService => _pianoSurveyService.Value;
+
 
     public ISurveyQuestionService ISurveyQuestionService => _surveryQuestionService.Value;
 

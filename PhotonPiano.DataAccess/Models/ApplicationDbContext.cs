@@ -34,9 +34,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<DayOff> DayOffs { get; set; }
     public DbSet<AccountNotification> AccountNotifications { get; set; }
     public DbSet<Application> Applications { get; set; }
+    public DbSet<PianoSurvey> PianoSurveys { get; set; }
     public DbSet<LearnerSurvey> LearnerSurveys { get; set; }
     public DbSet<SurveyQuestion> SurveyQuestions { get; set; }
+    public DbSet<LearnerAnswer> LearnerAnswers { get; set; }
+    public DbSet<PianoSurveyQuestion> PianoSurveyQuestions { get; set; }
     public DbSet<Level> Levels { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,10 +63,12 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new DayOffConfiguration());
         modelBuilder.ApplyConfiguration(new AccountNotificationConfiguration());
         modelBuilder.ApplyConfiguration(new ApplicationConfiguration());
+        modelBuilder.ApplyConfiguration(new PianoSurveyConfiguration());
         modelBuilder.ApplyConfiguration(new LearnerSurveyConfiguration());
         modelBuilder.ApplyConfiguration(new SurveyQuestionConfiguration());
+        modelBuilder.ApplyConfiguration(new LearnerAnswerConfiguration());
+        modelBuilder.ApplyConfiguration(new PianoSurveyQuestionConfiguration());
         modelBuilder.ApplyConfiguration(new LevelConfiguration());
-
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());
 

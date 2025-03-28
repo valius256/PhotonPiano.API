@@ -10,12 +10,14 @@ using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Middlewares;
 using PhotonPiano.Api.Requests.Application;
 using PhotonPiano.Api.Requests.EntranceTest;
+using PhotonPiano.Api.Requests.Survey;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
+using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -118,6 +120,9 @@ public static class IServiceCollectionExtensions
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>.NewConfig()
             .Map(dest => dest.StartDate, src => DateTime.SpecifyKind(src.StartDate, DateTimeKind.Unspecified))
             .Map(dest => dest.EndDate, src => DateTime.SpecifyKind(src.EndDate, DateTimeKind.Unspecified));
+
+        TypeAdapterConfig<CreatePianoSurveyRequest, CreatePianoSurveyModel>.NewConfig()
+            .Map(dest => dest.CreateQuestionRequests, src => src.Questions);
 
         return services;
     }

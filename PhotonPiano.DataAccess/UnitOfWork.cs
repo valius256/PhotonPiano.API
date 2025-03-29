@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Repositories;
@@ -170,47 +171,56 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task ExecuteInTransactionAsync(Func<Task> action)
     {
-        await using var transaction = await BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            // Execute the provided action and get the result
-            await action();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Execute the provided action
+                await action();
 
-            // Commit the transaction
-            await SaveChangesAsync();
-            await transaction.CommitAsync();
-        }
-        catch
-        {
-            // Rollback the transaction on failure
-            await transaction.RollbackAsync();
-            throw;
-        }
+                // Commit the transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                // Rollback the transaction on failure
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action)
     {
-        await using var transaction = await BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            // Execute the provided action and get the result
-            var result = await action();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Execute the provided action and get the result
+                var result = await action();
 
-            // Commit the transaction
-            await SaveChangesAsync();
-            await transaction.CommitAsync();
+                // Commit the transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-            // Return the result
-            return result;
-        }
-        catch
-        {
-            // Rollback the transaction on failure
-            await transaction.RollbackAsync();
-            throw;
-        }
+                // Return the result
+                return result;
+            }
+            catch
+            {
+                // Rollback the transaction on failure
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
-    
+
+
     public void ClearChangeTracker()
     {
         _context.ChangeTracker.Clear();

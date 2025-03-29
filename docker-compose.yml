@@ -11,22 +11,19 @@ services:
 
 
   photonpiano.api:
-    image: ${DOCKER_REGISTRY-}photonpianoapi
+    image: ghcr.io/valius256/photonpiano-api:latest
     container_name: photonpiano.api
     restart: on-failure
     depends_on: 
       - photonpiano.database
-    build:
-      context: .
-      dockerfile: PhotonPiano.Api/Dockerfile
     ports:
-       - "5001:5001"
-       - "5002:5002"
+      - "8080:8080"
+      - "8081:8081"
     environment:
        - ASPNETCORE_Kestrel__Certificates__Default__Password=quangphat12a3
        - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
        - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
-       - ASPNETCORE_URLS=http://+:5001;https://+:5002
+       - ASPNETCORE_URLS=http://0.0.0.0:8080;https://0.0.0.0:8081
        - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;Include Error Detail = true
        - HangfireConnectionString=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;
     volumes:
@@ -34,20 +31,20 @@ services:
       - ${APPDATA}/ASP.NET/Https:/https:ro
     pull_policy: always
     
-  photonpiano.frontend:
-    build:
-      context: ../Frontend/PhotonPiano_WebApp
-      dockerfile: Dockerfile
-      args:
-        - MODE=production
-    container_name: photonpiano.frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - VITE_API_BASE_URL=http://photonpiano.api:5001
-    depends_on:
-      - photonpiano.api
+#  photonpiano.frontend:
+#    build:
+#      context: ../Frontend/PhotonPiano_WebApp
+#      dockerfile: Dockerfile
+#      args:
+#        - MODE=production
+#    container_name: photonpiano.frontend
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      - NODE_ENV=production
+#      - VITE_API_BASE_URL=http://photonpiano.api:5001
+#    depends_on:
+#      - photonpiano.api
     
 #  photonpiano.cache:
 #    image: redis:6.2

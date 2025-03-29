@@ -24,5 +24,6 @@ public class Class : BaseEntityWithId
     public virtual Account DeletedBy { get; set; } = default!;
     public virtual Level Level { get; set; } = default!;
     public virtual ICollection<StudentClass> StudentClasses { get; set; } = new List<StudentClass>();
+    public virtual ICollection<Account> Students { get; set; } = new List<Account>();
     public virtual ICollection<Slot> Slots { get; set; } = new List<Slot>();
 }

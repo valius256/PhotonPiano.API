@@ -10,5 +10,7 @@ namespace PhotonPiano.Shared.Utils
         public static readonly string AllowSkippingLevel = "Được phép học vượt level";
 
         public static readonly string EntranceSurvey = "Bài khảo sát đầu vào";
+
+        public static readonly string ChangingClassDeadline = "Deadline đổi lớp";
     }
 }

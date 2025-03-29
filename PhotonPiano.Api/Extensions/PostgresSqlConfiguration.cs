@@ -34,7 +34,17 @@ public class PostgresSqlConfiguration
 
                     context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS unaccent;");
                     context.Database.ExecuteSqlRaw(
-                        "UPDATE \"Account\" SET \"CurrentClassId\" = (SELECT \"ClassId\" FROM \"StudentClass\" WHERE \"StudentClass\".\"StudentFirebaseId\" = \"Account\".\"AccountFirebaseId\" LIMIT 1) WHERE \"Role\" = 1"
+                        "UPDATE \"Account\" " +
+                        "SET \"CurrentClassId\" = (" +
+                        "    SELECT \"sc\".\"ClassId\" " +
+                        "    FROM \"StudentClass\" AS \"sc\" " +
+                        "    JOIN \"Class\" AS \"c\" ON \"sc\".\"ClassId\" = \"c\".\"ClassId\" " +
+                        "    WHERE \"sc\".\"StudentFirebaseId\" = \"Account\".\"AccountFirebaseId\" " +
+                        "    AND \"c\".\"Status\" = 1 " +
+                        "    AND \"c\".\"RecordStatus\" = 1 " +
+                        "    LIMIT 1" +
+                        ") " +
+                        "WHERE \"Role\" = 1"
                     );
 
                     // do here to update level 

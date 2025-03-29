@@ -26,7 +26,6 @@ public class SystemConfigsController : BaseController
     }
 
     [HttpGet("{name}")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get system config by name")]
     public async Task<ActionResult<SystemConfigModel>> GetByName([FromRoute] string name)
     {

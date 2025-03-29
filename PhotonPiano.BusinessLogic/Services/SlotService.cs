@@ -261,6 +261,9 @@ public class SlotService : ISlotService
                     {
                         slot.Class.Status = ClassStatus.Ongoing;
                         classesToUpdate.Add(slot.Class);
+                        //Create tuition khi lớp bắt đầu
+                        var classDetail = await _serviceFactory.ClassService.GetClassDetailById(slot.ClassId);
+                        await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
                     }
                 }
             }

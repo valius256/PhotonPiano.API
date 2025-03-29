@@ -101,7 +101,7 @@ public class ClassService : IClassService
     public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass)
     {
         var (page, pageSize, sortColumn, orderByDesc,
-            classStatus, level, keyword, isScorePublished, teacherId, studentId) = queryClass;
+            classStatus, level, keyword, isScorePublished, teacherId, studentId, isPublic) = queryClass;
 
         var likeKeyword = queryClass.GetLikeKeyword();
 
@@ -114,6 +114,7 @@ public class ClassService : IClassService
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
                 q => teacherId == null || q.InstructorId == teacherId,
                 q => studentId == null || q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId),
+                q => isPublic == null || q.IsPublic == isPublic,
                 q =>
                     string.IsNullOrEmpty(keyword) ||
                     EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword)
@@ -144,6 +145,7 @@ public class ClassService : IClassService
                 IsPublic = q.IsPublic,
                 Level = q.Level.Adapt<LevelModel>(),
                 ScheduleDescription = q.ScheduleDescription,
+                StartTime = q.StartTime,
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
                 TotalSlots = q.Slots.Count(),
@@ -313,7 +315,7 @@ public class ClassService : IClassService
                 classInfo.IsPublic = false;
                 classInfo.IsScorePublished = false;
                 classInfo.Status = ClassStatus.NotStarted;
-                classInfo.StartTime = classInfo.Slots.Count > 0 ? classInfo.Slots.First().Date : DateOnly.MinValue;
+                classInfo.StartTime = classInfo.Slots.Count > 0 ? classInfo.Slots.First().Date : DateOnly.MaxValue;
 
                 var classesThatMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == classInfo.StartTime.Month
                     && c.StartTime.Year == classInfo.StartTime.Year, false, true);
@@ -387,10 +389,22 @@ public class ClassService : IClassService
 
             //Change student status and current class
             await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang cập nhật lại trạng thái các học viên...", currentProgress);
-            await _unitOfWork.AccountRepository.FindAsQueryable(a =>
-                    a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(b => b.StudentStatus, StudentStatus.InClass));
+            var studentToUpdate = await _unitOfWork.AccountRepository.FindAsQueryable(a =>
+                    a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass).ToListAsync();
+
+            foreach (var student in studentToUpdate)
+            {
+                var studentClass = studentClasses.FirstOrDefault(sc => sc.StudentFirebaseId == student.AccountFirebaseId);
+                if (studentClass != null)
+                {
+                    student.StudentStatus = StudentStatus.InClass;
+                    student.CurrentClassId = studentClass.ClassId;
+                }
+            }
+            //    .ExecuteUpdateAsync(setters => setters
+            //        .SetProperty(b => b.StudentStatus, StudentStatus.InClass)
+            //        .SetProperty(b => b.CurrentClassId, cla);
+            await _unitOfWork.AccountRepository.UpdateRangeAsync(studentToUpdate);
             currentProgress += 5;
 
             await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang hoàn tất...", currentProgress);
@@ -747,11 +761,7 @@ public class ClassService : IClassService
         {
             await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
             await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(studentClassScores);
-            await _unitOfWork.SaveChangesAsync();
-
-            // create 1st tuition for students in class
-            if (classDetail.StudentClasses.Count > 0)
-                await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
+            await _unitOfWork.SaveChangesAsync();                
         });
 
         //Notification
@@ -840,6 +850,7 @@ public class ClassService : IClassService
             scheduleDescription += Constants.VietnameseDaysOfTheWeek[(int)day] + " ,";
         }
         scheduleDescription += $" Ca {(int)pickedShift + 1} ({Constants.Shifts[(int)pickedShift]})";
+        var classStartDate = classDetail.Slots.Count > 0 ? classDetail.Slots.First().Date : DateOnly.MaxValue;
         //Save change
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -847,7 +858,10 @@ public class ClassService : IClassService
             await _unitOfWork.SlotStudentRepository.AddRangeAsync(slotStudents);
             await _unitOfWork.ClassRepository.ExecuteUpdateAsync(
                     c => c.Id == classDetail.Id,
-                    set => set.SetProperty(c => c.ScheduleDescription, scheduleDescription)
+                    set => set
+                        .SetProperty(c => c.ScheduleDescription, scheduleDescription)
+                        .SetProperty(c => c.StartTime, classStartDate)
+
                 );
             await _unitOfWork.SaveChangesAsync();
         });

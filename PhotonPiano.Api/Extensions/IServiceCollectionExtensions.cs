@@ -26,6 +26,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Threading.RateLimiting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -50,6 +51,7 @@ public static class IServiceCollectionExtensions
             .AddRazorTemplateWithConfigPath()
             .AddRateLimitedForAllEndpoints()
             .ConfigureResponseCompression()
+            .AddHealthChecks()
             ;
 
 
@@ -158,7 +160,7 @@ public static class IServiceCollectionExtensions
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
                 .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173", "http://photonpiano.frontend:3000", "https://photonpiano.api:5001")
+                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app" ,"http://photonpiano.frontend:3000", "https://photonpiano.api:5001")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
@@ -171,15 +173,15 @@ public static class IServiceCollectionExtensions
 
     private static string? GetConnectionString(this IConfiguration configuration)
     {
-        // var rs = configuration.GetValue<bool>("IsDeploy")
-        //     ? configuration.GetConnectionString("PostgresDeployDb")
-        //     : configuration.GetConnectionString("PostgresLocal");
+        var rs = configuration.GetValue<bool>("IsDeploy")
+            ? configuration.GetConnectionString("PostgresDeploy")
+            : configuration.GetConnectionString("PostgresPhotonPiano");
 
         // if (configuration.GetValue<bool>("IsAspireHost"))
         //     rs = configuration.GetConnectionString("photonpiano");
 
 
-        var rs = configuration.GetConnectionString("PostgresPhotonPiano");
+        // var rs = configuration.GetConnectionString("PostgresPhotonPiano");
 
 
         if (!_messagePrinted)
@@ -195,9 +197,18 @@ public static class IServiceCollectionExtensions
     private static IServiceCollection AddDbContextConfigurations(this IServiceCollection services,
         IConfiguration configuration)
     {
+        var connectionString = GetConnectionString(configuration) +
+                               ";Maximum Pool Size=40;Minimum Pool Size=5;Connection Lifetime=60;Pooling=true";
+
         services.AddDbContext<ApplicationDbContext>(options =>
         {
-            options.UseNpgsql(GetConnectionString(configuration));
+            options.UseNpgsql(connectionString, npgsqlOptions =>
+            {
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorCodesToAdd: null);
+            });
             options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
             options.EnableDetailedErrors();
         });
@@ -301,7 +312,7 @@ public static class IServiceCollectionExtensions
 
         services.AddHangfireServer((service, cf) =>
         {
-            cf.WorkerCount = 50;
+            cf.WorkerCount = 15;
             cf.TimeZoneResolver = new DefaultTimeZoneResolver();
 
             var recurringJobManager = service.GetRequiredService<IRecurringJobManager>();
@@ -367,6 +378,18 @@ public static class IServiceCollectionExtensions
         services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
 
         services.Configure<GzipCompressionProviderOptions>(options => { options.Level = CompressionLevel.Fastest; });
+
+        return services;
+    }
+    
+    private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddHealthChecks()
+            .AddNpgSql(
+                GetConnectionString(configuration)!,
+                name: "postgres",
+                failureStatus: HealthStatus.Degraded,
+                tags: new[] { "db", "postgresql" });
 
         return services;
     }

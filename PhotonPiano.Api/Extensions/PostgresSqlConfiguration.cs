@@ -38,9 +38,9 @@ public class PostgresSqlConfiguration
                         "SET \"CurrentClassId\" = (" +
                         "    SELECT \"sc\".\"ClassId\" " +
                         "    FROM \"StudentClass\" AS \"sc\" " +
-                        "    JOIN \"Class\" AS \"c\" ON \"sc\".\"ClassId\" = \"c\".\"ClassId\" " +
+                        "    JOIN \"Class\" AS \"c\" ON \"sc\".\"ClassId\" = \"c\".\"Id\" " +
                         "    WHERE \"sc\".\"StudentFirebaseId\" = \"Account\".\"AccountFirebaseId\" " +
-                        "    AND \"c\".\"Status\" = 1 " +
+                        "    AND (\"c\".\"Status\" = 0 OR \"c\".\"Status\" = 1) " +
                         "    AND \"c\".\"RecordStatus\" = 1 " +
                         "    LIMIT 1" +
                         ") " +

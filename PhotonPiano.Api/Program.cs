@@ -61,8 +61,8 @@ app.UseScalarConfig();
 app.UseCors("AllowAll");
 
 // Register and execute PostgresSqlConfiguration
-var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
-sqlConfig.Configure();
+// var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
+// await sqlConfig.Configure();
 
 app.UseHttpsRedirection();
 
@@ -73,6 +73,9 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     IsReadOnlyFunc = _ => false,
     TimeZoneResolver = new DefaultTimeZoneResolver()
 });
+
+var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
+sqlConfig.Configure();
 
 // uncomment to active Rate limiter
 // app.UseRateLimiter();
@@ -86,6 +89,9 @@ app.MapSignalRConfig();
 app.UseResponseCompression();
 
 app.MapControllers();
+
+
+
 
 await app.RunAsync();
 

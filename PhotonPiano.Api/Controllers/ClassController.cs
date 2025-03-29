@@ -115,12 +115,13 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPut("student-class")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
         [EndpointDescription("Change class of a student")]
         public async Task<ActionResult> ChangeClassOfStudent([FromBody] UpdateStudentClassRequest request)
         {
+            if (CurrentAccount == null) return Unauthorized();
             await _serviceFactory.StudentClassService.ChangeClassOfStudent(request.Adapt<ChangeClassModel>(),
-                CurrentUserFirebaseId);
+                CurrentAccount);
 
             return NoContent();
         }

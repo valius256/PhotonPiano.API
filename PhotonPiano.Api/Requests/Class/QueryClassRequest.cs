@@ -14,6 +14,8 @@ namespace PhotonPiano.Api.Requests.Class
 
         [FromQuery(Name = "is-score-published")] public bool? IsScorePublished { get; init; }
 
+        [FromQuery(Name = "is-public")] public bool? IsPublic { get; init; }
+
         [FromQuery(Name = "teacher-id")] public string? TeacherId { get; init; }
 
         [FromQuery(Name = "student-id")] public string? StudentId { get; init; }

@@ -25,6 +25,8 @@ namespace PhotonPiano.DataAccess.Models.Entity
 
         public Guid? NextLevelId { get; set; }
 
+        public string? ThemeColor { get; set; }
+
         public virtual Level? NextLevel { get; set; } // Navigation property
 
         public virtual ICollection<Class> Classes { get; set; } = new List<Class>();

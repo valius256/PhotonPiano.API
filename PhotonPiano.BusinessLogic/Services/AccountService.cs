@@ -49,7 +49,7 @@ public class AccountService : IAccountService
 
     public async Task<AccountDetailModel> GetAccountById(string firebaseId)
     {
-        var result = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountDetailModel>(x => x.AccountFirebaseId == firebaseId);
+        var result = await _unitOfWork.AccountRepository.FindFirstProjectedAsync<AccountDetailModel>(x => x.AccountFirebaseId == firebaseId);
         if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
         return result;
     }

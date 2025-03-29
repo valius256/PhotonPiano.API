@@ -2,6 +2,7 @@
 
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -23,8 +24,13 @@ namespace PhotonPiano.BusinessLogic.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task ChangeClassOfStudent(ChangeClassModel changeClassModel, string accountFirebaseId)
+        public async Task ChangeClassOfStudent(ChangeClassModel changeClassModel, AccountModel account)
         {
+            if (account.Role == Role.Student)
+            {
+                changeClassModel.StudentFirebaseId = account.AccountFirebaseId;
+            }
+
             var oldStudentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.StudentFirebaseId == changeClassModel.StudentFirebaseId && sc.ClassId == changeClassModel.OldClassId);
             if (oldStudentClass is null)
             {
@@ -34,6 +40,16 @@ namespace PhotonPiano.BusinessLogic.Services
                 .Include(c => c.Slots)
                 .Include(oc => oc.StudentClasses)
                 .SingleOrDefaultAsync(oc => oc.Id == oldStudentClass.ClassId))!;
+
+            if (account.Role == Role.Student)
+            {
+                var deadlineDays = int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.ChangingClassDeadline)).ConfigValue ?? "0");
+                var firstSlot = oldClassInfo.Slots.OrderBy(s => s.Date).OrderBy(s => s.Shift).FirstOrDefault();
+                if (firstSlot != null && DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7).AddDays(deadlineDays)) > firstSlot.Date)
+                {
+                    throw new BadRequestException("The deadline for changing class has been overdued");
+                }
+            }
 
             var student = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == changeClassModel.StudentFirebaseId);
             if (student is null)
@@ -85,7 +101,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 && classSlotIds.Contains(ss.SlotId), false, true);
             var studentSlots = classInfo.Slots.Select(s => new SlotStudent
             {
-                CreatedById = accountFirebaseId,
+                CreatedById = account.AccountFirebaseId,
                 SlotId = s.Id,
                 StudentFirebaseId = changeClassModel.StudentFirebaseId
             });
@@ -102,7 +118,7 @@ namespace PhotonPiano.BusinessLogic.Services
 
             //Update old studentClass
             oldStudentClass.ClassId = changeClassModel.NewClassId;
-            oldStudentClass.UpdateById = accountFirebaseId;
+            oldStudentClass.UpdateById = account.AccountFirebaseId;
             oldStudentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
             //Delete old studentSlots
@@ -112,7 +128,7 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 oldStudentSlot.RecordStatus = RecordStatus.IsDeleted;
                 oldStudentSlot.DeletedAt = DateTime.UtcNow.AddHours(7);
-                oldStudentSlot.DeletedById = accountFirebaseId;
+                oldStudentSlot.DeletedById = account.AccountFirebaseId;
             }
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -199,7 +215,7 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 var otherStudents = await _unitOfWork.AccountRepository.FindAsQueryable(s => s.StudentStatus == StudentStatus.WaitingForClass
                     && !createStudentClassesModel.StudentFirebaseIds.Contains(s.AccountFirebaseId)
-                    && (allowSkipLevel || (!allowSkipLevel && s.LevelId == classInfo.LevelId)))
+                    && s.LevelId == classInfo.LevelId)
                     .Take(maxStudents - classInfo.StudentClasses.Count - students.Count)
                     .ToListAsync();
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhotonPiano.DataAccess.Models;
@@ -12,9 +13,11 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250328185448_Add_Property_Theme_Color_To_Level")]
+    partial class Add_Property_Theme_Color_To_Level
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,7 +117,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("LevelId");
 
-                    b.ToTable("Account", (string)null);
+                    b.ToTable("Account");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.AccountNotification", b =>
@@ -144,7 +147,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("NotificationId");
 
-                    b.ToTable("AccountNotification", (string)null);
+                    b.ToTable("AccountNotification");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Application", b =>
@@ -223,7 +226,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Application", (string)null);
+                    b.ToTable("Application");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Class", b =>
@@ -293,7 +296,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("Class", (string)null);
+                    b.ToTable("Class");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Criteria", b =>
@@ -347,7 +350,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("Criteria", (string)null);
+                    b.ToTable("Criteria");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.DayOff", b =>
@@ -395,7 +398,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("DayOff", (string)null);
+                    b.ToTable("DayOff");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTest", b =>
@@ -469,7 +472,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("EntranceTest", (string)null);
+                    b.ToTable("EntranceTest");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTestResult", b =>
@@ -527,7 +530,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("EntranceTestResult", (string)null);
+                    b.ToTable("EntranceTestResult");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.EntranceTestStudent", b =>
@@ -600,7 +603,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("EntranceTestStudent", (string)null);
+                    b.ToTable("EntranceTestStudent");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerAnswer", b =>
@@ -637,7 +640,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("SurveyQuestionId");
 
-                    b.ToTable("LearnerAnswer", (string)null);
+                    b.ToTable("LearnerAnswer");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerSurvey", b =>
@@ -675,7 +678,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("PianoSurveyId");
 
-                    b.ToTable("LearnerSurvey", (string)null);
+                    b.ToTable("LearnerSurvey");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Level", b =>
@@ -741,7 +744,7 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("NextLevelId")
                         .IsUnique();
 
-                    b.ToTable("Level", (string)null);
+                    b.ToTable("Level");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.New", b =>
@@ -792,7 +795,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("New", (string)null);
+                    b.ToTable("New");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Notification", b =>
@@ -830,7 +833,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("Id");
 
-                    b.ToTable("Notification", (string)null);
+                    b.ToTable("Notification");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.PianoSurvey", b =>
@@ -877,7 +880,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("PianoSurvey", (string)null);
+                    b.ToTable("PianoSurvey");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.PianoSurveyQuestion", b =>
@@ -912,7 +915,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("PianoSurveyQuestion", (string)null);
+                    b.ToTable("PianoSurveyQuestion");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Room", b =>
@@ -960,7 +963,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("Room", (string)null);
+                    b.ToTable("Room");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Slot", b =>
@@ -1015,7 +1018,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("Slot", (string)null);
+                    b.ToTable("Slot");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.SlotStudent", b =>
@@ -1076,7 +1079,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("SlotStudent", (string)null);
+                    b.ToTable("SlotStudent");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.StudentClass", b =>
@@ -1138,7 +1141,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdateById");
 
-                    b.ToTable("StudentClass", (string)null);
+                    b.ToTable("StudentClass");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.StudentClassScore", b =>
@@ -1174,7 +1177,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("StudentClassId");
 
-                    b.ToTable("StudentClassScore", (string)null);
+                    b.ToTable("StudentClassScore");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.SurveyQuestion", b =>
@@ -1233,7 +1236,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("SurveyQuestion", (string)null);
+                    b.ToTable("SurveyQuestion");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.SystemConfig", b =>
@@ -1269,7 +1272,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemConfig", (string)null);
+                    b.ToTable("SystemConfig");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Transaction", b =>
@@ -1338,7 +1341,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("TutionId");
 
-                    b.ToTable("Transaction", (string)null);
+                    b.ToTable("Transaction");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Tuition", b =>
@@ -1378,7 +1381,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("StudentClassId");
 
-                    b.ToTable("Tuition", (string)null);
+                    b.ToTable("Tuition");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Account", b =>

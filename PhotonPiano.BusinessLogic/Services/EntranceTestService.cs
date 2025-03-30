@@ -337,52 +337,43 @@ public class EntranceTestService : IEntranceTestService
             throw new NotFoundException("Account not found");
         }
 
-        await using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
-
-        try
+        transaction.PaymentStatus =
+        callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
+        transaction.TransactionCode = callbackModel.VnpTransactionNo;
+        transaction.UpdatedAt = DateTime.UtcNow;
+        switch (transaction.PaymentStatus)
         {
-            transaction.PaymentStatus =
-                callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
-            transaction.TransactionCode = callbackModel.VnpTransactionNo;
-            transaction.UpdatedAt = DateTime.UtcNow;
+            case PaymentStatus.Succeed:
 
-            switch (transaction.PaymentStatus)
-            {
-                case PaymentStatus.Succeed:
+                var entranceTestStudent = new EntranceTestStudent
+                {
+                    Id = Guid.CreateVersion7(),
+                    StudentFirebaseId = accountId,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = accountId,
+                };
 
-                    var entranceTestStudent = new EntranceTestStudent
-                    {
-                        Id = Guid.CreateVersion7(),
-                        StudentFirebaseId = accountId,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedById = accountId,
-                    };
+                await _unitOfWork.EntranceTestStudentRepository.AddAsync(entranceTestStudent);
 
-                    await _unitOfWork.EntranceTestStudentRepository.AddAsync(entranceTestStudent);
+                transaction.EntranceTestStudentId = entranceTestStudent.Id;
 
-                    transaction.EntranceTestStudentId = entranceTestStudent.Id;
-
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
                     account.StudentStatus = StudentStatus.WaitingForEntranceTestArrangement;
                     account.UpdatedAt = DateTime.UtcNow;
-
                     await _unitOfWork.SaveChangesAsync();
-                    await _unitOfWork.CommitTransactionAsync();
-
                     await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
                         $"Học viên {account.FullName} vừa đăng ký thi đầu vào", "");
-
-                    break;
-                case PaymentStatus.Failed:
-                    throw new BadRequestException("Payment has failed.");
-                default:
-                    throw new BadRequestException("Unknown payment status.");
-            }
+                });
+                
+           
+                break;
+            case PaymentStatus.Failed:
+                throw new BadRequestException("Payment has failed.");
+            default:
+                throw new BadRequestException("Unknown payment status.");
         }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync();
-            throw;
-        }
+        
     }
 
     private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(

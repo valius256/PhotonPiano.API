@@ -14,9 +14,7 @@ namespace PhotonPiano.Test.IntegrationTest.Scheduler;
 public class SchedulerControllerIntegrationTest : BaseIntergrationTest
 {
     private readonly HttpClient _client;
-
-
-
+    
     public SchedulerControllerIntegrationTest(IntergrationTestWebAppFactory factory) : base(factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -24,9 +22,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
             AllowAutoRedirect = false
         });
     }
-
-
-
+    
     // Unauthorized
     [Fact]
     public async Task GetSchedulers_Unauthorized_ReturnsUnauthorized()
@@ -313,6 +309,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
     // }
     //
     // Test for non-existent student IDs
+    
     [Fact]
     public async Task UpdateAttendance_NonExistentStudentIds_ReturnsBadRequest()
     {
@@ -347,5 +344,85 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+    
+      [Fact]
+    public async Task GetBlankClassAndShift_ReturnsOkResult()
+    {
+        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        // Arrange
+        var request = new BlankSlotAndShiftRequest
+        {
+            StartDate = DateOnly.FromDateTime(DateTime.Now),
+            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7))
+        };
+        
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/blank-slot", request);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<List<BlankSlotModel>>();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task CancelSlot_ReturnsNoContent()
+    {
+        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+        
+        
+        // Arrange
+        var request = new CancelSlotRequest
+        {
+            SlotId = firstSlotId, 
+             CancelReason = "Test reason" // Uncomment if needed
+        };
+
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/cancel-slot", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PublicNewSlot_ReturnsOkResult()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+
+        var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId;
+        
+        var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId.Value;
+      
+        var request = new PublicNewSlotRequest
+        {
+            Shift = Shift.Shift1_7h_8h30,
+            ClassId = classId.Value,
+            Date = DateOnly.FromDateTime(DateTime.Now),
+            RoomId = roomId
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/public-new-slot", request);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<SlotDetailModel>();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(result);
     }
 }

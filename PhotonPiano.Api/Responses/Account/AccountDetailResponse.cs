@@ -8,6 +8,8 @@ public record AccountDetailResponse : AccountResponse
 {
     public ClassModel? CurrentClass { get; set; }
 
+    public List<StudentClassWithClassModel> StudentClasses { get; set; } = [];
+
     public List<EntranceTestResponse> EntranceTests { get; init; } = [];
 
     public List<EntranceTestStudentModel> EntranceTestStudents { get; init; } = [];

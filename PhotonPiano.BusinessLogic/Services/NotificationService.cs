@@ -165,11 +165,12 @@ public class NotificationService : INotificationService
 
         List<Task> pushNotificationTasks = [];
 
-        foreach (var staff in staffs)
-        {
-            pushNotificationTasks.Add(SendNotificationAsync(staff.AccountFirebaseId, title, message));
-        }
+        await SendNotificationToManyAsync(staffs.Select(s => s.AccountFirebaseId).ToList(), title + ": " + message, "");
+        //foreach (var staff in staffs)
+        //{
+        //    pushNotificationTasks.Add((staff.AccountFirebaseId, title, ));
+        //}
 
-        await Task.WhenAll(pushNotificationTasks);
+        //await Task.WhenAll(pushNotificationTasks);
     }
 }

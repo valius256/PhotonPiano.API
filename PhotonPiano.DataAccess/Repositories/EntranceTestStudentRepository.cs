@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -11,5 +12,12 @@ public class EntranceTestStudentRepository : GenericRepository<EntranceTestStude
     public EntranceTestStudentRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;
+    }
+
+    public async Task<List<EntranceTestStudent>> GetEntranceTestStudentsWithResults(Guid entranceTestId)
+    {
+        return await _context.EntranceTestStudents.Where(x => x.EntranceTestId == entranceTestId)
+            .Include(x => x.EntranceTestResults)
+            .ToListAsync();
     }
 }

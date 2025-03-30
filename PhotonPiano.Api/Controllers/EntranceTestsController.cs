@@ -168,6 +168,20 @@ public class EntranceTestsController : BaseController
         return Created();
     }
 
+
+    [HttpPut("{id}/results")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Update results of an entrance test")]
+    public async Task<ActionResult> UpdateEntranceTestResults(
+        [FromRoute] Guid id,
+        [FromBody] UpdateStudentsEntranceTestResultsRequest request)
+    {
+        await _serviceFactory.EntranceTestService.UpdateStudentsEntranceTestResults(
+            request.Adapt<UpdateStudentsEntranceTestResultsModel>(), id, base.CurrentAccount!);
+
+        return NoContent();
+    }
+
     [HttpPut("{id}/students/{student-id}/results")]
     [EndpointDescription("Update student entrance test results")]
     [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]

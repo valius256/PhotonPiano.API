@@ -559,6 +559,69 @@ public class EntranceTestService : IEntranceTestService
         });
     }
 
+    public async Task UpdateStudentsEntranceTestResults(UpdateStudentsEntranceTestResultsModel updateModel,
+        Guid entranceTestId,
+        AccountModel currentAccount)
+    {
+        var entranceTestStudents =
+            await _unitOfWork.EntranceTestStudentRepository.GetEntranceTestStudentsWithResults(entranceTestId);
+
+        if (entranceTestStudents.Count != updateModel.UpdateRequests.Count)
+        {
+            throw new BadRequestException("Some students are not valid to be updated.");
+        }
+
+        var criterias =
+            await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.EntranceTest, hasTrackings: false);
+
+        List<EntranceTestResult> entranceTestResultsToAdd = [];
+        
+        foreach (var entranceTestStudent in entranceTestStudents)
+        {
+            var requestModel = updateModel.UpdateRequests.FirstOrDefault(x => x.StudentId == entranceTestStudent.StudentFirebaseId);
+
+            if (requestModel is null)
+            {
+                continue;
+            }
+
+            entranceTestStudent.TheoraticalScore = requestModel.TheoraticalScore;
+            entranceTestStudent.InstructorComment = requestModel.InstructorComment;
+
+            entranceTestStudent.EntranceTestResults.Clear();
+
+            foreach (var result in requestModel.Scores)
+            {
+                var criteria = criterias.FirstOrDefault(c => c.Id == result.CriteriaId);
+
+                if (criteria is null)
+                {
+                    throw new NotFoundException($"Criteria with id {result.CriteriaId} not found.");
+                }
+
+                var resultToAdd = new EntranceTestResult
+                {
+                    Id = Guid.NewGuid(),
+                    EntranceTestStudentId = entranceTestStudent.Id,
+                    CreatedById = currentAccount.AccountFirebaseId,
+                    CriteriaId = result.CriteriaId,
+                    CriteriaName = criteria.Name,
+                    Score = result.Score,
+                    Weight = criteria.Weight
+                };
+                
+                entranceTestResultsToAdd.Add(resultToAdd);
+                
+                entranceTestStudent.EntranceTestResults.Add(resultToAdd);
+            }
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.EntranceTestResultRepository.AddRangeAsync(entranceTestResultsToAdd);
+        });
+    }
+
     public async Task UpdateStudentEntranceResults(Guid id, string studentId,
         UpdateEntranceTestResultsModel updateModel,
         AccountModel currentAccount)

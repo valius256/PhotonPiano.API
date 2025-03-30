@@ -34,6 +34,8 @@ public interface IEntranceTestService
 
     Task AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model, AccountModel currentAccount);
 
+    Task UpdateStudentsEntranceTestResults(UpdateStudentsEntranceTestResultsModel updateModel, Guid entranceTestId, AccountModel currentAccount);
+
     Task UpdateStudentEntranceResults(Guid id, string studentId, UpdateEntranceTestResultsModel updateModel, AccountModel currentAccount);
 
     Task UpdateEntranceTestsMaxStudents(int maxStudents, AccountModel currentAccount);

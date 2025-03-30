@@ -1,6 +1,7 @@
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.BusinessLogic.BusinessModel.Utils;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -39,24 +40,24 @@ public class RoomService : IRoomService
 
         return result;
     }
-    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates, List<Slot> otherSlots)
+    public async Task<List<RoomModel>> GetAvailableRooms(List<(DateOnly, Shift)> timeSlots, List<Slot> otherSlots)
     {
 
         var bookedRoomIds = await _unitOfWork.SlotRepository.Entities
-            .Where(s => dates.Contains(s.Date) && s.Shift == shift)
+            .Where(s => timeSlots.Any(ts => ts.Item1 == s.Date && s.Shift == ts.Item2))
             .Select(s => s.RoomId)
             .Distinct()
             .ToListAsync();
 
         // Get booked room IDs from the additional (in-memory) slots
         var newlyBookedRoomIds = otherSlots
-            .Where(s => dates.Contains(s.Date) && s.Shift == shift)
+            .Where(s => timeSlots.Any(ts => ts.Item1 == s.Date && s.Shift == ts.Item2))
             .Select(s => s.RoomId)
             .Distinct()
             .ToList();
 
         var bookRoomIdsForEntranceTest = await _unitOfWork.EntranceTestRepository.Entities
-            .Where(et => dates.Contains(et.Date) && et.Shift == shift)
+            .Where(et => timeSlots.Any(ts => ts.Item1 == et.Date && et.Shift == ts.Item2))
             .Select(et => (Guid?)et.RoomId)
             .Distinct()
             .ToListAsync();

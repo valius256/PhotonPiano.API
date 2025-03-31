@@ -29,6 +29,11 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         return _dbContainer.StopAsync();
     }
 
+    public string GetDbConnectionString()
+    {
+        return _dbContainer.GetConnectionString();
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureTestServices(services =>

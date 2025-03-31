@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
+using Npgsql;
 using PhotonPiano.Api.Requests.Tution;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.Api.Responses.Tution;
@@ -17,6 +18,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
     private readonly IServiceScope _scope;
     private readonly IServiceFactory _serviceFactory;
     private static bool _dataInitialized = false;
+    private static readonly object _lock = new object();
 
     public TuitionControllerIntegrationTest(IntergrationTestWebAppFactory factory) : base(factory)
     {
@@ -29,10 +31,14 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _scope = factory.Services.CreateScope();
         _serviceFactory = _scope.ServiceProvider.GetRequiredService<IServiceFactory>();
 
-        if (!_dataInitialized)
+        lock (_lock)
         {
-            _serviceFactory.TuitionService.CronAutoCreateTuition().GetAwaiter().GetResult();
-            _dataInitialized = true;
+            if (!_dataInitialized)
+            {
+                EnsureDatabaseReady(factory.GetDbConnectionString()); // Chờ database sẵn sàng
+                _serviceFactory.TuitionService.CronAutoCreateTuition().GetAwaiter().GetResult();
+                _dataInitialized = true;
+            }
         }
     }
 
@@ -40,6 +46,32 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
     {
         _scope?.Dispose();
     }
+
+    private void EnsureDatabaseReady(string connectionString)
+    {
+        var retry = 10;
+        while (retry > 0)
+        {
+            try
+            {
+                using var conn = new NpgsqlConnection(connectionString);
+                conn.Open();
+                using var cmd = new NpgsqlCommand("SELECT 1;", conn);
+                cmd.ExecuteScalar();
+                Console.WriteLine("✅ Database is ready!");
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Database not ready yet. Retrying... {retry} attempts left. Error: {ex.Message}");
+                Task.Delay(2000).Wait();
+                retry--;
+            }
+        }
+
+        throw new Exception("❌ Database is not ready for TuitionService.");
+    }
+
 
     [Fact]
     public async Task PayTuitionFee_AsStudent_ReturnsPaymentUrl()

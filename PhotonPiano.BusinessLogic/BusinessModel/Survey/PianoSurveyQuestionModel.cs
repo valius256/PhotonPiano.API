@@ -2,6 +2,8 @@
 
 public record PianoSurveyQuestionModel
 {
+    public required Guid Id { get; init; }
+    
     public Guid SurveyId { get; init; }
 
     public Guid QuestionId { get; init; }

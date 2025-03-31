@@ -230,8 +230,42 @@ public class ClassService : IClassService
 
             // Find valid groups (Cliques)
             var studentGroups = studentGraph.FindCliques(minStudents, maxStudents);
+            var unassignedStudents = new HashSet<string>(studentsOfLevel.Select(s => s.AccountFirebaseId));
 
             // Assign students to classes
+            foreach (var group in studentGroups)
+            {
+                
+                foreach (var student in group)
+                    unassignedStudents.Remove(student);
+            }
+            // 🔹 Handle Unassigned Students
+            var unassignedList = unassignedStudents.ToList();
+            while (unassignedList.Count != 0)
+            {
+                var student = unassignedList.First();
+                unassignedList.RemoveAt(0);
+
+                // Try adding to an existing group
+                var bestGroup = studentGroups
+                    .Where(g => g.Count < maxStudents)
+                    .OrderByDescending(g => g.Count) // Prefer nearly full groups
+                    .FirstOrDefault();
+
+                if (bestGroup != null)
+                {
+                    bestGroup.Add(student);
+                }
+                else
+                {
+                    // Create a new group if necessary
+                    studentGroups.Add([student]);
+                }
+            }
+
+            // 🔹 Remove any groups that don't meet minStudents
+            studentGroups.RemoveAll(g => g.Count < minStudents);
+
             foreach (var group in studentGroups)
             {
                 classes.Add(new CreateClassAutoModel
@@ -241,7 +275,7 @@ public class ClassService : IClassService
                     Name = $"",
                     StudentIds = group
                 });
-            }
+            }        
         }
         await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đã đến lúc phân bổ lịch học! Đang chuẩn bị cấu hình và ngày nghỉ...", currentProgress);
         await Task.Delay(500);
@@ -295,7 +329,7 @@ public class ClassService : IClassService
             var slots = await ScheduleAClassAutomatically(arrangeClassModel.StartWeek, bestSlots, dayOffs, level, unaddedSlots, false);
 
             //var (slot, shift) = 
-            classDraft.Slots.AddRange(slots.Adapt<CreateSlotThroughArrangementModel>());
+            classDraft.Slots.AddRange(slots.Adapt<List<CreateSlotThroughArrangementModel>>());
             unaddedSlots.AddRange(bestSlots.Adapt<List<Slot>>());
 
             string scheduleDescription = "";

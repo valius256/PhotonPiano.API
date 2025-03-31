@@ -11,11 +11,11 @@ using static PhotonPiano.Test.Extensions.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.Scheduler;
 
-[Collection("Schedulers Integration Tests")]
+//[Collection("Schedulers Integration Tests")]
 public class SchedulerControllerIntegrationTest : BaseIntergrationTest
 {
     private readonly HttpClient _client;
-    
+
     public SchedulerControllerIntegrationTest(IntergrationTestWebAppFactory factory) : base(factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -23,7 +23,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
             AllowAutoRedirect = false
         });
     }
-    
+
     // Unauthorized
     [Fact]
     public async Task GetSchedulers_Unauthorized_ReturnsUnauthorized()
@@ -211,7 +211,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.NotNull(result);
         Assert.True(result.Data);
     }
-    
+
     [Fact]
     public async Task UpdateAttendance_EmptyLists_ReturnsBadRequest()
     {
@@ -262,7 +262,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-    
+
     // Test for non-existent student IDs
     [Fact]
     public async Task UpdateAttendance_NonExistentStudentIds_ReturnsBadRequest()
@@ -299,20 +299,20 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
-    
+
     [Fact]
     public async Task GetBlankClassAndShift_ReturnsOkResult()
     {
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        
+
         // Arrange
         var request = new BlankSlotAndShiftRequest
         {
             StartDate = DateOnly.FromDateTime(DateTime.Now),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7))
         };
-        
+
         // Act
         var response = await _client.PostAsJsonAsync("/api/scheduler/blank-slot", request);
 
@@ -333,8 +333,8 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         // Arrange
         var request = new CancelSlotRequest
         {
-            SlotId = Guid.NewGuid(), 
-             CancelReason = "Test reason" 
+            SlotId = Guid.NewGuid(),
+            CancelReason = "Test reason"
         };
 
 
@@ -344,7 +344,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-    
+
     [Fact]
     public async Task CancelSlot_ReturnsNoContent()
     {
@@ -353,12 +353,12 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
         var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
-        
-        
+
+
         // Arrange
         var request = new CancelSlotRequest
         {
-            SlotId = firstSlotId, 
+            SlotId = firstSlotId,
             CancelReason = "Test reason" // Uncomment if needed
         };
 
@@ -380,10 +380,10 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
 
         var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId!.Value;
-        
+
         var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId!.Value;
 
-        
+
         var request = new PublicNewSlotRequest
         {
             Shift = Shift.Shift1_7h_8h30,
@@ -401,7 +401,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         // Assert.NotNull(result);
     }
-    
+
     [Fact]
     public async Task PublicNewSlot_ReturnsOk()
     {
@@ -412,9 +412,9 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
 
         var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId!.Value;
-        
+
         var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId!.Value;
-        
+
         var request = new PublicNewSlotRequest
         {
             Shift = Shift.Shift3_10h45_12h,

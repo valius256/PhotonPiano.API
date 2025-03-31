@@ -1,22 +1,17 @@
-﻿using System.Linq.Expressions;
-using AutoFixture;
+﻿using AutoFixture;
 using AutoFixture.AutoMoq;
-using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
-using PhotonPiano.BusinessLogic.BusinessModel.Payment;
-using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Abstractions;
-using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
-using PhotonPiano.Shared.Exceptions;
+using System.Linq.Expressions;
 
 namespace PhotonPiano.Test.UnitTest.Tuition;
 
 
-[Collection("Tuition Unit Tests")]
+//[Collection("Tuition Unit Tests")]
 public class TuitionServiceTest
 {
     private readonly IFixture _fixture = new Fixture().Customize(new AutoMoqCustomization());

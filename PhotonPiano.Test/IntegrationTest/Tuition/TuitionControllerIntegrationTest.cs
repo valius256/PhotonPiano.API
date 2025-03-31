@@ -10,7 +10,7 @@ using System.Net.Http.Json;
 
 namespace PhotonPiano.Test.IntegrationTest.Tuition;
 
-[Collection("Tuition Integration Tests")]
+//[Collection("Tuition Integration Tests")]
 public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposable
 {
     private readonly HttpClient _client;

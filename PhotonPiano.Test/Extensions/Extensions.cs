@@ -27,6 +27,16 @@ public static class Extensions
 
         return JsonConvert.DeserializeObject<AuthModel>(await response.Content.ReadAsStringAsync())!.IdToken;
     }
+    
+    public static async Task<string> GetFirebaseAccountId(this HttpClient client, string email, string password)
+    {
+        var signInRequest = new SignInRequest(email, password);
+        var content = new StringContent(JsonConvert.SerializeObject(signInRequest), Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/auth/sign-in", content);
+        response.EnsureSuccessStatusCode();
+
+        return JsonConvert.DeserializeObject<AuthModel>(await response.Content.ReadAsStringAsync())!.LocalId;
+    }
 
     public static StringContent SerializeRequest<T>(T request)
     {

@@ -11,6 +11,7 @@ using static PhotonPiano.Test.Extensions.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.Scheduler;
 
+[Collection("Schedulers Integration Tests")]
 public class SchedulerControllerIntegrationTest : BaseIntergrationTest
 {
     private readonly HttpClient _client;
@@ -210,9 +211,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.NotNull(result);
         Assert.True(result.Data);
     }
-
-    //
-    // Test for empty attendance lists
+    
     [Fact]
     public async Task UpdateAttendance_EmptyLists_ReturnsBadRequest()
     {

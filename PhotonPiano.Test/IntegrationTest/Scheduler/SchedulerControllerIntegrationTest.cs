@@ -263,53 +263,8 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-
-    // Test for duplicate student IDs
-    // [Fact]
-    // public async Task UpdateAttendance_DuplicateStudentIds_ReturnsBadRequest()
-    // {
-    //     // Arrange
-    //     var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
-    //     _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
-    //
-    //     var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
-    //     var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
-    //     var slotResponse = await _client.GetAsync($"/api/scheduler/attendance-status/{firstSlotId}");
-    //     var slotDetails = await DeserializeResponse<List<StudentAttendanceResponse>>(slotResponse);
-    //
-    //     var studentIds = slotDetails.Select(x => x.StudentFirebaseId).ToList();
-    //
-    //     var randomStudentId = studentIds.First();
-    //     
-    //     var slotStudentInfors = new List<SlotStudentInfoRequest>()
-    //     {
-    //         new SlotStudentInfoRequest()
-    //         {
-    //             StudentId = randomStudentId,
-    //             AttendanceStatus = AttendanceStatus.Absent
-    //         },
-    //         new SlotStudentInfoRequest()
-    //         {
-    //             StudentId = randomStudentId,
-    //             AttendanceStatus = AttendanceStatus.Attended
-    //         }
-    //     };
-    //     
-    //     var request = new AttendanceRequest
-    //     {
-    //         SlotId = firstSlotId,
-    //         SlotStudentInfoRequests = slotStudentInfors
-    //     };
-    //
-    //     // Act
-    //     var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
-    //
-    //     // Assert
-    //     Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    // }
-    //
-    // Test for non-existent student IDs
     
+    // Test for non-existent student IDs
     [Fact]
     public async Task UpdateAttendance_NonExistentStudentIds_ReturnsBadRequest()
     {
@@ -346,7 +301,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
     
-      [Fact]
+    [Fact]
     public async Task GetBlankClassAndShift_ReturnsOkResult()
     {
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
@@ -370,6 +325,28 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
     }
 
     [Fact]
+    public async Task CancelSlot_ReturnsNotFound()
+    {
+        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+
+        // Arrange
+        var request = new CancelSlotRequest
+        {
+            SlotId = Guid.NewGuid(), 
+             CancelReason = "Test reason" 
+        };
+
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/cancel-slot", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    [Fact]
     public async Task CancelSlot_ReturnsNoContent()
     {
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
@@ -383,7 +360,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var request = new CancelSlotRequest
         {
             SlotId = firstSlotId, 
-             CancelReason = "Test reason" // Uncomment if needed
+            CancelReason = "Test reason" // Uncomment if needed
         };
 
 
@@ -395,23 +372,54 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
     }
 
     [Fact]
-    public async Task PublicNewSlot_ReturnsOkResult()
+    public async Task PublicNewSlot_ReturnsIllegalArgument()
     {
         // Arrange
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
-        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
 
-        var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId;
+        var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId!.Value;
         
-        var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId.Value;
-      
+        var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId!.Value;
+
+        
         var request = new PublicNewSlotRequest
         {
             Shift = Shift.Shift1_7h_8h30,
-            ClassId = classId.Value,
+            ClassId = classId,
+            Date = DateOnly.FromDateTime(DateTime.Now),
+            RoomId = roomId
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/public-new-slot", request);
+
+        // Assert
+        // response.EnsureSuccessStatusCode();
+        // var result = await response.Content.ReadFromJsonAsync<SlotDetailModel>();
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        // Assert.NotNull(result);
+    }
+    
+    [Fact]
+    public async Task PublicNewSlot_ReturnsOk()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+
+        var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId!.Value;
+        
+        var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId!.Value;
+        
+        var request = new PublicNewSlotRequest
+        {
+            Shift = Shift.Shift3_10h45_12h,
+            ClassId = classId,
             Date = DateOnly.FromDateTime(DateTime.Now),
             RoomId = roomId
         };

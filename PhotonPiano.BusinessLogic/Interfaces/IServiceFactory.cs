@@ -64,4 +64,6 @@ public interface IServiceFactory
     ISurveyQuestionService SurveyQuestionService { get; }
     
     IPianoSurveyService PianoSurveyService { get; }
+
+    IFreeSlotService FreeSlotService { get; }
 }

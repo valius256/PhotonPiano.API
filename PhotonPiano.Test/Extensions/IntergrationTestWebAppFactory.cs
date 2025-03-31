@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using PhotonPiano.Api;
 using PhotonPiano.DataAccess.Models;
 using Testcontainers.PostgreSql;
@@ -17,12 +18,32 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithDatabase("photonpiano")
         .WithUsername("postgres")
         .WithPassword("postgres")
+        .WithCleanUp(false)
         .Build();
 
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
+
+
+        var maxRetries = 10;
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                using var conn = new NpgsqlConnection(GetDbConnectionString());
+                await conn.OpenAsync();
+                return;
+            }
+            catch
+            {
+                await Task.Delay(1000);
+            }
+        }
+
+        throw new Exception("PostgreSQL container did not start in time.");
     }
+
 
     Task IAsyncLifetime.DisposeAsync()
     {
@@ -57,6 +78,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
                 config.UsePostgreSqlStorage(options =>
                 {
                     options.UseNpgsqlConnection(connectionString);
+
                 });
             });
         });

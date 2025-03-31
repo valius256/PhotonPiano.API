@@ -136,6 +136,7 @@ public class SurveyQuestionService : ISurveyQuestionService
                 //Add to PianoSurveyQuestion table
                 await _unitOfWork.PianoSurveyQuestionRepository.AddAsync(new PianoSurveyQuestion
                 {
+                    Id = Guid.NewGuid(),
                     QuestionId = question.Id,
                     SurveyId = createModel.SurveyId.Value,
                     OrderIndex = createModel.OrderIndex.Value,

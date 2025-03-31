@@ -109,6 +109,7 @@ public class PianoSurveyService : IPianoSurveyService
                     dbQuestionIds.Add(request.Id.Value);
                     pianoSurveyQuestions.Add(new PianoSurveyQuestion
                     {
+                        Id = Guid.NewGuid(),
                         QuestionId = request.Id.Value,
                         SurveyId = survey.Id,
                         OrderIndex = index,
@@ -125,6 +126,7 @@ public class PianoSurveyService : IPianoSurveyService
                     surveyQuestionsToAdd.Add(newQuestion);
                     pianoSurveyQuestions.Add(new PianoSurveyQuestion
                     {
+                        Id = Guid.NewGuid(),
                         QuestionId = newQuestion.Id,
                         SurveyId = survey.Id,
                         OrderIndex = index,
@@ -167,7 +169,7 @@ public class PianoSurveyService : IPianoSurveyService
 
     public async Task UpdatePianoSurvey(Guid id, UpdatePianoSurveyModel updateModel, AccountModel currentAccount)
     {
-        var survey = await _unitOfWork.PianoSurveyRepository.FindSingleAsync(s => s.Id == id);
+        var survey = await _unitOfWork.PianoSurveyRepository.GetPianoSurveyWithQuestionsAsync(id);
 
         if (survey is null)
         {
@@ -214,6 +216,7 @@ public class PianoSurveyService : IPianoSurveyService
                     dbQuestionIds.Add(request.Id.Value);
                     pianoSurveyQuestions.Add(new PianoSurveyQuestion
                     {
+                        Id = Guid.NewGuid(),
                         QuestionId = request.Id.Value,
                         SurveyId = survey.Id,
                         OrderIndex = index,
@@ -230,6 +233,7 @@ public class PianoSurveyService : IPianoSurveyService
                     surveyQuestionsToAdd.Add(newQuestion);
                     pianoSurveyQuestions.Add(new PianoSurveyQuestion
                     {
+                        Id = Guid.NewGuid(),
                         QuestionId = newQuestion.Id,
                         SurveyId = survey.Id,
                         OrderIndex = index,
@@ -249,19 +253,26 @@ public class PianoSurveyService : IPianoSurveyService
                 throw new BadRequestException("Some of questions are not found");
             }
         }
+        
+        foreach (var question in survey.PianoSurveyQuestions)
+        {
+            _unitOfWork.PianoSurveyQuestionRepository.Detach(question);
+        }
+        
+        await _unitOfWork.PianoSurveyQuestionRepository.DeleteRangeAsync(survey.PianoSurveyQuestions);
+        await _unitOfWork.SaveChangesAsync();
+        
+        survey.PianoSurveyQuestions.Clear();
 
-
+        foreach (var question in pianoSurveyQuestions)
+        {
+            survey.PianoSurveyQuestions.Add(question);
+        }
+        
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             if (updateModel.Questions.Count > 0)
             {
-                // await _unitOfWork.PianoSurveyRepository.UpdateAsync(survey);
-                // await _unitOfWork.SaveChangesAsync();
-                // // survey.PianoSurveyQuestions.Clear();
-                //
-                //
-                // _unitOfWork.PianoSurveyRepository.Detach(survey);
-                //
                 if (surveyQuestionsToAdd.Count > 0)
                 {
                     await _unitOfWork.SurveyQuestionRepository.AddRangeAsync(surveyQuestionsToAdd);
@@ -269,9 +280,6 @@ public class PianoSurveyService : IPianoSurveyService
 
                 if (pianoSurveyQuestions.Count > 0)
                 {
-                    await _unitOfWork.PianoSurveyQuestionRepository.ExecuteDeleteAsync(x => x.SurveyId == survey.Id);
-                    // await _unitOfWork.SaveChangesAsync();
-
                     await _unitOfWork.PianoSurveyQuestionRepository.AddRangeAsync(pianoSurveyQuestions);
                 }
             }

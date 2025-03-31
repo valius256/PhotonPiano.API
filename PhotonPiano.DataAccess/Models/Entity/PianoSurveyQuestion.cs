@@ -1,6 +1,6 @@
 ﻿namespace PhotonPiano.DataAccess.Models.Entity;
 
-public class PianoSurveyQuestion : BaseEntity
+public class PianoSurveyQuestion : BaseEntityWithId
 {
     public Guid SurveyId { get; set; }
 

@@ -30,6 +30,7 @@ env:
   VNPAY_TMNCODE: ${{ secrets.VNPAY_TMNCODE }}
   VNPAY_LOCALE: ${{ secrets.VNPAY_LOCALE }}
   VNPAY_TIMEZONEID: ${{ secrets.VNPAY_TIMEZONEID }}
+  VNPAY_VERSION: ${{ secrets.VNPAY_VERSION }}
   GITHUB_ACTIONS: "true"
 
 jobs:

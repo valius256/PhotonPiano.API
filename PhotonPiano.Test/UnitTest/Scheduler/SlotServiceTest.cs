@@ -17,6 +17,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Room;
 
 namespace PhotonPiano.Test.UnitTest.Scheduler;
 
+[Collection("Slot Unit Tests")]
 public class SlotServiceTest
 {
     private readonly IFixture _fixture = new Fixture().Customize(new AutoMoqCustomization());

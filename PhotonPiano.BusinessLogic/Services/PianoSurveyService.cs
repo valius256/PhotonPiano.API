@@ -286,6 +286,23 @@ public class PianoSurveyService : IPianoSurveyService
         });
     }
 
+    public async Task DeletePianoSurvey(Guid id, AccountModel currentAccount)
+    {
+        var survey = await _unitOfWork.PianoSurveyRepository.FindSingleAsync(s => s.Id == id);
+
+        if (survey is null)
+        {
+            throw new NotFoundException("Survey not found");
+        }
+
+        survey.RecordStatus = RecordStatus.IsDeleted;
+        survey.DeletedAt = DateTime.UtcNow.AddHours(7);
+        survey.UpdatedById = currentAccount.AccountFirebaseId;
+        survey.DeletedAt = DateTime.UtcNow.AddHours(7);
+        
+        await _unitOfWork.SaveChangesAsync();
+    }
+
     public async Task<PianoSurveyDetailsModel> GetEntranceSurvey()
     {
         var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey);

@@ -1,4 +1,5 @@
-﻿using Hangfire;
+﻿using DotNet.Testcontainers.Builders;
+using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -19,6 +20,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithUsername("postgres")
         .WithPassword("postgres")
         .WithCleanUp(false)
+         .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     public async Task InitializeAsync()
@@ -45,10 +47,11 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
     }
 
 
-    Task IAsyncLifetime.DisposeAsync()
+    public async Task DisposeAsync()
     {
-        return _dbContainer.StopAsync();
+        await _dbContainer.DisposeAsync();
     }
+
 
     public string GetDbConnectionString()
     {

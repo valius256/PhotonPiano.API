@@ -207,27 +207,27 @@ public class SlotService : ISlotService
         foreach (var slot in pastSlots)
         {
             slot.Status = SlotStatus.Finished;
-            // Thêm ClassId và tuần của slot vào tập hợp
             affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
         }
 
         // Cập nhật slot trong ngày hiện tại (chỉ lấy slot có khả năng thay đổi trạng thái)
-        var todaySlots = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class).Where(
+        var todaySlots = await _unitOfWork.SlotRepository.FindProjectedAsync<Slot>(
             s => s.Date == currentDate && s.Status != SlotStatus.Finished && s.Status != SlotStatus.Cancelled
-        ).ToListAsync();
+        );
 
         var classIds = todaySlots.Select(s => s.ClassId).Distinct().ToList();
 
-        var firstLastSlots = await _unitOfWork.SlotRepository.Entities
-            .Where(s => classIds.Contains(s.ClassId))
-            .GroupBy(s => s.ClassId)
-            .Select(g => new
-            {
-                ClassId = g.Key,
-                FirstSlot = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).FirstOrDefault(),
-                LastSlot = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).FirstOrDefault()
-            })
-            .ToDictionaryAsync(x => x.ClassId);
+        var firstLastSlotNoFilter = await _unitOfWork.SlotRepository
+            .FindAsync(s => classIds.Contains(s.ClassId));
+            
+       var firstLastSlots =  firstLastSlotNoFilter.GroupBy(s => s.ClassId)
+        .Select(g => new
+        {
+            ClassId = g.Key,
+            FirstSlot = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).FirstOrDefault(),
+            LastSlot = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).FirstOrDefault()
+        })
+        .ToDictionary(x => x.ClassId);
 
         var classesToUpdate = new List<Class>();
 
@@ -701,18 +701,17 @@ public class SlotService : ISlotService
 
 
         var classInDb = await _serviceFactory.ClassService.GetClassDetailById(newSlot.ClassId);
-        var slotInDb = await _serviceFactory.SlotService.GetSLotDetailById(newSlot.Id);
         //Notification
         await _serviceFactory.NotificationService.SendNotificationToManyAsync(
             studentIds,
-            $"Lớp {classInDb.Name} sẽ có một buổi học mới vào ngày {newSlot.Date}, tại phòng {slotInDb.Room.Name}.",
+            $"Lớp {classInDb.Name} sẽ có một buổi học mới vào ngày {newSlot.Date}, tại phòng {roomInDb.Name}.",
             ""
         );
 
         // await InvalidateCacheForClassAsync(newSlot.ClassId, newSlot.Date);
 
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
-        return await GetSLotDetailById(newSlot.Id);
+        return newSlot.Adapt<SlotDetailModel>();
 
     }
 

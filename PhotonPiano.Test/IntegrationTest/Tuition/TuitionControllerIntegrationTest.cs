@@ -1,12 +1,12 @@
-﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
+﻿using Microsoft.AspNetCore.Mvc.Testing;
 using PhotonPiano.Api.Requests.Tution;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.Api.Responses.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Test.Extensions;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace PhotonPiano.Test.IntegrationTest.Tuition;
 
@@ -17,7 +17,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
     private readonly IServiceScope _scope;
     private readonly IServiceFactory _serviceFactory;
     private static bool _dataInitialized = false;
-    
+
     public TuitionControllerIntegrationTest(IntergrationTestWebAppFactory factory) : base(factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -30,54 +30,54 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _serviceFactory = _scope.ServiceProvider.GetRequiredService<IServiceFactory>();
 
         if (!_dataInitialized)
-        {   
+        {
             _serviceFactory.TuitionService.CronAutoCreateTuition().GetAwaiter().GetResult();
             _dataInitialized = true;
         }
     }
-    
+
     public void Dispose()
     {
         _scope?.Dispose();
     }
-    
-    // [Fact]
-    // public async Task PayTuitionFee_AsStudent_ReturnsPaymentUrl()
-    // {
-    //     // Arrange
-    //     var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
-    //     _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-    //
-    //     // Get tuitions to find an unpaid one
-    //     var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
-    //     tuitionsResponse.EnsureSuccessStatusCode();
-    //     var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
-    //     var unpaidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Pending);
-    //     
-    //     Assert.NotNull(unpaidTuition);
-    //     
-    //     var request = new PayTuitionFeeRequest
-    //     {
-    //         TuitionId = unpaidTuition.Id,
-    //         // ReturnUrl = "https://test-return-url.com"
-    //     };
-    //
-    //     // Act
-    //     var response = await _client.PostAsJsonAsync("/api/tuitions/tuition-fee", request);
-    //
-    //     // Assert
-    //     response.EnsureSuccessStatusCode();
-    //     var result = await response.Content.ReadFromJsonAsync<PaymentUrlResponse>();
-    //     Assert.NotNull(result);
-    //     Assert.NotEmpty(result.Url);
-    // }
+
+    [Fact]
+    public async Task PayTuitionFee_AsStudent_ReturnsPaymentUrl()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Get tuitions to find an unpaid one
+        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+        tuitionsResponse.EnsureSuccessStatusCode();
+        var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
+        var unpaidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Pending);
+
+        Assert.NotNull(unpaidTuition);
+
+        var request = new PayTuitionFeeRequest
+        {
+            TuitionId = unpaidTuition.Id,
+            // ReturnUrl = "https://test-return-url.com"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tuitions/tuition-fee", request);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaymentUrlResponse>();
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Url);
+    }
 
     [Fact]
     public async Task PayTuitionFee_WithoutAuth_ReturnsUnauthorized()
     {
         // Arrange
         _client.DefaultRequestHeaders.Authorization = null;
-        
+
         var request = new PayTuitionFeeRequest
         {
             TuitionId = Guid.NewGuid(),
@@ -95,7 +95,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
     public async Task HandleEnrollmentPaymentCallback_ReturnsNotFound()
     {
         // Arrange
-        var accountId = _client.GetFirebaseAccountId("learner035@gmail.com", "123456"); 
+        var accountId = _client.GetFirebaseAccountId("learner035@gmail.com", "123456");
         var clientRedirectUrl = "https://test-redirect-url.com";
         var callbackUrl = $"/api/tuitions/{accountId}/tuition-payment-callback?vnp_ResponseCode=00&vnp_TxnRef={Guid.NewGuid()}&url={clientRedirectUrl}";
 
@@ -144,10 +144,10 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         // Arrange
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        
+
         var startDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(-1));
         var endDate = DateOnly.FromDateTime(DateTime.Now);
-        
+
         // Act
         var response = await _client.GetAsync($"/api/tuitions?page=1&page-size=10&start-date={startDate}&end-date={endDate}&payment-statuses=Pending");
 
@@ -164,7 +164,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         // Arrange
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        
+
         // First get a tuition id
         var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=1");
         tuitionsResponse.EnsureSuccessStatusCode();
@@ -194,7 +194,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-    
+
     // RefundTuitionAmount_AsStudent_ReturnsMoneyAmount
     // [Fact]
     // public async Task RefundTuitionAmount_AsStudent_ReturnsMoneyAmount()
@@ -225,6 +225,6 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
     //     Assert.True(refundAmount >= 0);
     // }
     //
-    
-    
+
+
 }

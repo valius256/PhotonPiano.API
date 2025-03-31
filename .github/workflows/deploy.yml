@@ -23,6 +23,13 @@ env:
   Firebase__Auth__Authority: ${{ secrets.FIREBASE_AUTHORITY }}
   Firebase__Auth__Issuer: ${{ secrets.FIREBASE_ISSUER }}
   Firebase__Auth__Audience: ${{ secrets.FIREBASE_AUDIENCE }}
+  VNPAY_BASEURL: ${{ secrets.VNPAY_BASEURL }}
+  VNPAY_COMMAND: ${{ secrets.VNPAY_COMMAND }}
+  VNPAY_CURRCODE: ${{ secrets.VNPAY_CURRCODE }}
+  VNPAY_HASHSECRET: ${{ secrets.VNPAY_HASHSECRET }}
+  VNPAY_TMNCODE: ${{ secrets.VNPAY_TMNCODE }}
+  VNPAY_LOCALE: ${{ secrets.VNPAY_LOCALE }}
+  VNPAY_TIMEZONEID: ${{ secrets.VNPAY_TIMEZONEID }}
   GITHUB_ACTIONS: "true"
 
 jobs:

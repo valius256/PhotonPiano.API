@@ -72,6 +72,15 @@ namespace PhotonPiano.Api.Controllers
             return NoContent();
         }
 
+        [HttpDelete("{id}")]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Delete piano survey")]
+        public async Task<ActionResult> DeletePianoSurvey([FromRoute] Guid id)
+        {
+            await _serviceFactory.PianoSurveyService.DeletePianoSurvey(id, base.CurrentAccount!);
+            return NoContent();
+        }
+
         [HttpPost("entrance-survey/answers")]
         [EndpointDescription("Send learner answers for entrance survey")]
         public async Task<ActionResult<PianoSurveyDetailsModel>> CreateAnswersForPianoSurvey(

@@ -62,8 +62,22 @@ jobs:
       - name: Build
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h localhost -p 5432 -U postgres; then
+              echo "PostgreSQL is ready!"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+          echo "PostgreSQL did not start in time."
+          exit 1
+
+
       - name: Run Tests with Testcontainers
-        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity detailed --logger trx
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3

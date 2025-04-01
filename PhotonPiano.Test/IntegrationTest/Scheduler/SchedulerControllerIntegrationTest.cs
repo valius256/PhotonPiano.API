@@ -11,6 +11,7 @@ using static PhotonPiano.Test.Extensions.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.Scheduler;
 
+[Collection("Schedulers Integration Tests")]
 public class SchedulerControllerIntegrationTest : BaseIntergrationTest
 {
     private readonly HttpClient _client;
@@ -210,9 +211,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.NotNull(result);
         Assert.True(result.Data);
     }
-
-    //
-    // Test for empty attendance lists
+    
     [Fact]
     public async Task UpdateAttendance_EmptyLists_ReturnsBadRequest()
     {
@@ -380,17 +379,14 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
 
-        var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId!.Value;
-        
-        var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId!.Value;
-
+        var firstSlotModel = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First();
         
         var request = new PublicNewSlotRequest
         {
-            Shift = Shift.Shift1_7h_8h30,
-            ClassId = classId,
-            Date = DateOnly.FromDateTime(DateTime.Now),
-            RoomId = roomId
+            Shift = firstSlotModel.Shift,
+            ClassId = firstSlotModel.ClassId!.Value,
+            Date = firstSlotModel.Date,
+            RoomId = firstSlotModel.RoomId!.Value
         };
 
         // Act

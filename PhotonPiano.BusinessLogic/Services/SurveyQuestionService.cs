@@ -8,6 +8,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -86,17 +87,24 @@ public class SurveyQuestionService : ISurveyQuestionService
                 throw new BadRequestException("Options can't be empty for this question type");
             }
 
-            // var minPianoKeywordFrequencyInOptionsConfig =
-            //     await _serviceFactory.SystemConfigService.GetConfig("Số lần xuất hiện từ piano trong câu trả lời");
-            //
-            // int minPianoKeywordFrequencyInOptions =
-            //     Convert.ToInt32(minPianoKeywordFrequencyInOptionsConfig.ConfigValue);
-            //
-            // if (createModel.Options.Count(o => o.ToLower().Contains("piano")) < minPianoKeywordFrequencyInOptions)
-            // {
-            //     throw new BadRequestException(
-            //         $"Options must include piano keyword for at least {minPianoKeywordFrequencyInOptions} times");
-            // }
+            var surveyConfigs = await _serviceFactory.SystemConfigService.GetAllSurveyConfigs();
+            
+            var instrumentNameConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.InstrumentName);
+            var instrumentFrequencyConfig =
+                surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.InstrumentFrequencyInResponse);
+
+            if (instrumentNameConfig is not null && instrumentFrequencyConfig is not null)
+            {
+                string instrumentName = instrumentNameConfig.ConfigValue ?? string.Empty;
+
+                int frequency = Convert.ToInt32(instrumentFrequencyConfig.ConfigValue ?? "0");
+
+                if (createModel.Options.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency)
+                {
+                    throw new BadRequestException(
+                        $"Options in question must contain the instrument name {instrumentName} at least {frequency} times");
+                }
+            }
         }
 
         if (createModel.SurveyId.HasValue)

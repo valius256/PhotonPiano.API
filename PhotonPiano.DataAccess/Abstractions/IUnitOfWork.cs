@@ -53,6 +53,8 @@ public interface IUnitOfWork
     
     IPianoSurveyQuestionRepository PianoSurveyQuestionRepository { get; }
 
+    IFreeSlotRepository FreeSlotRepository { get; }
+
     Task<int> SaveChangesAsync();
 
     Task<IDbContextTransaction> BeginTransactionAsync();

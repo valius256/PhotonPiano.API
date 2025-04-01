@@ -145,4 +145,6 @@ public class Account : BaseEntity
     // Slot 
     public virtual ICollection<Slot> UpdatedSlots { get; set; } = new List<Slot>();
     public virtual ICollection<Slot> CanceledSlots { get; set; } = new List<Slot>();
+    //Free slot
+    public virtual ICollection<FreeSlot> FreeSlots { get; set; } = new List<FreeSlot>();
 }

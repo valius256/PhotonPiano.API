@@ -39,6 +39,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<SurveyQuestion> SurveyQuestions { get; set; }
     public DbSet<LearnerAnswer> LearnerAnswers { get; set; }
     public DbSet<PianoSurveyQuestion> PianoSurveyQuestions { get; set; }
+    public DbSet<FreeSlot> FreeSlots { get; set; }
     public DbSet<Level> Levels { get; set; }
 
 
@@ -69,6 +70,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new LearnerAnswerConfiguration());
         modelBuilder.ApplyConfiguration(new PianoSurveyQuestionConfiguration());
         modelBuilder.ApplyConfiguration(new LevelConfiguration());
+        modelBuilder.ApplyConfiguration(new FreeSlotConfiguration());
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes()) entity.SetTableName(entity.DisplayName());
 

@@ -21,7 +21,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student, Role.Administrator])]
         [EndpointDescription("Get surveys with paging")]
         public async Task<ActionResult<List<PianoSurveyModel>>> GetSurveys([FromQuery] QueryPagedSurveysRequest request)
         {
@@ -69,6 +69,15 @@ namespace PhotonPiano.Api.Controllers
             await _serviceFactory.PianoSurveyService.UpdatePianoSurvey(id, request.Adapt<UpdatePianoSurveyModel>(),
                 base.CurrentAccount!);
 
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Delete piano survey")]
+        public async Task<ActionResult> DeletePianoSurvey([FromRoute] Guid id)
+        {
+            await _serviceFactory.PianoSurveyService.DeletePianoSurvey(id, base.CurrentAccount!);
             return NoContent();
         }
 

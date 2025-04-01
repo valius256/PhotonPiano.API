@@ -86,18 +86,6 @@ public class EntranceTestsController : BaseController
         return NoContent();
     }
 
-    [HttpPut("max-students-per-test")]
-    [EndpointDescription("Update entrance tests max students")]
-    [FirebaseAuthorize(Roles = [Role.Administrator])]
-    public async Task<ActionResult> UpdateEntranceTestMaxStudentsPerTest(
-        [FromBody] UpdateEntranceTestsMaxStudentsRequest request)
-    {
-        await _serviceFactory.EntranceTestService.UpdateEntranceTestsMaxStudents(request.MaxStudents,
-            base.CurrentAccount!);
-
-        return NoContent();
-    }
-
     [HttpGet("{id}/students")]
     [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance tests students")]

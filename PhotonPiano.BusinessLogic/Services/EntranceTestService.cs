@@ -12,6 +12,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -287,6 +288,21 @@ public class EntranceTestService : IEntranceTestService
     public async Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress,
         string apiBaseUrl)
     {
+        var entranceTestConfigs = await _serviceFactory.SystemConfigService.GetAllEntranceTestConfigs();
+
+        var allowRegisterConfig =
+            entranceTestConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.AllowEntranceTestRegistering);
+
+        if (allowRegisterConfig is not null) 
+        {
+            bool allowRegistering = Convert.ToBoolean(allowRegisterConfig.ConfigValue);
+
+            if (!allowRegistering)
+            {
+                throw new BadRequestException("Entrance test registering is closed for now.");
+            }
+        }
+
         if (currentAccount.StudentStatus != StudentStatus.DropOut &&
             currentAccount.StudentStatus != StudentStatus.Unregistered)
         {
@@ -338,7 +354,7 @@ public class EntranceTestService : IEntranceTestService
         }
 
         transaction.PaymentStatus =
-        callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
+            callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
         transaction.TransactionCode = callbackModel.VnpTransactionNo;
         transaction.UpdatedAt = DateTime.UtcNow;
         switch (transaction.PaymentStatus)
@@ -365,15 +381,14 @@ public class EntranceTestService : IEntranceTestService
                     await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
                         $"Học viên {account.FullName} vừa đăng ký thi đầu vào", "");
                 });
-                
-           
+
+
                 break;
             case PaymentStatus.Failed:
                 throw new BadRequestException("Payment has failed.");
             default:
                 throw new BadRequestException("Unknown payment status.");
         }
-        
     }
 
     private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(
@@ -382,7 +397,7 @@ public class EntranceTestService : IEntranceTestService
         string staffAccountId, params List<Shift> shiftOptions)
     {
         var maxStudentsPerSlotConfig =
-            await _serviceFactory.SystemConfigService.GetConfig(name: "Số học viên tối đa của ca thi");
+            await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaxStudentsInTest);
         int maxStudentsPerSlot = Convert.ToInt32(maxStudentsPerSlotConfig.ConfigValue);
 
         var entranceTests = new List<EntranceTest>();
@@ -575,10 +590,11 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.EntranceTest, hasTrackings: false);
 
         List<EntranceTestResult> entranceTestResultsToAdd = [];
-        
+
         foreach (var entranceTestStudent in entranceTestStudents)
         {
-            var requestModel = updateModel.UpdateRequests.FirstOrDefault(x => x.StudentId == entranceTestStudent.StudentFirebaseId);
+            var requestModel =
+                updateModel.UpdateRequests.FirstOrDefault(x => x.StudentId == entranceTestStudent.StudentFirebaseId);
 
             if (requestModel is null)
             {
@@ -609,9 +625,9 @@ public class EntranceTestService : IEntranceTestService
                     Score = result.Score,
                     Weight = criteria.Weight
                 };
-                
+
                 entranceTestResultsToAdd.Add(resultToAdd);
-                
+
                 entranceTestStudent.EntranceTestResults.Add(resultToAdd);
             }
         }

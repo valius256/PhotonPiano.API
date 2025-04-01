@@ -31,6 +31,8 @@ env:
   VNPAY_LOCALE: ${{ secrets.VNPAY_LOCALE }}
   VNPAY_TIMEZONEID: ${{ secrets.VNPAY_TIMEZONEID }}
   VNPAY_VERSION: ${{ secrets.VNPAY_VERSION }}
+  VNPAY_RETURNURL: ${{ secrets.VNPAY_RETURNURL }}
+
   GITHUB_ACTIONS: "true"
 
 jobs:

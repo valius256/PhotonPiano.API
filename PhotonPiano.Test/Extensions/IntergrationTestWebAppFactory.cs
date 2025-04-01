@@ -40,6 +40,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
             }
             catch
             {
+                Console.WriteLine($"Attempt {i + 1}/{maxRetries}: Failed to connect to database. Exception: {ex.Message}");
                 await Task.Delay(2000);
             }
         }

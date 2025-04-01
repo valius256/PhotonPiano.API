@@ -1,6 +1,8 @@
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.BusinessLogic.BusinessModel.Utils;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -39,24 +41,26 @@ public class RoomService : IRoomService
 
         return result;
     }
-    public async Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates, List<Slot> otherSlots)
+    public async Task<List<RoomModel>> GetAvailableRooms(List<(DateOnly, Shift)> timeSlots, List<Slot> otherSlots)
     {
+        var dates = timeSlots.Select(ts => ts.Item1).ToHashSet();
+        var shifts = timeSlots.Select(ts => ts.Item2).ToHashSet();
 
         var bookedRoomIds = await _unitOfWork.SlotRepository.Entities
-            .Where(s => dates.Contains(s.Date) && s.Shift == shift)
+            .Where(s => dates.Contains(s.Date) && shifts.Contains(s.Shift))
             .Select(s => s.RoomId)
             .Distinct()
             .ToListAsync();
 
         // Get booked room IDs from the additional (in-memory) slots
         var newlyBookedRoomIds = otherSlots
-            .Where(s => dates.Contains(s.Date) && s.Shift == shift)
+            .Where(s => timeSlots.Any(ts => ts.Item1 == s.Date && ts.Item2 == s.Shift))
             .Select(s => s.RoomId)
             .Distinct()
             .ToList();
 
         var bookRoomIdsForEntranceTest = await _unitOfWork.EntranceTestRepository.Entities
-            .Where(et => dates.Contains(et.Date) && et.Shift == shift)
+            .Where(et => dates.Contains(et.Date) && shifts.Contains(et.Shift))
             .Select(et => (Guid?)et.RoomId)
             .Distinct()
             .ToListAsync();
@@ -72,10 +76,9 @@ public class RoomService : IRoomService
             .ToListAsync();
 
         // Convert to RoomModel, ensuring unique rooms using HashSet
-        return availableRooms
+        return [.. availableRooms
             .DistinctBy(r => r.Id) // LINQ to remove duplicates
-            .Select(r => r.Adapt<RoomModel>())
-            .ToList();
+            .Select(r => r.Adapt<RoomModel>())];
     }
 
 

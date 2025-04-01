@@ -70,7 +70,6 @@ public class AccountsController : BaseController
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)
     {
         var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
-
         return Ok(result.Adapt<AccountDetailResponse>());
     }
 

@@ -19,16 +19,17 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithDatabase("photonpiano")
         .WithUsername("postgres")
         .WithPassword("postgres")
+        .WithAutoRemove(false)
         .WithCleanUp(false)
-         .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
+        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
+
         .Build();
 
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
 
-
-        var maxRetries = 10;
+        var maxRetries = 20; // Tăng số lần thử kết nối
         for (var i = 0; i < maxRetries; i++)
         {
             try
@@ -39,7 +40,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
             }
             catch
             {
-                await Task.Delay(1000);
+                await Task.Delay(2000);
             }
         }
 
@@ -47,10 +48,14 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
     }
 
 
-    public async Task DisposeAsync()
+
+    async Task IAsyncLifetime.DisposeAsync()
     {
+        Console.WriteLine("Stopping PostgreSQL container...");
         await _dbContainer.DisposeAsync();
+        Console.WriteLine("PostgreSQL container stopped.");
     }
+
 
 
     public string GetDbConnectionString()

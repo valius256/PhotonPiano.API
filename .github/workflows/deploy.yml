@@ -1,4 +1,4 @@
-name: Build, Test & Deploy .NET 9 API
+name: Build, Test & Deploy .NET 9 API Photon Piano
 
 on:
   push:
@@ -17,12 +17,24 @@ env:
   IMAGE_NAME: ghcr.io/valius256/photonpiano-api
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  POSTGRES_CONNECTION: ${{ secrets.POSTGRES_CONNECTION }}
-  ASPNETCORE_ENVIRONMENT: Production
+  POSTGRES_CONNECTION: "Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=anhphatdeptrai"
+  ASPNETCORE_ENVIRONMENT: Development
+  DOTNET_ENVIRONMENT: Development
   Firebase__Auth__ApiKey: ${{ secrets.FIREBASE_API_KEY }}
   Firebase__Auth__Authority: ${{ secrets.FIREBASE_AUTHORITY }}
   Firebase__Auth__Issuer: ${{ secrets.FIREBASE_ISSUER }}
   Firebase__Auth__Audience: ${{ secrets.FIREBASE_AUDIENCE }}
+  VNPAY__BASEURL: ${{ secrets.FIREBASE_AUDIENCE }}
+  VNPAY__TMNCODE: ${{ secrets.VNPAY_TMNCODE }}
+  VNPAY__HASHSECRET: ${{ secrets.VNPAY_HASHSECRET }}
+  VNPAY__RETURNURL: ${{ secrets.VNPAY_RETURNURL }}
+  VNPAY__CURRCODE: ${{ secrets.VNPAY_CURRCODE }}
+  VNPAY__LOCALE: ${{ secrets.VNPAY_LOCALE }}
+  VNPAY__TIMEZONEID: ${{ secrets.VNPAY_TIMEZONEID }}
+  VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
+  VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
+  Logging__LogLevel__Hangfire: Debug
+  Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"
 
 jobs:
@@ -40,21 +52,21 @@ jobs:
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: Checkout code
+      - name: 🛠️ Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: ⚙️ Setup .NET 9 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
+      - name: 📦 Restore Dependencies
         run: dotnet restore PhotonPiano.API.sln
 
-      - name: Build
+      - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-      - name: Run Tests with Testcontainers
+      - name: ✅ Run Tests
         run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
       - name: Login to GitHub Container Registry

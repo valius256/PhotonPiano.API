@@ -173,16 +173,12 @@ public static class IServiceCollectionExtensions
 
     private static string? GetConnectionString(this IConfiguration configuration)
     {
-        var rs = configuration.GetValue<bool>("IsDeploy")
-            ? configuration.GetConnectionString("PostgresDeploy")
-            : configuration.GetConnectionString("PostgresPhotonPiano");
-
-        // if (configuration.GetValue<bool>("IsAspireHost"))
-        //     rs = configuration.GetConnectionString("photonpiano");
-
-
-        // var rs = configuration.GetConnectionString("PostgresPhotonPiano");
-
+        var envConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION");
+        var rs = !string.IsNullOrEmpty(envConnectionString)
+            ? envConnectionString
+            : configuration.GetValue<bool>("IsDeploy")
+                ? configuration.GetConnectionString("PostgresDeploy")
+                : configuration.GetConnectionString("PostgresPhotonPiano");
 
         if (!_messagePrinted)
         {

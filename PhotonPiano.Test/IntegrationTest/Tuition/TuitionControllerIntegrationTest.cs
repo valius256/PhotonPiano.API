@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
+using Newtonsoft.Json;
 using Npgsql;
 using PhotonPiano.Api.Requests.Tution;
 using PhotonPiano.Api.Responses.Payment;
@@ -91,14 +92,16 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         var request = new PayTuitionFeeRequest
         {
             TuitionId = unpaidTuition.Id,
-            // ReturnUrl = "https://test-return-url.com"
         };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/tuitions/tuition-fee", request);
 
         // Assert
-        var result = await response.Content.ReadFromJsonAsync<PaymentUrlResponse>();
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine(responseContent);
+        var result = JsonConvert.DeserializeObject<PaymentUrlResponse>(responseContent);
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Url);
     }

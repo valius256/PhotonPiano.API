@@ -41,36 +41,36 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _scope?.Dispose();
     }
     
-    // [Fact]
-    // public async Task PayTuitionFee_AsStudent_ReturnsPaymentUrl()
-    // {
-    //     // Arrange
-    //     var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
-    //     _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-    //
-    //     // Get tuitions to find an unpaid one
-    //     var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
-    //     tuitionsResponse.EnsureSuccessStatusCode();
-    //     var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
-    //     var unpaidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Pending);
-    //     
-    //     Assert.NotNull(unpaidTuition);
-    //     
-    //     var request = new PayTuitionFeeRequest
-    //     {
-    //         TuitionId = unpaidTuition.Id,
-    //         // ReturnUrl = "https://test-return-url.com"
-    //     };
-    //
-    //     // Act
-    //     var response = await _client.PostAsJsonAsync("/api/tuitions/tuition-fee", request);
-    //
-    //     // Assert
-    //     response.EnsureSuccessStatusCode();
-    //     var result = await response.Content.ReadFromJsonAsync<PaymentUrlResponse>();
-    //     Assert.NotNull(result);
-    //     Assert.NotEmpty(result.Url);
-    // }
+    [Fact]
+    public async Task PayTuitionFee_AsStudent_ReturnsPaymentUrl()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    
+        // Get tuitions to find an unpaid one
+        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+        tuitionsResponse.EnsureSuccessStatusCode();
+        var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
+        var unpaidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Pending);
+        
+        Assert.NotNull(unpaidTuition);
+        
+        var request = new PayTuitionFeeRequest
+        {
+            TuitionId = unpaidTuition.Id,
+            // ReturnUrl = "https://test-return-url.com"
+        };
+    
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tuitions/tuition-fee", request);
+    
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<PaymentUrlResponse>();
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Url);
+    }
 
     [Fact]
     public async Task PayTuitionFee_WithoutAuth_ReturnsUnauthorized()

@@ -8,6 +8,12 @@
 
         public static readonly string AllowSkippingLevel = "Được phép học vượt level";
 
+        public static readonly string MaxStudentsInTest = "Số học viên tối đa của ca thi";
+
+        public static readonly string MinStudentsInTest = "Số học viên tối thiểu của ca thi";
+
+        public static readonly string AllowEntranceTestRegistering = "Cho phép đăng ký thi đầu vào";
+
         public static readonly string EntranceSurvey = "Bài khảo sát đầu vào";
 
         public static readonly string ChangingClassDeadline = "Deadline đổi lớp";

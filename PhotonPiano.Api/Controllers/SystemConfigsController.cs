@@ -1,7 +1,9 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -92,6 +94,18 @@ public class SystemConfigsController : BaseController
     {
         await _serviceFactory.SystemConfigService.UpdateSurveySystemConfig(
             request.Adapt<UpdateSurveySystemConfigModel>());
+
+        return NoContent();
+    }
+
+    [HttpPut("entrance-test")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Update entrance test system config")]
+    public async Task<ActionResult> UpdateEntranceTestSystemConfig(
+        [FromBody] UpdateEntranceTestSystemConfigRequest request)
+    {
+        await _serviceFactory.SystemConfigService.UpdateEntranceTestSystemConfig(
+            request.Adapt<UpdateEntranceTestSystemConfigModel>());
         
         return NoContent();
     }

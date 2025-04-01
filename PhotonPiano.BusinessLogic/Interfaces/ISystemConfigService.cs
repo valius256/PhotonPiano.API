@@ -1,4 +1,5 @@
-﻿using PhotonPiano.BusinessLogic.BusinessModel.Survey;
+﻿using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -14,5 +15,7 @@ public interface ISystemConfigService
     Task<SystemConfigsModel> GetSystemConfigs(string name);
     Task<SystemConfigModel> UpsertSystemConfig(string configName, SystemConfigType type, string value);
     Task UpdateSurveySystemConfig(UpdateSurveySystemConfigModel updateModel);
+    Task UpdateEntranceTestSystemConfig(UpdateEntranceTestSystemConfigModel updateModel);
     Task<List<SystemConfigModel>> GetAllSurveyConfigs();
+    Task<List<SystemConfigModel>> GetAllEntranceTestConfigs();
 }

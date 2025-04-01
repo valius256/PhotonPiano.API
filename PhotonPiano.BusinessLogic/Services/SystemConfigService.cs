@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -20,6 +21,11 @@ public class SystemConfigService : ISystemConfigService
     [
         ConfigNames.InstrumentName, ConfigNames.InstrumentFrequencyInResponse, ConfigNames.MaxQuestionsPerSurvey,
         ConfigNames.MinQuestionsPerSurvey
+    ];
+
+    private readonly List<string> _entranceTestConfigNames =
+    [
+        ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest, ConfigNames.AllowEntranceTestRegistering
     ];
 
     public SystemConfigService(IUnitOfWork unitOfWork)
@@ -153,6 +159,30 @@ public class SystemConfigService : ISystemConfigService
         });
     }
 
+    public async Task UpdateEntranceTestSystemConfig(UpdateEntranceTestSystemConfigModel updateModel)
+    {
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.MinStudentsPerEntranceTest.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MinStudentsInTest, SystemConfigType.UnsignedInt,
+                    updateModel.MinStudentsPerEntranceTest.Value.ToString());
+            }
+
+            if (updateModel.MaxStudentsPerEntranceTest.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MaxStudentsInTest, SystemConfigType.UnsignedInt,
+                    updateModel.MaxStudentsPerEntranceTest.Value.ToString());
+            }
+
+            if (updateModel.AllowEntranceTestRegistering.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.AllowEntranceTestRegistering, SystemConfigType.Boolean,
+                    updateModel.AllowEntranceTestRegistering.Value.ToString());
+            }
+        });
+    }
+
     public async Task<List<SystemConfigModel>> GetAllSurveyConfigs()
     {
         var surveyConfigs = await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
@@ -161,6 +191,14 @@ public class SystemConfigService : ISystemConfigService
             hasTrackings: false);
 
         return surveyConfigs;
+    }
+
+    public async Task<List<SystemConfigModel>> GetAllEntranceTestConfigs()
+    {
+        return await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
+            expression: c =>
+                _entranceTestConfigNames.Contains(c.ConfigName),
+            hasTrackings: false);
     }
 
     public async Task<SystemConfigModel> UpsertSystemConfig(string configName, SystemConfigType type, string value)

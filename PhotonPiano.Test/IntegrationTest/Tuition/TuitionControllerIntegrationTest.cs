@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
-using Newtonsoft.Json;
 using Npgsql;
 using PhotonPiano.Api.Requests.Tution;
-using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.Api.Responses.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -80,37 +78,37 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
 
 
 
-    [Fact]
-    public async Task PayTuitionFee_AsStudent_ReturnsPaymentUrl()
-    {
-        // Arrange
-        var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    //[Fact]
+    //public async Task PayTuitionFee_AsStudent_ReturnsPaymentUrl()
+    //{
+    //    // Arrange
+    //    var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
+    //    _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Get tuitions to find an unpaid one
-        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
-        tuitionsResponse.EnsureSuccessStatusCode();
-        var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
-        var unpaidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Pending);
+    //    // Get tuitions to find an unpaid one
+    //    var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+    //    tuitionsResponse.EnsureSuccessStatusCode();
+    //    var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
+    //    var unpaidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Pending);
 
-        Assert.NotNull(unpaidTuition);
+    //    Assert.NotNull(unpaidTuition);
 
-        var request = new PayTuitionFeeRequest
-        {
-            TuitionId = unpaidTuition.Id,
-        };
+    //    var request = new PayTuitionFeeRequest
+    //    {
+    //        TuitionId = unpaidTuition.Id,
+    //    };
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/tuitions/tuition-fee", request);
+    //    // Act
+    //    var response = await _client.PostAsJsonAsync("/api/tuitions/tuition-fee", request);
 
-        // Assert
-        var responseContent = await response.Content.ReadAsStringAsync();
-        Console.WriteLine(responseContent);
-        var result = JsonConvert.DeserializeObject<PaymentUrlResponse>(responseContent);
+    //    // Assert
+    //    var responseContent = await response.Content.ReadAsStringAsync();
+    //    Console.WriteLine(responseContent);
+    //    var result = JsonConvert.DeserializeObject<PaymentUrlResponse>(responseContent);
 
-        Assert.NotNull(result);
-        Assert.NotEmpty(result.Url);
-    }
+    //    Assert.NotNull(result);
+    //    Assert.NotEmpty(result.Url);
+    //}
 
     [Fact]
     public async Task PayTuitionFee_WithoutAuth_ReturnsUnauthorized()

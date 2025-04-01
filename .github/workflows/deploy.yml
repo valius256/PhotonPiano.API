@@ -24,6 +24,15 @@ env:
   Firebase__Auth__Authority: ${{ secrets.FIREBASE_AUTHORITY }}
   Firebase__Auth__Issuer: ${{ secrets.FIREBASE_ISSUER }}
   Firebase__Auth__Audience: ${{ secrets.FIREBASE_AUDIENCE }}
+  VNPAY__BASEURL: ${{ secrets.FIREBASE_AUDIENCE }}
+  VNPAY__TMNCODE: ${{ secrets.VNPAY_TMNCODE }}
+  VNPAY__HASHSECRET: ${{ secrets.VNPAY_HASHSECRET }}
+  VNPAY__RETURNURL: ${{ secrets.VNPAY_RETURNURL }}
+  VNPAY__CURRCODE: ${{ secrets.VNPAY_CURRCODE }}
+  VNPAY__LOCALE: ${{ secrets.VNPAY_LOCALE }}
+  VNPAY__TIMEZONEID: ${{ secrets.VNPAY_TIMEZONEID }}
+  VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
+  VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
   Logging__LogLevel__Hangfire: Debug
   Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"

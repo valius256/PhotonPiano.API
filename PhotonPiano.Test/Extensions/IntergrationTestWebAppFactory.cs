@@ -92,6 +92,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
                 config.UsePostgreSqlStorage(options =>
                 {
                     options.UseNpgsqlConnection(connectionString);
+                    
                 });
                 
                 // Disable dashboard and server in test environment
@@ -99,7 +100,8 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
             });
             
             services.AddHangfireServer(options => {
-               options.WorkerCount = 15;
+               options.WorkerCount = 1;
+               options.ShutdownTimeout = TimeSpan.FromSeconds(5);
                options.Queues = new[] { "critical", "default" };
             });
             

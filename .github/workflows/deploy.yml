@@ -18,11 +18,14 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   POSTGRES_CONNECTION: "Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=anhphatdeptrai"
-  ASPNETCORE_ENVIRONMENT: Production
+  ASPNETCORE_ENVIRONMENT: Development
+  DOTNET_ENVIRONMENT: Development
   Firebase__Auth__ApiKey: ${{ secrets.FIREBASE_API_KEY }}
   Firebase__Auth__Authority: ${{ secrets.FIREBASE_AUTHORITY }}
   Firebase__Auth__Issuer: ${{ secrets.FIREBASE_ISSUER }}
   Firebase__Auth__Audience: ${{ secrets.FIREBASE_AUDIENCE }}
+  Logging__LogLevel__Hangfire: Debug
+  Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"
 
 jobs:

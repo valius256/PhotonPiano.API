@@ -3,6 +3,7 @@ using Hangfire.PostgreSql;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -26,7 +27,6 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Threading.RateLimiting;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -160,7 +160,7 @@ public static class IServiceCollectionExtensions
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
                 .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app" ,"http://photonpiano.frontend:3000", "https://photonpiano.api:5001")
+                .WithOrigins("http://localhost:5173", "https://photon-piano.vercel.app", "http://photonpiano.frontend:3000", "https://photonpiano.api:5001")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
@@ -173,16 +173,12 @@ public static class IServiceCollectionExtensions
 
     private static string? GetConnectionString(this IConfiguration configuration)
     {
-        var rs = configuration.GetValue<bool>("IsDeploy")
-            ? configuration.GetConnectionString("PostgresDeploy")
-            : configuration.GetConnectionString("PostgresPhotonPiano");
-
-        // if (configuration.GetValue<bool>("IsAspireHost"))
-        //     rs = configuration.GetConnectionString("photonpiano");
-
-
-        // var rs = configuration.GetConnectionString("PostgresPhotonPiano");
-
+        var envConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION");
+        var rs = !string.IsNullOrEmpty(envConnectionString)
+            ? envConnectionString
+            : configuration.GetValue<bool>("IsDeploy")
+                ? configuration.GetConnectionString("PostgresDeploy")
+                : configuration.GetConnectionString("PostgresPhotonPiano");
 
         if (!_messagePrinted)
         {
@@ -381,7 +377,7 @@ public static class IServiceCollectionExtensions
 
         return services;
     }
-    
+
     private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHealthChecks()

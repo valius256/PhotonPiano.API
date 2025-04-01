@@ -1,4 +1,4 @@
-name: Build, Test & Deploy .NET 9 API
+name: Build, Test & Deploy .NET 9 API Photon Piano
 
 on:
   push:
@@ -40,21 +40,21 @@ jobs:
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: Checkout code
+      - name: 🛠️ Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: ⚙️ Setup .NET 9 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
+      - name: 📦 Restore Dependencies
         run: dotnet restore PhotonPiano.API.sln
 
-      - name: Build
+      - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-      - name: Run Tests with Testcontainers
+      - name: ✅ Run Tests
         run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
       - name: Login to GitHub Container Registry

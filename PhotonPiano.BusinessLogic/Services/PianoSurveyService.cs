@@ -87,6 +87,49 @@ public class PianoSurveyService : IPianoSurveyService
     public async Task<PianoSurveyDetailsModel> CreatePianoSurvey(CreatePianoSurveyModel createModel,
         AccountModel currentAccount)
     {
+        var surveyConfigs = await _serviceFactory.SystemConfigService.GetAllSurveyConfigs();
+
+        var instrumentNameConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.InstrumentName);
+        var instrumentFrequencyConfig =
+            surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.InstrumentFrequencyInResponse);
+
+        var maxQuestionsConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.MaxQuestionsPerSurvey);
+        var minQuestionsConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.MinQuestionsPerSurvey);
+
+        if (minQuestionsConfig is not null && maxQuestionsConfig is not null)
+        {
+            int minQuestions = Convert.ToInt32(minQuestionsConfig.ConfigValue);
+
+            int maxQuestions = Convert.ToInt32(maxQuestionsConfig.ConfigValue);
+
+            if (createModel.CreateQuestionRequests.Count < minQuestions ||
+                createModel.CreateQuestionRequests.Count > maxQuestions)
+            {
+                throw new BadRequestException(
+                    $"Number of questions in survey must between {minQuestions} and {maxQuestions}");
+            }
+        }
+
+        if (instrumentNameConfig is not null && instrumentFrequencyConfig is not null)
+        {
+            string instrumentName = instrumentNameConfig.ConfigValue ?? string.Empty;
+
+            if (!createModel.Name.ToLower().Contains(instrumentName.ToLower()))
+            {
+                throw new BadRequestException(
+                    $"The survey name doesn't contains the instrument name: {instrumentName}");
+            }
+
+            int frequency = Convert.ToInt32(instrumentFrequencyConfig.ConfigValue ?? "0");
+
+            if (createModel.CreateQuestionRequests.Any(question =>
+                    question.Options.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency))
+            {
+                throw new BadRequestException(
+                    $"Options in question must contain the instrument name {instrumentName} at least {frequency} times");
+            }
+        }
+
         var survey = createModel.Adapt<PianoSurvey>();
 
         survey.Id = Guid.NewGuid();
@@ -185,7 +228,6 @@ public class PianoSurveyService : IPianoSurveyService
             survey.DeletedAt = DateTime.UtcNow.AddHours(7);
         }
 
-
         if (updateModel.IsEntranceSurvey.HasValue)
         {
             var entranceSurveyConfig =
@@ -200,6 +242,43 @@ public class PianoSurveyService : IPianoSurveyService
             }
         }
 
+        var surveyConfigs = await _serviceFactory.SystemConfigService.GetAllSurveyConfigs();
+
+        var instrumentNameConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.InstrumentName);
+        string instrumentName =
+            instrumentNameConfig is not null ? instrumentNameConfig.ConfigValue ?? "" : string.Empty;
+        if (!string.IsNullOrEmpty(updateModel.Name))
+        {
+            if (!updateModel.Name.ToLower().Contains(instrumentName.ToLower()))
+            {
+                throw new BadRequestException($"Survey name must contains the instrument name {instrumentName}");
+            }
+        }
+
+        var maxQuestionsConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.MaxQuestionsPerSurvey);
+        var minQuestionsConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.MinQuestionsPerSurvey);
+
+        if (minQuestionsConfig is not null && maxQuestionsConfig is not null)
+        {
+            int minQuestions = Convert.ToInt32(minQuestionsConfig.ConfigValue);
+
+            int maxQuestions = Convert.ToInt32(maxQuestionsConfig.ConfigValue);
+
+            if (updateModel.Questions.Count < minQuestions ||
+                updateModel.Questions.Count > maxQuestions)
+            {
+                throw new BadRequestException(
+                    $"Number of questions in survey must between {minQuestions} and {maxQuestions}");
+            }
+        }
+
+        var instrumentFrequencyConfig =
+            surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.InstrumentFrequencyInResponse);
+
+        int frequency = instrumentFrequencyConfig is not null
+            ? Convert.ToInt32(instrumentFrequencyConfig.ConfigValue ?? "0")
+            : 0;
+
         List<SurveyQuestion> surveyQuestionsToAdd = [];
         List<SurveyQuestion> dbQuestions = [];
         List<PianoSurveyQuestion> pianoSurveyQuestions = [];
@@ -211,6 +290,12 @@ public class PianoSurveyService : IPianoSurveyService
 
             foreach (var request in updateModel.Questions)
             {
+                if (request.Options.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency)
+                {
+                    throw new BadRequestException(
+                        $"Options in question must contain the instrument name {instrumentName} at least {frequency} times");
+                }
+
                 if (request.Id.HasValue)
                 {
                     dbQuestionIds.Add(request.Id.Value);
@@ -253,22 +338,22 @@ public class PianoSurveyService : IPianoSurveyService
                 throw new BadRequestException("Some of questions are not found");
             }
         }
-        
+
         foreach (var question in survey.PianoSurveyQuestions)
         {
             _unitOfWork.PianoSurveyQuestionRepository.Detach(question);
         }
-        
+
         await _unitOfWork.PianoSurveyQuestionRepository.DeleteRangeAsync(survey.PianoSurveyQuestions);
         await _unitOfWork.SaveChangesAsync();
-        
+
         survey.PianoSurveyQuestions.Clear();
 
         foreach (var question in pianoSurveyQuestions)
         {
             survey.PianoSurveyQuestions.Add(question);
         }
-        
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             if (updateModel.Questions.Count > 0)
@@ -299,7 +384,7 @@ public class PianoSurveyService : IPianoSurveyService
         survey.DeletedAt = DateTime.UtcNow.AddHours(7);
         survey.UpdatedById = currentAccount.AccountFirebaseId;
         survey.DeletedAt = DateTime.UtcNow.AddHours(7);
-        
+
         await _unitOfWork.SaveChangesAsync();
     }
 
@@ -392,7 +477,7 @@ public class PianoSurveyService : IPianoSurveyService
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.LearnerSurveyRepository.AddAsync(learnerSurvey);
-            
+
             await _unitOfWork.LearnerAnswerRepository.AddRangeAsync(learnerAnswers);
         });
     }

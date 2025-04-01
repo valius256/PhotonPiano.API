@@ -21,7 +21,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student, Role.Administrator])]
         [EndpointDescription("Get surveys with paging")]
         public async Task<ActionResult<List<PianoSurveyModel>>> GetSurveys([FromQuery] QueryPagedSurveysRequest request)
         {

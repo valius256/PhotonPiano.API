@@ -50,6 +50,11 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
 
     private async Task EnsureDatabaseReadyAsync(string connectionString)
     {
+        if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("capstone-db"))
+        {
+            throw new Exception("❌ Database connection string is incorrect for testing!");
+        }
+
         var retry = 10;
         while (retry > 0)
         {

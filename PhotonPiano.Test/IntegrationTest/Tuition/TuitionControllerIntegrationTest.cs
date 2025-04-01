@@ -12,7 +12,7 @@ using System.Net.Http.Json;
 
 namespace PhotonPiano.Test.IntegrationTest.Tuition;
 
-//[Collection("Tuition Integration Tests")]
+[Collection("Tuition Integration Tests")]
 public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposable
 {
     private readonly HttpClient _client;
@@ -36,7 +36,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         {
             if (!_dataInitialized)
             {
-                EnsureDatabaseReady(factory.GetDbConnectionString()); // Chờ database sẵn sàng
+                EnsureDatabaseReadyAsync(factory.GetDbConnectionString()).GetAwaiter().GetResult(); // Chờ database sẵn sàng
                 _serviceFactory.TuitionService.CronAutoCreateTuition().GetAwaiter().GetResult();
                 _dataInitialized = true;
             }
@@ -48,30 +48,31 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _scope?.Dispose();
     }
 
-    private void EnsureDatabaseReady(string connectionString)
+    private async Task EnsureDatabaseReadyAsync(string connectionString)
     {
         var retry = 10;
         while (retry > 0)
         {
             try
             {
-                using var conn = new NpgsqlConnection(connectionString);
-                conn.Open();
-                using var cmd = new NpgsqlCommand("SELECT 1;", conn);
-                cmd.ExecuteScalar();
+                await using var conn = new NpgsqlConnection(connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new NpgsqlCommand("SELECT 1;", conn);
+                await cmd.ExecuteScalarAsync();
                 Console.WriteLine("✅ Database is ready!");
                 return;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"⚠️ Database not ready yet. Retrying... {retry} attempts left. Error: {ex.Message}");
-                Task.Delay(2000).Wait();
+                await Task.Delay(2000);
                 retry--;
             }
         }
 
         throw new Exception("❌ Database is not ready for TuitionService.");
     }
+
 
 
     [Fact]
@@ -129,7 +130,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
     public async Task HandleEnrollmentPaymentCallback_ReturnsNotFound()
     {
         // Arrange
-        var accountId = _client.GetFirebaseAccountId("learner035@gmail.com", "123456");
+        var accountId = await _client.GetFirebaseAccountId("learner035@gmail.com", "123456");
         var clientRedirectUrl = "https://test-redirect-url.com";
         var callbackUrl = $"/api/tuitions/{accountId}/tuition-payment-callback?vnp_ResponseCode=00&vnp_TxnRef={Guid.NewGuid()}&url={clientRedirectUrl}";
 

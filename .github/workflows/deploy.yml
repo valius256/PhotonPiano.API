@@ -1,9 +1,10 @@
 name: Build, Test & Deploy .NET 9 API
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
-  workflow_dispatch:
+
     
 permissions:
   contents: read
@@ -34,7 +35,7 @@ env:
   GITHUB_ACTIONS: "true"
 
 jobs:
-  build-and-test-pr:
+  build-and-test-pull-request:
     runs-on: ubuntu-latest
     services:
       postgres:

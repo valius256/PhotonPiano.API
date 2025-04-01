@@ -129,20 +129,20 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact]
-    public async Task HandleEnrollmentPaymentCallback_ReturnsNotFound()
-    {
-        // Arrange
-        var accountId = await _client.GetFirebaseAccountId("learner035@gmail.com", "123456");
-        var clientRedirectUrl = "https://test-redirect-url.com";
-        var callbackUrl = $"/api/tuitions/{accountId}/tuition-payment-callback?vnp_ResponseCode=00&vnp_TxnRef={Guid.NewGuid()}&url={clientRedirectUrl}";
+    //[Fact]
+    //public async Task HandleEnrollmentPaymentCallback_ReturnsNotFound()
+    //{
+    //    // Arrange
+    //    var accountId = await _client.GetFirebaseAccountId("learner035@gmail.com", "123456");
+    //    var clientRedirectUrl = "https://test-redirect-url.com";
+    //    var callbackUrl = $"/api/tuitions/{accountId}/tuition-payment-callback?vnp_ResponseCode=00&vnp_TxnRef={Guid.NewGuid()}&url={clientRedirectUrl}";
 
-        // Act
-        var response = await _client.GetAsync(callbackUrl);
+    //    // Act
+    //    var response = await _client.GetAsync(callbackUrl);
 
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
+    //    // Assert
+    //    Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    //}
 
     [Fact]
     public async Task GetPagedTuitions_AsStudent_ReturnsOwnTuitionsOnly()

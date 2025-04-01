@@ -1,6 +1,7 @@
 ﻿using DotNet.Testcontainers.Builders;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Hangfire.Server;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -18,7 +19,7 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
         .WithDatabase("photonpiano")
         .WithUsername("postgres")
         .WithPassword("postgres")
-        .WithPortBinding(5432, true) // Use random port to avoid conflicts
+        .WithPortBinding(5432, true)
         .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
@@ -40,20 +41,15 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
             {
                 using var connection = new Npgsql.NpgsqlConnection(connectionString);
                 await connection.OpenAsync();
-                
-                // Test query to verify database is fully ready
                 using var cmd = connection.CreateCommand();
                 cmd.CommandText = "SELECT 1";
                 await cmd.ExecuteScalarAsync();
-                
-                // If we get here, the database is ready
                 return;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 if (i == maxRetries - 1)
-                    throw new Exception($"Database failed to become available after {maxRetries} attempts", ex);
-                
+                    throw;
                 await Task.Delay(retryDelay);
             }
         }
@@ -61,6 +57,19 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
 
     async Task IAsyncLifetime.DisposeAsync()
     {
+        // Properly dispose Hangfire servers first
+        try
+        {
+            using var scope = Services.CreateScope();
+            var backgroundServer = scope.ServiceProvider.GetService<IBackgroundProcessingServer>();
+            (backgroundServer as IDisposable)?.Dispose();
+        }
+        catch (Exception)
+        {
+            // Ignore disposal errors
+        }
+
+        // Stop the container after Hangfire has been disposed
         await _dbContainer.StopAsync();
     }
 
@@ -68,43 +77,49 @@ public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAs
     {
         builder.ConfigureTestServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
+            // Remove existing DB context configuration
+            var dbContextDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+            if (dbContextDescriptor != null) 
+                services.Remove(dbContextDescriptor);
 
-            if (descriptor is not null) services.Remove(descriptor);
+            // Remove existing Hangfire configurations
+            var hangfireStorage = services.SingleOrDefault(d => d.ServiceType == typeof(JobStorage));
+            if (hangfireStorage != null) 
+                services.Remove(hangfireStorage);
+
+            var hangfireServer = services.SingleOrDefault(d => d.ServiceType == typeof(IBackgroundProcessingServer));
+            if (hangfireServer != null) 
+                services.Remove(hangfireServer);
 
             var connectionString = _dbContainer.GetConnectionString();
 
+            // Configure EF Core
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseNpgsql(connectionString, npgsqlOptions =>
                 {
-                    npgsqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 5,
-                        maxRetryDelay: TimeSpan.FromSeconds(30),
-                        errorCodesToAdd: null);
+                    npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(5), null);
                 });
             });
 
-            // Configure Hangfire for testing
+            // Configure Hangfire with complete settings
             services.AddHangfire((_, config) =>
             {
                 config.UsePostgreSqlStorage(options =>
                 {
                     options.UseNpgsqlConnection(connectionString);
-                    
                 });
-                
-                // Disable dashboard and server in test environment
-                config.SetDataCompatibilityLevel(CompatibilityLevel.Version_170);
             });
-            
+
+            // Use minimal server configuration
             services.AddHangfireServer(options => {
-               options.WorkerCount = 1;
-               options.ShutdownTimeout = TimeSpan.FromSeconds(5);
-               options.Queues = new[] { "critical", "default" };
+                options.WorkerCount = 1;
+                options.ShutdownTimeout = TimeSpan.FromSeconds(5);
+                options.ServerName = $"test-server-{Guid.NewGuid()}";
+                options.Queues = new[] { "default" };
+                options.StopTimeout = TimeSpan.FromSeconds(3);
             });
-            
         });
 
         base.ConfigureWebHost(builder);

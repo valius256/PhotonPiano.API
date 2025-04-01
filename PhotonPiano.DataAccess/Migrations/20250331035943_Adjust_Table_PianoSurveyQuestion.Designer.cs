@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhotonPiano.DataAccess.Models;
@@ -12,9 +13,11 @@ using PhotonPiano.DataAccess.Models;
 namespace PhotonPiano.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250331035943_Adjust_Table_PianoSurveyQuestion")]
+    partial class Adjust_Table_PianoSurveyQuestion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -601,41 +604,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("UpdateById");
 
                     b.ToTable("EntranceTestStudent");
-                });
-
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.FreeSlot", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AccountId")
-                        .IsRequired()
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DayOfWeek")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RecordStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Shift")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.ToTable("FreeSlot");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerAnswer", b =>
@@ -1708,17 +1676,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("UpdateBy");
                 });
 
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.FreeSlot", b =>
-                {
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Account")
-                        .WithMany("FreeSlots")
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Account");
-                });
-
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.LearnerAnswer", b =>
                 {
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.LearnerSurvey", "LearnerSurvey")
@@ -2105,8 +2062,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("DeletednNews");
 
                     b.Navigation("EntranceTestStudents");
-
-                    b.Navigation("FreeSlots");
 
                     b.Navigation("InstructorClasses");
 

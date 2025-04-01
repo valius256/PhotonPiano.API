@@ -85,8 +85,11 @@ public class RoomService : IRoomService
     public async Task<RoomDetailModel> GetRoomDetailById(Guid id)
     {
         var result = await _unitOfWork.RoomRepository
-            .FindSingleProjectedAsync<RoomDetailModel>(e => e.Id == id, false);
-        if (result is null) throw new NotFoundException("Room not found.");
+            .FindFirstProjectedAsync<RoomDetailModel>(e => e.Id == id, false);
+        if (result is null || result.Id == new Guid())
+        {
+            throw new NotFoundException("Room not found.");
+        }
         return result;
     }
 

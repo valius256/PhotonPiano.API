@@ -10,6 +10,8 @@ public interface IPianoSurveyService
     Task<PianoSurveyDetailsModel> GetSurveyDetails(Guid id, AccountModel currentAccount);
     Task<PianoSurveyDetailsModel> CreatePianoSurvey(CreatePianoSurveyModel createModel, AccountModel currentAccount);
     Task UpdatePianoSurvey(Guid id, UpdatePianoSurveyModel updateModel, AccountModel currentAccount);
+    
+    Task DeletePianoSurvey(Guid id, AccountModel currentAccount);
 
     Task<PianoSurveyDetailsModel> GetEntranceSurvey();
 

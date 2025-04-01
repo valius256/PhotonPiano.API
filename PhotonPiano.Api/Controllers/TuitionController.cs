@@ -88,7 +88,7 @@ public class TuitionController : BaseController
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
     [EndpointDescription("Get Tuition details")]
     public async Task<ActionResult<TuitionWithStudentClassResponse>> GetTuitionDetails(
-        [FromQuery] Guid id)
+        [FromRoute] Guid id)
     {
         return Ok(await _serviceFactory.TuitionService.GetTuitionById(id));
     }

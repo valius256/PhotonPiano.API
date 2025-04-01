@@ -1,5 +1,8 @@
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -51,7 +54,9 @@ public class SystemConfigsController : BaseController
         {
             return Ok(cacheValue);
         }
-        var result = await _serviceFactory.SystemConfigService.GetConfig($"Deadline cho điểm danh {DateTime.Today.Year}");
+
+        var result =
+            await _serviceFactory.SystemConfigService.GetConfig($"Deadline cho điểm danh {DateTime.Today.Year}");
 
         // check if the config value is empty, set it to the end of the day 
         if (string.IsNullOrEmpty(result.ConfigValue))
@@ -80,4 +85,14 @@ public class SystemConfigsController : BaseController
         return Ok(result);
     }
 
+    [HttpPut("survey")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Update survey system config")]
+    public async Task<ActionResult> UpdateSurveySystemConfig([FromBody] UpdateSurveySystemConfigRequest request)
+    {
+        await _serviceFactory.SystemConfigService.UpdateSurveySystemConfig(
+            request.Adapt<UpdateSurveySystemConfigModel>());
+        
+        return NoContent();
+    }
 }

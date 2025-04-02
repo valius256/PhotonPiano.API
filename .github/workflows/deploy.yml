@@ -70,17 +70,15 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/obj/project.assets.json') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.sln') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-            
+
       - name: 📦 Restore Dependencies
         run: dotnet restore PhotonPiano.API.sln --locked-mode
 
-
       - name: 🏗️ Build & Test Project
         run: |
-          dotnet restore PhotonPiano.API.sln
           dotnet build PhotonPiano.API.sln --configuration Release --no-restore
           dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 

@@ -56,4 +56,8 @@
 		<None Include="Views\TutionFeeNotification.cshtml" />
 	</ItemGroup>
 
+	<PropertyGroup>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+	</PropertyGroup>
+
 </Project>

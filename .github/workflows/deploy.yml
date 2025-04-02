@@ -37,8 +37,9 @@ env:
   Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"
 
+
 jobs:
-  build-and-test-pr:
+  build-and-test:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -49,7 +50,11 @@ jobs:
           POSTGRES_PASSWORD: anhphatdeptrai
         ports:
           - 5432:5432
-        options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: 🛠️ Checkout Repository
@@ -59,28 +64,37 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
 
-      - name: 📦 Restore Dependencies
-        run: dotnet restore PhotonPiano.API.sln
+      - name: 📦 Restore Dependencies with Caching
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-      - name: 🏗️ Build Project
-        run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
+      - name: 🏗️ Build & Test Project
+        run: |
+          dotnet restore PhotonPiano.API.sln
+          dotnet build PhotonPiano.API.sln --configuration Release --no-restore
+          dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
-      - name: ✅ Run Tests
-        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+  docker-build-and-push:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛠️ Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Login to GitHub Container Registry
+      - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and tag Docker Image
-        run: docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
-
-      - name: Push Docker Images
-        if: success()
+      - name: 🏗️ Build and Push Docker Image
         run: |
-          docker push ${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
+          docker push ${{ env.IMAGE_NAME }} --all-tags

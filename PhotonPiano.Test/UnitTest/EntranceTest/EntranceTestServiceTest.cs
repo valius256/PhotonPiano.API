@@ -5,6 +5,7 @@ using Moq;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
@@ -238,6 +239,151 @@ public class EntranceTestServiceTest
         Assert.Equal("Account not found", record.Message);
     }
 
+    [Fact]
+    public async Task AutoArrangeEntranceTests_StudentsNotFound_ThrowsBadRequestException()
+    {
+        //Arrange
+        var requestModel = _fixture.Build<AutoArrangeEntranceTestsModel>()
+            .With(x => x.StudentIds, ["test@abc.com"])
+            .Create();
+
+        _accountRepositoryMock.Setup(repo =>
+                repo.FindProjectedAsync<AccountDetailModel>(It.IsAny<Expression<Func<Account, bool>>>(), false, false,
+                    TrackingOption.Default))
+            .ReturnsAsync([]);
+
+        //Act
+        var record = await Record.ExceptionAsync(() =>
+            _entranceTestService.AutoArrangeEntranceTests(requestModel, _sampleStaff));
+
+        //Assert
+        Assert.IsType<BadRequestException>(record);
+        Assert.Equal("Some students are not found.", record.Message);
+    }
+
+    [Fact]
+    public async Task AutoArrangeEntranceTests_StudentsAreNotValidToBeArranged_ThrowsBadRequestException()
+    {
+        //Arrange
+        var requestModel = _fixture.Build<AutoArrangeEntranceTestsModel>()
+            .With(x => x.StudentIds, ["student1", "student2"])
+            .Create();
+
+        var students = new List<AccountDetailModel>
+        {
+            new AccountDetailModel
+            {
+                AccountFirebaseId = "student1",
+                Email = "student1@abc.com",
+                Role = Role.Student,
+                StudentStatus = StudentStatus.Unregistered
+            },
+            new AccountDetailModel
+            {
+                AccountFirebaseId = "student2",
+                Email = "student2@abc.com",
+                Role = Role.Student,
+                StudentStatus = StudentStatus.Leave
+            }
+        };
+
+        _accountRepositoryMock.Setup(repo =>
+                repo.FindProjectedAsync<AccountDetailModel>(It.IsAny<Expression<Func<Account, bool>>>(), false, false,
+                    TrackingOption.Default))
+            .ReturnsAsync(students);
+
+        //Act
+        var record = await Record.ExceptionAsync(() =>
+            _entranceTestService.AutoArrangeEntranceTests(requestModel, _sampleStaff));
+
+        //Assert
+        Assert.IsType<BadRequestException>(record);
+        Assert.Equal("Some students are not valid to be arranged with entrance tests.", record.Message);
+    }
+
+    [Fact]
+    public async Task AutoArrangeEntranceTests_SomeStudentsAreArranged_ThrowsConflictException()
+    {
+        //Arrange
+        var requestModel = _fixture.Build<AutoArrangeEntranceTestsModel>()
+            .With(x => x.StudentIds, ["student1", "student2"])
+            .Create();
+
+        var students = new List<AccountDetailModel>
+        {
+            new()
+            {
+                AccountFirebaseId = "student1",
+                Email = "student1@abc.com",
+                Role = Role.Student,
+                StudentStatus = StudentStatus.WaitingForEntranceTestArrangement,
+                EntranceTestStudents =
+                [
+                    new EntranceTestStudentModel
+                    {
+                        EntranceTestId = Guid.NewGuid(),
+                        Id = Guid.NewGuid(),
+                        StudentFirebaseId = "student1",
+                    }
+                ]
+            },
+            new()
+            {
+                AccountFirebaseId = "student2",
+                Email = "student2@abc.com",
+                Role = Role.Student,
+                StudentStatus = StudentStatus.WaitingForEntranceTestArrangement,
+                EntranceTestStudents =
+                [
+                    new EntranceTestStudentModel
+                    {
+                        EntranceTestId = Guid.NewGuid(),
+                        Id = Guid.NewGuid(),
+                        StudentFirebaseId = "student2",
+                    }
+                ]
+            }
+        };
+
+        _accountRepositoryMock.Setup(repo =>
+                repo.FindProjectedAsync<AccountDetailModel>(It.IsAny<Expression<Func<Account, bool>>>(), false, false,
+                    TrackingOption.Default))
+            .ReturnsAsync(students);
+
+        //Act
+        var record = await Record.ExceptionAsync(() =>
+            _entranceTestService.AutoArrangeEntranceTests(requestModel, _sampleStaff));
+
+        //Assert
+        Assert.IsType<ConflictException>(record);
+        Assert.Equal(
+            $"Students: {string.Join(", ", students.Select(s => $"{s.AccountFirebaseId}-{s.Email}"))} are already arranged.",
+            record.Message);
+    }
+
+    [Fact]
+    public async Task UpdateStudentEntranceResults_EntranceTestStudentNotFound_ThrowsNotFoundException()
+    {
+        //Arrange
+        var updateModel = _fixture.Build<UpdateEntranceTestResultsModel>()
+            .Create();
+        var entranceTestId = Guid.NewGuid();
+        var studentId = Guid.NewGuid();
+
+        _entranceTestStudentRepositoryMock.Setup(repo => repo.FindFirstAsync(ets => ets.EntranceTestId == entranceTestId
+                    && ets.StudentFirebaseId == studentId.ToString(), true, false,
+                null, true))
+            .ReturnsAsync((EntranceTestStudent?)null);
+
+        //Act
+        var record = await Record.ExceptionAsync(() =>
+            _entranceTestService.UpdateStudentEntranceResults(entranceTestId, studentId.ToString(), updateModel,
+                _sampleStaff));
+
+        //Assert
+        Assert.IsType<NotFoundException>(record);
+        Assert.Equal("Entrance test not found or student not found.", record.Message);
+    }
 
     [Fact]
     public async Task CreateEntranceTest_RoleIsNotInstructor_ThrowsBadRequestException()
@@ -303,14 +449,14 @@ public class EntranceTestServiceTest
     {
         //Arrange
         var entranceTestId = Guid.NewGuid();
-    
+
         var roomId = Guid.NewGuid();
-    
+
         var updateModel = _fixture.Build<UpdateEntranceTestModel>()
             .With(x => x.RoomId, roomId)
             .With(x => x.StartTime, DateOnly.FromDateTime(DateTime.UtcNow))
             .Create();
-    
+
         _entranceTestRepositoryMock.Setup(repo => repo.FindSingleAsync(e => e.Id == entranceTestId, true, false))
             .ReturnsAsync(new DataAccess.Models.Entity.EntranceTest
             {
@@ -321,15 +467,15 @@ public class EntranceTestServiceTest
                 RoomId = roomId,
                 CreatedById = Guid.NewGuid().ToString()
             });
-        
-    
+
+
         _roomRepositoryMock.Setup(repo => repo.FindSingleAsync(It.IsAny<Expression<Func<Room, bool>>>(), false, false))
             .ReturnsAsync((Room?)null);
-    
+
         //Act
         var record = await Record.ExceptionAsync(() => _entranceTestService.UpdateEntranceTest(entranceTestId,
             updateModel, _sampleStaff.AccountFirebaseId));
-    
+
         //Assert
         Assert.IsType<NotFoundException>(record);
         Assert.Equal("Room not found.", record.Message);

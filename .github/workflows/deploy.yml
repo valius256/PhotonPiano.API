@@ -38,7 +38,7 @@ env:
   GITHUB_ACTIONS: "true"
 
 jobs:
-  build-and-test-pr:
+  build-and-test:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -69,18 +69,21 @@ jobs:
       - name: ✅ Run Tests
         run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
-      - name: Login to GitHub Container Registry
+  docker-build-and-push:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛠️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and tag Docker Image
-        run: docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
-
-      - name: Push Docker Images
-        if: success()
+      - name: 🏗️ Build and Push Docker Image
         run: |
-          docker push ${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
+          docker push ${{ env.IMAGE_NAME }} --all-tags

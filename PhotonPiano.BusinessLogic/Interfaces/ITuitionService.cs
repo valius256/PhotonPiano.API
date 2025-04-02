@@ -17,7 +17,7 @@ public interface ITuitionService
     Task<PagedResult<TuitionWithStudentClassModel>> GetTuitionsPaged(QueryTuitionModel queryTuitionModel,
         AccountModel? account = default);
 
-    Task<TuitionWithStudentClassModel> GetTuitionById(Guid tuitionId);
+    Task<TuitionWithStudentClassModel> GetTuitionById(Guid tuitionId, AccountModel? currentAccount);
 
     Task CreateTuitionWhenRegisterClass(ClassDetailModel classDetailModel);
 

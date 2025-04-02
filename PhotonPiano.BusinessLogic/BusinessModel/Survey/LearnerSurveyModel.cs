@@ -7,4 +7,6 @@ public record LearnerSurveyModel
     public Guid PianoSurveyId { get; init; }
 
     public required string LearnerEmail { get; init; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
 }

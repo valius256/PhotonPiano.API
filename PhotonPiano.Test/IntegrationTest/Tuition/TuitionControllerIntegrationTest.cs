@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using PhotonPiano.Api.Requests.Tution;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.Api.Responses.Tution;
+using PhotonPiano.BusinessLogic.BusinessModel.Query;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Test.Extensions;
+using static PhotonPiano.Test.Extensions.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.Tuition;
 
@@ -49,7 +51,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     
         // Get tuitions to find an unpaid one
-        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&size=10");
         tuitionsResponse.EnsureSuccessStatusCode();
         var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
         var unpaidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Pending);
@@ -114,12 +116,65 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+        var response = await _client.GetAsync("/api/tuitions?page=1&size=10");
 
         // Assert
         response.EnsureSuccessStatusCode();
         var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(response);
         Assert.NotNull(tuitions);
+    }
+    
+    [Fact]
+    public async Task GetPagedTuitions_ReturnsCorrectPaginationHeaders()
+    {
+        // Arrange
+
+        var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        // var accountId = _client.GetFirebaseAccountId("learner035@gmail.com", "123456");
+
+        var queryPaged = new QueryPagedModel()
+        {
+            Page = 1,
+            PageSize = 5,
+            SortColumn = "Id",
+            OrderByDesc = true,
+        };
+        
+        var queryParams = new Dictionary<string, string>
+        {
+            ["page"] = queryPaged.Page.ToString(),
+            ["size"] = queryPaged.PageSize.ToString(),
+            ["column"] = queryPaged.SortColumn,
+            ["desc"] = queryPaged.OrderByDesc.ToString()
+        };
+    
+        var queryString = string.Join("&", queryParams.Select(p => $"{p.Key}={p.Value}"));
+        var requestUri = $"/api/tuitions?{queryString}";
+    
+        // Act
+        var response = await _client.GetAsync(requestUri);
+    
+        // Assert
+        response.EnsureSuccessStatusCode();
+    
+        // Verify pagination headers 
+        Assert.True(response.Headers.Contains("X-Total-Count"), "X-Total-Count header is missing");
+        Assert.True(response.Headers.Contains("X-Total-Pages"), "X-Total-Pages header is missing");
+        Assert.True(response.Headers.Contains("X-Page"), "X-Page header is missing");
+        Assert.True(response.Headers.Contains("X-Page-Size"), "X-Page-Size header is missing");
+    
+        // Verify header values
+        var page = int.Parse(response.Headers.GetValues("X-Page").First());
+        var pageSize = int.Parse(response.Headers.GetValues("X-Page-Size").First());
+        
+        Assert.Equal(page, queryPaged.Page);
+        Assert.Equal(pageSize, queryPaged.PageSize);
+    
+        // Deserialize content and verify it matches headers
+        var result = DeserializeResponse<List<TuitionWithStudentClassResponse>>(response);
+    
+        Assert.NotNull(result);
     }
 
     [Fact]
@@ -130,11 +185,11 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
-        var response = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+        var response = await _client.GetAsync("/api/tuitions?page=1&size=10");
 
         // Assert
         response.EnsureSuccessStatusCode();
-        var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(response);
+        var tuitions = await DeserializeResponse<List<TuitionWithStudentClassResponse>>(response);
         Assert.NotNull(tuitions);
     }
 
@@ -149,7 +204,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         var endDate = DateOnly.FromDateTime(DateTime.Now);
         
         // Act
-        var response = await _client.GetAsync($"/api/tuitions?page=1&page-size=10&start-date={startDate}&end-date={endDate}&payment-statuses=Pending");
+        var response = await _client.GetAsync($"/api/tuitions?page=1&size=10&start-date={startDate}&end-date={endDate}&payment-statuses=Pending");
 
         // Assert
         response.EnsureSuccessStatusCode();
@@ -166,7 +221,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // First get a tuition id
-        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=1");
+        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&size=1");
         tuitionsResponse.EnsureSuccessStatusCode();
         var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
         var id = tuitions.First().Id;
@@ -203,7 +258,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         var staffToken = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", staffToken);
         
-        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&size=10");
         tuitionsResponse.EnsureSuccessStatusCode();
         var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
         
@@ -231,7 +286,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Get tuitions to find a paid one
-        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=10");
+        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&size=10");
         tuitionsResponse.EnsureSuccessStatusCode();
         var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
         var paidTuition = tuitions.FirstOrDefault(t => t.PaymentStatus == PaymentStatus.Succeed);
@@ -264,7 +319,7 @@ public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposabl
         var staffToken = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", staffToken);
         
-        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&page-size=20");
+        var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&size=20");
         tuitionsResponse.EnsureSuccessStatusCode();
         var tuitions = await Extensions.Extensions.DeserializeResponse<List<TuitionWithStudentClassResponse>>(tuitionsResponse);
         

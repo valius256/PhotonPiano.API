@@ -7,6 +7,7 @@ using PhotonPiano.Shared.Models;
 using PhotonPiano.Test.Extensions;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using PhotonPiano.BusinessLogic.BusinessModel.Query;
 using static PhotonPiano.Test.Extensions.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.Scheduler;
@@ -35,15 +36,6 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact]
-    public async Task GetAttendanceStatus_Unauthorized_ReturnsUnauthorized()
-    {
-        // Act
-        var response = await _client.GetAsync($"/api/scheduler/attendance-status/{Guid.NewGuid()}");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
 
     // Invalid input Parameters
     [Fact]
@@ -59,21 +51,7 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
-
-    // Non-Existent Resources
-    [Fact]
-    public async Task GetSlotById_NonExistentSlot_ReturnsNotFound()
-    {
-        // Arrange
-        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        // Act
-        var response = await _client.GetAsync($"/api/scheduler/slot/{Guid.NewGuid()}");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
+    
 
     // Boundary Dates
     [Fact]
@@ -121,6 +99,16 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
         Assert.NotEmpty(result);
+    }
+    
+    [Fact]
+    public async Task GetAttendanceStatus_Unauthorized_ReturnsUnauthorized()
+    {
+        // Act
+        var response = await _client.GetAsync($"/api/scheduler/attendance-status/{Guid.NewGuid()}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -174,6 +162,22 @@ public class SchedulerControllerIntegrationTest : BaseIntergrationTest
         var result = await DeserializeResponse<SlotDetailModel>(response);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
+    }
+    
+    
+    // Non-Existent Resources
+    [Fact]
+    public async Task GetSlotById_NonExistentSlot_ReturnsNotFound()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response = await _client.GetAsync($"/api/scheduler/slot/{Guid.NewGuid()}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

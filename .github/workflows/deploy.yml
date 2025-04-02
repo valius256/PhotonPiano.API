@@ -75,7 +75,8 @@ jobs:
             ${{ runner.os }}-nuget-
             
       - name: 📦 Restore Dependencies
-        run: dotnet restore PhotonPiano.API.sln
+        run: dotnet restore PhotonPiano.API.sln --locked-mode
+
 
       - name: 🏗️ Build & Test Project
         run: |

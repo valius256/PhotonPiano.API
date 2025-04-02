@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Newtonsoft.Json;
 using PhotonPiano.Api.Requests.EntranceTest;
+using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Test.Extensions;
 
@@ -33,7 +34,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntergrationTest
     }
 
     [Fact]
-    public async Task GetEntranceTests_GetSuccessAndAuthorized_ReturnsOkStatusWithCorrectHeaderData()
+    public async Task GetEntranceTests_GetSuccessAndAuthorized_ReturnsOkStatus()
     {
         //Arrange
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
@@ -46,14 +47,12 @@ public class EntranceTestControllerIntegrationTest : BaseIntergrationTest
             SortColumn = "CreatedAt",
             OrderByDesc = false
         };
-
-        var url = $"{_baseUrl}/api/entrance-tests";
         
-        url += $"?page={queryRequest.Page}&size={queryRequest.PageSize}&column={queryRequest.SortColumn}&desc={queryRequest.OrderByDesc}";
+        string url = $"{_baseUrl}?page={queryRequest.Page}&size={queryRequest.PageSize}&column={queryRequest.SortColumn}&desc={queryRequest.OrderByDesc}";
         
         //Act
-        var response = await _client.GetAsync(url);    
-        
+        var response = await _client.GetAsync(url);
+
         var headers = response.Headers;
         
         var page = headers.GetValues("X-Page").FirstOrDefault();
@@ -73,8 +72,6 @@ public class EntranceTestControllerIntegrationTest : BaseIntergrationTest
     public async Task GetEntranceTestDetails_Unauthorized_ReturnsUnauthorizedStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         //Act 
         var response = await _client.GetAsync($"{_baseUrl}/682e3e48-50ca-464e-aea5-1964e3a03811");
@@ -105,11 +102,59 @@ public class EntranceTestControllerIntegrationTest : BaseIntergrationTest
         var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
-        var entranceTestId = "682e3e48-50ca-464e-aea5-1964e3a03811";
+        Guid entranceTestId = Guid.Parse("3c707d90-f81f-4f35-a089-829c8d36bbe2");
         
         //Act
         var response = await _client.GetAsync($"{_baseUrl}/{entranceTestId}");
         
+        //Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetEntranceTestStudentDetails_Unauthorized_ReturnsUnauthorizedStatus()
+    {
+        //Arrange
+        var id = Guid.NewGuid();
+        var studentId = Guid.NewGuid().ToString();
+        
+        string url = $"{_baseUrl}/{id}/students/{studentId}";
+        
+        //Act
+        var response = await _client.GetAsync(url);
+        
+        //Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetEntranceTestStudentDetails_EntranceTestStudentNotFound_ReturnsNotFoundStatus()
+    {
+        //Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var entranceTestId = Guid.NewGuid();
+        var studentId = Guid.NewGuid().ToString();
+
+        //Act
+        var response = await _client.GetAsync($"{_baseUrl}/{entranceTestId}/students/{studentId}");
+
+        //Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetEntranceTestStudentDetails_GetSuccessAndAuthorized_ReturnsOkStatus()
+    {
+        //Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var entranceTestId = "682e3e48-50ca-464e-aea5-1964e3a03811";
+        var studentId = "GVX3Q2a70aU3OansV69wbTtvddY2";
+
+        //Act
+        var response = await _client.GetAsync($"{_baseUrl}/{entranceTestId}/students/{studentId}");
+
         //Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -144,7 +189,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntergrationTest
         var createRequest = new CreateEntranceTestRequest
         {
             Name = "Test Entrance Test",
-            RoomId = Guid.NewGuid(),
+            RoomId = Guid.Parse("097eaa43-c599-4eae-a52d-f86733f28cd0"),
             Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3)),
             Shift = Shift.Shift3_10h45_12h,
             InstructorId = "1axRN4fG0ybZyDOYvO8wnkm5lHJ3",
@@ -159,6 +204,48 @@ public class EntranceTestControllerIntegrationTest : BaseIntergrationTest
 
         //Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EnrollEntranceTest_Unauthorized_ReturnsUnauthorizedStatus()
+    {
+        //Arrange
+        string returnUrl = "https://www.youtube.com/";
+        var request = new EnrollmentRequest(returnUrl);
+        
+        string json = JsonConvert.SerializeObject(request);
+        HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+        
+        //Act
+        var response = await _client.PostAsync($"{_baseUrl}/enrollment-requests", content);
+
+        //Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task EnrollEntranceTest_EnrollSuccess_ReturnsCreatedStatusWithPaymentUrl()
+    {
+        //Arrange
+        string returnUrl = "https://www.youtube.com/";
+        var request = new EnrollmentRequest(returnUrl);
+                
+        var token = await _client.GetAuthToken("learner041@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        string json = JsonConvert.SerializeObject(request);
+        HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+        
+        //Act
+        var response = await _client.PostAsync($"{_baseUrl}/enrollment-requests", content);
+        
+        var responseJsonString = await response.Content.ReadAsStringAsync();
+        var responseObject = JsonConvert.DeserializeObject<PaymentUrlResponse>(responseJsonString);
+
+        //Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(responseObject);
+        Assert.NotEmpty(responseObject.Url);
     }
 
     [Fact]

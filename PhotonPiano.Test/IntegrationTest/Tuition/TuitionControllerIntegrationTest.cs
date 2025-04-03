@@ -13,14 +13,14 @@ using static PhotonPiano.Test.Extensions.Extensions;
 namespace PhotonPiano.Test.IntegrationTest.Tuition;
 
 [Collection("Tuition Integration Tests")]
-public class TuitionControllerIntegrationTest : BaseIntergrationTest, IDisposable
+public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
 {
     private readonly HttpClient _client;
     private readonly IServiceScope _scope;
     private readonly IServiceFactory _serviceFactory;
     private static bool _dataInitialized = false;
     
-    public TuitionControllerIntegrationTest(IntergrationTestWebAppFactory factory) : base(factory)
+    public TuitionControllerIntegrationTest(IntegrationTestWebAppFactory factory) : base(factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {

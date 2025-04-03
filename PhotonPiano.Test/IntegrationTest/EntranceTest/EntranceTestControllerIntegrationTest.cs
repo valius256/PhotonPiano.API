@@ -9,13 +9,13 @@ using PhotonPiano.Test.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.EntranceTest;
 
-public class EntranceTestControllerIntegrationTest : BaseIntergrationTest
+public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
 {
     private readonly HttpClient _client;
 
     private readonly string _baseUrl = "/api/entrance-tests";
     
-    public EntranceTestControllerIntegrationTest(IntergrationTestWebAppFactory factory) : base(factory)
+    public EntranceTestControllerIntegrationTest(IntegrationTestWebAppFactory factory) : base(factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {

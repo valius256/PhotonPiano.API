@@ -92,25 +92,42 @@ jobs:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Set up SSH keys
+      - name: Set up SSH keys
+        run: |
+          # Create the SSH directory
+          mkdir -p ~/.ssh
+          
+          # Add SSH private key to the file
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Add GitHub to the known hosts to prevent SSH verification errors
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+          
+          # Optionally, add your server's IP to known_hosts for a more secure connection
+          ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+      
+      # Step 2: Deploy to server via SSH
       - name: 🚀 Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }} # Optional, only if your SSH private key is encrypted
           script: |
-            # Đăng nhập vào GitHub Container Registry
+            # Log in to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Dừng và xóa container cũ (nếu có)
+            
+            # Stop and remove old container if it exists
             docker stop photonpiano-api || true
             docker rm photonpiano-api || true
-
-            # Kéo image mới từ GHCR
+            
+            # Pull the new image from GHCR
             docker pull ${{ env.IMAGE_NAME }}:latest
-
-            # Chạy container mới
+            
+            # Run the new container
             docker run -d --name photonpiano-api \
               -p 8080:8080 \
               -e POSTGRES_CONNECTION="Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345" \

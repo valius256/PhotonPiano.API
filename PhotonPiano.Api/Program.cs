@@ -7,6 +7,7 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
+using PhotonPiano.BusinessLogic.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -16,10 +17,14 @@ var configuration = builder.Configuration;
 
 // hello this line write to proved i am the owner of this project and github is not good for beginner
 
+
+
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
+
+
 
 
 // Not Done Yet
@@ -74,6 +79,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     TimeZoneResolver = new DefaultTimeZoneResolver()
 });
 
+
 var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
 sqlConfig.Configure();
 
@@ -91,6 +97,7 @@ app.UseResponseCompression();
 app.MapControllers();
 
 
+app.MapHealthChecks("/health");
 
 
 await app.RunAsync();

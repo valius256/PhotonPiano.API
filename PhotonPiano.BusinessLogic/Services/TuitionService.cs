@@ -229,9 +229,6 @@ public class TuitionService : ITuitionService
             }
         }
 
-        var currentTuition = tutions.Count();
-
-
         // Save to database inside a transaction
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

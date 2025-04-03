@@ -7,7 +7,13 @@ public interface ICriteriaService
 {
     Task<List<MinimalCriteriaModel>> GetMinimalCriterias(QueryMinimalCriteriasModel queryModel);
 
-    Task<PagedResult<CriteriaDetailModel>> GetPagedCriteria(QueryCriteriaModel query);
+    Task<PagedResult<CriteriaModel>> GetPagedCriteria(QueryCriteriaModel query);
 
     Task<CriteriaDetailModel> GetCriteriaDetailById(Guid id);
+
+    Task<CriteriaModel> CreateCriteria(CreateCriteriaModel createCriteriaModel, string userFirebaseId);
+
+    Task UpdateCriteria(BulkUpdateCriteriaModel updateCriteriaModel, string userFirebaseId);
+
+    Task DeleteCriteria(Guid id, string userFirebaseId);
 }

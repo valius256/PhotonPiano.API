@@ -28,6 +28,7 @@ using System.Net;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -126,6 +127,9 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<CreatePianoSurveyRequest, CreatePianoSurveyModel>.NewConfig()
             .Map(dest => dest.CreateQuestionRequests, src => src.Questions);
+
+        TypeAdapterConfig<UpdateCriteriaModel, Criteria>.NewConfig()
+            .IgnoreNullValues(true);
 
         return services;
     }

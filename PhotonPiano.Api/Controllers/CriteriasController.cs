@@ -2,8 +2,10 @@ using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
+using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.Criteria;
 using PhotonPiano.Api.Responses.Criteria;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -22,7 +24,7 @@ public class CriteriasController : BaseController
     }
 
     [HttpGet("all-minimal")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student, Role.Instructor])]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student, Role.Instructor, Role.Administrator])]
     [EndpointDescription("Get all minimal criterias")]
     public async Task<ActionResult<List<MinimalCriteriaModel>>> GetMinimalCriterias(
         [FromQuery] QueryMinimalCriteriasRequest request)
@@ -48,5 +50,37 @@ public class CriteriasController : BaseController
     public async Task<ActionResult<CriteriaDetailModel>> GetCriteriaById([FromRoute] Guid id)
     {
         return Ok(await _serviceFactory.CriteriaService.GetCriteriaDetailById(id));
+    }
+
+    [HttpPost]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [EndpointDescription("Create a criteria")]
+    public async Task<ActionResult<CriteriaModel>> CreateCriteria(
+        [FromBody] CreateCriteriaRequest request)
+    {
+        var result =
+            await _serviceFactory.CriteriaService.CreateCriteria(
+                request.Adapt<CreateCriteriaModel>(), CurrentUserFirebaseId);
+        return Created(nameof(CreateCriteria), result);
+    }
+
+    [HttpDelete("{id}")]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [EndpointDescription("Delete a criteria")]
+    public async Task<ActionResult> DeleteCriteria([FromRoute] Guid id)
+    {
+        await _serviceFactory.CriteriaService.DeleteCriteria(id, CurrentUserFirebaseId);
+        return NoContent();
+    }
+
+    [HttpPut]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [EndpointDescription("Update a criteria")]
+    public async Task<ActionResult> UpdateCriteria([FromBody] BulkUpdateCriteriaRequest request)
+    {
+        await _serviceFactory.CriteriaService.UpdateCriteria(request.Adapt<BulkUpdateCriteriaModel>(),
+            CurrentUserFirebaseId);
+
+        return NoContent();
     }
 }

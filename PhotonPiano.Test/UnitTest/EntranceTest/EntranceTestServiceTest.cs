@@ -370,8 +370,8 @@ public class EntranceTestServiceTest
         var entranceTestId = Guid.NewGuid();
         var studentId = Guid.NewGuid();
 
-        _entranceTestStudentRepositoryMock.Setup(repo => repo.FindFirstAsync(ets => ets.EntranceTestId == entranceTestId
-                    && ets.StudentFirebaseId == studentId.ToString(), true, false,
+        _entranceTestStudentRepositoryMock.Setup(repo => repo.FindFirstAsync(
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.EntranceTestStudent, bool>>>(), true, false,
                 null, true))
             .ReturnsAsync((EntranceTestStudent?)null);
 

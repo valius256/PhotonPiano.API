@@ -98,6 +98,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
             # Đăng nhập vào GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -113,8 +114,8 @@ jobs:
             docker run -d --name photonpiano-api \
               -p 8080:8080 \
               -e POSTGRES_CONNECTION="Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345" \
-              -e ASPNETCORE_ENVIRONMENT="Development" \
-              -e DOTNET_ENVIRONMENT="Development" \
+              -e ASPNETCORE_ENVIRONMENT="Production" \
+              -e DOTNET_ENVIRONMENT="Production" \
               -e Firebase__Auth__ApiKey="${{ secrets.FIREBASE_API_KEY }}" \
               -e Firebase__Auth__Authority="${{ secrets.FIREBASE_AUTHORITY }}" \
               -e Firebase__Auth__Issuer="${{ secrets.FIREBASE_ISSUER }}" \

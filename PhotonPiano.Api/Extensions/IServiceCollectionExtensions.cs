@@ -27,6 +27,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using PhotonPiano.BusinessLogic.Interfaces;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -51,7 +52,7 @@ public static class IServiceCollectionExtensions
             .AddRazorTemplateWithConfigPath()
             .AddRateLimitedForAllEndpoints()
             .ConfigureResponseCompression()
-            .AddHealthChecks()
+            .AddHealthChecks(configuration)
             ;
 
 
@@ -288,40 +289,44 @@ public static class IServiceCollectionExtensions
     }
 
 
-    private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
-        IConfiguration configuration)
+    private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services, IConfiguration configuration)
+{
+    services.AddHangfire((_, config) =>
     {
-        services.AddHangfire((_, config) =>
+        config.UsePostgreSqlStorage(options =>
         {
-            config.UsePostgreSqlStorage(options =>
-            {
-                options.UseNpgsqlConnection(GetConnectionString(configuration));
-            });
+            options.UseNpgsqlConnection(GetConnectionString(configuration));
         });
+    });
 
-        var cultureInfo = new CultureInfo("vn-VN");
-        CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-        CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+    var cultureInfo = new CultureInfo("vn-VN");
+    CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+    CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-        // Register any other required services here
-        services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
+    services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
+    
+    services.AddHangfireServer((serviceProvider, cf) =>
+    {
+        cf.WorkerCount = 15;
+        cf.TimeZoneResolver = new DefaultTimeZoneResolver();
 
-        services.AddHangfireServer((service, cf) =>
+        var recurringJobManager = serviceProvider.GetRequiredService<IRecurringJobManager>();
+        
+
+        using (var scope = serviceProvider.CreateScope())
         {
-            cf.WorkerCount = 15;
-            cf.TimeZoneResolver = new DefaultTimeZoneResolver();
+            var configService = scope.ServiceProvider.GetRequiredService<ISystemConfigService>();
 
-            var recurringJobManager = service.GetRequiredService<IRecurringJobManager>();
-
-
-            //  recurring job
+            var tuitionReminderDay = configService.GetConfig("Ngày nhắc thanh toán học phí").Result?.ConfigValue ?? "15";
+            var tuitionOverdueDay = configService.GetConfig("Hạn chót thanh toán học phí").Result?.ConfigValue ?? "28";
+            
             recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
                 x => x.CronAutoCreateTuition(),
                 Cron.Monthly);
 
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                 x => x.CronForTuitionReminder(),
-                Cron.Monthly(15));
+                $"0 0 {tuitionReminderDay} * *");
 
             recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
                 x => x.CronAutoChangeSlotStatus(),
@@ -329,15 +334,17 @@ public static class IServiceCollectionExtensions
 
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
                 x => x.CronForTuitionOverdue(),
-                Cron.Monthly(28));
+                $"0 0 {tuitionOverdueDay} * *");
 
             recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
                 x => x.CronJobAutoRemovedOutDateNotifications(),
                 Cron.Hourly(15));
-        });
+        }
+    });
 
-        return services;
-    }
+    return services;
+}
+
 
     private static IServiceCollection AddRateLimitedForAllEndpoints(this IServiceCollection services)
     {

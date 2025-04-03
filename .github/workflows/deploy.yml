@@ -17,7 +17,7 @@ env:
   IMAGE_NAME: ghcr.io/valius256/photonpiano-api
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  POSTGRES_CONNECTION: "Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=anhphatdeptrai"
+  POSTGRES_CONNECTION: "Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345"
   ASPNETCORE_ENVIRONMENT: Development
   DOTNET_ENVIRONMENT: Development
   Firebase__Auth__ApiKey: ${{ secrets.FIREBASE_API_KEY }}
@@ -87,3 +87,48 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME }} --all-tags
+          
+  deploy-to-server:
+    needs: docker-build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Đăng nhập vào GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Dừng và xóa container cũ (nếu có)
+            docker stop photonpiano-api || true
+            docker rm photonpiano-api || true
+
+            # Kéo image mới từ GHCR
+            docker pull ${{ env.IMAGE_NAME }}:latest
+
+            # Chạy container mới
+            docker run -d --name photonpiano-api \
+              -p 8080:8080 \
+              -e POSTGRES_CONNECTION="Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345" \
+              -e ASPNETCORE_ENVIRONMENT="Production" \
+              -e DOTNET_ENVIRONMENT="Production" \
+              -e Firebase__Auth__ApiKey="${{ secrets.FIREBASE_API_KEY }}" \
+              -e Firebase__Auth__Authority="${{ secrets.FIREBASE_AUTHORITY }}" \
+              -e Firebase__Auth__Issuer="${{ secrets.FIREBASE_ISSUER }}" \
+              -e Firebase__Auth__Audience="${{ secrets.FIREBASE_AUDIENCE }}" \
+              -e VNPAY__BASEURL="${{ secrets.FIREBASE_AUDIENCE }}" \
+              -e VNPAY__TMNCODE="${{ secrets.VNPAY_TMNCODE }}" \
+              -e VNPAY__HASHSECRET="${{ secrets.VNPAY_HASHSECRET }}" \
+              -e VNPAY__RETURNURL="${{ secrets.VNPAY_RETURNURL }}" \
+              -e VNPAY__CURRCODE="${{ secrets.VNPAY_CURRCODE }}" \
+              -e VNPAY__LOCALE="${{ secrets.VNPAY_LOCALE }}" \
+              -e VNPAY__TIMEZONEID="${{ secrets.VNPAY_TIMEZONEID }}" \
+              -e VNPAY__VERSION="${{ secrets.VNPAY_VERSION }}" \
+              -e VNPAY__COMMAND="${{ secrets.VNPAY_COMMAND }}" \
+              -e Logging__LogLevel__Hangfire="Debug" \
+              -e Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command="Information" \
+              --restart unless-stopped \
+              ${{ env.IMAGE_NAME }}:latest

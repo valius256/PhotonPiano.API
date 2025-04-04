@@ -37,7 +37,12 @@ if (OperatingSystem.IsLinux())
             var passphrase = Environment.GetEnvironmentVariable("CERT_PEM_PASSPHRASE");
 
             // Load the certificate with the passphrase
-            var cert = new X509Certificate2("/etc/ssl/certs/combined-certificate.pem", passphrase);
+            var cert = new X509Certificate2("/etc/ssl/certs/mydomain.crt", passphrase);
+            var key = File.ReadAllText("/etc/ssl/private/mydomain.key");
+            
+            // Optionally, you can combine them into a PKCS#12 format (PFX)
+            var pfxCertificate = new X509Certificate2(cert.Export(X509ContentType.Pkcs12, passphrase), passphrase);
+            listenOptions.UseHttps(pfxCertificate);
 
             // If you have a separate private key file, you can load it like this:
             // var key = File.ReadAllText("/etc/ssl/private/mydomain.key");

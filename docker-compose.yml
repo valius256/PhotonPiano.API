@@ -4,10 +4,13 @@ services:
     container_name: photonpiano.database
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: PhotonPiano
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: photonpiano
     ports:
      - "5432:5432"
+    volumes:
+      - /root/photonpiano/postgres-data:/var/lib/postgresql/data 
+    restart: unless-stopped
 
 
   photonpiano.api:

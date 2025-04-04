@@ -33,11 +33,14 @@ if (OperatingSystem.IsLinux())
         options.Listen(IPAddress.Any, 8080); // HTTP
         options.Listen(IPAddress.Any, 8081, listenOptions =>
         {
-            var cert = new X509Certificate2("/etc/ssl/certs/combined-certificate.pem");
+            var passphrase = Environment.GetEnvironmentVariable("CERT_PEM_PASSPHRASE");
+            // Load the certificate with the passphrase
+            var cert = new X509Certificate2("/etc/ssl/certs/combined-certificate.pem", passphrase);
             listenOptions.UseHttps(cert);
         });
     });
 }
+
 
 
 

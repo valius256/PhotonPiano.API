@@ -42,11 +42,10 @@ public class CriteriaService : ICriteriaService
             sortColumn, orderByDesc,
             expressions:
             [
-                c => !string.IsNullOrEmpty(keyword) ||
+                c => string.IsNullOrEmpty(keyword) ||
                      EF.Functions.ILike(EF.Functions.Unaccent(c.Name), likeKeyword) ||
                      EF.Functions.ILike(EF.Functions.Unaccent(c.Description ?? string.Empty), likeKeyword)
             ]);
-        var allCriterial = await _unitOfWork.CriteriaRepository.GetAllAsync();
         // await _serviceFactory.RedisCacheService.SaveAsync("criteria", allCriterial, TimeSpan.FromHours(10));
         return result;
     }
@@ -67,7 +66,7 @@ public class CriteriaService : ICriteriaService
         }
 
         var criteria = createCriteriaModel.Adapt<Criteria>();
-
+        criteria.CreatedById = userFirebaseId;
         //Shift criteria
         var otherCriteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == criteria.For);
         var deltaWeight = 100 - createCriteriaModel.Weight;

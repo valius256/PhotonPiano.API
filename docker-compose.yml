@@ -15,7 +15,7 @@ services:
   
   photonpiano.api:
     image: ghcr.io/valius256/photonpiano-api:latest
-    container_name: photonpiano.api
+    container_name: photonpiano-api
     restart: unless-stopped
     depends_on:
       - photonpiano.database

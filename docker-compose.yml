@@ -18,7 +18,7 @@ services:
     container_name: photonpiano-api
     restart: unless-stopped
     depends_on:
-      - photonpiano.database
+      - photonpiano-database
     ports:
       - "8081:8081"
     environment:

@@ -11,30 +11,40 @@ services:
     volumes:
       - /root/photonpiano/postgres-data:/var/lib/postgresql/data 
     restart: unless-stopped
-
-
+  
+  
   photonpiano.api:
     image: ghcr.io/valius256/photonpiano-api:latest
     container_name: photonpiano.api
-    restart: on-failure
-    depends_on: 
+    restart: unless-stopped
+    depends_on:
       - photonpiano.database
     ports:
-      - "8080:8080"
       - "8081:8081"
     environment:
-      - /root/server.pem:/https/server.pem:ro
-      - /root/server-key.pem:/https/server-key.pem:ro
-      - C:\certs:/https:ro
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
-      - ASPNETCORE_URLS=http://0.0.0.0:8080;https://0.0.0.0:8081
-      - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;Include Error Detail = true
-      - HangfireConnectionString=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;
+      - ASPNETCORE_URLS=https://0.0.0.0:8081
+      - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
+      - HangfireConnectionString=Host=photonpiano-database;;Port=5432;Database=photonpiano;Username=postgres;Password=12345
+      - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}
+      - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
+      - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
+      - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
+      - VNPAY__BASEURL=${FIREBASE_AUDIENCE}
+      - VNPAY__TMNCODE=${VNPAY_TMNCODE}
+      - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
+      - VNPAY__RETURNURL=${VNPAY_RETURNURL}
+      - VNPAY__CURRCODE=${VNPAY_CURRCODE}
+      - VNPAY__LOCALE=${VNPAY_LOCALE}
+      - VNPAY__TIMEZONEID=${VNPAY_TIMEZONEID}
+      - VNPAY__VERSION=${VNPAY_VERSION}
+      - VNPAY__COMMAND=${VNPAY_COMMAND}
+      - Logging__LogLevel__Hangfire=Debug
+      - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
     volumes:
-      - /root/photonpiano/certs/server.pem:/https/server.pem:ro
-      - /root/photonpiano/certs/server-key.pem:/https/server-key.pem:ro
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/https:ro
+#      - /root/photonpiano/certs/server.pem:/https/server.pem:ro
+#      - /root/photonpiano/certs/server-key.pem:/https/server-key.pem:ro
+      - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+      - /root/.aspnet/https:/https:ro
     pull_policy: always
     
 #  photonpiano.frontend:

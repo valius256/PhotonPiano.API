@@ -117,6 +117,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }} # Optional, only if your SSH private key is encrypted
           script: |
+            # Write certificate and private key to files
+            echo "${{ secrets.CERTIFICATE_CRT }}" > /etc/ssl/certs/mydomain.crt
+            echo "${{ secrets.PRIVATE_KEY }}" > /etc/ssl/private/mydomain.key
+            
+            # Set file permissions for security
+            chmod 600 /etc/ssl/private/mydomain.key
+            chmod 644 /etc/ssl/certs/mydomain.crt
+          
             # Set CERT_PEM_PASSPHRASE environment variable
             echo "CERT_PEM_PASSPHRASE=${{ secrets.CERT_PEM_PASSPHRASE }}" >> $GITHUB_ENV
             

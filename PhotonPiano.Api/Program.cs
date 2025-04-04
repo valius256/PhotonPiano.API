@@ -31,11 +31,18 @@ if (OperatingSystem.IsLinux())
     builder.WebHost.ConfigureKestrel(options =>
     {
         options.Listen(IPAddress.Any, 8080); // HTTP
+
         options.Listen(IPAddress.Any, 8081, listenOptions =>
         {
             var passphrase = Environment.GetEnvironmentVariable("CERT_PEM_PASSPHRASE");
+
             // Load the certificate with the passphrase
             var cert = new X509Certificate2("/etc/ssl/certs/combined-certificate.pem", passphrase);
+
+            // If you have a separate private key file, you can load it like this:
+            // var key = File.ReadAllText("/etc/ssl/private/mydomain.key");
+            // var cert = new X509Certificate2(certPath, passphrase, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+
             listenOptions.UseHttps(cert);
         });
     });

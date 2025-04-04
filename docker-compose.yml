@@ -30,6 +30,8 @@ services:
     volumes:
        - /root/server.pem:/root/server.pem:ro
        - /root/server-key.pem:/root/server-key.pem:ro
+       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+       - ${APPDATA}/ASP.NET/Https:/https:ro
     pull_policy: always
     
 #  photonpiano.frontend:

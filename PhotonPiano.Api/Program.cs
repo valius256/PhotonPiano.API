@@ -1,3 +1,4 @@
+using System.Net;
 using Hangfire;
 using Mapster;
 using PhotonPiano.Api.Configurations;
@@ -23,6 +24,14 @@ var configuration = builder.Configuration;
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Listen(IPAddress.Any, 443, listenOptions =>
+    {
+        listenOptions.UseHttps("/root/server.crt", "/root/server.key");
+    });
+});
 
 
 

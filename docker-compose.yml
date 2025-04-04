@@ -1,7 +1,7 @@
 services:
   photonpiano.database:
     image: postgres:15
-    container_name: photonpiano.database
+    container_name: photonpiano-database
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345

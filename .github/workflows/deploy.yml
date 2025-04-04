@@ -157,6 +157,7 @@ jobs:
             
             # Run the new API container
             docker run -d --name photonpiano-api \
+              --user appuser \
               -p 8080:8080 \
               -p 8081:8081 \
               --network photonpiano-network \

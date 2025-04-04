@@ -143,7 +143,7 @@ jobs:
             # Run the new API container
             docker run -d --name photonpiano-api \
               -p 8080:8080 \
-              -e POSTGRES_CONNECTION="Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345" \
+              -e POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}" \
               -e ASPNETCORE_ENVIRONMENT="Production" \
               -e DOTNET_ENVIRONMENT="Production" \
               -e Firebase__Auth__ApiKey="${{ secrets.FIREBASE_API_KEY }}" \

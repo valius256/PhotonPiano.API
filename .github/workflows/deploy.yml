@@ -120,12 +120,24 @@ jobs:
             # Log in to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Stop and remove old container if it exists
+            # Stop and remove the old containers if they exist
             docker stop photonpiano-api || true
             docker rm photonpiano-api || true
+            docker stop photonpiano-database || true
+            docker rm photonpiano-database || true
             
             # Pull the new image from GHCR
             docker pull ${{ env.IMAGE_NAME }}:latest
+            docker pull postgres:latest
+            
+            # Run the Postgres container
+            docker run -d --name photonpiano-database \
+            -e POSTGRES_DB=photonpiano \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=12345 \
+            -p 5432:5432 \
+            --restart unless-stopped \
+            postgres:latest
             
             # Run the new container
             docker run -d --name photonpiano-api \

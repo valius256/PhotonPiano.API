@@ -168,3 +168,4 @@ jobs:
               -e Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command="Information" \
               --restart unless-stopped \
               ${{ env.IMAGE_NAME }}:latest  
+ 

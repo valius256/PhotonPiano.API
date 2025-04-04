@@ -8,6 +8,7 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using PhotonPiano.BusinessLogic.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,7 +33,8 @@ if (OperatingSystem.IsLinux())
         options.Listen(IPAddress.Any, 8080); // HTTP
         options.Listen(IPAddress.Any, 8081, listenOptions =>
         {
-            listenOptions.UseHttps("/etc/ssl/certs/combined-certificate.pem");
+            var cert = new X509Certificate2("/etc/ssl/certs/combined-certificate.pem");
+            listenOptions.UseHttps(cert);
         });
     });
 }

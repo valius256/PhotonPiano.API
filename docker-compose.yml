@@ -23,7 +23,7 @@ services:
       - "8081:8081"
     environment:
       - ASPNETCORE_URLS=https://0.0.0.0:8081
-      - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
+      - POSTGRES_CONNECTION=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
       - HangfireConnectionString=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345
       - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}
       - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}

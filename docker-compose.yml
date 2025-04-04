@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: PhotonPiano
     ports:
-    - "5432:5432"
+     - "5432:5432"
 
 
   photonpiano.api:
@@ -28,8 +28,8 @@ services:
        - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;Include Error Detail = true
        - HangfireConnectionString=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;
     volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/https:ro
+       - /root/server.pem:/root/server.pem:ro
+       - /root/server-key.pem:/root/server-key.pem:ro
     pull_policy: always
     
 #  photonpiano.frontend:

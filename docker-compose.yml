@@ -20,9 +20,10 @@ services:
     depends_on:
       - photonpiano-database
     ports:
-      - "8081:8081"
+      - "8080:8080"  # HTTP
+      - "8081:8081"  # HTTPS
     environment:
-      - ASPNETCORE_URLS=https://0.0.0.0:8081
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
       - POSTGRES_CONNECTION=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
       - HangfireConnectionString=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345
       - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}
@@ -43,6 +44,7 @@ services:
     volumes:
       - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
       - /root/.aspnet/https:/https:ro
+      - /etc/ssl/certs:/etc/ssl/certs:ro
     pull_policy: always
     
 #  photonpiano.frontend:

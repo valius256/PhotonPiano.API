@@ -32,7 +32,7 @@ if (OperatingSystem.IsLinux())
         options.Listen(IPAddress.Any, 8080); // HTTP
         options.Listen(IPAddress.Any, 8081, listenOptions =>
         {
-            listenOptions.UseHttps("/etc/ssl/certs/server.pem");
+            listenOptions.UseHttps("/etc/ssl/certs/combined-certificate.pem");
         });
     });
 }

@@ -25,15 +25,16 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
 
-builder.WebHost.ConfigureKestrel(options =>
+if (OperatingSystem.IsLinux())
 {
-    options.Listen(IPAddress.Any, 443, listenOptions =>
+    builder.WebHost.ConfigureKestrel(options =>
     {
-        listenOptions.UseHttps("/root/server.crt", "/root/server.key");
+        options.Listen(IPAddress.Any, 443, listenOptions =>
+        {
+            listenOptions.UseHttps("/root/server.crt", "/root/server.key");
+        });
     });
-});
-
-
+}
 
 
 // Not Done Yet

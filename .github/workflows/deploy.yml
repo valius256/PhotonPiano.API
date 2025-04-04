@@ -130,6 +130,9 @@ jobs:
             docker pull ${{ env.IMAGE_NAME }}:latest
             docker pull postgres:latest
             
+            # Create network (only if it doesn't exist)
+            docker network create photonpiano-network || true
+            
             # Run the Postgres container with volume for data persistence
             docker run -d --name photonpiano-database \
             -e POSTGRES_DB=photonpiano \
@@ -138,11 +141,13 @@ jobs:
             -v /path/to/local/postgres/data:/var/lib/postgresql/data \
             -p 5432:5432 \
             --restart unless-stopped \
+            --network photonpiano-network \
             postgres:latest
             
             # Run the new API container
             docker run -d --name photonpiano-api \
               -p 8080:8080 \
+              --network photonpiano-network \
               -e POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}" \
               -e ASPNETCORE_ENVIRONMENT="Production" \
               -e DOTNET_ENVIRONMENT="Production" \

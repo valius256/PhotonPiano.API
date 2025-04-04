@@ -1,3 +1,4 @@
+using System.Net;
 using Hangfire;
 using Mapster;
 using PhotonPiano.Api.Configurations;
@@ -24,7 +25,13 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
 
-
+if (OperatingSystem.IsLinux())
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.Listen(IPAddress.Any, 8081); // Let ASP.NET Core handle HTTPS
+    });
+}
 
 
 // Not Done Yet

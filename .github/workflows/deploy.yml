@@ -107,7 +107,7 @@ jobs:
           
           # Optionally, add your server's IP to known_hosts for a more secure connection
           ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-      
+       
       # Step 2: Deploy to server via SSH
       - name: 🚀 Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3

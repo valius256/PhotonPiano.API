@@ -13,11 +13,11 @@ using static PhotonPiano.Test.Extensions.Extensions;
 namespace PhotonPiano.Test.IntegrationTest.Scheduler;
 
 [Collection("Schedulers Integration Tests")]
-public class SchedulerControllerIntegrationTest : BaseIntergrationTest
+public class SchedulerControllerIntegrationTest : BaseIntegrationTest
 {
     private readonly HttpClient _client;
     
-    public SchedulerControllerIntegrationTest(IntergrationTestWebAppFactory factory) : base(factory)
+    public SchedulerControllerIntegrationTest(IntegrationTestWebAppFactory factory) : base(factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {

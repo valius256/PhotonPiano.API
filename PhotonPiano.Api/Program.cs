@@ -29,9 +29,9 @@ if (OperatingSystem.IsLinux())
 {
     builder.WebHost.ConfigureKestrel(options =>
     {
-        options.Listen(IPAddress.Any, 443, listenOptions =>
+        options.Listen(IPAddress.Any, 8081, listenOptions => 
         {
-            listenOptions.UseHttps("/root/server.pem", "/root/server-key.pem"); 
+            listenOptions.UseHttps("/https/server.pem", "/https/server-key.pem"); 
         });
     });
 }

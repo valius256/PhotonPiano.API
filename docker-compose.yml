@@ -25,16 +25,16 @@ services:
     environment:
       - /root/server.pem:/https/server.pem:ro
       - /root/server-key.pem:/https/server-key.pem:ro
-       - C:\certs:/https:ro
-       - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
-       - ASPNETCORE_URLS=http://0.0.0.0:8080;https://0.0.0.0:8081
-       - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;Include Error Detail = true
-       - HangfireConnectionString=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;
+      - C:\certs:/https:ro
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
+      - ASPNETCORE_URLS=http://0.0.0.0:8080;https://0.0.0.0:8081
+      - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;Include Error Detail = true
+      - HangfireConnectionString=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;
     volumes:
-       - /root/server.pem:/root/server.pem:ro
-       - /root/server-key.pem:/root/server-key.pem:ro
-       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-       - ${APPDATA}/ASP.NET/Https:/https:ro
+      - /root/photonpiano/certs/server.pem:/https/server.pem:ro
+      - /root/photonpiano/certs/server-key.pem:/https/server-key.pem:ro
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/https:ro
     pull_policy: always
     
 #  photonpiano.frontend:

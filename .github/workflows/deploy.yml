@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-    
+
 permissions:
   contents: read
   packages: write
@@ -87,7 +87,7 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME }} --all-tags
-          
+  
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
@@ -130,16 +130,17 @@ jobs:
             docker pull ${{ env.IMAGE_NAME }}:latest
             docker pull postgres:latest
             
-            # Run the Postgres container
+            # Run the Postgres container with volume for data persistence
             docker run -d --name photonpiano-database \
             -e POSTGRES_DB=photonpiano \
             -e POSTGRES_USER=postgres \
             -e POSTGRES_PASSWORD=12345 \
+            -v /path/to/local/postgres/data:/var/lib/postgresql/data \
             -p 5432:5432 \
             --restart unless-stopped \
             postgres:latest
             
-            # Run the new container
+            # Run the new API container
             docker run -d --name photonpiano-api \
               -p 8080:8080 \
               -e POSTGRES_CONNECTION="Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345" \
@@ -161,4 +162,4 @@ jobs:
               -e Logging__LogLevel__Hangfire="Debug" \
               -e Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command="Information" \
               --restart unless-stopped \
-              ${{ env.IMAGE_NAME }}:latest
+              ${{ env.IMAGE_NAME }}:latest  

@@ -147,6 +147,7 @@ jobs:
             # Run the new API container
             docker run -d --name photonpiano-api \
               -p 8080:8080 \
+              -p 8081:8081 \
               --network photonpiano-network \
               -e POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}" \
               -e ASPNETCORE_ENVIRONMENT="Production" \
@@ -166,6 +167,7 @@ jobs:
               -e VNPAY__COMMAND="${{ secrets.VNPAY_COMMAND }}" \
               -e Logging__LogLevel__Hangfire="Debug" \
               -e Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command="Information" \
+              -v /etc/ssl/certs:/etc/ssl/certs:ro \
               --restart unless-stopped \
               ${{ env.IMAGE_NAME }}:latest  
  

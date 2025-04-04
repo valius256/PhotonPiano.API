@@ -29,7 +29,11 @@ if (OperatingSystem.IsLinux())
 {
     builder.WebHost.ConfigureKestrel(options =>
     {
-        options.Listen(IPAddress.Any, 8081); // Let ASP.NET Core handle HTTPS
+        options.Listen(IPAddress.Any, 8080); // HTTP
+        options.Listen(IPAddress.Any, 8081, listenOptions =>
+        {
+            listenOptions.UseHttps("/etc/ssl/certs/combined-certificate.pem");
+        });
     });
 }
 

@@ -3,12 +3,12 @@ using PhotonPiano.DataAccess.Models;
 
 namespace PhotonPiano.Test.Extensions;
 
-public abstract class BaseIntergrationTest : IClassFixture<IntergrationTestWebAppFactory>
+public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebAppFactory>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IServiceScope _scope;
 
-    protected BaseIntergrationTest(IntergrationTestWebAppFactory factory)
+    protected BaseIntegrationTest(IntegrationTestWebAppFactory factory)
     {
         _scope = factory.Services.CreateScope();
         _dbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

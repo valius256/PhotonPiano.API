@@ -12,7 +12,7 @@ using Testcontainers.PostgreSql;
 
 namespace PhotonPiano.Test.Extensions;
 
-public class IntergrationTestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:15")

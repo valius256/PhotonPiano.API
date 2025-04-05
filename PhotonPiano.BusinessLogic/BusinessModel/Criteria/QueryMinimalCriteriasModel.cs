@@ -4,5 +4,5 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 
 public record QueryMinimalCriteriasModel
 {
-    public CriteriaFor CriteriaFor { get; init; } 
+    public CriteriaFor CriteriaFor { get; init; }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Repositories;
@@ -39,17 +40,25 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<ITransactionRepository> _transactionRepository;
 
     private readonly Lazy<ITuitionRepository> _tuitionRepository;
-    
+
     private readonly Lazy<IEntranceTestResultRepository> _entranceTestResultRepository;
 
 
     private readonly Lazy<IStudentClassScoreRepository> _studentClassScoreRepository;
-    
+
     private readonly Lazy<ISurveyQuestionRepository> _surveyQuestionRepository;
-    
+
     private readonly Lazy<ILearnerSurveyRepository> _learnerSurveyRepository;
+    
+    private readonly Lazy<IPianoSurveyRepository> _pianoSurveyRepository;
+    
+    private readonly Lazy<ILearnerAnswerRepository> _learnerAnswerRepository;
 
     private readonly Lazy<ILevelRepository> _levelRepository;
+    
+    private readonly Lazy<IPianoSurveyQuestionRepository> _pianoSurveyQuestionRepository;
+
+    private readonly Lazy<IFreeSlotRepository> _freeSlotRepository;
 
     private IDbContextTransaction? _currentTransaction;
 
@@ -76,9 +85,13 @@ public class UnitOfWork : IUnitOfWork
             new Lazy<IAccountNotificationRepository>(() => new AccountNotificationRepository(context));
         _studentClassScoreRepository = new Lazy<IStudentClassScoreRepository>(() => new StudentClassScoreRepository(context));
         _entranceTestResultRepository = new Lazy<IEntranceTestResultRepository>(() => new EntranceTestResultRepository(context));
-        _surveyQuestionRepository = new Lazy<ISurveyQuestionRepository>(() => new SurveyQuestionRepository(context));  
+        _surveyQuestionRepository = new Lazy<ISurveyQuestionRepository>(() => new SurveyQuestionRepository(context));
         _learnerSurveyRepository = new Lazy<ILearnerSurveyRepository>(() => new LearnerSurveyRepository(context));
+        _pianoSurveyRepository = new Lazy<IPianoSurveyRepository>(() => new PianoSurveyRepository(context));
+        _learnerAnswerRepository = new Lazy<ILearnerAnswerRepository>(() => new LearnerAnswerRepository(context));
         _levelRepository = new Lazy<ILevelRepository>(() => new LevelRepository(context));
+        _pianoSurveyQuestionRepository = new Lazy<IPianoSurveyQuestionRepository>(() => new PianoSurveyQuestionRepository(context));
+        _freeSlotRepository = new Lazy<IFreeSlotRepository>(() => new FreeSlotRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -112,17 +125,25 @@ public class UnitOfWork : IUnitOfWork
     public INotificationRepository NotificationRepository => _notificationRepository.Value;
 
     public IAccountNotificationRepository AccountNotificationRepository => _accountNotificationRepository.Value;
-    
+
     public IEntranceTestResultRepository EntranceTestResultRepository => _entranceTestResultRepository.Value;
 
 
     public IStudentClassScoreRepository StudentClassScoreRepository => _studentClassScoreRepository.Value;
-    
+
     public ISurveyQuestionRepository SurveyQuestionRepository => _surveyQuestionRepository.Value;
-    
+
     public ILearnerSurveyRepository LearnerSurveyRepository => _learnerSurveyRepository.Value;
+    
+    public IPianoSurveyRepository PianoSurveyRepository => _pianoSurveyRepository.Value;
+    
+    public ILearnerAnswerRepository LearnerAnswerRepository => _learnerAnswerRepository.Value;
 
     public ILevelRepository LevelRepository => _levelRepository.Value;
+    
+    public IPianoSurveyQuestionRepository PianoSurveyQuestionRepository => _pianoSurveyQuestionRepository.Value;
+
+    public IFreeSlotRepository FreeSlotRepository => _freeSlotRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {
@@ -155,44 +176,58 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task ExecuteInTransactionAsync(Func<Task> action)
     {
-        await using var transaction = await BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            // Execute the provided action and get the result
-            await action();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Execute the provided action
+                await action();
 
-            // Commit the transaction
-            await SaveChangesAsync();
-            await transaction.CommitAsync();
-        }
-        catch
-        {
-            // Rollback the transaction on failure
-            await transaction.RollbackAsync();
-            throw;
-        }
+                // Commit the transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                // Rollback the transaction on failure
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action)
     {
-        await using var transaction = await BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            // Execute the provided action and get the result
-            var result = await action();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Execute the provided action and get the result
+                var result = await action();
 
-            // Commit the transaction
-            await SaveChangesAsync();
-            await transaction.CommitAsync();
+                // Commit the transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-            // Return the result
-            return result;
-        }
-        catch
-        {
-            // Rollback the transaction on failure
-            await transaction.RollbackAsync();
-            throw;
-        }
+                // Return the result
+                return result;
+            }
+            catch
+            {
+                // Rollback the transaction on failure
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
+    }
+
+
+    public void ClearChangeTracker()
+    {
+        _context.ChangeTracker.Clear();
     }
 }

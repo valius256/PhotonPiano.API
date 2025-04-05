@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using PhotonPiano.PubSub.Notification;
 using PhotonPiano.PubSub.Pubsub;
 
@@ -12,7 +11,7 @@ public static class AppBuilderExtensions
     {
         if (builder is null)
             throw new ArgumentNullException(nameof(builder));
-        
+
         builder.Services.AddSignalR(cfg => cfg.EnableDetailedErrors = true);
         builder.Services.AddSingleton<IPubSubService, PubSubService>();
         builder.Services.AddSingleton<INotificationServiceHub, NotificationServiceHub>();

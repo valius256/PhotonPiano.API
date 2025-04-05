@@ -1,5 +1,4 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Level;
-using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 {

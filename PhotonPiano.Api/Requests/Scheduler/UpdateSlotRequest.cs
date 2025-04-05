@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using PhotonPiano.DataAccess.Models.Enum;
+﻿using PhotonPiano.DataAccess.Models.Enum;
 using System.ComponentModel.DataAnnotations;
 
 namespace PhotonPiano.Api.Requests.Scheduler
@@ -11,6 +10,7 @@ namespace PhotonPiano.Api.Requests.Scheduler
         public Shift? Shift { get; init; }
         public DateOnly? Date { get; init; }
         public Guid? RoomId { get; init; }
+        public string? Reason { get; init; }
 
     }
 }

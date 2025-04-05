@@ -29,5 +29,14 @@ public class SlotConfiguration : IEntityTypeConfiguration<Slot>
             .WithMany(x => x.Slots)
             .HasForeignKey(x => x.RoomId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(x => x.UpdateBy)
+            .WithMany(x => x.UpdatedSlots)
+            .HasForeignKey(x => x.UpdateById);
+
+        builder.HasOne(x => x.CancelBy)
+            .WithMany(x => x.CanceledSlots)
+            .HasForeignKey(x => x.CancelById);
+
     }
 }

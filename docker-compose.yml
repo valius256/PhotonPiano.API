@@ -1,53 +1,67 @@
 services:
   photonpiano.database:
     image: postgres:15
-    container_name: photonpiano.database
+    container_name: photonpiano-database
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: PhotonPiano
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: photonpiano
     ports:
-    - "5432:5432"
-
-
-  photonpiano.api:
-    image: ${DOCKER_REGISTRY-}photonpianoapi
-    container_name: photonpiano.api
-    restart: on-failure
-    depends_on: 
-      - photonpiano.database
-    build:
-      context: .
-      dockerfile: PhotonPiano.Api/Dockerfile
-    ports:
-       - "5001:5001"
-       - "5002:5002"
-    environment:
-       - ASPNETCORE_Kestrel__Certificates__Default__Password=quangphat12a3
-       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-       - OTEL_EXPORTER_OTLP_ENDPOINT=http://photonpiano-jaeger:4317
-       - ASPNETCORE_URLS=http://+:5001;https://+:5002
-       - ConnectionStrings__PostgresPhotonPiano=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;Include Error Detail = true
-       - HangfireConnectionString=Host=photonpiano.database;Port=5432;Database=PhotonPiano;Username=postgres;Password=postgres;
+     - "5432:5432"
     volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/https:ro
+      - /root/photonpiano/postgres-data:/var/lib/postgresql/data 
+    restart: unless-stopped
+  
+  
+  photonpiano.api:
+    image: ghcr.io/valius256/photonpiano-api:latest
+    container_name: photonpiano-api
+    restart: unless-stopped
+    depends_on:
+      - photonpiano-database
+    ports:
+      - "8080:8080"  # HTTP
+      - "8081:8081"  # HTTPS
+    environment:
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+      - POSTGRES_CONNECTION=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
+      - HangfireConnectionString=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345
+      - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}
+      - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
+      - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
+      - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
+      - VNPAY__BASEURL=${FIREBASE_AUDIENCE}
+      - VNPAY__TMNCODE=${VNPAY_TMNCODE}
+      - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
+      - VNPAY__RETURNURL=${VNPAY_RETURNURL}
+      - VNPAY__CURRCODE=${VNPAY_CURRCODE}
+      - VNPAY__LOCALE=${VNPAY_LOCALE}
+      - VNPAY__TIMEZONEID=${VNPAY_TIMEZONEID}
+      - VNPAY__VERSION=${VNPAY_VERSION}
+      - VNPAY__COMMAND=${VNPAY_COMMAND}
+      - Logging__LogLevel__Hangfire=Debug
+      - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
+    volumes:
+      - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+      - /root/.aspnet/https:/https:ro
+      - /etc/ssl/certs:/etc/ssl/certs:ro
+      - /root/combined-certificate.pem:/etc/ssl/certs/combined-certificate.pem:ro
     pull_policy: always
     
-  photonpiano.frontend:
-    build:
-      context: ../Frontend/PhotonPiano_WebApp
-      dockerfile: Dockerfile
-      args:
-        - MODE=production
-    container_name: photonpiano.frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - VITE_API_BASE_URL=http://photonpiano.api:5001
-    depends_on:
-      - photonpiano.api
+#  photonpiano.frontend:
+#    build:
+#      context: ../Frontend/PhotonPiano_WebApp
+#      dockerfile: Dockerfile
+#      args:
+#        - MODE=production
+#    container_name: photonpiano.frontend
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      - NODE_ENV=production
+#      - VITE_API_BASE_URL=http://photonpiano.api:5001
+#    depends_on:
+#      - photonpiano.api
     
 #  photonpiano.cache:
 #    image: redis:6.2
@@ -56,11 +70,3 @@ services:
 #    ports:
 #      - "6379:6379"
 #
-#  photonpiano.jaeger:
-#    image: jaegertracing/all-in-one:latest
-#    container_name: photonpiano.jaeger
-#    environment:
-#      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
-#    ports:
-#      - "4317:4317"
-#      - "16686:16686"     # UI port

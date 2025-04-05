@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
@@ -25,10 +26,10 @@ public class SlotStudentService : ISlotStudentService
 
         if (slotEntity.Class.InstructorId != teacherId)
             throw new IllegalArgumentException("You are not allowed to update attendance for this slot.");
-        
-        if(model.SlotStudentInfoRequests.Count == 0 || model.SlotStudentInfoRequests == null)
+
+        if (model.SlotStudentInfoRequests.Count == 0 || model.SlotStudentInfoRequests == null)
             throw new IllegalArgumentException("Student list sending cannot be empty.");
-        
+
         if (slotEntity == null) throw new IllegalArgumentException("The specified slot does not exist.");
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
@@ -42,40 +43,43 @@ public class SlotStudentService : ISlotStudentService
         // if ((currentDateTime - slotDateTime).TotalHours > 24)
         //     throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
 
-        if (model.SlotStudentInfoRequests != null)
-            foreach (var studentModel in model.SlotStudentInfoRequests)
+
+        foreach (var studentModel in model.SlotStudentInfoRequests)
+        {
+            var slotStudent = await _unitOfWork.SlotStudentRepository
+                .FindFirstProjectedAsync<SlotStudent>(x =>
+                    x.SlotId == model.SlotId && x.StudentFirebaseId == studentModel.StudentId);
+
+            if (slotStudent is null)
             {
-                var slotStudent = await _unitOfWork.SlotStudentRepository
-                    .FindFirstProjectedAsync<SlotStudent>(x =>
-                        x.SlotId == model.SlotId && x.StudentFirebaseId == studentModel.StudentId);
-
-                if (slotStudent is null)
-                {
-                    throw new IllegalArgumentException("The specified student does not exist in this slot.");
-                }
-
-                // update properties
-                slotStudent.AttendanceStatus = studentModel.AttendanceStatus;
-                slotStudent.UpdateById = teacherId;
-                slotStudent.GestureComment = studentModel.GestureComment;
-                slotStudent.AttendanceComment = studentModel.AttendanceComment;
-                slotStudent.PedalComment = studentModel.PedalComment;
-                slotStudent.FingerNoteComment = studentModel.FingerNoteComment;
-                slotStudent.GestureUrl = studentModel.GestureUrl;
-                slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
-
-                await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
-
-                await _serviceFactory.NotificationService.SendNotificationAsync(studentModel.StudentId,
-                    $"Bạn {slotStudent.StudentAccount.FullName ?? slotStudent.StudentAccount.UserName} đã {ConvertAttendanceStatusToVietnamese(studentModel.AttendanceStatus)} lớp {slotEntity.Class.Name} ngày {DateTime.UtcNow.AddHours(7)}",
-                    "");
+                throw new IllegalArgumentException("The specified student does not exist in this slot.");
             }
+
+            // update properties
+            slotStudent.AttendanceStatus = studentModel.AttendanceStatus;
+            slotStudent.UpdateById = teacherId;
+            slotStudent.GestureComment = studentModel.GestureComment;
+            slotStudent.AttendanceComment = studentModel.AttendanceComment;
+            slotStudent.PedalComment = studentModel.PedalComment;
+            slotStudent.FingerNoteComment = studentModel.FingerNoteComment;
+            if (studentModel.GestureUrls != null)
+            {
+                slotStudent.GestureUrl = JsonConvert.SerializeObject(studentModel.GestureUrls);
+            }
+            slotStudent.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+            await _unitOfWork.SlotStudentRepository.UpdateAsync(slotStudent);
+
+            await _serviceFactory.NotificationService.SendNotificationAsync(studentModel.StudentId,
+                $"Bạn {slotStudent.StudentAccount.FullName ?? slotStudent.StudentAccount.UserName} đã {ConvertAttendanceStatusToVietnamese(studentModel.AttendanceStatus)} lớp {slotEntity.Class.Name} ngày {DateTime.UtcNow.AddHours(7)}",
+                "");
+        }
 
         await _unitOfWork.SaveChangesAsync();
 
         return true;
     }
-    
+
     private string ConvertAttendanceStatusToVietnamese(AttendanceStatus status)
     {
         return status switch

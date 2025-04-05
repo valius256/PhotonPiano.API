@@ -1,5 +1,4 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Slot;
-using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 {
@@ -10,6 +9,8 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
         public required Guid LevelId { get; init; }
 
         public required string Name { get; init; }
+
+        public string? ScheduleDescription { get; init; }
 
         public List<string> StudentIds { get; init; } = [];
 

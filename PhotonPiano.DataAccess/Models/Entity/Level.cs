@@ -9,7 +9,7 @@ namespace PhotonPiano.DataAccess.Models.Entity
 
         public string Description { get; set; } = string.Empty;
 
-        public List<string> SkillsEarned {  get; set; } = new List<string>();
+        public List<string> SkillsEarned { get; set; } = new List<string>();
 
         public int SlotPerWeek { get; set; }
 
@@ -24,6 +24,8 @@ namespace PhotonPiano.DataAccess.Models.Entity
         public bool IsGenreDivided { get; set; }
 
         public Guid? NextLevelId { get; set; }
+
+        public string? ThemeColor { get; set; }
 
         public virtual Level? NextLevel { get; set; } // Navigation property
 

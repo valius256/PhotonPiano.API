@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 
@@ -18,5 +19,5 @@ public interface IRoomService
 
     Task<bool> IsRoomExist(Guid id);
 
-    Task<List<RoomModel>> GetAvailableRooms(Shift shift, HashSet<DateOnly> dates);
+    Task<List<RoomModel>> GetAvailableRooms(List<(DateOnly, Shift)> timeSlots, List<Slot> otherSlots);
 }

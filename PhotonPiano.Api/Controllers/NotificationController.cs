@@ -31,9 +31,9 @@ public class NotificationController : BaseController
         var pagedResult =
             await _serviceFactory.NotificationService.GetPagedNotifications(
                 request.Adapt<QueryPagedNotificationsModel>(), base.CurrentAccount!);
-        
+
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
-        
+
         return pagedResult.Items;
     }
 
@@ -55,7 +55,7 @@ public class NotificationController : BaseController
         await _serviceFactory.NotificationService.ToggleBatchViewStatus(base.CurrentAccount!, request.NotificationIds);
         return NoContent();
     }
-    
+
 
     [HttpPut("{id}/view-status")]
     [EndpointDescription("Toggle notification view status")]

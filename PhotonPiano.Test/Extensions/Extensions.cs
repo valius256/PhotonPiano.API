@@ -1,10 +1,10 @@
-﻿using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.DataAccess.Models;
+using System.Text;
 
 namespace PhotonPiano.Test.Extensions;
 
@@ -26,6 +26,16 @@ public static class Extensions
         response.EnsureSuccessStatusCode();
 
         return JsonConvert.DeserializeObject<AuthModel>(await response.Content.ReadAsStringAsync())!.IdToken;
+    }
+    
+    public static async Task<string> GetFirebaseAccountId(this HttpClient client, string email, string password)
+    {
+        var signInRequest = new SignInRequest(email, password);
+        var content = new StringContent(JsonConvert.SerializeObject(signInRequest), Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/auth/sign-in", content);
+        response.EnsureSuccessStatusCode();
+
+        return JsonConvert.DeserializeObject<AuthModel>(await response.Content.ReadAsStringAsync())!.LocalId;
     }
 
     public static StringContent SerializeRequest<T>(T request)

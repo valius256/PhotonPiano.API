@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.Shared.Models;
+using System.Security.Claims;
 
 namespace PhotonPiano.Api.Controllers;
 

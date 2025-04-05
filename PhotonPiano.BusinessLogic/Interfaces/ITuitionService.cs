@@ -3,7 +3,6 @@ using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
-using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
@@ -18,7 +17,7 @@ public interface ITuitionService
     Task<PagedResult<TuitionWithStudentClassModel>> GetTuitionsPaged(QueryTuitionModel queryTuitionModel,
         AccountModel? account = default);
 
-    Task<TuitionWithStudentClassModel> GetTuitionById(Guid tuitionId);
+    Task<TuitionWithStudentClassModel> GetTuitionById(Guid tuitionId, AccountModel? currentAccount);
 
     Task CreateTuitionWhenRegisterClass(ClassDetailModel classDetailModel);
 

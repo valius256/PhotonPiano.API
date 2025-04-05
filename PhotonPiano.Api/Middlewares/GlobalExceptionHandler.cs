@@ -1,8 +1,8 @@
-﻿using System.Net;
-using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PhotonPiano.Shared.Exceptions;
+using System.Net;
 
 namespace PhotonPiano.Api.Middlewares;
 

@@ -1,5 +1,3 @@
-using PhotonPiano.DataAccess.Models.Enum;
-
 namespace PhotonPiano.Api.Responses.Class;
 
 public record ClassLevelResponse

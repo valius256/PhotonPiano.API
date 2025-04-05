@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using PhotonPiano.DataAccess.Models.Enum;
+﻿using PhotonPiano.DataAccess.Models.Enum;
+using System.ComponentModel.DataAnnotations;
 
 namespace PhotonPiano.DataAccess.Models.Entity;
 
@@ -125,14 +125,26 @@ public class Account : BaseEntity
     public virtual ICollection<Application> UpdatedApplications { get; set; } = new List<Application>();
     public virtual ICollection<Application> ApprovedApplications { get; set; } = new List<Application>();
     public virtual ICollection<Application> DeletedApplications { get; set; } = new List<Application>();
-    
+
     // SurveyQuestion
     public virtual ICollection<SurveyQuestion> CreatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
     public virtual ICollection<SurveyQuestion> UpdatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
     
     
+    // PianoSurvey
+    public virtual ICollection<PianoSurvey> CreatedPianoSurveys { get; set; } = [];
+    
+    public virtual ICollection<PianoSurvey> UpdatedPianoSurveys { get; set; } = [];
+    
+    
+
+
     // SurveyDetails
     public virtual ICollection<LearnerSurvey> LearnerSurveys { get; set; } = new List<LearnerSurvey>();
-    
-    
+
+    // Slot 
+    public virtual ICollection<Slot> UpdatedSlots { get; set; } = new List<Slot>();
+    public virtual ICollection<Slot> CanceledSlots { get; set; } = new List<Slot>();
+    //Free slot
+    public virtual ICollection<FreeSlot> FreeSlots { get; set; } = new List<FreeSlot>();
 }

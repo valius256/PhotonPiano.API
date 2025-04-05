@@ -27,4 +27,6 @@ public interface IClassService
     Task PublishClass(Guid classId, string accountFirebaseId);
 
     Task ScheduleClass(ScheduleClassModel scheduleClassModel, string accountFirebaseId);
+
+    Task ClearClassSchedule(Guid classId, string accountFirebaseId);
 }

@@ -86,16 +86,6 @@ public class EntranceTestsController : BaseController
         return NoContent();
     }
 
-    [HttpPut("max-students-per-test")]
-    [EndpointDescription("Update entrance tests max students")]
-    [FirebaseAuthorize(Roles = [Role.Administrator])]
-    public async Task<ActionResult> UpdateEntranceTestMaxStudentsPerTest([FromBody] UpdateEntranceTestsMaxStudentsRequest request)
-    {
-        await _serviceFactory.EntranceTestService.UpdateEntranceTestsMaxStudents(request.MaxStudents, base.CurrentAccount!);
-        
-        return NoContent();
-    }
-
     [HttpGet("{id}/students")]
     [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance tests students")]
@@ -158,14 +148,26 @@ public class EntranceTestsController : BaseController
     [HttpPost("auto-arrangement")]
     [EndpointDescription("Auto arrange entrance tests")]
     [FirebaseAuthorize(Roles = [Role.Staff])]
-    public async Task<ActionResult<List<EntranceTestDetailResponse>>> AutoArrangeEntranceTests(
+    public async Task<ActionResult> AutoArrangeEntranceTests(
         [FromBody] AutoArrangeEntranceTestsRequest request)
     {
-        var result =
-            await _serviceFactory.EntranceTestService.AutoArrangeEntranceTests(
-                request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!);
+        await _serviceFactory.EntranceTestService.AutoArrangeEntranceTests(
+            request.Adapt<AutoArrangeEntranceTestsModel>(), base.CurrentAccount!);
+        return Created();
+    }
 
-        return Created(nameof(AutoArrangeEntranceTests), result.Adapt<List<EntranceTestDetailResponse>>());
+
+    [HttpPut("{id}/results")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Update results of an entrance test")]
+    public async Task<ActionResult> UpdateEntranceTestResults(
+        [FromRoute] Guid id,
+        [FromBody] UpdateStudentsEntranceTestResultsRequest request)
+    {
+        await _serviceFactory.EntranceTestService.UpdateStudentsEntranceTestResults(
+            request.Adapt<UpdateStudentsEntranceTestResultsModel>(), id, base.CurrentAccount!);
+
+        return NoContent();
     }
 
     [HttpPut("{id}/students/{student-id}/results")]

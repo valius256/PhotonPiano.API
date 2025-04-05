@@ -48,7 +48,6 @@ public class ServiceFactory : IServiceFactory
 
     private readonly Lazy<IPaymentService> _paymentService;
 
-
     private readonly Lazy<IPinataService> _pinataService;
 
     private readonly Lazy<IRedisCacheService> _redisCacheService;
@@ -70,14 +69,22 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IStudentClassService> _studentClassService;
 
     private readonly Lazy<IDayOffService> _dayOffService;
-    
+
     private readonly Lazy<ILearnerSurveyService> _learnerSurveyService;
     
+    private readonly Lazy<ISurveyQuestionService> _surveyQuestionService;
+    
+    private readonly Lazy<IPianoSurveyService> _pianoSurveyService;
+    
+
     private readonly Lazy<ISurveyQuestionService> _surveryQuestionService;
     
     private readonly Lazy<ILevelService> _levelService;
     
     private readonly Lazy<IProgressServiceHub> _progressServiceHub;
+
+    private readonly Lazy<IFreeSlotService> _freeSlotService;
+
     
     private readonly Lazy<IStudentClassScoreService> _studentClassScoreService;
     private readonly Lazy<ICertificateService> _certificateService;
@@ -117,7 +124,8 @@ public class ServiceFactory : IServiceFactory
         _dayOffService = new Lazy<IDayOffService>(() => new DayOffService(unitOfWork, this));
         // _logger.LogInformation("ServiceFactory has been initialized.");
         _learnerSurveyService = new Lazy<ILearnerSurveyService>(() => new LearnerSurveyService(unitOfWork));
-        _surveryQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork));
+        _pianoSurveyService = new Lazy<IPianoSurveyService>(() => new PianoSurveyService(unitOfWork, this));
+        _surveyQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork, this));
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this));
@@ -129,6 +137,7 @@ public class ServiceFactory : IServiceFactory
             tempDataProvider, 
             httpContextAccessor, 
             converter));
+        _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -179,11 +188,18 @@ public class ServiceFactory : IServiceFactory
 
     public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
     
+    public ISurveyQuestionService SurveyQuestionService => _surveyQuestionService.Value;
+
+    public IPianoSurveyService PianoSurveyService => _pianoSurveyService.Value;
+
+
     public ISurveyQuestionService ISurveyQuestionService => _surveryQuestionService.Value;
-    
+
     public ILearnerSurveyService LearnerSurveyService => _learnerSurveyService.Value;
 
     public ILevelService LevelService => _levelService.Value;
+
+    public IFreeSlotService FreeSlotService => _freeSlotService.Value;
     
     public IStudentClassScoreService StudentClassScoreService => _studentClassScoreService.Value;
     public ICertificateService CertificateService => _certificateService.Value;

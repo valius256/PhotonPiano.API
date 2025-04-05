@@ -1,4 +1,3 @@
-using System.Text;
 using Mapster;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -10,6 +9,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
+using System.Text;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -241,9 +241,9 @@ public class AuthService : IAuthService
             email = newEmail,
             returnSecureToken = true
         });
-        
+
         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-        
+
         var response = await client.PostAsync(url, content);
 
         if (!response.IsSuccessStatusCode)
@@ -284,7 +284,7 @@ public class AuthService : IAuthService
         return responseObject;
     }
 
-    private async Task<string> SignUpOnFirebase(string email, string password)
+    public async Task<string> SignUpOnFirebase(string email, string password)
     {
         using var client = _httpClientFactory.CreateClient();
 

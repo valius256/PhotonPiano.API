@@ -13,6 +13,7 @@ using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Mvc.Razor;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using PhotonPiano.BusinessLogic.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -22,10 +23,24 @@ var configuration = builder.Configuration;
 
 // hello this line write to proved i am the owner of this project and github is not good for beginner
 
+
+
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
+
+if (OperatingSystem.IsLinux())
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.Listen(IPAddress.Any, 8080); // HTTP
+        options.Listen(IPAddress.Any, 8081, listenOptions =>
+        {
+            listenOptions.UseHttps("/etc/ssl/certs/combined-certificate.pem");
+        });
+    });
+}
 
 // Load wkhtmltopdf native libraries
 // Modify the path to point to wkhtmltox folder
@@ -89,8 +104,8 @@ app.UseScalarConfig();
 app.UseCors("AllowAll");
 
 // Register and execute PostgresSqlConfiguration
-var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
-sqlConfig.Configure();
+// var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
+// await sqlConfig.Configure();
 
 app.UseHttpsRedirection();
 
@@ -106,6 +121,12 @@ app.UseStaticFiles();
 
 app.MapRazorPages();
 
+var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
+sqlConfig.Configure();
+
+// uncomment to active Rate limiter
+// app.UseRateLimiter();
+
 app.UseExceptionHandler();
 
 app.UseAuthorization();
@@ -115,6 +136,10 @@ app.MapSignalRConfig();
 app.UseResponseCompression();
 
 app.MapControllers();
+
+
+app.MapHealthChecks("/health");
+
 
 await app.RunAsync();
 

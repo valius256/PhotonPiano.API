@@ -36,6 +36,17 @@ public class AccountsController : BaseController
         return pagedResult.Items;
     }
 
+    [HttpGet("teachers")]
+    [EndpointDescription("Get teachers with paging")]
+    public async Task<ActionResult<List<AccountModel>>> GetTeachers([FromQuery] QueryPagedAccountsRequest request)
+    {
+        var pagedResult =
+            await _serviceFactory.AccountService.GetTeachers(request.Adapt<QueryPagedAccountsModel>());
+
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+        return pagedResult.Items;
+    }
+
     [HttpGet("class-waiting")]
     [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get accounts with paging")]
@@ -59,8 +70,18 @@ public class AccountsController : BaseController
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)
     {
         var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
-
         return Ok(result.Adapt<AccountDetailResponse>());
+    }
+
+    [HttpGet("{firebase-id}/teacher")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor])]
+    [EndpointDescription("Get teacher detail by id")]
+    public async Task<ActionResult<TeacherDetailModel>> GetTeacherDetailById(
+        [FromRoute(Name = "firebase-id")] string accountFirebaseId)
+    {
+        var result = await _serviceFactory.AccountService.GetTeacherDetailById(accountFirebaseId);
+
+        return Ok(result.Adapt<TeacherDetailModel>());
     }
 
     [HttpPut]
@@ -72,7 +93,7 @@ public class AccountsController : BaseController
         string idToken = bearerToken.Replace("Bearer ", "");
         await _serviceFactory.AccountService.UpdateAccount(request.Adapt<UpdateAccountModel>(),
             base.CurrentAccount!, idToken);
-        
+
         return NoContent();
     }
 

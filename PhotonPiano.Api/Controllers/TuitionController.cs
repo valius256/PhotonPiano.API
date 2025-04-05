@@ -42,9 +42,9 @@ public class TuitionController : BaseController
             ipAddress, apiBaseUrl);
 
         return Ok(new PaymentUrlResponse
-            {
-                Url = url
-            }
+        {
+            Url = url
+        }
         );
     }
 
@@ -88,19 +88,19 @@ public class TuitionController : BaseController
     [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
     [EndpointDescription("Get Tuition details")]
     public async Task<ActionResult<TuitionWithStudentClassResponse>> GetTuitionDetails(
-        [FromQuery] Guid id)
+        [FromRoute] Guid id)
     {
-        return Ok(await _serviceFactory.TuitionService.GetTuitionById(id));
+        return Ok(await _serviceFactory.TuitionService.GetTuitionById(id, CurrentAccount));
     }
 
-    [HttpGet("refund-amount")]
-    [FirebaseAuthorize(Roles = [Role.Student])]
-    [EndpointDescription("Get Refund Tuition Amount")]
-    public async Task<ActionResult> RefundTuitionAmount()
-    {
-        if (CurrentAccount != null)
-            return Ok(await _serviceFactory.TuitionService.GetTuitionRefundAmount(CurrentAccount.AccountFirebaseId,
-                CurrentAccount.CurrentClassId));
-        return NoContent();
-    }
+    // [HttpGet("refund-amount")]
+    // [FirebaseAuthorize(Roles = [Role.Student])]
+    // [EndpointDescription("Get Refund Tuition Amount")]
+    // public async Task<ActionResult> RefundTuitionAmount()
+    // {
+    //     if (CurrentAccount != null)
+    //         return Ok(await _serviceFactory.TuitionService.GetTuitionRefundAmount(CurrentAccount.AccountFirebaseId,
+    //             CurrentAccount.CurrentClassId));
+    //     return NoContent();
+    // }
 }

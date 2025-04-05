@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Requests.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -43,5 +45,31 @@ public class StudentClassController : BaseController
         using var stream = file.OpenReadStream();
         var success = await _serviceFactory.StudentClassService.ImportScores(classId, stream, CurrentAccount!);
         return success ? NoContent() : NotFound();
-    } 
+    }
+
+    [HttpPut("{studentFirebaseId}/status")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Change Student Status")]
+    public async Task<IActionResult> UpdateStudentStatus([FromRoute] string studentFirebaseId, [FromBody] ChangeStudentStatusRequest request)
+    {
+        var success = await _serviceFactory.StudentClassService.UpdateStudentStatusAsync(
+            studentFirebaseId, request.NewStatus, CurrentAccount!, request.ClassId);
+        return success ? NoContent() : BadRequest("Failed to change student status");
+    }
+    
+    [HttpPut]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Update a student's score for a specific criteria")]
+    public async Task<IActionResult> UpdateStudentScore([FromBody] UpdateStudentScoreRequest request)
+    {
+        var model = new UpdateStudentScoreModel
+        {
+            StudentClassId = request.StudentClassId,
+            CriteriaId = request.CriteriaId,
+            Score = request.Score
+        };
+
+        var success = await _serviceFactory.StudentClassService.UpdateStudentScore(model, CurrentAccount!);
+        return success ? NoContent() : BadRequest("Failed to update student score");
+    }
 }

@@ -1,6 +1,4 @@
-﻿
-
-using PhotonPiano.DataAccess.Models.Enum;
+﻿using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 {
@@ -13,6 +11,5 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
         public Guid? LevelId { get; init; }
 
         public string? InstructorId { get; init; }
-
     }
 }

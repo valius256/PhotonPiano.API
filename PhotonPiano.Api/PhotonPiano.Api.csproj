@@ -13,6 +13,7 @@
 		<PackageReference Include="Aspire.Npgsql" Version="8.2.2" />
 		<PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.2.2" />
 		<PackageReference Include="Aspire.StackExchange.Redis" Version="9.0.0" />
+		<PackageReference Include="DinkToPdf" Version="1.0.8" />
 		<PackageReference Include="FirebaseAdmin" Version="3.1.0" />
 		<PackageReference Include="Hangfire" Version="1.8.17" />
 		<PackageReference Include="Hangfire.PostgreSql" Version="1.20.10" />
@@ -54,6 +55,12 @@
 		<None Include="Views\PaymentSuccess.cshtml" />
 		<None Include="Views\TuitionCreated.cshtml" />
 		<None Include="Views\TutionFeeNotification.cshtml" />
+		<None Include="Views\Certificate.cshtml"/>
 	</ItemGroup>
 
+	<ItemGroup>
+		<Content Include="wkhtmltox\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 </Project>

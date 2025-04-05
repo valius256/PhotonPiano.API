@@ -61,4 +61,6 @@ public interface IServiceFactory
     ILevelService LevelService { get; }
     
     IStudentClassScoreService StudentClassScoreService { get; }
+    
+    ICertificateService CertificateService { get; }
 }

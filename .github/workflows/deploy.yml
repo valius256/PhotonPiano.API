@@ -107,7 +107,7 @@ jobs:
           
           # Optionally, add your server's IP to known_hosts for a more secure connection
           ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-      
+       
       # Step 2: Deploy to server via SSH
       - name: 🚀 Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -117,6 +117,17 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }} # Optional, only if your SSH private key is encrypted
           script: |
+            # Write certificate and private key to files
+            echo "${{ secrets.CERTIFICATE_CRT }}" > /etc/ssl/certs/mydomain.crt
+            echo "${{ secrets.PRIVATE_KEY }}" > /etc/ssl/private/mydomain.key
+            
+            # Set file permissions for security
+            chmod 600 /etc/ssl/private/mydomain.key
+            chmod 644 /etc/ssl/certs/mydomain.crt
+          
+            # Set CERT_PEM_PASSPHRASE environment variable
+            echo "CERT_PEM_PASSPHRASE=${{ secrets.CERT_PEM_PASSPHRASE }}" >> $GITHUB_ENV
+            
             # Log in to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
@@ -146,6 +157,7 @@ jobs:
             
             # Run the new API container
             docker run -d --name photonpiano-api \
+              --user appuser \
               -p 8080:8080 \
               -p 8081:8081 \
               --network photonpiano-network \

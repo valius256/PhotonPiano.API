@@ -1,5 +1,6 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.Interfaces
 {

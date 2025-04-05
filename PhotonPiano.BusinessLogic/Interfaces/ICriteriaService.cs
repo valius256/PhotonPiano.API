@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
@@ -16,4 +17,7 @@ public interface ICriteriaService
     Task UpdateCriteria(BulkUpdateCriteriaModel updateCriteriaModel, string userFirebaseId);
 
     Task DeleteCriteria(Guid id, string userFirebaseId);
+
+    Task<List<CriteriaGradeModel>> GetAllCriteriaDetails(Guid classId,
+        CriteriaFor criteriaType = CriteriaFor.Class);
 }

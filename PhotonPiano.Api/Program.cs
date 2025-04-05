@@ -1,3 +1,4 @@
+using System.Net;
 using Hangfire;
 using Mapster;
 using PhotonPiano.Api.Configurations;
@@ -11,9 +12,6 @@ using System.Runtime.InteropServices;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Mvc.Razor;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using PhotonPiano.BusinessLogic.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();

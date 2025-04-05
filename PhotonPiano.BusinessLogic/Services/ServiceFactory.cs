@@ -78,15 +78,15 @@ public class ServiceFactory : IServiceFactory
     
 
     private readonly Lazy<ISurveyQuestionService> _surveryQuestionService;
-    
+
     private readonly Lazy<ILevelService> _levelService;
-    
+
     private readonly Lazy<IProgressServiceHub> _progressServiceHub;
 
     private readonly Lazy<IFreeSlotService> _freeSlotService;
 
-    
     private readonly Lazy<IStudentClassScoreService> _studentClassScoreService;
+    
     private readonly Lazy<ICertificateService> _certificateService;
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
@@ -94,7 +94,7 @@ public class ServiceFactory : IServiceFactory
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine,
         IRazorViewEngine razorViewEngine,  IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider, IHttpContextAccessor httpContextAccessor,
-    IConverter converter)
+        IConverter converter)
     {
         _logger = logger;
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork, this));
@@ -107,7 +107,7 @@ public class ServiceFactory : IServiceFactory
         _roomService = new Lazy<IRoomService>(() => new RoomService(unitOfWork));
         _criteriaService = new Lazy<ICriteriaService>(() => new CriteriaService(unitOfWork, this));
         _slotService = new Lazy<ISlotService>(() => new SlotService(this, unitOfWork));
-        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay));
+        _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay, this));
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
         _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
         _slotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
@@ -128,6 +128,7 @@ public class ServiceFactory : IServiceFactory
         _surveyQuestionService = new Lazy<ISurveyQuestionService>(() => new SurveyQuestionService(unitOfWork, this));
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
+        _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
         _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this));
         _certificateService = new Lazy<ICertificateService>(() => new CertificateService(
             this, 
@@ -200,7 +201,6 @@ public class ServiceFactory : IServiceFactory
     public ILevelService LevelService => _levelService.Value;
 
     public IFreeSlotService FreeSlotService => _freeSlotService.Value;
-    
     public IStudentClassScoreService StudentClassScoreService => _studentClassScoreService.Value;
     public ICertificateService CertificateService => _certificateService.Value;
 }

@@ -1,3 +1,5 @@
+using PhotonPiano.DataAccess.Models.Enum;
+
 namespace PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 
 public record CriteriaModel
@@ -10,4 +12,6 @@ public record CriteriaModel
     public string? CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
+    public CriteriaFor For { get; set; }
+
 }

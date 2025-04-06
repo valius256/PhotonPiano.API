@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-    
+
 permissions:
   contents: read
   packages: write
@@ -17,7 +17,7 @@ env:
   IMAGE_NAME: ghcr.io/valius256/photonpiano-api
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  POSTGRES_CONNECTION: "Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345"
+  POSTGRES_CONNECTION: ${{ secrets.POSTGRES_CONNECTION }}
   ASPNETCORE_ENVIRONMENT: Development
   DOTNET_ENVIRONMENT: Development
   Firebase__Auth__ApiKey: ${{ secrets.FIREBASE_API_KEY }}
@@ -46,7 +46,7 @@ jobs:
         env:
           POSTGRES_DB: photonpiano
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: anhphatdeptrai
+          POSTGRES_PASSWORD: 12345
         ports:
           - 5432:5432
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -87,7 +87,7 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME }} --all-tags
-          
+  
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
@@ -107,7 +107,7 @@ jobs:
           
           # Optionally, add your server's IP to known_hosts for a more secure connection
           ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-      
+       
       # Step 2: Deploy to server via SSH
       - name: 🚀 Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -117,20 +117,51 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }} # Optional, only if your SSH private key is encrypted
           script: |
+            # Write certificate and private key to files
+            echo "${{ secrets.CERTIFICATE_CRT }}" > /etc/ssl/certs/mydomain.crt
+            echo "${{ secrets.PRIVATE_KEY }}" > /etc/ssl/private/mydomain.key
+            
+            # Set file permissions for security
+            chmod 600 /etc/ssl/private/mydomain.key
+            chmod 644 /etc/ssl/certs/mydomain.crt
+          
+            # Set CERT_PEM_PASSPHRASE environment variable
+            echo "CERT_PEM_PASSPHRASE=${{ secrets.CERT_PEM_PASSPHRASE }}" >> $GITHUB_ENV
+            
             # Log in to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Stop and remove old container if it exists
+            # Stop and remove the old containers if they exist
             docker stop photonpiano-api || true
             docker rm photonpiano-api || true
+            docker stop photonpiano-database || true
+            docker rm photonpiano-database || true
             
             # Pull the new image from GHCR
             docker pull ${{ env.IMAGE_NAME }}:latest
+            docker pull postgres:latest
             
-            # Run the new container
+            # Create network (only if it doesn't exist)
+            docker network create photonpiano-network || true
+            
+            # Run the Postgres container with volume for data persistence
+            docker run -d --name photonpiano-database \
+            -e POSTGRES_DB=photonpiano \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=12345 \
+            -v /path/to/local/postgres/data:/var/lib/postgresql/data \
+            -p 5432:5432 \
+            --restart unless-stopped \
+            --network photonpiano-network \
+            postgres:latest
+            
+            # Run the new API container
             docker run -d --name photonpiano-api \
+              --user appuser \
               -p 8080:8080 \
-              -e POSTGRES_CONNECTION="Host=localhost;Port=5432;Database=photonpiano;Username=postgres;Password=12345" \
+              -p 8081:8081 \
+              --network photonpiano-network \
+              -e POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}" \
               -e ASPNETCORE_ENVIRONMENT="Production" \
               -e DOTNET_ENVIRONMENT="Production" \
               -e Firebase__Auth__ApiKey="${{ secrets.FIREBASE_API_KEY }}" \
@@ -148,5 +179,7 @@ jobs:
               -e VNPAY__COMMAND="${{ secrets.VNPAY_COMMAND }}" \
               -e Logging__LogLevel__Hangfire="Debug" \
               -e Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command="Information" \
+              -v /etc/ssl/certs:/etc/ssl/certs:ro \
               --restart unless-stopped \
-              ${{ env.IMAGE_NAME }}:latest
+              ${{ env.IMAGE_NAME }}:latest  
+ 

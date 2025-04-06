@@ -14,7 +14,7 @@ public record UpdateStudentEntranceTestResultsRequest
 
     [Required] public required decimal TheoraticalScore { get; init; }
 
-    public string? InstructorComment { get; init; }
+    // public string? InstructorComment { get; init; }
 
     [Required] public required List<UpdateEntranceTestScoreRequest> Scores { get; init; }
 }

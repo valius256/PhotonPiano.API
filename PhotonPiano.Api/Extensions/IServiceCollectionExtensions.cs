@@ -44,7 +44,6 @@ public static class IServiceCollectionExtensions
             .AddScalarConfigurations()
             .AddSettingsOptions(configuration)
             .AddDbContextConfigurations(configuration)
-            .AddFireBaseServices(configuration)
             .AddHangFireConfigurations(configuration)
             .AddCorsConfigurations()
             .AddMapsterConfig()
@@ -237,37 +236,10 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
-    private static IServiceCollection AddFireBaseServices(this IServiceCollection services,
-        IConfiguration configuration)
-    {
-        //var firebaseSettings = configuration.GetSection(nameof(Appsettings.FireBase)).Get<FireBase>();
-        //var firebaseJsonPath = Path.Combine(Directory.GetCurrentDirectory(), "fit-swipe-161d7-firebase-adminsdk-l0tth-9884dc9fa1.json");
-        //FirebaseApp.Create(new AppOptions
-        //{
-        //    Credential = GoogleCredential.FromFile(firebaseJsonPath),
-        //    ProjectId = firebaseSettings?.ProjectId,
-        //});
-
-        ////var storageClient = StorageClient.Create(GoogleCredential.FromFile(firebaseJsonPath));
-
-
-        return services;
-    }
-
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
-        // if (configuration.GetValue<bool>("IsCacheDeploy"))
-        // {
-        //     var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
-        //     services.AddSingleton<IConnectionMultiplexer>(_ =>
-        //         ConnectionMultiplexer.Connect(redisConnectionString!, options =>
-        //         {
-        //             options.ConnectRetry = 5;
-        //             options.ConnectTimeout = 5000;
-        //         }));
-        // }
 
-        var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
+        var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisLocal"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString!, options =>
             {

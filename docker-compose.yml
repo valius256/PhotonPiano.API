@@ -64,10 +64,9 @@ services:
 #    depends_on:
 #      - photonpiano.api
     
-#  photonpiano.cache:
-#    image: redis:6.2
-#    restart: always
-#    container_name: photonpiano.cache
-#    ports:
-#      - "6379:6379"
-#
+  photonpiano.cache:
+    image: redis:6.2
+    restart: always
+    container_name: photonpiano.cache
+    ports:
+      - "6379:6379"

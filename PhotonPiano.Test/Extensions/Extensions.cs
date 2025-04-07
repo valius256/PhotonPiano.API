@@ -23,7 +23,6 @@ public static class Extensions
         var signInRequest = new SignInRequest(email, password);
         var content = new StringContent(JsonConvert.SerializeObject(signInRequest), Encoding.UTF8, "application/json");
         var response = await client.PostAsync("/api/auth/sign-in", content);
-        response.EnsureSuccessStatusCode();
 
         return JsonConvert.DeserializeObject<AuthModel>(await response.Content.ReadAsStringAsync())!.IdToken;
     }

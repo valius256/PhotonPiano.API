@@ -121,7 +121,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
             EndTime = DateOnly.FromDateTime(DateTime.Now.AddDays(7))
         };
 
-        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
+        var token = await _client.GetAuthToken("learner035@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var responseSlots =

@@ -31,7 +31,7 @@ services:
       - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
       - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
       - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
-      - VNPAY__BASEURL=${FIREBASE_AUDIENCE}
+      - VNPAY__BASEURL=${VNPAY_BASEURL }
       - VNPAY__TMNCODE=${VNPAY_TMNCODE}
       - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
       - VNPAY__RETURNURL=${VNPAY_RETURNURL}
@@ -45,36 +45,18 @@ services:
     volumes:
       - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
       - /root/.aspnet/https:/https:ro
-      # Removed: /etc/ssl/certs/:/etc/ssl:ro
-      # Removed: /etc/ssl/certs:/etc/ssl/certs:ro
-      # Removed: /root/combined-certificate.pem:/etc/ssl/certs/combined-certificate.pem:ro
     pull_policy: always
     networks:
       - app-network
 
-  photonpiano.cache:
-    image: redis:6.2
-    restart: always
-    container_name: photonpiano.cache
-    ports:
-      - "6379:6379"
-    networks:
-      - app-network
-
-  photonpiano.nginx:
-    image: nginx:latest
-    container_name: photonpiano.nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - /etc/letsencrypt:/etc/letsencrypt
-    depends_on:
-      - photonpiano.api
-    restart: unless-stopped
-    networks:
-      - app-network
+#  photonpiano.cache:
+#    image: redis:6.2
+#    restart: always
+#    container_name: photonpiano.cache
+#    ports:
+#      - "6379:6379"
+#    networks:
+#      - app-network
 
 networks:
   app-network:

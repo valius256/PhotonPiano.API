@@ -239,7 +239,7 @@ public static class IServiceCollectionExtensions
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
 
-        var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisLocal"];
+        var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString!, options =>
             {

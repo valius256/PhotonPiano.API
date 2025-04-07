@@ -2,7 +2,6 @@
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-RUN useradd -m appuser
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080 
@@ -33,7 +32,5 @@ RUN dotnet publish "./PhotonPiano.Api.csproj" -c $BUILD_CONFIGURATION -o /app/pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-
-USER appuser
 
 ENTRYPOINT ["dotnet", "PhotonPiano.Api.dll"]

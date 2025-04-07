@@ -65,9 +65,9 @@ jobs:
 
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
-
-      - name: ✅ Run Tests
-        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+#      i commment this cause the issue with get token by google has limit 
+#      - name: ✅ Run Tests
+#        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
   docker-build-and-push:
     needs: build-and-test
@@ -108,11 +108,11 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
-            # Ensure Nginx and Certbot are installed
+            # Install Docker Compose and NGINX
             sudo apt-get update
-            sudo apt-get install -y nginx certbot python3-certbot-nginx
+            sudo apt-get install -y docker-compose nginx certbot python3-certbot-nginx
             
-            # Configure Nginx for HTTPS with DuckDNS subdomain
+            # Configure NGINX for HTTPS with DuckDNS subdomain and SignalR support
             sudo bash -c 'cat > /etc/nginx/sites-available/photonpiano <<EOF
             server {
                 listen 80;
@@ -130,6 +130,49 @@ jobs:
                 include /etc/letsencrypt/options-ssl-nginx.conf;
                 ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
             
+                ssl_protocols TLSv1.2 TLSv1.3;
+                ssl_ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-GCM-SHA256";
+                ssl_prefer_server_ciphers on;
+            
+                location /pubsub {
+                    proxy_pass http://localhost:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+            
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+            
+                location /notification {
+                    proxy_pass http://localhost:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+            
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+            
+                location /progress {
+                    proxy_pass http://localhost:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+            
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+            
                 location / {
                     proxy_pass http://localhost:8080;
                     proxy_set_header Host \$host;
@@ -140,64 +183,90 @@ jobs:
             }
             EOF'
             
-            # Enable Nginx configuration and restart
+            # Enable NGINX configuration and restart
             sudo ln -sf /etc/nginx/sites-available/photonpiano /etc/nginx/sites-enabled/photonpiano
             sudo rm -f /etc/nginx/sites-enabled/default
             sudo nginx -t && sudo systemctl restart nginx
             
-            # Create Postgres data directory
-            sudo mkdir -p /var/lib/photonpiano/postgres
-            sudo chown -R 999:999 /var/lib/photonpiano/postgres
+            # Stop and remove existing containers
+            docker stop photonpiano-database photonpiano-api photonpiano.cache || true
+            docker rm photonpiano-database photonpiano-api photonpiano.cache || true
+            
+            # Create directory for deployment
+            mkdir -p ~/photonpiano
+            cd ~/photonpiano
+            
+            # Write docker-compose.yml
+            cat > docker-compose.yml <<EOF
+            version: '3.8'
+            services:
+              photonpiano.database:
+                image: postgres:15
+                container_name: photonpiano-database
+                environment:
+                  POSTGRES_USER: postgres
+                  POSTGRES_PASSWORD: 12345
+                  POSTGRES_DB: photonpiano
+                ports:
+                  - "5432:5432"
+                volumes:
+                  - /root/photonpiano/postgres-data:/var/lib/postgresql/data
+                restart: unless-stopped
+                networks:
+                  - app-network
+            
+              photonpiano.api:
+                image: ghcr.io/valius256/photonpiano-api:latest
+                container_name: photonpiano-api
+                restart: unless-stopped
+                depends_on:
+                  - photonpiano.database
+                ports:
+                  - "8080:8080"
+                environment:
+                  - ASPNETCORE_URLS=http://0.0.0.0:8080
+                  - ASPNETCORE_ENVIRONMENT=Production
+                  - DOTNET_ENVIRONMENT=Production
+                  - POSTGRES_CONNECTION=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
+                  - HangfireConnectionString=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345
+                  - Firebase__Auth__ApiKey=${{ secrets.FIREBASE_API_KEY }}
+                  - Firebase__Auth__Authority=${{ secrets.FIREBASE_AUTHORITY }}
+                  - Firebase__Auth__Issuer=${{ secrets.FIREBASE_ISSUER }}
+                  - Firebase__Auth__Audience=${{ secrets.FIREBASE_AUDIENCE }}
+                  - VNPAY__BASEURL=${{ secrets.VNPAY_BASEURL }}
+                  - VNPAY__TMNCODE=${{ secrets.VNPAY_TMNCODE }}
+                  - VNPAY__HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
+                  - VNPAY__RETURNURL=${{ secrets.VNPAY_RETURNURL }}
+                  - VNPAY__CURRCODE=${{ secrets.VNPAY_CURRCODE }}
+                  - VNPAY__LOCALE=${{ secrets.VNPAY_LOCALE }}
+                  - VNPAY__TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
+                  - VNPAY__VERSION=${{ secrets.VNPAY_VERSION }}
+                  - VNPAY__COMMAND=${{ secrets.VNPAY_COMMAND }}
+                  - Logging__LogLevel__Hangfire=Debug
+                  - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
+                volumes:
+                  - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+                pull_policy: always
+                networks:
+                  - app-network
+            
+              photonpiano.cache:
+                image: redis:6.2
+                container_name: photonpiano.cache
+                ports:
+                  - "6379:6379"
+                restart: unless-stopped
+                networks:
+                  - app-network
+            
+            networks:
+              app-network:
+                driver: bridge
+            EOF
             
             # Log in to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Clean up old Docker resources
-            docker stop photonpiano-api || true
-            docker rm photonpiano-api || true
-            docker stop photonpiano-database || true
-            docker rm photonpiano-database || true
-            
-            # Pull new images
-            docker pull ${{ env.IMAGE_NAME }}:latest
-            docker pull postgres:latest
-            
-            # Create network
-            docker network create photonpiano-network || true
-            
-            # Run Postgres container
-            docker run -d --name photonpiano-database \
-              -e POSTGRES_DB=photonpiano \
-              -e POSTGRES_USER=postgres \
-              -e POSTGRES_PASSWORD=12345 \
-              -v /var/lib/photonpiano/postgres:/var/lib/postgresql/data \
-              -p 5432:5432 \
-              --restart unless-stopped \
-              --network photonpiano-network \
-              postgres:latest
-            
-            # Run API container
-            docker run -d --name photonpiano-api \
-              --user appuser \
-              -p 8080:8080 \
-              --network photonpiano-network \
-              -e POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}" \
-              -e ASPNETCORE_ENVIRONMENT="Production" \
-              -e DOTNET_ENVIRONMENT="Production" \
-              -e Firebase__Auth__ApiKey="${{ secrets.FIREBASE_API_KEY }}" \
-              -e Firebase__Auth__Authority="${{ secrets.FIREBASE_AUTHORITY }}" \
-              -e Firebase__Auth__Issuer="${{ secrets.FIREBASE_ISSUER }}" \
-              -e Firebase__Auth__Audience="${{ secrets.FIREBASE_AUDIENCE }}" \
-              -e VNPAY__BASEURL="${{ secrets.VNPAY_BASEURL }}" \
-              -e VNPAY__TMNCODE="${{ secrets.VNPAY_TMNCODE }}" \
-              -e VNPAY__HASHSECRET="${{ secrets.VNPAY_HASHSECRET }}" \
-              -e VNPAY__RETURNURL="${{ secrets.VNPAY_RETURNURL }}" \
-              -e VNPAY__CURRCODE="${{ secrets.VNPAY_CURRCODE }}" \
-              -e VNPAY__LOCALE="${{ secrets.VNPAY_LOCALE }}" \
-              -e VNPAY__TIMEZONEID="${{ secrets.VNPAY_TIMEZONEID }}" \
-              -e VNPAY__VERSION="${{ secrets.VNPAY_VERSION }}" \
-              -e VNPAY__COMMAND="${{ secrets.VNPAY_COMMAND }}" \
-              -e Logging__LogLevel__Hangfire="Debug" \
-              -e Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command="Information" \
-              --restart unless-stopped \
-              ${{ env.IMAGE_NAME }}:latest
+            # Pull images and deploy
+            docker-compose pull
+            docker-compose up -d --force-recreate

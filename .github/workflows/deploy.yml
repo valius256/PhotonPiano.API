@@ -113,8 +113,8 @@ jobs:
             sudo apt-get install -y docker-compose
 
             # Stop and remove existing containers
-            docker stop photonpiano-database photonpiano-api photonpiano.nginx || true
-            docker rm photonpiano-database photonpiano-api photonpiano.nginx || true
+            docker stop photonpiano-database photonpiano-api photonpiano.nginx photonpiano.cache || true
+            docker rm photonpiano-database photonpiano-api photonpiano.nginx photonpiano.cache || true
 
             # Create directory for deployment
             mkdir -p ~/photonpiano
@@ -138,6 +138,7 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
+
               photonpiano.api:
                 image: ghcr.io/valius256/photonpiano-api:latest
                 container_name: photonpiano-api
@@ -146,9 +147,10 @@ jobs:
                   - photonpiano.database
                 ports:
                   - "8080:8080"
-                  - "8081:8081"
                 environment:
-                  - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+                  - ASPNETCORE_URLS=http://0.0.0.0:8080
+                  - ASPNETCORE_ENVIRONMENT=Production
+                  - DOTNET_ENVIRONMENT=Production
                   - POSTGRES_CONNECTION=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
                   - HangfireConnectionString=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345
                   - Firebase__Auth__ApiKey=${{ secrets.FIREBASE_API_KEY }}
@@ -168,13 +170,19 @@ jobs:
                   - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
                 volumes:
                   - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
-                  - /root/.aspnet/https:/https:ro
-                  - /etc/ssl/certs/:/etc/ssl:ro
-                  - /etc/ssl/certs:/etc/ssl/certs:ro
-                  - /root/combined-certificate.pem:/etc/ssl/certs/combined-certificate.pem:ro
                 pull_policy: always
                 networks:
                   - app-network
+
+              photonpiano.cache:
+                image: redis:6.2
+                container_name: photonpiano.cache
+                ports:
+                  - "6379:6379"
+                restart: unless-stopped
+                networks:
+                  - app-network
+
               photonpiano.nginx:
                 image: nginx:latest
                 container_name: photonpiano.nginx
@@ -189,6 +197,7 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
+
             networks:
               app-network:
                 driver: bridge
@@ -215,6 +224,45 @@ jobs:
                 ssl_protocols TLSv1.2 TLSv1.3;
                 ssl_ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-GCM-SHA256";
                 ssl_prefer_server_ciphers on;
+
+                location /pubsub {
+                    proxy_pass http://photonpiano.api:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+
+                location /notification {
+                    proxy_pass http://photonpiano.api:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+
+                location /progress {
+                    proxy_pass http://photonpiano.api:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
 
                 location / {
                     proxy_pass http://photonpiano.api:8080;

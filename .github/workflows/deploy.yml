@@ -46,7 +46,7 @@ jobs:
         env:
           POSTGRES_DB: photonpiano
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: 12345
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -180,6 +180,13 @@ jobs:
                     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                     proxy_set_header X-Forwarded-Proto \$scheme;
                 }
+            
+                location /hangfire/ {
+                    proxy_pass http://localhost:8080/hangfire/;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                }
+              
             }
             EOF'
             
@@ -205,7 +212,7 @@ jobs:
                 container_name: photonpiano-database
                 environment:
                   POSTGRES_USER: postgres
-                  POSTGRES_PASSWORD: 12345
+                  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
                   POSTGRES_DB: photonpiano
                 ports:
                   - "5432:5432"
@@ -269,4 +276,4 @@ jobs:
             
             # Pull images and deploy
             docker-compose pull
-            docker-compose up -d --force-recreate
+            docker-compose up -d --force-recreate 

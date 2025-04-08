@@ -77,8 +77,10 @@ public class EntranceTestService : IEntranceTestService
                 page, pageSize, sortColumn, orderByDesc,
                 expressions:
                 [
-                    e => currentAccount.Role != Role.Student || e.EntranceTestStudents.Any(ets =>
-                        ets.StudentFirebaseId == currentAccount.AccountFirebaseId),
+                    e => currentAccount.Role == Role.Staff || currentAccount.Role == Role.Instructor &&
+                         e.InstructorId == currentAccount.AccountFirebaseId ||
+                         e.EntranceTestStudents.Any(ets =>
+                             ets.StudentFirebaseId == currentAccount.AccountFirebaseId),
                     e => roomIds != null && (roomIds.Count == 0 || roomIds.Contains(e.RoomId)),
                     e => isAnnouncedScore == null || e.IsAnnouncedScore == isAnnouncedScore.Value,
                     e => shifts != null && (shifts.Count == 0 || shifts.Contains(e.Shift)),
@@ -293,7 +295,7 @@ public class EntranceTestService : IEntranceTestService
         var allowRegisterConfig =
             entranceTestConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.AllowEntranceTestRegistering);
 
-        if (allowRegisterConfig is not null) 
+        if (allowRegisterConfig is not null)
         {
             bool allowRegistering = Convert.ToBoolean(allowRegisterConfig.ConfigValue);
 
@@ -497,6 +499,24 @@ public class EntranceTestService : IEntranceTestService
         return entranceTests;
     }
 
+    private string GetEntranceTestName(EntranceTest entranceTest)
+    {
+        string shiftName = entranceTest.Shift switch
+        {
+            Shift.Shift1_7h_8h30 => "7h_8h30",
+            Shift.Shift2_8h45_10h15 => "8h45_10h15",
+            Shift.Shift3_10h45_12h => "10h45_12h",
+            Shift.Shift4_12h30_14h00 => "12h30_14h00",
+            Shift.Shift5_14h15_15h45 => "14h15_15h45",
+            Shift.Shift6_16h00_17h30 => "16h00_17h30",
+            Shift.Shift7_18h_19h30 => "18h_19h30",
+            Shift.Shift8_19h45_21h15 => "19h45_21h15",
+            _ => entranceTest.Shift.ToString()
+        };
+
+        return $"{shiftName}_{entranceTest.Date:yyyy-MM-dd}_{entranceTest.RoomName}";
+    }
+
     public async Task AutoArrangeEntranceTests(AutoArrangeEntranceTestsModel model,
         AccountModel currentAccount)
     {
@@ -564,6 +584,11 @@ public class EntranceTestService : IEntranceTestService
 
         var arrangedStudentIds = students.Select(s => s.AccountFirebaseId);
 
+        foreach (var test in entranceTests)
+        {
+            test.Name = GetEntranceTestName(test);
+        }
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.EntranceTestRepository.AddRangeAsync(entranceTests);
@@ -601,8 +626,18 @@ public class EntranceTestService : IEntranceTestService
                 continue;
             }
 
-            entranceTestStudent.TheoraticalScore = requestModel.TheoraticalScore;
-            entranceTestStudent.InstructorComment = requestModel.InstructorComment;
+            var theoryScore = requestModel.TheoraticalScore;
+            decimal practicalScore = 0;
+
+            if (currentAccount.Role == Role.Staff)
+            {
+                entranceTestStudent.TheoraticalScore = theoryScore;
+            }
+            
+            if (currentAccount.Role == Role.Instructor)
+            {
+                entranceTestStudent.InstructorComment = requestModel.InstructorComment;
+            }
 
             entranceTestStudent.EntranceTestResults.Clear();
 
@@ -629,7 +664,11 @@ public class EntranceTestService : IEntranceTestService
                 entranceTestResultsToAdd.Add(resultToAdd);
 
                 entranceTestStudent.EntranceTestResults.Add(resultToAdd);
+
+                practicalScore += result.Score * (criteria.Weight / 100);
             }
+
+            entranceTestStudent.BandScore = ((decimal)theoryScore + practicalScore) / 2;
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -712,7 +751,7 @@ public class EntranceTestService : IEntranceTestService
             }
 
             decimal practicalScore = results.Aggregate(decimal.Zero,
-                (current, result) => current + result.Score!.Value * result.Weight!.Value);
+                (current, result) => current + result.Score!.Value * (result.Weight!.Value / 100));
 
             decimal theoryScore = entranceTestStudent.TheoraticalScore.HasValue
                 ? Convert.ToDecimal(entranceTestStudent.TheoraticalScore.Value)
@@ -731,7 +770,7 @@ public class EntranceTestService : IEntranceTestService
                 hasTrackings: false);
 
             decimal practicalScore = dbResults.Aggregate(decimal.Zero,
-                (current, result) => current + result.Score!.Value * result.Weight!.Value);
+                (current, result) => current + result.Score!.Value * (result.Weight!.Value / 100));
 
             if (updateModel.UpdateScoreRequests.Count > 0)
             {

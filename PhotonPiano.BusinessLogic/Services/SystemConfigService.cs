@@ -177,8 +177,8 @@ public class SystemConfigService : ISystemConfigService
 
             if (updateModel.AllowEntranceTestRegistering.HasValue)
             {
-                await UpsertSystemConfig(ConfigNames.AllowEntranceTestRegistering, SystemConfigType.Boolean,
-                    updateModel.AllowEntranceTestRegistering.Value.ToString());
+                await UpsertSystemConfig(ConfigNames.AllowEntranceTestRegistering, SystemConfigType.Text,
+                    updateModel.AllowEntranceTestRegistering.Value == true ? "true" : "false"); 
             }
         });
     }

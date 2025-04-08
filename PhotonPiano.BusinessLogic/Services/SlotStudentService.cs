@@ -22,7 +22,7 @@ public class SlotStudentService : ISlotStudentService
 
     public async Task<bool> UpdateAttentStudent(UpdateAttentdanceModel model, string teacherId)
     {
-        var slotEntity = await _serviceFactory.SlotService.GetSLotDetailById(model.SlotId);
+        var slotEntity = await _serviceFactory.SlotService.GetSlotDetailById(model.SlotId);
 
         if (slotEntity.Class.InstructorId != teacherId)
             throw new IllegalArgumentException("You are not allowed to update attendance for this slot.");

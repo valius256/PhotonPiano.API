@@ -9,7 +9,7 @@ public interface ISlotService
 {
     Task<List<SlotDetailModel>> GetSlotsAsync(GetSlotModel slotModel, AccountModel? accountModel);
 
-    Task<SlotDetailModel> GetSLotDetailById(Guid id, AccountModel? accountModel = default);
+    Task<SlotDetailModel> GetSlotDetailById(Guid id, AccountModel? accountModel = default);
 
     TimeOnly GetShiftStartTime(Shift shift);
 

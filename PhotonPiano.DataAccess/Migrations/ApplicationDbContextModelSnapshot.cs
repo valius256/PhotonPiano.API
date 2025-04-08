@@ -226,6 +226,62 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.ToTable("Application");
                 });
 
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Article", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedById")
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Thumbnail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UpdateById")
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
+                    b.HasIndex("Id");
+
+                    b.HasIndex("UpdateById");
+
+                    b.ToTable("Article");
+                });
+
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Class", b =>
                 {
                     b.Property<Guid>("Id")
@@ -777,57 +833,6 @@ namespace PhotonPiano.DataAccess.Migrations
                         .IsUnique();
 
                     b.ToTable("Level");
-                });
-
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.New", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<int>("RecordStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Thumbnail")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("DeletedById");
-
-                    b.HasIndex("Id");
-
-                    b.HasIndex("UpdateById");
-
-                    b.ToTable("New");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Notification", b =>
@@ -1490,6 +1495,31 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Article", b =>
+                {
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
+                        .WithMany("CreatedArticles")
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "DeletedBy")
+                        .WithMany("DeletedArticles")
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdatedBy")
+                        .WithMany("UpdatedArticles")
+                        .HasForeignKey("UpdateById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeletedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Class", b =>
                 {
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreatedBy")
@@ -1767,31 +1797,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("NextLevel");
                 });
 
-            modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.New", b =>
-                {
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "CreateBy")
-                        .WithMany("CreatedNews")
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "DeletedBy")
-                        .WithMany("DeletednNews")
-                        .HasForeignKey("DeletedById")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
-                        .WithMany("UpdatednNews")
-                        .HasForeignKey("UpdateById")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("CreateBy");
-
-                    b.Navigation("DeletedBy");
-
-                    b.Navigation("UpdateBy");
-                });
-
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Notification", b =>
                 {
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", null)
@@ -2056,6 +2061,8 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Navigation("CreatedApplications");
 
+                    b.Navigation("CreatedArticles");
+
                     b.Navigation("CreatedClasses");
 
                     b.Navigation("CreatedCriteria");
@@ -2067,8 +2074,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("CreatedEntranceTestStudent");
 
                     b.Navigation("CreatedEntrancesTest");
-
-                    b.Navigation("CreatedNews");
 
                     b.Navigation("CreatedPianoSurveys");
 
@@ -2083,6 +2088,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("CreatedTransaction");
 
                     b.Navigation("DeletedApplications");
+
+                    b.Navigation("DeletedArticles");
 
                     b.Navigation("DeletedClasses");
 
@@ -2102,8 +2109,6 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Navigation("DeletedStudentClass");
 
-                    b.Navigation("DeletednNews");
-
                     b.Navigation("EntranceTestStudents");
 
                     b.Navigation("FreeSlots");
@@ -2121,6 +2126,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("StudentClasses");
 
                     b.Navigation("UpdatedApplications");
+
+                    b.Navigation("UpdatedArticles");
 
                     b.Navigation("UpdatedClasses");
 
@@ -2145,8 +2152,6 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("UpdatedStudentClass");
 
                     b.Navigation("UpdatedSurveyQuestions");
-
-                    b.Navigation("UpdatednNews");
                 });
 
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Class", b =>

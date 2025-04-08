@@ -79,6 +79,8 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IProgressServiceHub> _progressServiceHub;
 
     private readonly Lazy<IFreeSlotService> _freeSlotService;
+    
+    private readonly Lazy<IArticleService> _articleService;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
@@ -119,6 +121,7 @@ public class ServiceFactory : IServiceFactory
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
+        _articleService = new Lazy<IArticleService>(() => new ArticleService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -181,4 +184,6 @@ public class ServiceFactory : IServiceFactory
     public ILevelService LevelService => _levelService.Value;
 
     public IFreeSlotService FreeSlotService => _freeSlotService.Value;
+    
+    public IArticleService ArticleService => _articleService.Value;
 }

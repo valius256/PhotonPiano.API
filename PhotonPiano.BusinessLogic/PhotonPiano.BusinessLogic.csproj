@@ -20,6 +20,7 @@
         <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Razor.Templating.Core" Version="2.1.0" />
+        <PackageReference Include="Slugify.Core" Version="5.1.1" />
         <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
     </ItemGroup>
 

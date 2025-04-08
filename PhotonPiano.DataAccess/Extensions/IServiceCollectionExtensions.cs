@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPianoSurveyRepository, PianoSurveyRepository>();
         services.AddScoped<ILearnerAnswerRepository, LearnerAnswerRepository>();
         services.AddScoped<IPianoSurveyQuestionRepository, PianoSurveyQuestionRepository>();
+        services.AddScoped<IArticleRepository, ArticleRepository>();
         return services;
     }
 }

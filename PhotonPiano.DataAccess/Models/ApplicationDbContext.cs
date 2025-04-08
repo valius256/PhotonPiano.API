@@ -30,7 +30,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<SystemConfig> SystemConfigs { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Tuition> Tuitions { get; set; }
-    public DbSet<New> News { get; set; }
+    public DbSet<Article> Articles { get; set; }
     public DbSet<DayOff> DayOffs { get; set; }
     public DbSet<AccountNotification> AccountNotifications { get; set; }
     public DbSet<Application> Applications { get; set; }
@@ -60,7 +60,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new SystemConfigConfiguration());
         modelBuilder.ApplyConfiguration(new TransactionConfiguration());
         modelBuilder.ApplyConfiguration(new TuitionConfiguration());
-        modelBuilder.ApplyConfiguration(new NewConfiguration());
+        modelBuilder.ApplyConfiguration(new ArticleConfiguration());
         modelBuilder.ApplyConfiguration(new DayOffConfiguration());
         modelBuilder.ApplyConfiguration(new AccountNotificationConfiguration());
         modelBuilder.ApplyConfiguration(new ApplicationConfiguration());

@@ -107,9 +107,11 @@ public class Account : BaseEntity
     public virtual ICollection<StudentClass> DeletedStudentClass { get; set; } = new List<StudentClass>();
 
     // New
-    public virtual ICollection<New> CreatedNews { get; set; } = new List<New>();
-    public virtual ICollection<New> UpdatednNews { get; set; } = new List<New>();
-    public virtual ICollection<New> DeletednNews { get; set; } = new List<New>();
+    public virtual ICollection<Article> CreatedArticles { get; set; } = new List<Article>();
+    
+    public virtual ICollection<Article> UpdatedArticles { get; set; } = new List<Article>();
+    
+    public virtual ICollection<Article> DeletedArticles { get; set; } = new List<Article>();
 
     // DayOff
     public virtual ICollection<DayOff> CreatedDayOffs { get; set; } = new List<DayOff>();

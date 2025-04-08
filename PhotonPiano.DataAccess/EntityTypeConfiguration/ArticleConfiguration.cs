@@ -5,28 +5,27 @@ using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration;
 
-public class NewConfiguration : IEntityTypeConfiguration<New>
+public class ArticleConfiguration : IEntityTypeConfiguration<Article>
 {
-    public void Configure(EntityTypeBuilder<New> builder)
+    public void Configure(EntityTypeBuilder<Article> builder)
     {
         builder.HasIndex(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
 
-
-        builder.HasOne(x => x.CreateBy)
-            .WithMany(x => x.CreatedNews)
+        builder.HasOne(x => x.CreatedBy)
+            .WithMany(x => x.CreatedArticles)
             .HasForeignKey(x => x.CreatedById)
             .OnDelete(DeleteBehavior.NoAction);
 
-        builder.HasOne(x => x.UpdateBy)
-            .WithMany(x => x.UpdatednNews)
+        builder.HasOne(x => x.UpdatedBy)
+            .WithMany(x => x.UpdatedArticles)
             .HasForeignKey(x => x.UpdateById)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(x => x.DeletedBy)
-            .WithMany(x => x.DeletednNews)
+            .WithMany(x => x.DeletedArticles)
             .HasForeignKey(x => x.DeletedById)
             .OnDelete(DeleteBehavior.NoAction);
     }

@@ -629,8 +629,15 @@ public class EntranceTestService : IEntranceTestService
             var theoryScore = requestModel.TheoraticalScore;
             decimal practicalScore = 0;
 
-            entranceTestStudent.TheoraticalScore = theoryScore;
-            // entranceTestStudent.InstructorComment = requestModel.InstructorComment;
+            if (currentAccount.Role == Role.Staff)
+            {
+                entranceTestStudent.TheoraticalScore = theoryScore;
+            }
+            
+            if (currentAccount.Role == Role.Instructor)
+            {
+                entranceTestStudent.InstructorComment = requestModel.InstructorComment;
+            }
 
             entranceTestStudent.EntranceTestResults.Clear();
 

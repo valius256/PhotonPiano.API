@@ -7,18 +7,19 @@ services:
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: photonpiano
     ports:
-     - "5432:5432"
+      - "5432:5432"
     volumes:
-      - /root/photonpiano/postgres-data:/var/lib/postgresql/data 
+      - /root/photonpiano/postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
-  
-  
+    networks:
+      - app-network
+
   photonpiano.api:
     image: ghcr.io/valius256/photonpiano-api:latest
     container_name: photonpiano-api
     restart: unless-stopped
     depends_on:
-      - photonpiano-database
+      - photonpiano.database
     ports:
       - "8080:8080"  # HTTP
       - "8081:8081"  # HTTPS
@@ -30,7 +31,7 @@ services:
       - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
       - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
       - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
-      - VNPAY__BASEURL=${FIREBASE_AUDIENCE}
+      - VNPAY__BASEURL=${VNPAY_BASEURL }
       - VNPAY__TMNCODE=${VNPAY_TMNCODE}
       - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
       - VNPAY__RETURNURL=${VNPAY_RETURNURL}
@@ -44,30 +45,19 @@ services:
     volumes:
       - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
       - /root/.aspnet/https:/https:ro
-      - /etc/ssl/certs/:/etc/ssl:ro
-      - /etc/ssl/certs:/etc/ssl/certs:ro
-      - /root/combined-certificate.pem:/etc/ssl/certs/combined-certificate.pem:ro
     pull_policy: always
-    
-#  photonpiano.frontend:
-#    build:
-#      context: ../Frontend/PhotonPiano_WebApp
-#      dockerfile: Dockerfile
-#      args:
-#        - MODE=production
-#    container_name: photonpiano.frontend
-#    ports:
-#      - "3000:3000"
-#    environment:
-#      - NODE_ENV=production
-#      - VITE_API_BASE_URL=http://photonpiano.api:5001
-#    depends_on:
-#      - photonpiano.api
-    
+    networks:
+      - app-network
+
 #  photonpiano.cache:
 #    image: redis:6.2
 #    restart: always
 #    container_name: photonpiano.cache
 #    ports:
 #      - "6379:6379"
-#
+#    networks:
+#      - app-network
+
+networks:
+  app-network:
+    driver: bridge

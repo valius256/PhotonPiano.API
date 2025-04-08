@@ -29,6 +29,7 @@ using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -44,7 +45,6 @@ public static class IServiceCollectionExtensions
             .AddScalarConfigurations()
             .AddSettingsOptions(configuration)
             .AddDbContextConfigurations(configuration)
-            .AddFireBaseServices(configuration)
             .AddHangFireConfigurations(configuration)
             .AddCorsConfigurations()
             .AddMapsterConfig()
@@ -165,7 +165,7 @@ public static class IServiceCollectionExtensions
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
                 .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app" ,"http://photonpiano.frontend:3000", "https://photonpiano.api:5001")
+                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
@@ -185,7 +185,7 @@ public static class IServiceCollectionExtensions
                 ? configuration.GetConnectionString("PostgresDeploy")
                 : configuration.GetConnectionString("PostgresPhotonPiano");
 
-        if (!_messagePrinted)
+        if (!_messagePrinted && Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
         {
             Console.WriteLine("This running is using connection string: " + rs);
             _messagePrinted = true;
@@ -237,35 +237,8 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
-    private static IServiceCollection AddFireBaseServices(this IServiceCollection services,
-        IConfiguration configuration)
-    {
-        //var firebaseSettings = configuration.GetSection(nameof(Appsettings.FireBase)).Get<FireBase>();
-        //var firebaseJsonPath = Path.Combine(Directory.GetCurrentDirectory(), "fit-swipe-161d7-firebase-adminsdk-l0tth-9884dc9fa1.json");
-        //FirebaseApp.Create(new AppOptions
-        //{
-        //    Credential = GoogleCredential.FromFile(firebaseJsonPath),
-        //    ProjectId = firebaseSettings?.ProjectId,
-        //});
-
-        ////var storageClient = StorageClient.Create(GoogleCredential.FromFile(firebaseJsonPath));
-
-
-        return services;
-    }
-
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
-        // if (configuration.GetValue<bool>("IsCacheDeploy"))
-        // {
-        //     var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
-        //     services.AddSingleton<IConnectionMultiplexer>(_ =>
-        //         ConnectionMultiplexer.Connect(redisConnectionString!, options =>
-        //         {
-        //             options.ConnectRetry = 5;
-        //             options.ConnectTimeout = 5000;
-        //         }));
-        // }
 
         var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>
@@ -321,8 +294,8 @@ public static class IServiceCollectionExtensions
         {
             var configService = scope.ServiceProvider.GetRequiredService<ISystemConfigService>();
 
-            var tuitionReminderDay = configService.GetConfig("Ngày nhắc thanh toán học phí").Result?.ConfigValue ?? "15";
-            var tuitionOverdueDay = configService.GetConfig("Hạn chót thanh toán học phí").Result?.ConfigValue ?? "28";
+            var tuitionReminderDay = configService.GetConfig(ConfigNames.TuitionPaymentReminderDate).Result?.ConfigValue ?? "15";
+            var tuitionOverdueDay = configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
             
             recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
                 x => x.CronAutoCreateTuition(),
@@ -392,6 +365,11 @@ public static class IServiceCollectionExtensions
     private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHealthChecks()
+            // .AddRedis(
+            //     configuration.GetConnectionString("RedisConnectionStrings"),
+            //     name: "redis",
+            //     failureStatus: HealthStatus.Degraded,
+            //     tags: new[] { "db", "redis" })
             .AddNpgSql(
                 GetConnectionString(configuration)!,
                 name: "postgres",

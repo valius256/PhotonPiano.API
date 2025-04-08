@@ -8,6 +8,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -81,7 +82,7 @@ public class SystemConfigsController : BaseController
             return Ok(cacheValue);
         }
 
-        var result = await _serviceFactory.SystemConfigService.GetConfig("Lý do hủy tiết");
+        var result = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.ReasonForCancelSlot);
 
         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
         return Ok(result);

@@ -15,10 +15,10 @@ namespace PhotonPiano.Test.Extensions;
 public class IntegrationTestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:15")
+        .WithImage("postgres:16")
         .WithDatabase("photonpiano")
         .WithUsername("postgres")
-        .WithPassword("postgres")
+        .WithPassword("12345")
         .WithPortBinding(5432, true)
         .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();

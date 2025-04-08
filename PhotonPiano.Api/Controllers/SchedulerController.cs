@@ -59,7 +59,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get Slot by Id")]
     public async Task<ActionResult> GetSlotById([FromRoute] Guid id)
     {
-        var result = await _serviceFactory.SlotService.GetSLotDetailById(id, CurrentAccount);
+        var result = await _serviceFactory.SlotService.GetSlotDetailById(id, CurrentAccount);
             return Ok(result.Adapt<SlotDetailModel>());
     }
 

@@ -198,6 +198,7 @@ public class SlotService : ISlotService
 
         // Tập hợp để lưu các ClassId và tuần bị ảnh hưởng
         var affectedClassesAndWeeks = new HashSet<(Guid ClassId, DateOnly StartOfWeek)>();
+        
 
         //  Cập nhật slot trong quá khứ (chỉ lấy slot chưa Finished)
         var pastSlots = await _unitOfWork.SlotRepository.FindAsync(
@@ -211,11 +212,15 @@ public class SlotService : ISlotService
         }
 
         // Cập nhật slot trong ngày hiện tại (chỉ lấy slot có khả năng thay đổi trạng thái)
-        var todaySlots = await _unitOfWork.SlotRepository.FindProjectedAsync<Slot>(
+        var todaySlots = await _unitOfWork.SlotRepository.FindAsync(
             s => s.Date == currentDate && s.Status != SlotStatus.Finished && s.Status != SlotStatus.Cancelled
         );
 
         var classIds = todaySlots.Select(s => s.ClassId).Distinct().ToList();
+
+        var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(
+            c => classIds.Contains(c.Id)
+        );
 
         var firstLastSlotNoFilter = await _unitOfWork.SlotRepository
             .FindAsync(s => classIds.Contains(s.ClassId));
@@ -245,8 +250,12 @@ public class SlotService : ISlotService
                 {
                     if (slot.Id == classSlots.LastSlot?.Id) 
                     {
-                        slot.Class.Status = ClassStatus.Finished;
-                        classesToUpdate.Add(slot.Class);
+                        var classAffected = affectedClasses.FirstOrDefault(c => c.Id == slot.ClassId);
+                        if (classAffected != null)
+                        {
+                            classAffected.Status = ClassStatus.Finished;
+                            classesToUpdate.Add(classAffected);
+                        }             
                     }
                 }
             }
@@ -259,16 +268,21 @@ public class SlotService : ISlotService
                 {
                     if (slot.Id == classSlots.FirstSlot?.Id) 
                     {
-                        slot.Class.Status = ClassStatus.Ongoing;
-                        classesToUpdate.Add(slot.Class);
-                        //Create tuition khi lớp bắt đầu
-                        var classDetail = await _serviceFactory.ClassService.GetClassDetailById(slot.ClassId);
-                        await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
+                        var classAffected = affectedClasses.FirstOrDefault(c => c.Id == slot.ClassId);
+                        if (classAffected != null)
+                        {
+                            classAffected.Status = ClassStatus.Ongoing;
+                            classesToUpdate.Add(classAffected);
+                            //Create tuition khi lớp bắt đầu
+                            var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classAffected.Id);
+                            await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
+                        }                 
                     }
                 }
             }
         }
         await _unitOfWork.ClassRepository.UpdateRangeAsync(classesToUpdate);
+        await _unitOfWork.SlotRepository.UpdateRangeAsync(todaySlots);
         //  Lưu thay đổi vào database
         await _unitOfWork.SaveChangesAsync();
 

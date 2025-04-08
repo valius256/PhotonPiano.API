@@ -122,12 +122,20 @@ public class PianoSurveyService : IPianoSurveyService
 
             int frequency = Convert.ToInt32(instrumentFrequencyConfig.ConfigValue ?? "0");
 
-            if (createModel.CreateQuestionRequests.Any(question =>
-                    question.Options.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency))
+            var allOptions = createModel.CreateQuestionRequests.SelectMany(r => r.Options);
+
+            if (allOptions.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency)
             {
                 throw new BadRequestException(
                     $"Options in question must contain the instrument name {instrumentName} at least {frequency} times");
             }
+
+            // if (createModel.CreateQuestionRequests.Any(question =>
+            //         question.Options.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency))
+            // {
+            //     throw new BadRequestException(
+            //         $"Options in question must contain the instrument name {instrumentName} at least {frequency} times");
+            // }
         }
 
         var survey = createModel.Adapt<PianoSurvey>();
@@ -288,14 +296,16 @@ public class PianoSurveyService : IPianoSurveyService
             var dbQuestionIds = new List<Guid>();
             int index = 0;
 
+            var allOptions = updateModel.Questions.SelectMany(q => q.Options);
+            
+            if (allOptions.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency)
+            {
+                throw new BadRequestException(
+                    $"Options in question must contain the instrument name {instrumentName} at least {frequency} times");
+            }
+
             foreach (var request in updateModel.Questions)
             {
-                if (request.Options.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency)
-                {
-                    throw new BadRequestException(
-                        $"Options in question must contain the instrument name {instrumentName} at least {frequency} times");
-                }
-
                 if (request.Id.HasValue)
                 {
                     dbQuestionIds.Add(request.Id.Value);
@@ -330,13 +340,27 @@ public class PianoSurveyService : IPianoSurveyService
             }
 
             dbQuestions =
-                await _unitOfWork.SurveyQuestionRepository.FindAsync(q => dbQuestionIds.Contains(q.Id),
-                    hasTrackings: false);
+                await _unitOfWork.SurveyQuestionRepository.FindAsync(q => dbQuestionIds.Contains(q.Id));
 
             if (dbQuestionIds.Count != dbQuestions.Count)
             {
                 throw new BadRequestException("Some of questions are not found");
             }
+
+            foreach (var question in dbQuestions)
+            {
+                var updatedQuestion = updateModel.Questions.FirstOrDefault(q => q.Id == question.Id);
+
+                if (updatedQuestion is null)
+                {
+                    continue;
+                }
+                
+                question.QuestionContent = updatedQuestion.QuestionContent;
+                question.Options = updatedQuestion.Options;
+                question.AllowOtherAnswer = updatedQuestion.AllowOtherAnswer;
+            }
+            
         }
 
         foreach (var question in survey.PianoSurveyQuestions)
@@ -481,5 +505,4 @@ public class PianoSurveyService : IPianoSurveyService
             await _unitOfWork.LearnerAnswerRepository.AddRangeAsync(learnerAnswers);
         });
     }
-    
 }

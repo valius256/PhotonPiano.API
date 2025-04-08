@@ -31,7 +31,7 @@ services:
       - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
       - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
       - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
-      - VNPAY__BASEURL=${VNPAY_BASEURL }
+      - VNPAY__BASEURL=${VNPAY_BASEURL}
       - VNPAY__TMNCODE=${VNPAY_TMNCODE}
       - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
       - VNPAY__RETURNURL=${VNPAY_RETURNURL}

@@ -29,6 +29,7 @@ using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -164,7 +165,7 @@ public static class IServiceCollectionExtensions
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
                 .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app" ,"http://photonpiano.frontend:3000", "https://photonpiano.api:5001")
+                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()
@@ -293,8 +294,8 @@ public static class IServiceCollectionExtensions
         {
             var configService = scope.ServiceProvider.GetRequiredService<ISystemConfigService>();
 
-            var tuitionReminderDay = configService.GetConfig("Ngày nhắc thanh toán học phí").Result?.ConfigValue ?? "15";
-            var tuitionOverdueDay = configService.GetConfig("Hạn chót thanh toán học phí").Result?.ConfigValue ?? "28";
+            var tuitionReminderDay = configService.GetConfig(ConfigNames.TuitionPaymentReminderDate).Result?.ConfigValue ?? "15";
+            var tuitionOverdueDay = configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
             
             recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
                 x => x.CronAutoCreateTuition(),
@@ -364,6 +365,11 @@ public static class IServiceCollectionExtensions
     private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHealthChecks()
+            // .AddRedis(
+            //     configuration.GetConnectionString("RedisConnectionStrings"),
+            //     name: "redis",
+            //     failureStatus: HealthStatus.Degraded,
+            //     tags: new[] { "db", "redis" })
             .AddNpgSql(
                 GetConnectionString(configuration)!,
                 name: "postgres",

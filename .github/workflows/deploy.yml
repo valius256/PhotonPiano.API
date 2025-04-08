@@ -227,8 +227,9 @@ jobs:
                   - ASPNETCORE_URLS=http://0.0.0.0:8080
                   - ASPNETCORE_ENVIRONMENT=Production
                   - DOTNET_ENVIRONMENT=Production
-                  - POSTGRES_CONNECTION=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345;Include Error Detail=true
-                  - HangfireConnectionString=Host=photonpiano-database;Port=5432;Database=photonpiano;Username=postgres;Password=12345
+                  - POSTGRES_CONNECTION= ${{ secrets.POSTGRES_CONNECTION }}
+                  - ConnectionStrings__RedisConnectionStrings=photonpiano.cache:6379
+                  - HangfireConnectionString= ${{ secrets.POSTGRES_CONNECTION }}
                   - Firebase__Auth__ApiKey=${{ secrets.FIREBASE_API_KEY }}
                   - Firebase__Auth__Authority=${{ secrets.FIREBASE_AUTHORITY }}
                   - Firebase__Auth__Issuer=${{ secrets.FIREBASE_ISSUER }}
@@ -242,8 +243,7 @@ jobs:
                   - VNPAY__TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
                   - VNPAY__VERSION=${{ secrets.VNPAY_VERSION }}
                   - VNPAY__COMMAND=${{ secrets.VNPAY_COMMAND }}
-                  - Logging__LogLevel__Hangfire=Debug
-                  - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
+            
                 volumes:
                   - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
                 pull_policy: always

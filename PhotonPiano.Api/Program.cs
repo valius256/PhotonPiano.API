@@ -74,7 +74,6 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     DashboardTitle = "PhotonPiano Dashboard",
     DarkModeEnabled = true,
     IsReadOnlyFunc = _ => false,
-    TimeZoneResolver = new DefaultTimeZoneResolver(),
     Authorization = new[] { new HangfireAuthorizationFilter() },
     AppPath = "https://photonpiano.duckdns.org/scalar/v1",
 });

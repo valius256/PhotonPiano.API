@@ -26,5 +26,11 @@
 
         public static readonly string InstrumentFrequencyInResponse =
             "Số lần xuất hiện tên nhạc cụ trong 1 câu trả lời/lựa chọn";
+        
+        public static readonly string TuitionPaymentReminderDate = "Ngày nhắc thanh toán học phí";
+
+        public static readonly string TuitionPaymentDeadline = "Hạn chót thanh toán học phí";
+        
+        public static readonly string ReasonForCancelSlot = "Lý do hủy tiết";
     }
 }

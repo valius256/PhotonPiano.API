@@ -67,10 +67,6 @@ app.UseScalarConfig();
 
 app.UseCors("AllowAll");
 
-// Register and execute PostgresSqlConfiguration
-// var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
-// await sqlConfig.Configure();
-
 app.UseHttpsRedirection();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
@@ -79,10 +75,11 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     DarkModeEnabled = true,
     IsReadOnlyFunc = _ => false,
     TimeZoneResolver = new DefaultTimeZoneResolver(),
-    Authorization = new[] { new HangfireAuthorizationFilter() }
+    Authorization = new[] { new HangfireAuthorizationFilter() },
+    AppPath = "https://photonpiano.duckdns.org/scalar/v1",
 });
 
-
+// Register and execute PostgresSqlConfiguration
 var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
 sqlConfig.Configure();
 

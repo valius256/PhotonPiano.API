@@ -1,6 +1,8 @@
+using FluentEmail.Core;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -195,5 +197,35 @@ public class AccountService : IAccountService
             Role.Administrator => a => true,
             _ => a => a.Role == role
         };
+    }
+
+    public async Task ChangeRole(GrantRoleModel grantRoleModel)
+    {
+        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == grantRoleModel.AccountFirebaseId);
+        if (account == null)
+        {
+            throw new NotFoundException("Account not found");
+        }
+        if (account.Role != Role.Staff && account.Role != Role.Administrator)
+        {
+            throw new BadRequestException("Not applicable");
+        }
+        account.Role = grantRoleModel.Role;
+        await _unitOfWork.AccountRepository.UpdateAsync(account);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task<AccountModel> CreateNewStaff(SignUpModel signInModel, string accountFirebaseId)
+    {
+        var firebaseId = await _serviceFactory.AuthService.SignUpOnFirebase(signInModel.Email, signInModel.Password);
+
+        var staffAccount = signInModel.Adapt<Account>();
+        staffAccount.Level = null; //detach
+        staffAccount.Role = Role.Staff;
+        staffAccount.StudentStatus = null;
+        staffAccount.AccountFirebaseId = firebaseId;
+        var createAccount = await _unitOfWork.AccountRepository.AddAsync(staffAccount);
+        await _unitOfWork.SaveChangesAsync();
+        return createAccount.Adapt<AccountModel>();
     }
 }

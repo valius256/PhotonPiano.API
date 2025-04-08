@@ -185,7 +185,7 @@ public static class IServiceCollectionExtensions
                 ? configuration.GetConnectionString("PostgresDeploy")
                 : configuration.GetConnectionString("PostgresPhotonPiano");
 
-        if (!_messagePrinted)
+        if (!_messagePrinted && Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
         {
             Console.WriteLine("This running is using connection string: " + rs);
             _messagePrinted = true;

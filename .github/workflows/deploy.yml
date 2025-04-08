@@ -212,7 +212,7 @@ jobs:
                 container_name: photonpiano-database
                 environment:
                   POSTGRES_USER: postgres
-                  POSTGRES_PASSWORD: 12345
+                  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
                   POSTGRES_DB: photonpiano
                 ports:
                   - "5432:5432"

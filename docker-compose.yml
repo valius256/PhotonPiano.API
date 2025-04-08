@@ -4,7 +4,7 @@ services:
     container_name: photonpiano-database
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: G0UjzGNrnDqOjxY
       POSTGRES_DB: photonpiano
     ports:
       - "5432:5432"

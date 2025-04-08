@@ -1,10 +1,10 @@
 services:
-  photonpiano.database:
+  photonpiano-database:
     image: postgres:15
     container_name: photonpiano-database
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: photonpiano
     ports:
       - "5432:5432"
@@ -14,12 +14,12 @@ services:
     networks:
       - app-network
 
-  photonpiano.api:
+  photonpiano-api:
     image: ghcr.io/valius256/photonpiano-api:latest
     container_name: photonpiano-api
     restart: unless-stopped
     depends_on:
-      - photonpiano.database
+      - photonpiano-database
     ports:
       - "8080:8080"  # HTTP
       - "8081:8081"  # HTTPS

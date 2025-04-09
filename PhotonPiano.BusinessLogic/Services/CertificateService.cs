@@ -1,3 +1,5 @@
+using System.Drawing;
+using System.Drawing.Imaging;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Hosting;
@@ -9,11 +11,15 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
+using PdfiumViewer;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Certificate;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
+using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
+using ColorMode = DinkToPdf.ColorMode;
 using PaperKind = DinkToPdf.PaperKind;
 using RouteData = Microsoft.AspNetCore.Routing.RouteData;
 
@@ -43,7 +49,7 @@ public class CertificateService : ICertificateService
     }
 
     /// Validates if a student is eligible for a certificate
-    public async Task<bool> IsEligibleForCertificateAsync(Guid? studentClassId)
+    private async Task<bool> IsEligibleForCertificateAsync(Guid? studentClassId)
     {
         var studentClass = await _unitOfWork.StudentClassRepository.Entities
             .Include(sc => sc.Student)
@@ -75,6 +81,36 @@ public class CertificateService : ICertificateService
 
         return true;
     }
+    public async Task<List<StudentClass>> GetEligibleStudentsWithoutCertificatesAsync(Guid classId)
+    {
+        // Get the class to check if it's finished
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+        if (classInfo == null)
+        {
+            throw new NotFoundException($"Class with ID {classId} not found");
+        }
+        
+        // Class must be finished to generate certificates
+        if (classInfo.Status != ClassStatus.Finished)
+        {
+            return new List<StudentClass>();
+        }
+        
+        // Get all student classes for this class
+        var studentClasses = await _unitOfWork.StudentClassRepository.Entities
+            .Include(sc => sc.Student)
+            .Include(sc => sc.Class)
+            .ThenInclude(c => c.Level)
+            .Where(sc => 
+                sc.ClassId == classId && 
+                sc.IsPassed && 
+                sc.GPA >= sc.Class.Level.MinimumTheoreticalScore &&
+                string.IsNullOrEmpty(sc.CertificateUrl))
+            .ToListAsync();
+                
+        return studentClasses;
+    }
+
 
     //Generate a Certificate for a student class and returns the certificate URL
     public async Task<string> GenerateCertificateAsync(Guid studentClassId)
@@ -103,22 +139,27 @@ public class CertificateService : ICertificateService
             ClassName = studentClass.Class.Name,
             LevelName = studentClass.Class.Level.Name,
             CompletionDate = DateTime.UtcNow.AddHours(7), // Vietnam time
-            GPA = studentClass.GPA ?? 0m,  // Correctly handle nullable decimal
+            GPA = studentClass.GPA ?? 0m, // Correctly handle nullable decimal
             IsPassed = studentClass.IsPassed,
             CertificateId = $"CERT-{DateTime.UtcNow.Year}-{studentClassId.ToString().Substring(0, 8).ToUpper()}",
             SkillsEarned = studentClass.Class.Level.SkillsEarned, // Direct assignment since it's already List<string>
-            InstructorName = studentClass.Class.Instructor?.FullName ?? studentClass.Class.Instructor?.UserName ?? "Unknown",
+            InstructorName = studentClass.Class.Instructor?.FullName ??
+                             studentClass.Class.Instructor?.UserName ?? "Unknown",
             InstructorSignatureUrl = studentClass.Class.Instructor?.AvatarUrl ?? ""
         };
-        
+
+        // Generate HTML and PDF
         var certificateHtml = await RenderViewToStringAsync("Certificate", certificateModel);
-        // Convert HTML to PDF
         var pdfBytes = GeneratePdfFromHtml(certificateHtml);
 
-        // Save PDF to file system
-        string certificateFileName = $"certificate_{studentClassId}.pdf";
+        // Convert PDF to high-quality image
+        var imageBytes = await ConvertPdfToImageWithPdfiumViewer(pdfBytes);
+
+        // Create temporary files
+        string certificateFileName = $"certificate_{studentClassId}.png";
         string tempFilePath = Path.Combine(Path.GetTempPath(), certificateFileName);
-            
+
+
         // // Create directory if it doesn't exist
         // if (!Directory.Exists(certificatesDirectory))
         // {
@@ -139,8 +180,10 @@ public class CertificateService : ICertificateService
         // return certificateUrl;
         try
         {
-            await File.WriteAllBytesAsync(tempFilePath, pdfBytes); 
-            using var fileStream = new FileStream(tempFilePath, FileMode.Create);
+            await File.WriteAllBytesAsync(tempFilePath, imageBytes);
+
+            // Create FormFile from the temp file
+            using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
             var formFile = new FormFile(
                 fileStream,
                 0,
@@ -149,12 +192,17 @@ public class CertificateService : ICertificateService
                 certificateFileName)
             {
                 Headers = new HeaderDictionary(),
-                ContentType = "application/pdf"
+                ContentType = "image/png"
             };
+                    
+            // Upload to Pinata
             var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
+                    
+            // Update student class with Piñata URL
             studentClass.CertificateUrl = pinataUrl;
             await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
             await _unitOfWork.SaveChangesAsync();
+            
             return pinataUrl;
         }
         finally
@@ -229,5 +277,101 @@ public class CertificateService : ICertificateService
         };
 
         return _converter.Convert(pdf);
-    }   
+    }
+
+    // Converts a PDF to a high-quality image using PdfiumViewer
+    private async Task<byte[]> ConvertPdfToImageWithPdfiumViewer(byte[] pdfBytes)
+    {
+        return await Task.Run(() =>
+        {
+            // Use a high DPI for better quality
+            const float dpi = 300f;
+
+            using var stream = new MemoryStream(pdfBytes);
+            using var pdfDocument = PdfDocument.Load(stream);
+
+            // Get the size of the first page
+            var pageSize = pdfDocument.PageSizes[0];
+
+            // Calculate the image dimensions based on DPI
+            int width = (int)(pageSize.Width / 72.0f * dpi);
+            int height = (int)(pageSize.Height / 72.0f * dpi);
+
+            // Render the first page to an image
+            using var image = pdfDocument.Render(0, width, height, dpi, dpi, PdfRenderFlags.Annotations);
+
+            // Enhance the image quality
+            using var enhancedImage = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+            using var graphics = Graphics.FromImage(enhancedImage);
+
+            // Set high quality rendering
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+
+            // Fill with white background
+            graphics.FillRectangle(Brushes.White, 0, 0, width, height);
+
+            // Draw the PDF image
+            graphics.DrawImage(image, 0, 0, width, height);
+
+            // Add a subtle border
+            int borderWidth = 2;
+            graphics.DrawRectangle(new Pen(Color.FromArgb(230, 230, 230), borderWidth),
+                borderWidth / 2, borderWidth / 2, width - borderWidth, height - borderWidth);
+
+            // Convert to PNG
+            using var memoryStream = new MemoryStream();
+            enhancedImage.Save(memoryStream, ImageFormat.Png);
+            return memoryStream.ToArray();
+        });
+    }
+
+    public async Task<List<CertificateInfoModel>> GetStudentCertificatesAsync(AccountModel account)
+    {
+        var studentClass = await _unitOfWork.StudentClassRepository.Entities
+            .Include(sc => sc.Class)
+            .ThenInclude(c => c.Level)
+            .Where(sc => sc.StudentFirebaseId == account.AccountFirebaseId && 
+                         sc.IsPassed && 
+                         sc.CertificateUrl != null)
+            .ToListAsync();
+
+        return studentClass.Select(sc => new CertificateInfoModel
+        {
+            StudentClassId = sc.Id,
+            ClassName = sc.Class.Name,
+            LevelName = sc.Class.Level.Name,
+            CompletionDate = sc.UpdatedAt ?? sc.CreatedAt,
+            CertificateUrl = sc.CertificateUrl,
+            GPA = sc.GPA ?? 0
+        }).ToList();
+    }
+
+    public async Task<Dictionary<string, string>> GenerateCertificatesForClassAsync(Guid classId)
+    {
+        var eligibleStudents = await GetEligibleStudentsWithoutCertificatesAsync(classId);
+        if (!eligibleStudents.Any())
+        {
+            return new Dictionary<string, string>();
+        }
+
+        var results = new Dictionary<string, string>();
+        foreach (var studentClass in eligibleStudents)
+        {
+            try
+            {
+                string certificateUrl = await GenerateCertificateAsync(studentClass.Id);
+                results.Add(studentClass.StudentFirebaseId, certificateUrl);
+            }
+            catch (Exception ex)
+            {
+                // Log error but continue with other students
+                throw new Exception(ex.Message);
+            }
+
+        }
+        return results;
+    }
 }

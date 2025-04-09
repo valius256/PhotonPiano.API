@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Class;
+using PhotonPiano.Api.Requests.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -71,5 +73,25 @@ public class StudentClassController : BaseController
 
         var success = await _serviceFactory.StudentClassService.UpdateStudentScore(model, CurrentAccount!);
         return success ? NoContent() : BadRequest("Failed to update student score");
+    }
+        
+    [HttpPut("batch-update-scores")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Update scores for multiple students and criteria in a batch")]
+    public async Task<IActionResult> UpdateBatchScores([FromBody] UpdateBatchStudentScoreRequest request)
+    {
+        var success = await _serviceFactory.StudentClassService.UpdateBatchStudentClassScores(request.Adapt<UpdateBatchStudentClassScoreModel>(), CurrentAccount!);
+        return success 
+            ? NoContent() 
+            : BadRequest("Failed to update batch student scores");
+    }
+    
+    [HttpGet("{classId}/scores")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Get scores for all students in a class with criteria details")]
+    public async Task<IActionResult> GetClassScores([FromRoute] Guid classId)
+    {
+        var classScores = await _serviceFactory.StudentClassScoreService.GetClassScoresWithCriteria(classId);
+        return Ok(classScores);
     }
 }

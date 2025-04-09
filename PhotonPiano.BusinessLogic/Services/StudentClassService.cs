@@ -6,6 +6,7 @@ using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -604,15 +605,22 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             Console.WriteLine("Mapping columns to criteria:");
-            // Map criteria names to column indices (starting from column 2)
-            for (int col = startCol; col < worksheet.Dimension.Columns - 2; col++)
+    
+            // Fix: Change the loop condition to ensure all columns are considered
+            // Original problematic line: for (int col = startCol; col < worksheet.Dimension.Columns - 2; col++)
+    
+            // New implementation that checks all columns from start column to the end
+            for (int col = startCol; col <= worksheet.Dimension.Columns; col++)
             {
                 string criteriaName = worksheet.Cells[7, col].Text;
                 if (!string.IsNullOrEmpty(criteriaName))
                 {
+                    // Extract the base criteria name (remove any numbering like " (1)")
+                    string baseCriteriaName = Regex.Replace(criteriaName, @"\s*\(\d+\)$", "");
+            
                     // Find matching criteria ID
                     var matchingCriteria = classCriteria.FirstOrDefault(c =>
-                        string.Equals(c.Name, criteriaName, StringComparison.OrdinalIgnoreCase));
+                        string.Equals(c.Name, baseCriteriaName, StringComparison.OrdinalIgnoreCase));
 
                     if (matchingCriteria != null)
                     {

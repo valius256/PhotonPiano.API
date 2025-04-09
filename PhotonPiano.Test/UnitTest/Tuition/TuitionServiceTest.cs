@@ -6,6 +6,7 @@ using Moq;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
+using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;

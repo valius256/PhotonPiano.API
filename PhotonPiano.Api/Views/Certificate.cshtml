@@ -5,61 +5,65 @@
     <meta charset="utf-8" />
     <title>Certificate of Completion</title>
     <style>
-        body {
+        body {{
             font-family: 'Arial', sans-serif;
             color: #333;
             margin: 0;
             padding: 0;
             background-color: #f9f9f9;
-        }
+            width: 1123px;
+            height: 794px; /* A4 landscape dimensions */
+        }}
+        
         .certificate-container {
-            width: 100%;
-            max-width: 800px;
+            width: 1123px; /* A4 landscape width at 300 DPI */
+            height: 794px; /* A4 landscape height at 300 DPI */
             margin: 0 auto;
             padding: 40px;
             background-color: #fff;
             border: 20px solid #f5f5f5;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             position: relative;
             box-sizing: border-box;
+            background-image: url('data:image/svg+xml;base64,...'); /* Base64 background pattern */
+            background-size: cover;
         }
         .certificate-header {
             text-align: center;
             margin-bottom: 30px;
         }
         .certificate-title {
-            font-size: 36px;
-            color: #3a3a3a;
+            font-size: 48px;
+            color: #2a2a2a;
             margin-bottom: 10px;
             font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
         }
         .certificate-subtitle {
-            font-size: 24px;
-            color: #666;
+            font-size: 28px;
+            color: #555;
         }
         .certificate-body {
             text-align: center;
             margin: 40px 0;
         }
         .student-name {
-            font-size: 32px;
+            font-size: 42px;
             font-weight: bold;
-            color: #2a2a2a;
+            color: #1a1a1a;
             margin: 20px 0;
             border-bottom: 2px solid #eaeaea;
             padding-bottom: 10px;
+            display: inline-block;
+            min-width: 60%;
         }
         .certificate-text {
-            font-size: 18px;
+            font-size: 22px;
             line-height: 1.6;
             margin: 20px 0;
         }
         .certificate-details {
             margin: 30px 0;
-            font-size: 16px;
-        }
-        .certificate-details p {
-            margin: 5px 0;
+            font-size: 18px;
         }
         .certificate-footer {
             margin-top: 50px;
@@ -77,32 +81,34 @@
         }
         .signature-name {
             font-weight: bold;
+            font-size: 18px;
         }
         .signature-title {
             font-style: italic;
             color: #666;
+            font-size: 16px;
         }
         .certificate-id {
             position: absolute;
             bottom: 20px;
             right: 20px;
-            font-size: 12px;
+            font-size: 14px;
             color: #999;
         }
         .certificate-date {
             position: absolute;
             bottom: 20px;
             left: 20px;
-            font-size: 12px;
+            font-size: 14px;
             color: #999;
         }
         .certificate-seal {
             position: absolute;
             bottom: 80px;
             right: 40px;
-            width: 100px;
-            height: 100px;
-            /*background-image: url('/images/seal.png');*/
+            width: 120px;
+            height: 120px;
+            background-image: url('data:image/svg+xml;base64,...'); /* Base64 seal image */
             background-size: contain;
             background-repeat: no-repeat;
             opacity: 0.8;
@@ -116,18 +122,37 @@
             padding-left: 20px;
         }
         .skills-list li {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            font-size: 18px;
         }
         .gpa-display {
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
             color: #2a2a2a;
             margin: 20px 0;
         }
+        /* Add decorative elements */
+        .corner {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-image: url('data:image/svg+xml;base64,...'); /* Base64 corner decoration */
+            background-size: contain;
+        }
+        .corner-tl { top: 20px; left: 20px; transform: rotate(0deg); }
+        .corner-tr { top: 20px; right: 20px; transform: rotate(90deg); }
+        .corner-bl { bottom: 20px; left: 20px; transform: rotate(270deg); }
+        .corner-br { bottom: 20px; right: 20px; transform: rotate(180deg); }
     </style>
 </head>
 <body>
 <div class="certificate-container">
+    <!-- Decorative corners -->
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
     <div class="certificate-header">
         <div class="certificate-title">Certificate of Completion</div>
         <div class="certificate-subtitle">Photon Piano Academy</div>
@@ -144,18 +169,15 @@
         </p>
         <p class="gpa-display">@Model.GPA.ToString("F2")</p>
 
-        @if (Model.SkillsEarned != null && Model.SkillsEarned.Any())
-        {
-            <div class="skills-list">
-                <p><strong>Skills Acquired:</strong></p>
-                <ul>
-                    @foreach (var skill in Model.SkillsEarned)
-                    {
-                        <li>@skill</li>
-                    }
-                </ul>
-            </div>
-        }
+        <div class="skills-list">
+            <p><strong>Skills Acquired:</strong></p>
+            <ul>
+                @foreach (var skill in Model.SkillsEarned)
+                {
+                    <li>@skill</li>
+                }
+            </ul>
+        </div>
     </div>
 
     <div class="certificate-footer">

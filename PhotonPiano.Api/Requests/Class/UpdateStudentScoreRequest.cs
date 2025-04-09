@@ -1,6 +1,6 @@
 namespace PhotonPiano.Api.Requests.Class;
 
-public class UpdateStudentScoreRequest
+public record UpdateStudentScoreRequest
 {
     public required Guid StudentClassId { get; set; }
     

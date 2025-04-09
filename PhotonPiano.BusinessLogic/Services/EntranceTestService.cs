@@ -223,6 +223,11 @@ public class EntranceTestService : IEntranceTestService
             {
                 throw new BadRequestException("Can't publish the score of this entrance test");
             }
+
+            var studentIds = entranceTestStudents.Select(x => x.StudentFirebaseId);
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
         }
 
         entranceTestEntity.UpdateById = currentUserFirebaseId;

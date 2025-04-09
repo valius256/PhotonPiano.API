@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Account;
+using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.Api.Responses.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -96,6 +98,27 @@ public class AccountsController : BaseController
 
         return NoContent();
     }
+
+    [HttpPost("staff")]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [EndpointDescription("Create new staff")]
+    public async Task<ActionResult> CreateNewStaff([FromBody] SignUpRequest request)
+    {
+        var result = await _serviceFactory.AccountService.CreateNewStaff(request.Adapt<SignUpModel>(),
+            CurrentUserFirebaseId);
+        return Created(nameof(CreateNewStaff), result);
+    }
+
+
+    [HttpPut("role")]
+    [FirebaseAuthorize(Roles = [Role.Administrator, Role.Staff /*for testing production*/])]
+    [EndpointDescription("Change Role")]
+    public async Task<ActionResult> ChangeRole([FromBody] ChangeRoleRequest request)
+    {
+        await _serviceFactory.AccountService.ChangeRole(request.Adapt<GrantRoleModel>());
+        return NoContent();
+    }
+
 
     //[HttpGet("{account-id}/attempt-stats")]
     //[FirebaseAuthorize]

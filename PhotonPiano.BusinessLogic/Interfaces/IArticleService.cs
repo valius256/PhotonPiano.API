@@ -6,7 +6,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IArticleService
 {
-    Task<PagedResult<ArticleModel>> GetArticles(QueryPagedArticlesModel queryModel);
+    Task<PagedResult<ArticleModel>> GetArticles(QueryPagedArticlesModel queryModel, AccountModel? currentAccount);
     
     Task<ArticleDetailsModel> GetArticleDetailsBySlug(string slug);
 

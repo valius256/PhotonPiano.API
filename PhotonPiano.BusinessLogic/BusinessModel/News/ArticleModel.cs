@@ -11,4 +11,8 @@ public record ArticleModel : BaseModel
     public required string Slug { get; init; }
     
     public string? Thumbnail { get; init; }
+    
+    public bool IsPublished { get; init; }
+    
+    public DateTime? PublishedAt { get; init; }
 }

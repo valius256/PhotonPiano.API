@@ -11,4 +11,6 @@ public record CreateArticleRequest
     public required string Content { get; init; }
     
     public string? Thumbnail { get; init; }
+
+    public bool IsPublished { get; init; }
 }

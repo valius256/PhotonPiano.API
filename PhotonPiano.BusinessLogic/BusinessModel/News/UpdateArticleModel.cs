@@ -7,4 +7,6 @@ public record UpdateArticleModel
     public string? Content { get; init; }
     
     public string? Thumbnail { get; init; }
+    
+    public bool? IsPublished { get; init; }
 }

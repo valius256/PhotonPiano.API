@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.News;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -36,12 +37,21 @@ public class ArticleService : IArticleService
         return uniqueSlug;
     }
 
-    public async Task<PagedResult<ArticleModel>> GetArticles(QueryPagedArticlesModel queryModel)
+    public async Task<PagedResult<ArticleModel>> GetArticles(QueryPagedArticlesModel queryModel,
+        AccountModel? currentAccount)
     {
         var (page, size, column, desc, keyword) = queryModel;
 
+        var likeKeyword = queryModel.GetLikeKeyword();
+
         return await _unitOfWork.ArticleRepository.GetPaginatedWithProjectionAsync<ArticleModel>(page, size, column,
-            desc);
+            desc, expressions:
+            [
+                a => currentAccount != null && currentAccount.Role == Role.Staff || a.IsPublished == true,
+                a => string.IsNullOrEmpty(keyword) || 
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.Title), likeKeyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.Content), likeKeyword)
+            ]);
     }
 
     public async Task<ArticleDetailsModel> GetArticleDetailsBySlug(string slug)
@@ -65,8 +75,10 @@ public class ArticleService : IArticleService
 
         article.Slug = await GenerateUniqueSlugAsync(article.Title,
             slug => _unitOfWork.ArticleRepository.AnyAsync(a => a.Slug == slug));
-        
+
         article.CreatedById = currentAccount.AccountFirebaseId;
+
+        article.PublishedAt = article.IsPublished ? DateTime.UtcNow.AddHours(7) : null;
 
         await _unitOfWork.ArticleRepository.AddAsync(article);
 
@@ -85,7 +97,9 @@ public class ArticleService : IArticleService
         }
 
         updateModel.Adapt(article);
-        
+
+        article.PublishedAt = article.IsPublished ? DateTime.UtcNow.AddHours(7) : null;
+
         article.Slug = await GenerateUniqueSlugAsync(article.Title,
             s => _unitOfWork.ArticleRepository.AnyAsync(a => a.Slug == s));
 

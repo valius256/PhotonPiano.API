@@ -26,7 +26,8 @@ namespace PhotonPiano.Api.Controllers
         public async Task<ActionResult<List<ArticleModel>>> GetArticles([FromQuery] QueryPagedArticlesRequest request)
         {
             var pagedResult =
-                await _serviceFactory.ArticleService.GetArticles(request.Adapt<QueryPagedArticlesModel>());
+                await _serviceFactory.ArticleService.GetArticles(request.Adapt<QueryPagedArticlesModel>(),
+                    base.CurrentAccount);
 
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
@@ -67,7 +68,7 @@ namespace PhotonPiano.Api.Controllers
         public async Task<ActionResult> DeleteArticle([FromRoute] string slug)
         {
             await _serviceFactory.ArticleService.DeleteArticle(slug, base.CurrentAccount!);
-            
+
             return NoContent();
         }
     }

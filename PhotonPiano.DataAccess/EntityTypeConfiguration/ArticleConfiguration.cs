@@ -14,6 +14,9 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
 
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
 
+        builder.Property(x => x.IsPublished)
+            .HasDefaultValue(false);
+
         builder.HasOne(x => x.CreatedBy)
             .WithMany(x => x.CreatedArticles)
             .HasForeignKey(x => x.CreatedById)

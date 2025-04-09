@@ -329,16 +329,16 @@ public class ClassService : IClassService
             var slots = await ScheduleAClassAutomatically(arrangeClassModel.StartWeek, bestSlots, dayOffs, level, unaddedSlots, false);
 
             //var (slot, shift) = 
-            classDraft.Slots.AddRange(slots.Adapt<List<CreateSlotThroughArrangementModel>>());
-            unaddedSlots.AddRange(bestSlots.Adapt<List<Slot>>());
+            classDraft.Slots.AddRange(slots.Slots.Adapt<List<CreateSlotThroughArrangementModel>>());
+            unaddedSlots.AddRange(slots.Slots.Adapt<List<Slot>>());
 
             string scheduleDescription = "";
-            if (slots.Count == 0)
+            if (slots.Slots.Count == 0)
             {
                 scheduleDescription = "Chưa xác định";
             } else
             {
-                foreach (var timeSlot in bestSlots)
+                foreach (var timeSlot in slots.FinalFrame)
                 {
                     scheduleDescription += $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.Item1]} Ca {(int)timeSlot.Item2 + 1} ({Constants.Shifts[(int)timeSlot.Item2]}); ";
                 }
@@ -816,7 +816,7 @@ public class ClassService : IClassService
         //Construct slots and check for conflicts
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
         var requestTimeSlots = scheduleClassModel.DayOfWeeks.Select(dow => (dow, scheduleClassModel.Shift)).ToList();
-        var slots = (await ScheduleAClassAutomatically(scheduleClassModel.StartWeek, requestTimeSlots,dayOffs,level, [], true));
+        var (slots, finalFrames) = (await ScheduleAClassAutomatically(scheduleClassModel.StartWeek, requestTimeSlots,dayOffs,level, [], true));
 
         var mappedSlots = slots.Select(s => new Slot
         {
@@ -843,9 +843,9 @@ public class ClassService : IClassService
         }
         //Update schedule description
         string scheduleDescription = "";
-        foreach (var timeSlot in requestTimeSlots)
+        foreach (var timeSlot in finalFrames)
         {
-            scheduleDescription += $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.dow]} Ca {(int)timeSlot.Shift + 1} ({Constants.Shifts[(int)timeSlot.Shift]}); ";
+            scheduleDescription += $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.Item1]} Ca {(int)timeSlot.Item2 + 1} ({Constants.Shifts[(int)timeSlot.Item2]}); ";
         }
         var classStartDate = classDetail.Slots.Count > 0 ? classDetail.Slots.First().Date : DateOnly.MaxValue;
         //Save change
@@ -879,7 +879,7 @@ public class ClassService : IClassService
 
     }
 
-    private async Task<List<SlotModel>> ScheduleAClassAutomatically(
+    private async Task<(List<SlotModel> Slots, List<(DayOfWeek, Shift)> FinalFrame)> ScheduleAClassAutomatically(
         DateOnly startWeek, List<(DayOfWeek,Shift)> frames, 
         List<DayOff> dayOffs,
         Level level,
@@ -915,7 +915,7 @@ public class ClassService : IClassService
             {
                 randomDay = r.Next(6);
             }
-            daysFrame.Add(((DayOfWeek)randomDay, daysFrameCount == 0 ? (Shift)r.Next(shiftCount) : daysFrame[0].Item2));
+            daysFrame.Add(((DayOfWeek)randomDay, daysFrameCount == 0 ? (Shift)r.Next(shiftCount - 1) : daysFrame[0].Item2));
             daysFrameCount++;
         }
 
@@ -950,7 +950,7 @@ public class ClassService : IClassService
                     "Unable to complete arranging classes! No available rooms found! Consider different time or switch to manual scheduling");
             } else
             {
-                return [];
+                return ([], daysFrame);
             }
             
         }
@@ -958,13 +958,13 @@ public class ClassService : IClassService
 
         //Pick a room
         var room = availableRooms[r.Next(availableRooms.Count - 1)];
-        return [.. timeSlots.Select(ts => new SlotModel
+        return ([.. timeSlots.Select(ts => new SlotModel
         {
             Id = Guid.NewGuid(),
             Shift = ts.Item2,
             Date = ts.Item1,
             RoomId = room.Id,
-        })];
+        })], daysFrame);
     }
 
     public async Task ClearClassSchedule(Guid classId, string accountFirebaseId)

@@ -165,7 +165,7 @@ public static class IServiceCollectionExtensions
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
                 .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app")
+                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app", "https://photon-piano.netlify.app")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 // .AllowAnyOrigin()

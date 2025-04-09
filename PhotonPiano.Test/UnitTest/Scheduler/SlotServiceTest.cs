@@ -10,11 +10,8 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
-using PhotonPiano.Test.Extensions;
 
 namespace PhotonPiano.Test.UnitTest.Scheduler;
 
@@ -189,7 +186,7 @@ public class SlotServiceTest
 
 
    [Fact]
-    public async Task GetSlotsAsync_ReturnsFilteredSlots_ForRegularUser()
+    public async Task GetSlots_ReturnsFilteredSlots_ForRegularUser()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -222,7 +219,7 @@ public class SlotServiceTest
             .ReturnsAsync(expectedSlots);
 
         // Act
-        var result = await _slotService.GetSlotsAsync(slotModel, accountModel);
+        var result = await _slotService.GetSlots(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
@@ -230,7 +227,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetSlotsAsync_ReturnsFilteredSlots_ForInstructor()
+    public async Task GetSlots_ReturnsFilteredSlots_ForInstructor()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -264,7 +261,7 @@ public class SlotServiceTest
             .ReturnsAsync(expectedSlots);
 
         // Act
-        var result = await _slotService.GetSlotsAsync(slotModel, accountModel);
+        var result = await _slotService.GetSlots(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
@@ -272,7 +269,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetSlotsAsync_ReturnsFilteredSlots_ForNoAccountModel()
+    public async Task GetSlots_ReturnsFilteredSlots_ForNoAccountModel()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -298,7 +295,7 @@ public class SlotServiceTest
             .ReturnsAsync(expectedSlots);
 
         // Act
-        var result = await _slotService.GetSlotsAsync(slotModel);
+        var result = await _slotService.GetSlots(slotModel);
 
         // Assert
         Assert.NotNull(result);
@@ -339,9 +336,8 @@ public class SlotServiceTest
         await Assert.ThrowsAsync<NotFoundException>(() => _slotService.CreateSlot(createSlotModel, "testUser"));
     }
     
-
     [Fact]
-    public async Task InvalidateCacheForClassAsync_DeletesCacheForAllRoles()
+    public async Task InvalidateCacheForClass_DeletesCacheForAllRoles()
     {
         // Arrange
         var classId = Guid.NewGuid();
@@ -355,7 +351,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetWeeklyScheduleAsync_ReturnsSlotsFromDatabase_WhenCacheDoesNotExist()
+    public async Task GetWeeklySchedule_ReturnsSlotsFromDatabase_WhenCacheDoesNotExist()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -402,16 +398,15 @@ public class SlotServiceTest
             .ReturnsAsync(slotsFromDb);
 
         // Act
-        var result = await _slotService.GetWeeklyScheduleAsync(slotModel, accountModel);
+        var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(slotsFromDb.Count, result.Count);
     }
-    
 
     [Fact]
-    public async Task GetWeeklyScheduleAsync_ReturnsCachedSlots_WhenCacheExists()
+    public async Task GetWeeklySchedule_ReturnsCachedSlots_WhenCacheExists()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -450,7 +445,7 @@ public class SlotServiceTest
             .ReturnsAsync(cachedSlots);
 
         // Act
-        var result = await _slotService.GetWeeklyScheduleAsync(slotModel, accountModel);
+        var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
@@ -520,7 +515,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetAttendanceStatusAsync_ReturnsAttendanceStatus_WhenSlotExists()
+    public async Task GetAttendanceStatus_ReturnsAttendanceStatus_WhenSlotExists()
     {
         // Arrange
         var slotId = Guid.NewGuid();
@@ -543,7 +538,7 @@ public class SlotServiceTest
             .ReturnsAsync(slot);
 
         // Act
-        var result = await _slotService.GetAttendanceStatusAsync(slotId);
+        var result = await _slotService.GetAttendanceStatus(slotId);
 
         // Assert
         Assert.NotNull(result);
@@ -553,7 +548,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetAttendanceStatusAsync_ThrowsNotFoundException_WhenSlotDoesNotExist()
+    public async Task GetAttendanceStatus_ThrowsNotFoundException_WhenSlotDoesNotExist()
     {
         // Arrange
         var slotId = Guid.NewGuid();
@@ -567,7 +562,7 @@ public class SlotServiceTest
             .ReturnsAsync((Slot)null);
     
         // Act & Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => _slotService.GetAttendanceStatusAsync(slotId));
+        await Assert.ThrowsAsync<NotFoundException>(() => _slotService.GetAttendanceStatus(slotId));
     }
 
     [Fact]

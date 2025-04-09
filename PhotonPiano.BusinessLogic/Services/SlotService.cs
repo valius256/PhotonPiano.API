@@ -59,7 +59,7 @@ public class SlotService : ISlotService
         return result;
     }
 
-    public async Task<List<SlotDetailModel>> GetSlotsAsync(GetSlotModel slotModel, AccountModel? accountModel = default)
+    public async Task<List<SlotDetailModel>> GetSlots(GetSlotModel slotModel, AccountModel? accountModel = default)
     {
         Expression<Func<Slot, bool>> filter = s =>
             s.Date >= slotModel.StartTime &&
@@ -79,7 +79,7 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
+    public async Task<List<SlotSimpleModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
     {
 
         // Tạo danh sách các ClassId cần truy vấn
@@ -180,7 +180,7 @@ public class SlotService : ISlotService
         }
     }
 
-    public async Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId)
+    public async Task<List<StudentAttendanceModel>> GetAttendanceStatus(Guid slotId)
     {
         var slot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(s => s.Id == slotId);
         if (slot is null) throw new NotFoundException("Slot not found");

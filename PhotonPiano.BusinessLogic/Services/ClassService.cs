@@ -896,9 +896,32 @@ public class ClassService : IClassService
         //var dates = new HashSet<DateOnly>();
         var currentDate = startWeek;
         int slotCount = 0;
+
+        var daysFrame = new List<(DayOfWeek, Shift)>();
+        var shiftCount = Enum.GetValues<Shift>().Length;
+        foreach (var frame in frames)
+        {
+            if (!daysFrame.Any(d => d.Item1 == frame.Item1))
+            {
+                daysFrame.Add(frame);
+            }
+        }
+
+        var daysFrameCount = daysFrame.Count;
+        while (daysFrameCount < Math.Min(7,level.SlotPerWeek))
+        {
+            var randomDay = r.Next(6);
+            while (daysFrame.Any(d => (int)d.Item1 == randomDay))
+            {
+                randomDay = r.Next(6);
+            }
+            daysFrame.Add(((DayOfWeek)randomDay, daysFrameCount == 0 ? (Shift)r.Next(shiftCount) : daysFrame[0].Item2));
+            daysFrameCount++;
+        }
+
         while (slotCount < level.TotalSlots)
         {
-            foreach (var frame in frames)
+            foreach (var frame in daysFrame)
             {
                 var date = currentDate.AddDays((int)frame.Item1);
 

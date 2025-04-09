@@ -8,5 +8,6 @@ public record EntranceTestStudentResponse
     public decimal? BandScore { get; init; }
     public int? Rank { get; init; }
     public int? Year { get; init; }
+    public Guid? LevelId { get; init; }
     public bool IsScoreAnnounced { get; init; }
 }

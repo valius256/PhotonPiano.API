@@ -96,13 +96,16 @@ public class ArticleService : IArticleService
             throw new NotFoundException("Article not found");
         }
 
+        if (article.Title != updateModel.Title)
+        {
+            article.Slug = await GenerateUniqueSlugAsync(article.Title,
+                s => _unitOfWork.ArticleRepository.AnyAsync(a => a.Slug == s));
+        }
+        
         updateModel.Adapt(article);
 
         article.PublishedAt = article.IsPublished ? DateTime.UtcNow.AddHours(7) : null;
-
-        article.Slug = await GenerateUniqueSlugAsync(article.Title,
-            s => _unitOfWork.ArticleRepository.AnyAsync(a => a.Slug == s));
-
+        
         article.UpdatedAt = DateTime.UtcNow.AddHours(7);
         article.UpdateById = currentAccount.AccountFirebaseId;
 

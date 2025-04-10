@@ -31,6 +31,8 @@ env:
   VNPAY__TIMEZONEID: ${{ secrets.VNPAY_TIMEZONEID }}
   VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
   VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
+  PINATA__JWTTOKEN: ${{ secrets.PINATA_JWTTOKEN }}
+  PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
   Logging__LogLevel__Hangfire: Debug
   Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"
@@ -85,7 +87,7 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME }} --all-tags
-
+          
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
@@ -106,91 +108,30 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
-            
-            # Enable NGINX configuration and restart
-            sudo ln -sf /etc/nginx/sites-available/photonpiano /etc/nginx/sites-enabled/photonpiano
-            sudo rm -f /etc/nginx/sites-enabled/default
-            sudo nginx -t && sudo systemctl restart nginx
-            
-            # Stop and remove existing containers
-            docker stop photonpiano-database photonpiano-api photonpiano.cache || true
-            docker rm photonpiano-database photonpiano-api photonpiano.cache || true
-            
-            # Create directory for deployment
-            mkdir -p ~/photonpiano
-            cd ~/photonpiano
-            
-            # Write docker-compose.yml
-            cat > docker-compose.yml <<EOF
-            version: '3.8'
-            services:
-              photonpiano.database:
-                image: postgres:15
-                container_name: photonpiano-database
-                environment:
-                  POSTGRES_USER: postgres
-                  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-                  POSTGRES_DB: photonpiano
-                ports:
-                  - "5432:5432"
-                volumes:
-                  - /root/photonpiano/postgres-data:/var/lib/postgresql/data
-                restart: unless-stopped
-                networks:
-                  - app-network
-            
-              photonpiano.api:
-                image: ghcr.io/valius256/photonpiano-api:latest
-                container_name: photonpiano-api
-                restart: unless-stopped
-                depends_on:
-                  - photonpiano.database
-                ports:
-                  - "8080:8080"
-                environment:
-                  - ASPNETCORE_URLS=http://0.0.0.0:8080
-                  - ASPNETCORE_ENVIRONMENT=Production
-                  - DOTNET_ENVIRONMENT=Production
-                  - POSTGRES_CONNECTION= ${{ secrets.POSTGRES_CONNECTION }}
-                  - ConnectionStrings__RedisConnectionStrings=photonpiano.cache:6379
-                  - HangfireConnectionString= ${{ secrets.POSTGRES_CONNECTION }}
-                  - Firebase__Auth__ApiKey=${{ secrets.FIREBASE_API_KEY }}
-                  - Firebase__Auth__Authority=${{ secrets.FIREBASE_AUTHORITY }}
-                  - Firebase__Auth__Issuer=${{ secrets.FIREBASE_ISSUER }}
-                  - Firebase__Auth__Audience=${{ secrets.FIREBASE_AUDIENCE }}
-                  - VNPAY__BASEURL=${{ secrets.VNPAY_BASEURL }}
-                  - VNPAY__TMNCODE=${{ secrets.VNPAY_TMNCODE }}
-                  - VNPAY__HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
-                  - VNPAY__RETURNURL=${{ secrets.VNPAY_RETURNURL }}
-                  - VNPAY__CURRCODE=${{ secrets.VNPAY_CURRCODE }}
-                  - VNPAY__LOCALE=${{ secrets.VNPAY_LOCALE }}
-                  - VNPAY__TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
-                  - VNPAY__VERSION=${{ secrets.VNPAY_VERSION }}
-                  - VNPAY__COMMAND=${{ secrets.VNPAY_COMMAND }}
-            
-                volumes:
-                  - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
-                pull_policy: always
-                networks:
-                  - app-network
-            
-              photonpiano.cache:
-                image: redis:6.2
-                container_name: photonpiano.cache
-                ports:
-                  - "6379:6379"
-                restart: unless-stopped
-                networks:
-                  - app-network
-            
-            networks:
-              app-network:
-                driver: bridge
-            EOF
-            
-            # Log in to GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull images and deploy
-            docker-compose pull
-            docker-compose up -d --force-recreate 
+            cd /root/photonpiano
+            docker-compose --version || { echo "Docker Compose không được cài đặt!"; exit 1; }
+            docker-compose pull photonpiano-api photonpiano-database
+            docker-compose down --remove-orphans --volumes
+            docker-compose up -d --force-recreate --renew-anon-volumes
+            docker ps --filter "name=api" --filter "status=running" || { echo "API container không chạy!"; exit 1; }
+            docker ps --filter "name=database" --filter "status=running" || { echo "Database container không chạy!"; exit 1; }
+       
+            docker info || { echo "Docker không chạy!"; exit 1; }
+
+            # Pull các image mới
+            docker-compose pull photonpiano-api photonpiano-database
+
+            # Dừng các services hiện tại trước khi cập nhật
+            docker-compose down --remove-orphans --volumes
+
+            # Khởi động lại các containers với cấu hình và image mới
+            docker-compose up -d --force-recreate --renew-anon-volumes
+
+            # Đảm bảo rằng cả hai services đều đang hoạt động
+            docker ps --filter "name=photonpiano-api" --filter "status=running" || { echo "photonpiano-api không hoạt động!"; exit 1; }
+            docker ps --filter "name=photonpiano-database" --filter "status=running" || { echo "photonpiano-database không hoạt động!"; exit 1; }
+#
+#            # Kiểm tra tình trạng sức khỏe của container
+#            docker inspect --format '{{.State.Health.Status}}' photonpiano-api | grep "healthy" || { echo "photonpiano-api không khỏe!"; exit 1; }
+#            docker inspect --format '{{.State.Health.Status}}' photonpiano-database | grep "healthy" || { echo "photonpiano-database không khỏe!"; exit 1; }
+#  

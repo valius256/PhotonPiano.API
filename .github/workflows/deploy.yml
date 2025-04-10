@@ -118,30 +118,38 @@ jobs:
             echo "🐳 Pulling latest Docker image..."
             docker pull ghcr.io/valius256/photonpiano-api:latest
 
-            echo "🔍 Checking for currently running container..."
-            if docker ps -a --format '{{.Names}}' | grep -q "photonpiano-api"; then
+            container_exists=$(docker ps -a --format '{{.Names}}' | grep -w "photonpiano-api" || true)
+
+            if [ -n "$container_exists" ]; then
+              echo "💾 Saving current image for rollback..."
               previous_image=$(docker inspect --format='{{.Config.Image}}' photonpiano-api || true)
-              echo "💾 Saving current image: $previous_image"
               docker tag "$previous_image" ghcr.io/valius256/photonpiano-api:rollback || true
             else
-              echo "⚠️ No existing container found for photonpiano-api. This may be the first deploy."
+              echo "⚠️ No existing container for photonpiano-api. First time deploy."
             fi
 
-            echo "🔄 Deploying new container..."
+            echo "🔄 Trying to start new version of photonpiano-api..."
             if docker-compose pull photonpiano-api && docker-compose up -d --no-deps --force-recreate --remove-orphans photonpiano-api; then
-              echo "✅ Deploy succeeded!"
+              echo "✅ Deploy succeeded."
             else
-              echo "❌ Deploy failed. Rolling back..."
+              echo "❌ Deploy failed. Trying rollback..."
 
               if docker image inspect ghcr.io/valius256/photonpiano-api:rollback > /dev/null 2>&1; then
                 echo "🔁 Starting rollback..."
                 docker stop photonpiano-api || true
                 docker rm photonpiano-api || true
                 docker run -d --name photonpiano-api -p 5000:80 ghcr.io/valius256/photonpiano-api:rollback
-                echo "✅ Rollback succeeded."
+                echo "✅ Rollback completed."
               else
-                echo "🛑 Rollback failed: No rollback image found. Manual intervention required."
+                echo "🛑 Rollback failed: No previous image to restore."
                 exit 1
               fi
             fi
+
+            echo "🔍 Final check: is photonpiano-api running?"
+            if ! docker ps --format '{{.Names}}' | grep -w "photonpiano-api" > /dev/null; then
+              echo "❌ ERROR: photonpiano-api container is NOT running after deploy!"
+              exit 1
+            fi
+      
   

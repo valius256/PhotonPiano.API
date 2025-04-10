@@ -169,9 +169,8 @@ jobs:
                   - photonpiano-database
                 ports:
                   - "8080:8080"  # HTTP
-                  - "8081:8081"  # HTTPS
                 environment:
-                  - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+                  - ASPNETCORE_URLS=http://0.0.0.0:8080
                   - POSTGRES_CONNECTION=${POSTGRES_CONNECTION}
                   - HangfireConnectionString=${POSTGRES_CONNECTION}
                   - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}

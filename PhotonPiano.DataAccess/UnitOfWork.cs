@@ -59,6 +59,8 @@ public class UnitOfWork : IUnitOfWork
     private readonly Lazy<IPianoSurveyQuestionRepository> _pianoSurveyQuestionRepository;
 
     private readonly Lazy<IFreeSlotRepository> _freeSlotRepository;
+    
+    private readonly Lazy<IArticleRepository> _articleRepository;
 
     private IDbContextTransaction? _currentTransaction;
 
@@ -92,6 +94,7 @@ public class UnitOfWork : IUnitOfWork
         _levelRepository = new Lazy<ILevelRepository>(() => new LevelRepository(context));
         _pianoSurveyQuestionRepository = new Lazy<IPianoSurveyQuestionRepository>(() => new PianoSurveyQuestionRepository(context));
         _freeSlotRepository = new Lazy<IFreeSlotRepository>(() => new FreeSlotRepository(context));
+        _articleRepository = new Lazy<IArticleRepository>(() => new ArticleRepository(context));
     }
 
     public IEntranceTestStudentRepository EntranceTestStudentRepository => _entranceTestStudentRepository.Value;
@@ -144,6 +147,8 @@ public class UnitOfWork : IUnitOfWork
     public IPianoSurveyQuestionRepository PianoSurveyQuestionRepository => _pianoSurveyQuestionRepository.Value;
 
     public IFreeSlotRepository FreeSlotRepository => _freeSlotRepository.Value;
+    
+    public IArticleRepository ArticleRepository => _articleRepository.Value;
 
     public async Task<int> SaveChangesAsync()
     {

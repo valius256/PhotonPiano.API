@@ -54,6 +54,8 @@ public interface IUnitOfWork
     IPianoSurveyQuestionRepository PianoSurveyQuestionRepository { get; }
 
     IFreeSlotRepository FreeSlotRepository { get; }
+    
+    IArticleRepository ArticleRepository { get; }
 
     Task<int> SaveChangesAsync();
 

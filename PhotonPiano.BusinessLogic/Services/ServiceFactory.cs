@@ -84,6 +84,8 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IProgressServiceHub> _progressServiceHub;
 
     private readonly Lazy<IFreeSlotService> _freeSlotService;
+    
+    private readonly Lazy<IArticleService> _articleService;
 
     private readonly Lazy<IStudentClassScoreService> _studentClassScoreService;
     
@@ -129,6 +131,7 @@ public class ServiceFactory : IServiceFactory
         _progressServiceHub = new Lazy<IProgressServiceHub>(() => new ProgressServiceHub(progressHubContext));
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
+        _articleService = new Lazy<IArticleService>(() => new ArticleService(unitOfWork));
         _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this));
         _certificateService = new Lazy<ICertificateService>(() => new CertificateService(
             this, 
@@ -201,6 +204,8 @@ public class ServiceFactory : IServiceFactory
     public ILevelService LevelService => _levelService.Value;
 
     public IFreeSlotService FreeSlotService => _freeSlotService.Value;
+    
+    public IArticleService ArticleService => _articleService.Value;
     public IStudentClassScoreService StudentClassScoreService => _studentClassScoreService.Value;
     public ICertificateService CertificateService => _certificateService.Value;
 }

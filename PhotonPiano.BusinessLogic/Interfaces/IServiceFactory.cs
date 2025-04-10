@@ -66,6 +66,8 @@ public interface IServiceFactory
     IPianoSurveyService PianoSurveyService { get; }
 
     IFreeSlotService FreeSlotService { get; }
+    
+    IArticleService ArticleService { get; }
     IStudentClassScoreService StudentClassScoreService { get; }
     ICertificateService CertificateService { get; }
 

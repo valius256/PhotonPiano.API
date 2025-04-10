@@ -24,6 +24,7 @@
         <PackageReference Include="PdfiumViewer" Version="2.13.0" />
         <PackageReference Include="PdfiumViewer.Native.x86_64.v8-xfa" Version="2018.4.8.256" />
         <PackageReference Include="Razor.Templating.Core" Version="2.1.0" />
+        <PackageReference Include="Slugify.Core" Version="5.1.1" />
         <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.3" />
     </ItemGroup>

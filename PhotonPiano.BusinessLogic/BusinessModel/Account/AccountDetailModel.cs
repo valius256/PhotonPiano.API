@@ -1,6 +1,7 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.DataAccess.Models.Entity;
 

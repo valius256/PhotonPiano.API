@@ -68,4 +68,7 @@ public interface IServiceFactory
     IFreeSlotService FreeSlotService { get; }
     
     IArticleService ArticleService { get; }
+    IStudentClassScoreService StudentClassScoreService { get; }
+    ICertificateService CertificateService { get; }
+
 }

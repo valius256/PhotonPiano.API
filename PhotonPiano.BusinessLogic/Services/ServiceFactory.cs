@@ -1,4 +1,9 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using DinkToPdf.Contracts;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -82,11 +87,16 @@ public class ServiceFactory : IServiceFactory
     
     private readonly Lazy<IArticleService> _articleService;
 
+    private readonly Lazy<IStudentClassScoreService> _studentClassScoreService;
+    
+    private readonly Lazy<ICertificateService> _certificateService;
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IHubContext<ProgressHub> progressHubContext,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
-        IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine)
+        IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine,
+        IRazorViewEngine razorViewEngine,  IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider, IHttpContextAccessor httpContextAccessor,
+        IConverter converter)
     {
         _logger = logger;
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork, this));
@@ -122,6 +132,16 @@ public class ServiceFactory : IServiceFactory
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
         _articleService = new Lazy<IArticleService>(() => new ArticleService(unitOfWork));
+        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this));
+        _certificateService = new Lazy<ICertificateService>(() => new CertificateService(
+            this, 
+            unitOfWork, 
+            razorViewEngine, 
+            webHostEnvironment, 
+            tempDataProvider, 
+            httpContextAccessor, 
+            converter));
+        _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -186,4 +206,6 @@ public class ServiceFactory : IServiceFactory
     public IFreeSlotService FreeSlotService => _freeSlotService.Value;
     
     public IArticleService ArticleService => _articleService.Value;
+    public IStudentClassScoreService StudentClassScoreService => _studentClassScoreService.Value;
+    public ICertificateService CertificateService => _certificateService.Value;
 }

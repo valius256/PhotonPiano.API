@@ -29,7 +29,9 @@ using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.Shared.Utils;
+
 
 namespace PhotonPiano.Api.Extensions;
 

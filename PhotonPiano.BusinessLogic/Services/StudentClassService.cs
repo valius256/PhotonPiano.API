@@ -1,9 +1,12 @@
-﻿
-
+﻿using System.Drawing;
+using System.Text.RegularExpressions;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -380,6 +383,638 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
                     $"Học viên {student.FullName ?? student.UserName} đã bị xóa khỏi lớp {classInfo.Name}. Nếu có thắc mắc hoặc cho rằng đây là sự nhầm lẫn, vui lòng gửi đơn khiếu nại hoặc liên hệ trực tiếp bộ phận hỗ trợ!", student.AvatarUrl ?? "");
             }
+        }
+
+        //Down excel
+        public async Task<byte[]> GenerateGradeTemplate(Guid classId)
+        {
+            var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
+            var classCriteria = await _serviceFactory.CriteriaService.GetAllCriteriaDetails(classId);
+
+            var sortedCriteria = classCriteria
+                .OrderBy(c => DetermineCriteriaOrder(c.Name))
+                .ToList();
+
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("Grades");
+            var metadataSheet = package.Workbook.Worksheets.Add("Metadata");
+
+            // Configure metadata sheet (hidden from users)
+            metadataSheet.Hidden = eWorkSheetHidden.Hidden;
+            metadataSheet.Cells[1, 1].Value = "ClassId";
+            metadataSheet.Cells[1, 2].Value = classId.ToString();
+
+            // Store criteria IDs for later processing when importing
+            for (int i = 0; i < sortedCriteria.Count; i++)
+            {
+                metadataSheet.Cells[2, i + 1].Value = "CriteriaId";
+                metadataSheet.Cells[2, i + 2].Value = sortedCriteria[i].Id.ToString();
+            }
+
+            // Add header information
+            worksheet.Cells[1, 2, 1, 6].Merge = true;
+            worksheet.Cells[1, 2].Value = "Grade book";
+            worksheet.Cells[1, 2].Style.Font.Bold = true;
+            worksheet.Cells[1, 2].Style.Font.Size = 14;
+            worksheet.Cells[1, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            worksheet.Cells[1, 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            worksheet.Cells[1, 2].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 242, 204));
+
+            // Course and instructor information
+            worksheet.Cells[2, 1].Value = "Course:";
+            worksheet.Cells[2, 1].Style.Font.Bold = true;
+            var courseInfo = $"{classDetails.Name} {classDetails.Level?.Name}";
+            worksheet.Cells[2, 2].Value = courseInfo;
+
+            worksheet.Cells[3, 1].Value = "Instructor:";
+            worksheet.Cells[3, 1].Style.Font.Bold = true;
+            var instructorInfo = classDetails.Instructor?.UserName ?? classDetails.Instructor?.FullName;
+            worksheet.Cells[3, 2].Value = instructorInfo;
+
+            worksheet.Cells[4, 1].Value = "Assignments";
+            worksheet.Cells[4, 1].Style.Font.Bold = true;
+            worksheet.Cells[4, 1].Style.Font.Color.SetColor(Color.Blue);
+            worksheet.Cells[4, 1].Style.Font.UnderLine = true;
+
+            // Empty rows
+            worksheet.Cells[5, 1].Value = "";
+            worksheet.Cells[6, 1].Value = "";
+
+            // Student header
+            worksheet.Cells[7, 1].Value = "Student Name";
+            worksheet.Cells[7, 1].Style.Font.Bold = true;
+            worksheet.Cells[7, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            worksheet.Cells[7, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(221, 235, 247));
+            worksheet.Cells[7, 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            worksheet.Cells[7, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            int startCol = 2;
+            var assessments = sortedCriteria.Select(c => c.Name).ToArray();
+            var weights = sortedCriteria.Select(c => (double)c.Weight).ToArray();
+            Dictionary<string, int> headerCount = new Dictionary<string, int>();
+
+            // Assessment headers
+            for (int i = 0; i < assessments.Length; i++)
+            {
+                string assessmentName = assessments[i];
+
+                // Handle duplicates by appending a number (e.g., "Exam (1)", "Exam (2)")
+                if (headerCount.ContainsKey(assessmentName))
+                {
+                    headerCount[assessmentName]++;
+                    assessmentName = $"{assessmentName} ({headerCount[assessmentName]})";
+                }
+                else
+                {
+                    headerCount[assessmentName] = 1;
+                }
+
+                var nameCell = worksheet.Cells[7, startCol + i];
+                nameCell.Value = assessmentName;
+                nameCell.Style.Font.Bold = true;
+                nameCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                nameCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(221, 235, 247));
+                nameCell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                nameCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+                // Assign weight to row 8
+                var weightCell = worksheet.Cells[8, startCol + i];
+                weightCell.Value = weights[i];
+                weightCell.Style.Numberformat.Format = "0.0\\%";
+                weightCell.Style.Font.Bold = true;
+                weightCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                weightCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(226, 239, 218));
+                weightCell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                weightCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            }
+
+            // No need for total and percentage columns
+
+            int studentStartRow = 9;
+            foreach (var studentClass in classDetails.StudentClasses)
+            {
+                worksheet.Cells[studentStartRow, 1].Value = studentClass.Student.FullName;
+                studentStartRow++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+            worksheet.View.FreezePanes(9, 2);
+
+            return await package.GetAsByteArrayAsync();
+        }
+
+        public async Task<bool> ImportScores(Guid classId, Stream excelFileStream, AccountModel account)
+        {
+            var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
+
+            var classCriteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
+
+            if (!classCriteria.Any())
+            {
+                throw new BadRequestException("Assessment criteria not found for this class");
+            }
+
+            using var package = new ExcelPackage(excelFileStream);
+            var worksheet = package.Workbook.Worksheets[0];
+
+            var criteriaMapping = MapCriteriaToColumns(worksheet, classCriteria);
+
+            //Check valid template
+            ValidateExcelTemplate(worksheet, criteriaMapping.Count);
+
+            //Get metadata sheet 
+            var metaDataSheet = package.Workbook.Worksheets["Metadata"];
+            if (metaDataSheet == null || metaDataSheet.Cells[1, 2].Text != classId.ToString())
+            {
+                throw new BadRequestException("Invalid template: This template is not for the selected class");
+            }
+
+            // Starting row for student data
+            int studentStartRow = 9;
+            int rows = worksheet.Dimension.Rows;
+
+            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Process each student row
+                for (int row = studentStartRow; row <= rows; row++)
+                {
+                    string studentName = worksheet.Cells[row, 1].Text;
+                    if (string.IsNullOrEmpty(studentName))
+                        continue; // Skip empty rows
+
+                    // Find the student in class details
+                    var studentClass = classDetails.StudentClasses.FirstOrDefault(sc =>
+                        string.Equals(sc.Student.FullName, studentName, StringComparison.OrdinalIgnoreCase));
+
+                    if (studentClass == null)
+                        continue; // Skip if student not found
+
+                    // Update individual criteria scores
+                    await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
+                        account.AccountFirebaseId);
+
+                    // Calculate and update GPA based on weighted scores
+                    await UpdateStudentClassGPA(studentClass.Id,
+                        account.AccountFirebaseId,
+                        classDetails.Name);
+                }
+
+                return true;
+            });
+        }
+
+        private void ValidateExcelTemplate(ExcelWorksheet worksheet, int expectedCriteriaCount)
+        {
+            if (worksheet.Dimension.Columns < expectedCriteriaCount + 1) // +1 for student name column
+            {
+                throw new BadRequestException("Invalid Excel template: Missing required columns");
+            }
+
+            // string courseName = worksheet.Cells[2, 1].Text;
+            // string instructorName = worksheet.Cells[3, 1].Text;
+            // string assignmentsHeader = worksheet.Cells[4, 1].Text;
+
+            // if (string.IsNullOrEmpty(courseName) || !courseName.StartsWith("Course:") ||
+            //     string.IsNullOrEmpty(instructorName) || !instructorName.StartsWith("Instructor:") ||
+            //     string.IsNullOrEmpty(assignmentsHeader) ||
+            //     !assignmentsHeader.Equals("Assignments", StringComparison.OrdinalIgnoreCase))
+            // {
+            //     throw new BadRequestException(
+            //         "Invalid Excel template: Header structure does not match required format");
+            // }
+
+            // Check for student column
+            string studentHeader = worksheet.Cells[7, 1].Text;
+            if (string.IsNullOrEmpty(studentHeader) ||
+                !studentHeader.Equals("Student Name", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException("Invalid Excel template: Student column not found");
+            }
+        }
+
+        private Dictionary<string, (int Column, Guid Id)> MapCriteriaToColumns(ExcelWorksheet worksheet,
+            IEnumerable<Criteria> classCriteria)
+        {
+            int startCol = 2;
+            var mapping = new Dictionary<string, (int Column, Guid Id)>(StringComparer.OrdinalIgnoreCase);
+
+            Console.WriteLine("Available criteria:");
+            foreach (var criteria in classCriteria)
+            {
+                Console.WriteLine($"- {criteria.Name} (ID: {criteria.Id})");
+            }
+
+            Console.WriteLine("Mapping columns to criteria:");
+    
+            // Fix: Change the loop condition to ensure all columns are considered
+            // Original problematic line: for (int col = startCol; col < worksheet.Dimension.Columns - 2; col++)
+    
+            // New implementation that checks all columns from start column to the end
+            for (int col = startCol; col <= worksheet.Dimension.Columns; col++)
+            {
+                string criteriaName = worksheet.Cells[7, col].Text;
+                if (!string.IsNullOrEmpty(criteriaName))
+                {
+                    // Extract the base criteria name (remove any numbering like " (1)")
+                    string baseCriteriaName = Regex.Replace(criteriaName, @"\s*\(\d+\)$", "");
+            
+                    // Find matching criteria ID
+                    var matchingCriteria = classCriteria.FirstOrDefault(c =>
+                        string.Equals(c.Name, baseCriteriaName, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchingCriteria != null)
+                    {
+                        mapping[criteriaName] = (col, matchingCriteria.Id);
+                        Console.WriteLine($"- Column {col}: {criteriaName} -> ID {matchingCriteria.Id}");
+                    }
+                    else
+                    {
+                        Console.WriteLine(
+                            $"- Warning: No matching criteria found for '{criteriaName}' at column {col}");
+                    }
+                }
+            }
+
+            return mapping;
+        }
+
+        private async Task UpdateStudentClassScores(Guid studentClassId, ExcelWorksheet worksheet, int row,
+            Dictionary<string, (int Column, Guid Id)> criteriaMapping, string accountFirebaseId)
+        {
+            // Get existing scores for this student class
+            var existingScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
+                scs => scs.StudentClassId == studentClassId
+            );
+
+            List<StudentClassScore> scoresToUpdate = new List<StudentClassScore>();
+            List<StudentClassScore> scoresToAdd = new List<StudentClassScore>();
+
+            // Update individual criteria scores
+            foreach (var criteriaEntry in criteriaMapping)
+            {
+                string criteriaName = criteriaEntry.Key;
+                int col = criteriaEntry.Value.Column;
+                Guid criteriaId = criteriaEntry.Value.Id;
+
+                decimal? score = null;
+                if (decimal.TryParse(worksheet.Cells[row, col].Text, out decimal parsedScore))
+                {
+                    score = parsedScore;
+                }
+
+                // Find existing score record or create new one
+                var scoreRecord = existingScores.FirstOrDefault(s => s.CriteriaId == criteriaId);
+
+                if (scoreRecord != null)
+                {
+                    // Update existing record
+                    scoreRecord.Score = score;
+                    scoreRecord.UpdatedAt = DateTime.UtcNow.AddHours(7);
+                    scoresToUpdate.Add(scoreRecord);
+                }
+                else
+                {
+                    // Create new score record
+                    var newScore = new StudentClassScore
+                    {
+                        Id = Guid.NewGuid(),
+                        StudentClassId = studentClassId,
+                        CriteriaId = criteriaId,
+                        Score = score,
+                    };
+                    scoresToAdd.Add(newScore);
+                }
+            }
+
+            // Update and add scores
+            if (scoresToUpdate.Any())
+            {
+                await _unitOfWork.StudentClassScoreRepository.UpdateRangeAsync(scoresToUpdate);
+            }
+
+            if (scoresToAdd.Any())
+            {
+                await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(scoresToAdd);
+            }
+        }
+
+        private async Task UpdateStudentClassGPA(Guid studentClassId, string accountFirebaseId, string className)
+        {
+            var studentClassScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
+                scs => scs.StudentClassId == studentClassId
+            );
+
+            // Calculate weighted GPA
+            decimal totalWeightedScore = 0;
+            decimal totalWeight = 0;
+
+            foreach (var score in studentClassScores)
+            {
+                // Get the weight of each criteria
+                var criteria = await _unitOfWork.CriteriaRepository.GetByIdAsync(score.CriteriaId);
+
+                if (score.Score.HasValue && criteria != null)
+                {
+                    totalWeightedScore += score.Score.Value * criteria.Weight;
+                    totalWeight += criteria.Weight;
+                }
+            }
+
+            decimal gpa = totalWeight > 0
+                ? Math.Round(totalWeightedScore / totalWeight, 2)
+                : 0;
+
+            var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+            if (studentClass != null)
+            {
+                studentClass.GPA = gpa;
+                studentClass.UpdateById = accountFirebaseId;
+                studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+                await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
+
+                // Send notification to student
+                await _serviceFactory.NotificationService.SendNotificationAsync(
+                    studentClass.StudentFirebaseId,
+                    "Grade Update",
+                    $"Your grades for class {className} have been updated. Your total grade: {gpa}%"
+                );
+            }
+        }
+
+        private int DetermineCriteriaOrder(string criteriaName)
+        {
+            // Define sorting groups with priority
+            var criteriaGroups = new List<(string GroupName, int BaseOrder, Func<string, bool> Matcher)>
+            {
+                // Small Test Group
+                ("Kiểm tra nhỏ", 100, name => name.Contains("Kiểm tra nhỏ")),
+
+                // Exam Group
+                ("Bài thi", 200, name => name.Contains("Bài thi")),
+
+                // Final Exam Specific Categories (with sub-sorting)
+                ("Thi cuối kỳ (Âm sắc)", 300, name => name.Contains("Thi cuối kỳ (Âm sắc)")),
+                ("Thi cuối kỳ (Độ chính xác)", 310, name => name.Contains("Thi cuối kỳ (Độ chính xác)")),
+                ("Thi cuối kỳ (Phong thái)", 320, name => name.Contains("Thi cuối kỳ (Phong thái)")),
+                ("Thi cuối kỳ (Nhịp điệu)", 330, name => name.Contains("Thi cuối kỳ (Nhịp điệu)")),
+
+                // Attendance
+                ("Điểm chuyên cần", 1000, name => name.Contains("Điểm chuyên cần")),
+
+                // Catch-all for new criteria
+                ("Other", 2000, _ => true)
+            };
+
+            // Find the first matching group
+            var matchedGroup = criteriaGroups.First(g => g.Matcher(criteriaName));
+
+            // If it's an exact match or falls into the default group, return the base order
+            if (matchedGroup.GroupName == criteriaName || matchedGroup.GroupName == "Other")
+            {
+                return matchedGroup.BaseOrder;
+            }
+
+            // For grouped matches like "Kiểm tra nhỏ 1", extract the number
+            var numberMatch = Regex.Match(criteriaName, @"\d+");
+            if (numberMatch.Success)
+            {
+                int number = int.Parse(numberMatch.Value);
+                return matchedGroup.BaseOrder + number;
+            }
+
+            return matchedGroup.BaseOrder;
+        }
+
+        public async Task<bool> UpdateStudentStatusAsync(string studentFirbaseId, StudentStatus newStatus,
+            AccountModel account, Guid? classId = null)
+        {
+            var student =
+                await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == studentFirbaseId);
+
+            if (student == null || student.Role != Role.Student)
+            {
+                throw new ArgumentException("Invalid student ID or account is not a student");
+            }
+
+            var currentStatus = student.StudentStatus ?? StudentStatus.Unregistered;
+
+            //Check Valid Status for Student
+            if (!IsValidStatusTransition(currentStatus, newStatus))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid status transition from {currentStatus} to {newStatus}");
+            }
+
+            student.StudentStatus = newStatus;
+
+            if (newStatus == StudentStatus.InClass && classId.HasValue)
+            {
+                student.CurrentClassId = classId.Value;
+            }
+            else if (newStatus == StudentStatus.DropOut || newStatus == StudentStatus.Leave)
+            {
+                student.CurrentClassId = null;
+            }
+
+            await _unitOfWork.AccountRepository.UpdateAsync(student);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
+
+
+        /// Validates if the status transition is allowed according to the state diagram
+        private bool IsValidStatusTransition(StudentStatus fromStatus, StudentStatus toStatus)
+        {
+            return (fromStatus, toStatus) switch
+            {
+                (StudentStatus.Unregistered, StudentStatus.AttemptingEntranceTest) => true,
+                (StudentStatus.AttemptingEntranceTest, StudentStatus.WaitingForClass) => true,
+                (StudentStatus.AttemptingEntranceTest, StudentStatus.DropOut) => true,
+                (StudentStatus.WaitingForClass, StudentStatus.InClass) => true,
+                (StudentStatus.InClass, StudentStatus.DropOut) => true,
+                (StudentStatus.InClass, StudentStatus.Leave) => true,
+                (StudentStatus.InClass, StudentStatus.WaitingForClass) => true, // End of class, waiting for next
+                (StudentStatus.Leave, StudentStatus.AttemptingEntranceTest) => true, // Rejoin by taking entrance test
+                (StudentStatus.DropOut, StudentStatus
+                    .AttemptingEntranceTest) => true, // Rejoin by retaking entrance test
+                (StudentStatus.Leave, StudentStatus.WaitingForClass) => true, // Rejoin directly to waiting
+
+                _ => false
+            };
+        }
+
+        // Handle specific requirements for different status transitions
+        private async Task ValidateClassForTransition(Guid? classId)
+        {
+            // Validate class exists and is in appropriate status
+            if (!classId.HasValue)
+            {
+                throw new ArgumentException("Class ID is required when changing status to InClass");
+            }
+
+            var targetClass = await _unitOfWork.ClassRepository.GetByIdAsync(classId.Value);
+            if (targetClass == null || targetClass.Status == ClassStatus.Finished)
+            {
+                throw new InvalidOperationException("Class does not exist or is already finished");
+            }
+        }
+
+        //Update a specific score for a specific criteria
+        public async Task<bool> UpdateStudentScore(UpdateStudentScoreModel model, AccountModel account)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(model.StudentClassId);
+            if (studentClass == null)
+            {
+                throw new NotFoundException($"Student class with ID {model.StudentClassId} not found");
+            }
+
+            var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(studentClass.ClassId);
+            if (classInfo == null)
+            {
+                throw new NotFoundException($"Class with ID {studentClass.ClassId} not found");
+            }
+
+            if (classInfo.Status == ClassStatus.Finished)
+            {
+                throw new BadRequestException("Cannot update scores for a finished class");
+            }
+
+            var criteria = await _unitOfWork.CriteriaRepository.GetByIdAsync(model.CriteriaId);
+            if (criteria == null)
+            {
+                throw new NotFoundException($"Criteria with ID {model.CriteriaId} not found");
+            }
+
+            var score = await _unitOfWork.StudentClassScoreRepository.FindSingleAsync(
+                sc => sc.StudentClassId == studentClass.ClassId && sc.CriteriaId == model.CriteriaId);
+            if (score == null)
+            {
+                // Create new score
+                score = new StudentClassScore
+                {
+                    Id = Guid.NewGuid(),
+                    StudentClassId = model.StudentClassId,
+                    CriteriaId = model.CriteriaId,
+                    Score = model.Score
+                };
+                await _unitOfWork.StudentClassScoreRepository.AddAsync(score);
+            }
+            else
+            {
+                // Update existing score
+                score.Score = model.Score;
+                score.UpdatedAt = DateTime.UtcNow.AddHours(7);
+                await _unitOfWork.StudentClassScoreRepository.UpdateAsync(score);
+            }
+
+            await UpdateStudentClassGPA(model.StudentClassId, account.AccountFirebaseId, classInfo.Name);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
+
+        //Update batch
+        public async Task<bool> UpdateBatchStudentClassScores(UpdateBatchStudentClassScoreModel model,
+            AccountModel account)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            if (model.Scores == null || !model.Scores.Any())
+            {
+                throw new BadRequestException("No scores provided for update");
+            }
+
+            var studentClassIds = model.Scores.Select(s => s.StudentClassId).Distinct().ToList();
+            var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(
+                sc => studentClassIds.Contains(sc.Id) && sc.ClassId == model.ClassId);
+            if (studentClasses.Count != studentClassIds.Count)
+            {
+                throw new BadRequestException(
+                    "Some student classes were not found or don't belong to the specified class");
+            }
+
+            // Get class info
+            var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(model.ClassId);
+            if (classInfo == null)
+            {
+                throw new NotFoundException($"Class with ID {model.ClassId} not found");
+            }
+
+            if (classInfo.Status == ClassStatus.Finished)
+            {
+                throw new BadRequestException("Cannot update scores for a finished class");
+            }
+
+            // Get all criteria for validation
+            var criteriaIds = model.Scores.Select(s => s.CriteriaId).Distinct().ToList();
+            var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => criteriaIds.Contains(c.Id));
+
+            if (criteria.Count != criteriaIds.Count)
+            {
+                throw new BadRequestException("Some criteria were not found");
+            }
+
+            // Load all existing scores in one query for better performance
+            var existingScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
+                scs => studentClassIds.Contains(scs.StudentClassId) && criteriaIds.Contains(scs.CriteriaId));
+
+            // Create a dictionary for quick lookup
+            var scoreMap = existingScores.ToDictionary(
+                s => (s.StudentClassId, s.CriteriaId),
+                s => s);
+
+            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    var now = DateTime.UtcNow.AddHours(7);
+                    var newScores = new List<StudentClassScore>();
+                    var updatedScores = new List<StudentClassScore>();
+                    foreach (var scoreUpdate in model.Scores) 
+                    {
+                        if (scoreMap.TryGetValue((scoreUpdate.StudentClassId, scoreUpdate.CriteriaId), out var existingScore))
+                        {
+                            // Update existing score
+                            existingScore.Score = scoreUpdate.Score;
+                            existingScore.UpdatedAt = now;
+                            updatedScores.Add(existingScore);
+                        }
+                        else
+                        {
+                            var newScore = new StudentClassScore
+                            {
+                                Id = Guid.NewGuid(),
+                                StudentClassId = scoreUpdate.StudentClassId,
+                                CriteriaId = scoreUpdate.CriteriaId,
+                                Score = scoreUpdate.Score
+                            };
+                            newScores.Add(newScore);
+                        }
+                    }
+
+                    if (newScores.Any())
+                    {
+                        await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(newScores);
+                    }
+                    if (updatedScores.Any())
+                    {
+                        await _unitOfWork.StudentClassScoreRepository.UpdateRangeAsync(updatedScores);
+                    }
+
+                    // Update GPAs for all affected students
+                    foreach (var studentClassId in studentClassIds)
+                    {
+                        await UpdateStudentClassGPA(studentClassId, account.AccountFirebaseId, classInfo.Name);
+                    }
+                    return true;
+                }
+            );
         }
     }
 }

@@ -23,14 +23,15 @@ using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
 using System.Globalization;
-using System.IO.Compression;
 using System.Net;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OfficeOpenXml;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.Shared.Utils;
+using CompressionLevel = System.IO.Compression.CompressionLevel;
 
 
 namespace PhotonPiano.Api.Extensions;
@@ -41,6 +42,8 @@ public static class IServiceCollectionExtensions
 
     public static IServiceCollection AddApiDependencies(this IServiceCollection services, IConfiguration configuration)
     {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        
         services.AddControllerConfigurations()
             .AddAuthConfigurations(configuration)
             .AddExceptionHandlerConfiguration()
@@ -55,8 +58,7 @@ public static class IServiceCollectionExtensions
             .AddRazorTemplateWithConfigPath()
             .AddRateLimitedForAllEndpoints()
             .ConfigureResponseCompression()
-            .AddHealthChecks(configuration)
-            ;
+            .AddHealthChecks(configuration);
 
 
         return services;

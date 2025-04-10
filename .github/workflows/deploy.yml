@@ -109,27 +109,50 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
+            set -e # Dừng script nếu có lỗi
     
-            # Clean up old Docker resources
-            docker stop photonpiano-api || true
-            docker rm photonpiano-api || true
-            docker stop photonpiano-database || true
-            docker rm photonpiano-database || true
-            
-            # Create directory for deployment
+            # Đảm bảo docker-compose down trước
+            cd ~/photonpiano 2>/dev/null && docker compose down || true
+    
+            # Xóa container cũ bằng cách tìm tất cả container có tên 'photonpiano'
+            docker ps -a | grep photonpiano | awk '{print $1}' | xargs -r docker rm -f
+    
+            # Tạo directory cho deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano
-            
-            # Write docker-compose.yml
-            cat > docker-compose.yml <<EOF
-            version: '3.8'
+    
+            # Tạo .env file để sử dụng biến môi trường
+            cat > .env <<EOF
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
+            FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}
+            FIREBASE_AUTHORITY=${{ secrets.FIREBASE_AUTHORITY }}
+            FIREBASE_ISSUER=${{ secrets.FIREBASE_ISSUER }}
+            FIREBASE_AUDIENCE=${{ secrets.FIREBASE_AUDIENCE }}
+            VNPAY_BASEURL=${{ secrets.VNPAY_BASEURL }}
+            VNPAY_TMNCODE=${{ secrets.VNPAY_TMNCODE }}
+            VNPAY_HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
+            VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
+            VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
+            VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
+            VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
+            VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
+            VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}
+            PINATA_JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
+            PINATA_GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
+            REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
+            EOF
+    
+            # Viết docker-compose.yml
+            cat > docker-compose.yml <<'EOF'
+            version: "3.8"
             services:
-              photonpiano.database:
+              photonpiano-database:
                 image: postgres:15
                 container_name: photonpiano-database
                 environment:
                   POSTGRES_USER: postgres
-                  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
                   POSTGRES_DB: photonpiano
                 ports:
                   - "5432:5432"
@@ -138,50 +161,52 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-            
-              photonpiano.api:
+              photonpiano-api:
                 image: ghcr.io/valius256/photonpiano-api:latest
                 container_name: photonpiano-api
                 restart: unless-stopped
                 depends_on:
-                  - photonpiano.database
+                  - photonpiano-database
                 ports:
-                  - "8080:8080"
+                  - "8080:8080"  # HTTP
+                  - "8081:8081"  # HTTPS
                 environment:
-                  - ASPNETCORE_URLS=http://0.0.0.0:8080
-                  - ASPNETCORE_ENVIRONMENT=Production
-                  - DOTNET_ENVIRONMENT=Production
-                  - POSTGRES_CONNECTION= ${{ secrets.POSTGRES_CONNECTION }}
-                  - ConnectionStrings__RedisConnectionStrings=${{ secrets.REDIS_CONNECTION_STRING }}
-                  - HangfireConnectionString= ${{ secrets.POSTGRES_CONNECTION }}
-                  - Firebase__Auth__ApiKey=${{ secrets.FIREBASE_API_KEY }}
-                  - Firebase__Auth__Authority=${{ secrets.FIREBASE_AUTHORITY }}
-                  - Firebase__Auth__Issuer=${{ secrets.FIREBASE_ISSUER }}
-                  - Firebase__Auth__Audience=${{ secrets.FIREBASE_AUDIENCE }}
-                  - VNPAY__BASEURL=${{ secrets.VNPAY_BASEURL }}
-                  - VNPAY__TMNCODE=${{ secrets.VNPAY_TMNCODE }}
-                  - VNPAY__HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
-                  - VNPAY__RETURNURL=${{ secrets.VNPAY_RETURNURL }}
-                  - VNPAY__CURRCODE=${{ secrets.VNPAY_CURRCODE }}
-                  - VNPAY__LOCALE=${{ secrets.VNPAY_LOCALE }}
-                  - VNPAY__TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
-                  - VNPAY__VERSION=${{ secrets.VNPAY_VERSION }}
-                  - VNPAY__COMMAND=${{ secrets.VNPAY_COMMAND }}
-            
+                  - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+                  - POSTGRES_CONNECTION=${POSTGRES_CONNECTION}
+                  - HangfireConnectionString=${POSTGRES_CONNECTION}
+                  - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}
+                  - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
+                  - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
+                  - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
+                  - VNPAY__BASEURL=${VNPAY_BASEURL}
+                  - VNPAY__TMNCODE=${VNPAY_TMNCODE}
+                  - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
+                  - VNPAY__RETURNURL=${VNPAY_RETURNURL}
+                  - VNPAY__CURRCODE=${VNPAY_CURRCODE}
+                  - VNPAY__LOCALE=${VNPAY_LOCALE}
+                  - VNPAY__TIMEZONEID=${VNPAY_TIMEZONEID}
+                  - VNPAY__VERSION=${VNPAY_VERSION}
+                  - VNPAY__COMMAND=${VNPAY_COMMAND}
+                  - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
+                  - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
+                  - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
+                  - Logging__LogLevel__Hangfire=Debug
+                  - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
                 volumes:
                   - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
-                pull_policy: always
+                  - /root/.aspnet/https:/https:ro
                 networks:
                   - app-network
-          
+            volumes:
+              redis-data:
             networks:
               app-network:
                 driver: bridge
             EOF
-            
-            # Log in to GitHub Container Registry
+    
+            # Đăng nhập vào GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull images and deploy
-            docker compose pull
-            docker compose up -d --force-recreate 
+    
+            # Pull images và deploy với project name cụ thể
+            docker compose -p photonpiano pull
+            docker compose -p photonpiano up -d --force-recreate

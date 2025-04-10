@@ -79,6 +79,11 @@ builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration
 // add mapster 
 TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.UseUrls("http://0.0.0.0:8080");
+}
+
 builder.Configuration.AddUserSecrets<Program>();
 
 var app = builder.Build();

@@ -32,6 +32,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.Shared.Utils;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
+using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
 
 
 namespace PhotonPiano.Api.Extensions;
@@ -135,6 +136,8 @@ public static class IServiceCollectionExtensions
         TypeAdapterConfig<UpdateCriteriaModel, Criteria>.NewConfig()
             .IgnoreNullValues(true);
 
+        TypeAdapterConfig<FreeSlot, FreeSlotModel>.NewConfig()
+            .Map(dest => dest.LevelId, src => src.Account.LevelId);
         return services;
     }
 

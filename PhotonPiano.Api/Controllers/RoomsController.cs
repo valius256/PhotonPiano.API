@@ -21,7 +21,7 @@ public class RoomsController : BaseController
     }
 
     [HttpGet]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get rooms with paging")]
     public async Task<ActionResult<List<RoomDetailModel>>> GetRooms(
         [FromQuery] QueryRoomRequest request)
@@ -40,7 +40,7 @@ public class RoomsController : BaseController
     }
 
     [HttpPost]
-    [FirebaseAuthorize]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Create a room")]
     public async Task<ActionResult<RoomDetailModel>> CreateRoom(
         [FromBody] CreateRoomRequest request)
@@ -52,7 +52,7 @@ public class RoomsController : BaseController
     }
 
     [HttpDelete("{id}")]
-    [FirebaseAuthorize]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Delete a room")]
     public async Task<ActionResult> DeleteRoom([FromRoute] Guid id)
     {
@@ -61,7 +61,7 @@ public class RoomsController : BaseController
     }
 
     [HttpPut("{id}")]
-    [FirebaseAuthorize]
+    [FirebaseAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Update a room")]
     public async Task<ActionResult> UpdateRoom([FromRoute] Guid id, [FromBody] UpdateRoomRequest request)
     {

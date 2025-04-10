@@ -44,6 +44,7 @@ services:
       - VNPAY__COMMAND=${VNPAY_COMMAND}
       - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
       - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
+      - ConnectionStrings__RedisConnectionStrings=${REDIS_CONNECTION_STRING}
       - ConnectionStrings__RedisConnectionStrings=photonpiano-cache:6379,abortConnect=false
       - Logging__LogLevel__Hangfire=Debug
       - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information

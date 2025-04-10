@@ -32,6 +32,7 @@ env:
   VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
   VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
   PINATA__JWTTOKEN: ${{ secrets.PINATA_JWTTOKEN }}
+  CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
   Logging__LogLevel__Hangfire: Debug
   Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information

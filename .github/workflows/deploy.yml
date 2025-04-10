@@ -109,15 +109,6 @@ jobs:
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
 
-            # Enable NGINX configuration and restart
-            sudo ln -sf /etc/nginx/sites-available/photonpiano /etc/nginx/sites-enabled/photonpiano
-            sudo rm -f /etc/nginx/sites-enabled/default
-            sudo nginx -t && sudo systemctl restart nginx
-
-            # Stop and remove existing containers
-            docker stop photonpiano-database photonpiano-api photonpiano.cache || true
-            docker rm photonpiano-database photonpiano-api photonpiano.cache || true
-
             # Create directory for deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano

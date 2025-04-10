@@ -22,6 +22,14 @@ namespace PhotonPiano.Api.Controllers
             _serviceFactory = serviceFactory;
         }
 
+        [HttpGet("all")]
+        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [EndpointDescription("Get free slots of all students")]
+        public async Task<ActionResult<List<FreeSlotModel>>> GetAllFreeSlot()
+        {
+            return await _serviceFactory.FreeSlotService.GetAllFreeSlots();
+        }
+
         [HttpGet]
         [FirebaseAuthorize(Roles = [Role.Student])]
         [EndpointDescription("Get free slots of a student")]

@@ -224,10 +224,16 @@ public class EntranceTestService : IEntranceTestService
                 throw new BadRequestException("Can't publish the score of this entrance test");
             }
 
-            var studentIds = entranceTestStudents.Select(x => x.StudentFirebaseId);
+            if (entranceTestStudentModel.IsAnnouncedScore.Value)
+            {
+                var studentIds = entranceTestStudents.Select(x => x.StudentFirebaseId);
 
-            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
-                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
+                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
+                    setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
+
+                await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
+                    "Điểm thi đầu vào của bạn đã được công bố!", "");
+            }
         }
 
         entranceTestEntity.UpdateById = currentUserFirebaseId;
@@ -638,7 +644,7 @@ public class EntranceTestService : IEntranceTestService
             {
                 entranceTestStudent.TheoraticalScore = theoryScore;
             }
-            
+
             if (currentAccount.Role == Role.Instructor)
             {
                 entranceTestStudent.InstructorComment = requestModel.InstructorComment;

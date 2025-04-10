@@ -1,8 +1,5 @@
-using DinkToPdf;
-using DinkToPdf.Contracts;
 using Hangfire;
 using Mapster;
-using Microsoft.AspNetCore.Mvc.Razor;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
@@ -10,7 +7,6 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -43,7 +39,7 @@ builder.Services.AddApiDependencies(configuration)
 //
 // builder.Services.AddControllersWithViews()
 //     .AddRazorRuntimeCompilation();
-// builder.Services.AddRazorPages();
+builder.Services.AddRazorPages();
 //
 // builder.Services.Configure<RazorViewEngineOptions>(options =>
 // {
@@ -83,7 +79,7 @@ if (builder.Environment.IsDevelopment())
 {
     builder.WebHost.UseUrls("http://0.0.0.0:8080");
 }
-  
+
 builder.Configuration.AddUserSecrets<Program>();
 
 var app = builder.Build();

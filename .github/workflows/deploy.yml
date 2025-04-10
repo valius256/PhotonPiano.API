@@ -108,48 +108,93 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
-            set -e
 
-            cd ~/photonpiano || exit 1
+            # Enable NGINX configuration and restart
+            sudo ln -sf /etc/nginx/sites-available/photonpiano /etc/nginx/sites-enabled/photonpiano
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo nginx -t && sudo systemctl restart nginx
 
-            echo "🔐 Logging into GitHub Container Registry..."
+            # Stop and remove existing containers
+            docker stop photonpiano-database photonpiano-api photonpiano.cache || true
+            docker rm photonpiano-database photonpiano-api photonpiano.cache || true
+
+            # Create directory for deployment
+            mkdir -p ~/photonpiano
+            cd ~/photonpiano
+
+            # Write docker-compose.yml
+            cat > docker-compose.yml <<EOF
+            version: '3.8'
+            services:
+              photonpiano.database:
+                image: postgres:15
+                container_name: photonpiano-database
+                environment:
+                  POSTGRES_USER: postgres
+                  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+                  POSTGRES_DB: photonpiano
+                ports:
+                  - "5432:5432"
+                volumes:
+                  - /root/photonpiano/postgres-data:/var/lib/postgresql/data
+                restart: unless-stopped
+                networks:
+                  - app-network
+
+              photonpiano.api:
+                image: ghcr.io/valius256/photonpiano-api:latest
+                container_name: photonpiano-api
+                restart: unless-stopped
+                depends_on:
+                  - photonpiano.database
+                ports:
+                  - "8080:8080"
+                environment:
+                  - ASPNETCORE_URLS=http://0.0.0.0:8080
+                  - ASPNETCORE_ENVIRONMENT=Production
+                  - DOTNET_ENVIRONMENT=Production
+                  - POSTGRES_CONNECTION= ${{ secrets.POSTGRES_CONNECTION }}
+                  - ConnectionStrings__RedisConnectionStrings=photonpiano.cache:6379
+                  - HangfireConnectionString= ${{ secrets.POSTGRES_CONNECTION }}
+                  - Firebase__Auth__ApiKey=${{ secrets.FIREBASE_API_KEY }}
+                  - Firebase__Auth__Authority=${{ secrets.FIREBASE_AUTHORITY }}
+                  - Firebase__Auth__Issuer=${{ secrets.FIREBASE_ISSUER }}
+                  - Firebase__Auth__Audience=${{ secrets.FIREBASE_AUDIENCE }}
+                  - VNPAY__BASEURL=${{ secrets.VNPAY_BASEURL }}
+                  - VNPAY__TMNCODE=${{ secrets.VNPAY_TMNCODE }}
+                  - VNPAY__HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
+                  - VNPAY__RETURNURL=${{ secrets.VNPAY_RETURNURL }}
+                  - VNPAY__CURRCODE=${{ secrets.VNPAY_CURRCODE }}
+                  - VNPAY__LOCALE=${{ secrets.VNPAY_LOCALE }}
+                  - VNPAY__TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
+                  - VNPAY__VERSION=${{ secrets.VNPAY_VERSION }}
+                  - VNPAY__COMMAND=${{ secrets.VNPAY_COMMAND }}
+
+                volumes:
+                  - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+                pull_policy: always
+                networks:
+                  - app-network
+
+              photonpiano.cache:
+                image: redis:6.2
+                container_name: photonpiano.cache
+                ports:
+                  - "6379:6379"
+                restart: unless-stopped
+                networks:
+                  - app-network
+
+            networks:
+              app-network:
+                driver: bridge
+            EOF
+
+            # Log in to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            echo "🐳 Pulling latest Docker image..."
-            docker pull ghcr.io/valius256/photonpiano-api:latest
-
-            container_exists=$(docker ps -a --format '{{.Names}}' | grep -w "photonpiano-api" || true)
-
-            if [ -n "$container_exists" ]; then
-              echo "💾 Saving current image for rollback..."
-              previous_image=$(docker inspect --format='{{.Config.Image}}' photonpiano-api || true)
-              docker tag "$previous_image" ghcr.io/valius256/photonpiano-api:rollback || true
-            else
-              echo "⚠️ No existing container for photonpiano-api. First time deploy."
-            fi
-
-            echo "🔄 Trying to start new version of photonpiano-api..."
-            if docker-compose pull photonpiano-api && docker-compose up -d --no-deps --force-recreate --remove-orphans photonpiano-api; then
-              echo "✅ Deploy succeeded."
-            else
-              echo "❌ Deploy failed. Trying rollback..."
-
-              if docker image inspect ghcr.io/valius256/photonpiano-api:rollback > /dev/null 2>&1; then
-                echo "🔁 Starting rollback..."
-                docker stop photonpiano-api || true
-                docker rm photonpiano-api || true
-                docker run -d --name photonpiano-api -p 5000:80 ghcr.io/valius256/photonpiano-api:rollback
-                echo "✅ Rollback completed."
-              else
-                echo "🛑 Rollback failed: No previous image to restore."
-                exit 1
-              fi
-            fi
-
-            echo "🔍 Final check: is photonpiano-api running?"
-            if ! docker ps --format '{{.Names}}' | grep -w "photonpiano-api" > /dev/null; then
-              echo "❌ ERROR: photonpiano-api container is NOT running after deploy!"
-              exit 1
-            fi
+            # Pull images and deploy
+            docker-compose pull
+            docker-compose up -d --force-recreate 
       
   

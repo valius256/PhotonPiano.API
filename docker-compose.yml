@@ -53,19 +53,19 @@ services:
     networks:
       - app-network
 
-  photonpiano-cache:
-    image: redis:6.2
-    container_name: photonpiano-cache
-    restart: always
-    volumes:
-      - redis-data:/data
-    command: >
-      redis-server
-      --save 60 1
-      --loglevel warning
-      --dir /data
-    networks:
-      - app-network
+#  photonpiano-cache:
+#    image: redis:6.2
+#    container_name: photonpiano-cache
+#    restart: always
+#    volumes:
+#      - redis-data:/data
+#    command: >
+#      redis-server
+#      --save 60 1
+#      --loglevel warning
+#      --dir /data
+#    networks:
+#      - app-network
 
 volumes:
   redis-data:

@@ -17,13 +17,15 @@ public class SlotService : ISlotService
     private readonly IServiceFactory _serviceFactory;
     private readonly IUnitOfWork _unitOfWork;
     private const int DefaultCacheDurationMinutes = 1440; // Cache 1 ngày (24 giờ)
-
+    
     public SlotService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork)
     {
         _serviceFactory = serviceFactory;
         _unitOfWork = unitOfWork;
     }
-
+    
+    
+    
     public TimeOnly GetShiftStartTime(Shift shift)
     {
         var shiftStartTimes = new Dictionary<Shift, TimeOnly>
@@ -44,7 +46,7 @@ public class SlotService : ISlotService
         return shiftStartTime;
     }
 
-    public async Task<SlotDetailModel> GetSLotDetailById(Guid id, AccountModel? accountModel = default)
+    public async Task<SlotDetailModel> GetSlotDetailById(Guid id, AccountModel? accountModel = default)
     {
         var result = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<SlotDetailModel>(
             s => s.Id == id,
@@ -57,7 +59,7 @@ public class SlotService : ISlotService
         return result;
     }
 
-    public async Task<List<SlotDetailModel>> GetSlotsAsync(GetSlotModel slotModel, AccountModel? accountModel = default)
+    public async Task<List<SlotDetailModel>> GetSlots(GetSlotModel slotModel, AccountModel? accountModel = default)
     {
         Expression<Func<Slot, bool>> filter = s =>
             s.Date >= slotModel.StartTime &&
@@ -77,7 +79,7 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, AccountModel accountModel)
+    public async Task<List<SlotSimpleModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
     {
 
         // Tạo danh sách các ClassId cần truy vấn
@@ -178,7 +180,7 @@ public class SlotService : ISlotService
         }
     }
 
-    public async Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId)
+    public async Task<List<StudentAttendanceModel>> GetAttendanceStatus(Guid slotId)
     {
         var slot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(s => s.Id == slotId);
         if (slot is null) throw new NotFoundException("Slot not found");
@@ -193,13 +195,13 @@ public class SlotService : ISlotService
 
     public async Task CronAutoChangeSlotStatus()
     {
-        var currentDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
-        var currentTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var vietnamNow = GetVietnamNow();
+        var currentDate = DateOnly.FromDateTime(vietnamNow);
+        var currentTime = TimeOnly.FromDateTime(vietnamNow);
 
         // Tập hợp để lưu các ClassId và tuần bị ảnh hưởng
         var affectedClassesAndWeeks = new HashSet<(Guid ClassId, DateOnly StartOfWeek)>();
-
-        //  Cập nhật slot trong quá khứ (chỉ lấy slot chưa Finished)
+        
         var pastSlots = await _unitOfWork.SlotRepository.FindAsync(
             s => s.Date < currentDate && s.Status != SlotStatus.Finished
         );
@@ -209,70 +211,83 @@ public class SlotService : ISlotService
             slot.Status = SlotStatus.Finished;
             affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
         }
-
-        // Cập nhật slot trong ngày hiện tại (chỉ lấy slot có khả năng thay đổi trạng thái)
-        var todaySlots = await _unitOfWork.SlotRepository.FindProjectedAsync<Slot>(
+        
+        var todaySlots = await _unitOfWork.SlotRepository.FindAsync(
             s => s.Date == currentDate && s.Status != SlotStatus.Finished && s.Status != SlotStatus.Cancelled
         );
+        
+        if (!todaySlots.Any())
+        {
+            if (pastSlots.Any())
+            {
+                await _unitOfWork.SlotRepository.UpdateRangeAsync(pastSlots);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            return;
+        }
 
         var classIds = todaySlots.Select(s => s.ClassId).Distinct().ToList();
 
-        var firstLastSlotNoFilter = await _unitOfWork.SlotRepository
-            .FindAsync(s => classIds.Contains(s.ClassId));
-            
-       var firstLastSlots =  firstLastSlotNoFilter.GroupBy(s => s.ClassId)
-        .Select(g => new
-        {
-            ClassId = g.Key,
-            FirstSlot = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).FirstOrDefault(),
-            LastSlot = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).FirstOrDefault()
-        })
-        .ToDictionary(x => x.ClassId);
+        var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(c => classIds.Contains(c.Id));
 
+        var allRelatedSlots = await _unitOfWork.SlotRepository.FindAsync(s => classIds.Contains(s.ClassId));
+
+        var firstLastSlotMap = allRelatedSlots
+            .GroupBy(s => s.ClassId)
+            .ToDictionary(
+                g => g.Key,
+                g => new
+                {
+                    FirstSlot = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).First(),
+                    LastSlot = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).First()
+                });
+
+        var classStatusMap = affectedClasses.ToDictionary(c => c.Id, c => c);
         var classesToUpdate = new List<Class>();
 
         foreach (var slot in todaySlots)
         {
-            var shiftStartTime = GetShiftStartTime(slot.Shift);
-            var shiftEndTime = GetShiftEndTime(slot.Shift);
+            var shiftStart = GetShiftStartTime(slot.Shift);
+            var shiftEnd = GetShiftEndTime(slot.Shift);
+            var classId = slot.ClassId;
+            var slotId = slot.Id;
+            var startOfWeek = GetStartOfWeek(slot.Date);
 
-            if (currentTime > shiftEndTime && slot.Status != SlotStatus.Finished)
+            if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
             {
                 slot.Status = SlotStatus.Finished;
-                affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
-                //If this is the last slot - change the class status to Finish
-                if (firstLastSlots.TryGetValue(slot.ClassId, out var classSlots))
+                affectedClassesAndWeeks.Add((classId, startOfWeek));
+
+                if (firstLastSlotMap[classId].LastSlot.Id == slotId &&
+                    classStatusMap.TryGetValue(classId, out var cls) &&
+                    cls.Status != ClassStatus.Finished)
                 {
-                    if (slot.Id == classSlots.LastSlot?.Id) 
-                    {
-                        slot.Class.Status = ClassStatus.Finished;
-                        classesToUpdate.Add(slot.Class);
-                    }
+                    cls.Status = ClassStatus.Finished;
+                    classesToUpdate.Add(cls);
                 }
             }
-            else if (currentTime >= shiftStartTime && slot.Status != SlotStatus.Ongoing)
+            else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
             {
                 slot.Status = SlotStatus.Ongoing;
-                affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
-                //If this is the first slot - change the class status to OnGoing
-                if (firstLastSlots.TryGetValue(slot.ClassId, out var classSlots))
+                affectedClassesAndWeeks.Add((classId, startOfWeek));
+
+                if (firstLastSlotMap[classId].FirstSlot.Id == slotId &&
+                    classStatusMap.TryGetValue(classId, out var cls) &&
+                    cls.Status != ClassStatus.Ongoing)
                 {
-                    if (slot.Id == classSlots.FirstSlot?.Id) 
-                    {
-                        slot.Class.Status = ClassStatus.Ongoing;
-                        classesToUpdate.Add(slot.Class);
-                        //Create tuition khi lớp bắt đầu
-                        var classDetail = await _serviceFactory.ClassService.GetClassDetailById(slot.ClassId);
-                        await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
-                    }
+                    cls.Status = ClassStatus.Ongoing;
+                    classesToUpdate.Add(cls);
+                    
+                    var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
+                    await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
                 }
             }
         }
+        
         await _unitOfWork.ClassRepository.UpdateRangeAsync(classesToUpdate);
-        //  Lưu thay đổi vào database
+        await _unitOfWork.SlotRepository.UpdateRangeAsync(pastSlots.Concat(todaySlots).ToList());
         await _unitOfWork.SaveChangesAsync();
 
-        //  Invalidation cache có chọn lọc
         foreach (var (classId, startOfWeek) in affectedClassesAndWeeks)
         {
             await InvalidateCacheForClassAsync(classId, startOfWeek);
@@ -735,4 +750,7 @@ public class SlotService : ISlotService
 
         return shiftStartTime;
     }
+    
+    protected virtual DateTime GetVietnamNow() => DateTime.UtcNow.AddHours(7);
+    
 }

@@ -12,6 +12,8 @@ using System.Runtime.InteropServices;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Mvc.Razor;
+using System.Security.Cryptography.X509Certificates;
+using PhotonPiano.BusinessLogic.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -28,17 +30,7 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
 
-if (OperatingSystem.IsLinux())
-{
-    builder.WebHost.ConfigureKestrel(options =>
-    {
-        options.Listen(IPAddress.Any, 8080); // HTTP
-        options.Listen(IPAddress.Any, 8081, listenOptions =>
-        {
-            listenOptions.UseHttps("/etc/ssl/certs/combined-certificate.pem");
-        });
-    });
-}
+
 
 // Load wkhtmltopdf native libraries
 // Modify the path to point to wkhtmltox folder
@@ -101,10 +93,6 @@ app.UseScalarConfig();
 
 app.UseCors("AllowAll");
 
-// Register and execute PostgresSqlConfiguration
-// var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
-// await sqlConfig.Configure();
-
 app.UseHttpsRedirection();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
@@ -112,13 +100,14 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     DashboardTitle = "PhotonPiano Dashboard",
     DarkModeEnabled = true,
     IsReadOnlyFunc = _ => false,
-    TimeZoneResolver = new DefaultTimeZoneResolver()
+    Authorization = new[] { new HangfireAuthorizationFilter() },
+    AppPath = "https://photonpiano.duckdns.org/scalar/v1",
 });
 
 app.UseStaticFiles();
-
 app.MapRazorPages();
 
+// Register and execute PostgresSqlConfiguration
 var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
 sqlConfig.Configure();
 
@@ -137,7 +126,6 @@ app.MapControllers();
 
 
 app.MapHealthChecks("/health");
-
 
 await app.RunAsync();
 

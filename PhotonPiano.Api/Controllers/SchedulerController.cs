@@ -35,7 +35,7 @@ public class SchedulerController : BaseController
         if (CurrentAccount != null)
         {
             var result =
-                await _serviceFactory.SlotService.GetWeeklyScheduleAsync(request.Adapt<GetSlotModel>(),
+                await _serviceFactory.SlotService.GetWeeklySchedule(request.Adapt<GetSlotModel>(),
                     CurrentAccount);
             return Ok(result.Adapt<List<SlotSimpleModel>>());
         }
@@ -49,7 +49,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get Attendance Status for a Slot")]
     public async Task<ActionResult> GetAttendanceStatus([FromRoute] Guid slotId)
     {
-        var result = await _serviceFactory.SlotService.GetAttendanceStatusAsync(slotId);
+        var result = await _serviceFactory.SlotService.GetAttendanceStatus(slotId);
         return Ok(result.Adapt<List<StudentAttendanceResponse>>());
     }
 
@@ -59,7 +59,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get Slot by Id")]
     public async Task<ActionResult> GetSlotById([FromRoute] Guid id)
     {
-        var result = await _serviceFactory.SlotService.GetSLotDetailById(id, CurrentAccount);
+        var result = await _serviceFactory.SlotService.GetSlotDetailById(id, CurrentAccount);
             return Ok(result.Adapt<SlotDetailModel>());
     }
 

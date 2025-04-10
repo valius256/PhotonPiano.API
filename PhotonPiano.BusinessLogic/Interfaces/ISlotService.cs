@@ -7,16 +7,16 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface ISlotService
 {
-    Task<List<SlotDetailModel>> GetSlotsAsync(GetSlotModel slotModel, AccountModel? accountModel);
+    Task<List<SlotDetailModel>> GetSlots(GetSlotModel slotModel, AccountModel? accountModel);
 
-    Task<SlotDetailModel> GetSLotDetailById(Guid id, AccountModel? accountModel = default);
+    Task<SlotDetailModel> GetSlotDetailById(Guid id, AccountModel? accountModel = default);
 
     TimeOnly GetShiftStartTime(Shift shift);
 
 
-    Task<List<SlotSimpleModel>> GetWeeklyScheduleAsync(GetSlotModel slotModel, [Required] AccountModel accountModel);
+    Task<List<SlotSimpleModel>> GetWeeklySchedule(GetSlotModel slotModel, [Required] AccountModel accountModel);
 
-    Task<List<StudentAttendanceModel>> GetAttendanceStatusAsync(Guid slotId);
+    Task<List<StudentAttendanceModel>> GetAttendanceStatus(Guid slotId);
 
     Task CronAutoChangeSlotStatus();
 

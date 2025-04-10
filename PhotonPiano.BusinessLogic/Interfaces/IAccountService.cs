@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.DataAccess.Models.Paging;
 
@@ -25,4 +26,8 @@ public interface IAccountService
     Task<bool> IsAccountExist(string firebaseId);
 
     Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount, string idToken);
+
+    Task ChangeRole(GrantRoleModel grantRoleModel);
+
+    Task<AccountModel> CreateNewStaff(SignUpModel signInModel, string accountFirebaseId);
 }

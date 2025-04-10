@@ -10,8 +10,6 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
 
@@ -37,7 +35,7 @@ public class SlotServiceTest
     private readonly Mock<INotificationService> _notificationServiceMock;
 
     private readonly SlotService _slotService;
-
+    
     public SlotServiceTest()
     {
         // Freeze mocks to ensure consistent instances
@@ -69,9 +67,11 @@ public class SlotServiceTest
         _serviceFactoryMock.Setup(sf => sf.ClassService).Returns(_classServiceMock.Object);
         _serviceFactoryMock.Setup(sf => sf.RoomService).Returns(_roomServiceMock.Object);
         _serviceFactoryMock.Setup(sf => sf.NotificationService).Returns(_notificationServiceMock.Object);
-
+        
+        
         // Create the service under test
         _slotService = new SlotService(_serviceFactoryMock.Object, _unitOfWorkMock.Object);
+    
     }
     [Fact]
     public void GetShiftStartTime_ReturnsCorrectTime_ForAllShifts()
@@ -95,6 +95,17 @@ public class SlotServiceTest
             var startTime = _slotService.GetShiftStartTime(shift);
             Assert.Equal(expectedStartTimes[shift], startTime);
         }
+    }
+    
+    [Fact]
+    public void GetShiftStartTime_ThrowsException_ForInvalidShift()
+    {
+        // Arrange
+        var invalidShift = (Shift)999;
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() => _slotService.GetShiftStartTime(invalidShift));
+        Assert.Equal("Invalid shift value.", ex.Message);
     }
 
     [Fact]
@@ -120,9 +131,20 @@ public class SlotServiceTest
             Assert.Equal(expectedEndTimes[shift], endTime);
         }
     }
+    
+    [Fact]
+    public void GetShiftEndTime_ThrowsException_ForInvalidShift()
+    {
+        // Arrange
+        var invalidShift = (Shift)999;
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() => _slotService.GetShiftEndTime(invalidShift));
+        Assert.Equal("Invalid shift value.", ex.Message);
+    }
 
     [Fact]
-    public async Task GetSLotDetailById_ReturnsSlot_WhenSlotExists()
+    public async Task GetSlotDetailById_ReturnsSlot_WhenSlotExists()
     {
         // Arrange
         var slotId = Guid.NewGuid();
@@ -137,7 +159,7 @@ public class SlotServiceTest
             .ReturnsAsync(expectedSlot);
 
         // Act
-        var result = await _slotService.GetSLotDetailById(slotId);
+        var result = await _slotService.GetSlotDetailById(slotId);
 
         // Assert
         Assert.NotNull(result);
@@ -145,7 +167,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetSLotDetailById_ThrowsNotFoundException_WhenSlotDoesNotExist()
+    public async Task GetSlotDetailById_ThrowsNotFoundException_WhenSlotDoesNotExist()
     {
         // Arrange
         var slotId = Guid.NewGuid();
@@ -159,12 +181,12 @@ public class SlotServiceTest
             .ReturnsAsync((SlotDetailModel)null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => _slotService.GetSLotDetailById(slotId));
+        await Assert.ThrowsAsync<NotFoundException>(() => _slotService.GetSlotDetailById(slotId));
     }
 
 
    [Fact]
-    public async Task GetSlotsAsync_ReturnsFilteredSlots_ForRegularUser()
+    public async Task GetSlots_ReturnsFilteredSlots_ForRegularUser()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -197,7 +219,7 @@ public class SlotServiceTest
             .ReturnsAsync(expectedSlots);
 
         // Act
-        var result = await _slotService.GetSlotsAsync(slotModel, accountModel);
+        var result = await _slotService.GetSlots(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
@@ -205,7 +227,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetSlotsAsync_ReturnsFilteredSlots_ForInstructor()
+    public async Task GetSlots_ReturnsFilteredSlots_ForInstructor()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -239,7 +261,7 @@ public class SlotServiceTest
             .ReturnsAsync(expectedSlots);
 
         // Act
-        var result = await _slotService.GetSlotsAsync(slotModel, accountModel);
+        var result = await _slotService.GetSlots(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
@@ -247,7 +269,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetSlotsAsync_ReturnsFilteredSlots_ForNoAccountModel()
+    public async Task GetSlots_ReturnsFilteredSlots_ForNoAccountModel()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -273,7 +295,7 @@ public class SlotServiceTest
             .ReturnsAsync(expectedSlots);
 
         // Act
-        var result = await _slotService.GetSlotsAsync(slotModel);
+        var result = await _slotService.GetSlots(slotModel);
 
         // Assert
         Assert.NotNull(result);
@@ -314,9 +336,8 @@ public class SlotServiceTest
         await Assert.ThrowsAsync<NotFoundException>(() => _slotService.CreateSlot(createSlotModel, "testUser"));
     }
     
-
     [Fact]
-    public async Task InvalidateCacheForClassAsync_DeletesCacheForAllRoles()
+    public async Task InvalidateCacheForClass_DeletesCacheForAllRoles()
     {
         // Arrange
         var classId = Guid.NewGuid();
@@ -330,7 +351,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetWeeklyScheduleAsync_ReturnsSlotsFromDatabase_WhenCacheDoesNotExist()
+    public async Task GetWeeklySchedule_ReturnsSlotsFromDatabase_WhenCacheDoesNotExist()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -377,16 +398,15 @@ public class SlotServiceTest
             .ReturnsAsync(slotsFromDb);
 
         // Act
-        var result = await _slotService.GetWeeklyScheduleAsync(slotModel, accountModel);
+        var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(slotsFromDb.Count, result.Count);
     }
-    
 
     [Fact]
-    public async Task GetWeeklyScheduleAsync_ReturnsCachedSlots_WhenCacheExists()
+    public async Task GetWeeklySchedule_ReturnsCachedSlots_WhenCacheExists()
     {
         // Arrange
         var slotModel = new GetSlotModel
@@ -425,7 +445,7 @@ public class SlotServiceTest
             .ReturnsAsync(cachedSlots);
 
         // Act
-        var result = await _slotService.GetWeeklyScheduleAsync(slotModel, accountModel);
+        var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
 
         // Assert
         Assert.NotNull(result);
@@ -495,7 +515,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetAttendanceStatusAsync_ReturnsAttendanceStatus_WhenSlotExists()
+    public async Task GetAttendanceStatus_ReturnsAttendanceStatus_WhenSlotExists()
     {
         // Arrange
         var slotId = Guid.NewGuid();
@@ -518,7 +538,7 @@ public class SlotServiceTest
             .ReturnsAsync(slot);
 
         // Act
-        var result = await _slotService.GetAttendanceStatusAsync(slotId);
+        var result = await _slotService.GetAttendanceStatus(slotId);
 
         // Assert
         Assert.NotNull(result);
@@ -528,7 +548,7 @@ public class SlotServiceTest
     }
 
     [Fact]
-    public async Task GetAttendanceStatusAsync_ThrowsNotFoundException_WhenSlotDoesNotExist()
+    public async Task GetAttendanceStatus_ThrowsNotFoundException_WhenSlotDoesNotExist()
     {
         // Arrange
         var slotId = Guid.NewGuid();
@@ -542,11 +562,11 @@ public class SlotServiceTest
             .ReturnsAsync((Slot)null);
     
         // Act & Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => _slotService.GetAttendanceStatusAsync(slotId));
+        await Assert.ThrowsAsync<NotFoundException>(() => _slotService.GetAttendanceStatus(slotId));
     }
 
     [Fact]
-    public async Task CronAutoChangeSlotStatus_ChangesStatusOfExpiredSlots()
+    public async Task CronAutoChangeSlotStatus_SetsExpiredSlotsToFinished_WhenNoTodaySlots()
     {
         // Arrange
         var pastDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1).AddHours(7));
@@ -556,56 +576,79 @@ public class SlotServiceTest
         {
             new Slot {
                 Id = Guid.NewGuid(),
-                Status = SlotStatus.NotStarted,
-                ClassId = slotClass.Id,
-                Class = slotClass,
-                Date = pastDate,
-            },
-            new Slot {
-                Id = Guid.NewGuid(),
                 Status = SlotStatus.Ongoing,
                 ClassId = slotClass.Id,
                 Class = slotClass,
-                Date = pastDate
+                Date = pastDate,
             }
         };
 
-        // Setup for past slots
         _slotRepositoryMock
-            .Setup(r => r.FindAsync(
+            .SetupSequence(r => r.FindAsync(
                 It.IsAny<Expression<Func<Slot, bool>>>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>()))
-            .ReturnsAsync(expiredSlots);
-
-        // Mock FindProjectedAsync for today's slots
-        _slotRepositoryMock
-            .Setup(r => r.FindProjectedAsync<Slot>(
-                It.IsAny<Expression<Func<Slot, bool>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<TrackingOption>()))
+            .ReturnsAsync(expiredSlots) // First call: pastSlots
             .ReturnsAsync(new List<Slot>());
-        
-        // Setup for updating the class status
-        _classRepositoryMock
-            .Setup(r => r.UpdateRangeAsync(It.IsAny<IEnumerable<Class>>()))
-            .Returns(Task.CompletedTask);
 
         // Act
         await _slotService.CronAutoChangeSlotStatus();
 
         // Assert
-        _classRepositoryMock.Verify(r => r.UpdateRangeAsync(It.IsAny<IEnumerable<Class>>()), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(), Times.Once);
-    
-        // Verify that slots were updated (the Status property should be Finished)
         foreach (var slot in expiredSlots)
         {
             Assert.Equal(SlotStatus.Finished, slot.Status);
         }
-    }
 
+        _classRepositoryMock.Verify(r => r.UpdateRangeAsync(It.IsAny<IEnumerable<Class>>()), Times.Never);
+        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(), Times.Once);
+    }
+    
+    [Fact]
+    public async Task CronAutoChangeSlotStatus_ShouldUpdateClassAndSlotStatus_WhenFirstSlotOfTheDayIsNotStarted()
+    {
+        var fakeNow = new DateTime(2025, 4, 8, 9, 0, 0); // 9h00 -> during Shift2 (8h45 - 10h15)
+        var today = DateOnly.FromDateTime(fakeNow);
+        var classId = Guid.NewGuid();
+
+        var slotClass = new Class { Id = classId, Status = ClassStatus.NotStarted, Name = "Class piano 1", CreatedById = "admin001"};
+        var todaySlot = new Slot
+        {
+            Id = Guid.NewGuid(),
+            Date = today,
+            Shift = Shift.Shift2_8h45_10h15,
+            ClassId = classId,
+            Class = slotClass,
+            Status = SlotStatus.NotStarted
+        };
+
+        _slotRepositoryMock
+            .SetupSequence(r => r.FindAsync(
+                It.IsAny<Expression<Func<Slot, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .ReturnsAsync(new List<Slot>()) // pastSlots
+            .ReturnsAsync(new List<Slot> { todaySlot }) // todaySlots
+            .ReturnsAsync(new List<Slot> { todaySlot }); // allSlots
+
+        _classRepositoryMock
+            .Setup(r => r.FindAsync(It.IsAny<Expression<Func<Class, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .ReturnsAsync(new List<Class> { slotClass });
+
+        _slotRepositoryMock
+            .Setup(r => r.FindProjectedAsync<Slot>(
+                It.IsAny<Expression<Func<Slot, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .ReturnsAsync(new List<Slot>());
+
+        var testService = new TestableSlotService(_serviceFactoryMock.Object, _unitOfWorkMock.Object, fakeNow);
+
+        // Act
+        await testService.CronAutoChangeSlotStatus();
+
+        // Assert
+        Assert.Equal(SlotStatus.Ongoing, todaySlot.Status);
+        Assert.Equal(ClassStatus.Ongoing, slotClass.Status);
+    }
+    
      [Fact]
      public async Task PublicNewSlot_ThrowsNotFoundException_WhenRoomNotFound()
      {

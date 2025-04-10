@@ -31,28 +31,28 @@ builder.Services.AddApiDependencies(configuration)
 
 // Load wkhtmltopdf native libraries
 // Modify the path to point to wkhtmltox folder
-var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
-var context = new CustomAssemblyLoadContext();
-context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
-    RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
-    RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
-    "libwkhtmltox.dylib"));
-
-// Add DinkToPdf services
-builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
-
-builder.Services.AddControllersWithViews()
-    .AddRazorRuntimeCompilation();
-builder.Services.AddRazorPages();
-
-builder.Services.Configure<RazorViewEngineOptions>(options =>
-{
-    options.ViewLocationFormats.Clear();
-    options.ViewLocationFormats.Add("/Views/{0}" + RazorViewEngine.ViewExtension);
-    options.ViewLocationFormats.Add("/Views/{0}.cshtml");
-    options.ViewLocationFormats.Add("/{0}.cshtml");
-    options.ViewLocationFormats.Add("/{0}");
-});
+// var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
+// var context = new CustomAssemblyLoadContext();
+// context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
+//     RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
+//     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
+//     "libwkhtmltox.dylib"));
+//
+// // Add DinkToPdf services
+// builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+//
+// builder.Services.AddControllersWithViews()
+//     .AddRazorRuntimeCompilation();
+// builder.Services.AddRazorPages();
+//
+// builder.Services.Configure<RazorViewEngineOptions>(options =>
+// {
+//     options.ViewLocationFormats.Clear();
+//     options.ViewLocationFormats.Add("/Views/{0}" + RazorViewEngine.ViewExtension);
+//     options.ViewLocationFormats.Add("/Views/{0}.cshtml");
+//     options.ViewLocationFormats.Add("/{0}.cshtml");
+//     options.ViewLocationFormats.Add("/{0}");
+// });
 // Not Done Yet
 // builder.Services
 //     .AddOpenTelemetry()

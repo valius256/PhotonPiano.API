@@ -1,9 +1,11 @@
 ﻿
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.Services
 {
@@ -14,6 +16,16 @@ namespace PhotonPiano.BusinessLogic.Services
         public FreeSlotService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
+        }
+
+        public async Task<List<FreeSlotModel>> GetAllFreeSlots()
+        {
+            return (await _unitOfWork.FreeSlotRepository.Entities
+                .Include(f => f.Account)
+                .Where(f => f.Account.StudentStatus == StudentStatus.WaitingForClass)
+                .AsNoTracking()
+                .ToListAsync())
+                .Adapt<List<FreeSlotModel>>();
         }
 
         public async Task<List<FreeSlotModel>> GetFreeSlots(string accountFirebaseId)

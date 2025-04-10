@@ -114,5 +114,5 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull latest image and recreate container
-            docker-compose pull photonpiano.api
-            docker-compose up -d --no-deps --force-recreate photonpiano.api
+            docker-compose pull photonpiano-api
+            docker-compose up -d --no-deps --force-recreate photonpiano-api

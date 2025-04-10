@@ -1,0 +1,154 @@
+body {
+    font-family: 'Arial', sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+.certificate-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px;
+    background-color: #fff;
+    border: 20px solid #f5f5f5;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    box-sizing: border-box;
+}
+
+.certificate-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.certificate-title {
+    font-size: 36px;
+    color: #3a3a3a;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.certificate-subtitle {
+    font-size: 24px;
+    color: #666;
+}
+
+.certificate-body {
+    text-align: center;
+    margin: 40px 0;
+}
+
+.student-name {
+    font-size: 32px;
+    font-weight: bold;
+    color: #2a2a2a;
+    margin: 20px 0;
+    border-bottom: 2px solid #eaeaea;
+    padding-bottom: 10px;
+}
+
+.certificate-text {
+    font-size: 18px;
+    line-height: 1.6;
+    margin: 20px 0;
+}
+
+.certificate-details {
+    margin: 30px 0;
+    font-size: 16px;
+}
+
+.certificate-details p {
+    margin: 5px 0;
+}
+
+.certificate-footer {
+    margin-top: 50px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.signature-container {
+    text-align: center;
+    width: 45%;
+}
+
+.signature-line {
+    border-top: 1px solid #333;
+    margin-top: 50px;
+    padding-top: 10px;
+}
+
+.signature-name {
+    font-weight: bold;
+}
+
+.signature-title {
+    font-style: italic;
+    color: #666;
+}
+
+.certificate-id {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    font-size: 12px;
+    color: #999;
+}
+
+.certificate-date {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    font-size: 12px;
+    color: #999;
+}
+
+.certificate-seal {
+    position: absolute;
+    bottom: 80px;
+    right: 40px;
+    width: 100px;
+    height: 100px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.8;
+}
+
+.skills-list {
+    text-align: left;
+    margin: 20px auto;
+    max-width: 80%;
+}
+
+.skills-list ul {
+    padding-left: 20px;
+}
+
+.skills-list li {
+    margin-bottom: 5px;
+}
+
+.gpa-display {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2a2a2a;
+    margin: 20px 0;
+}
+
+/* Additional styles for PDF rendering */
+@page {
+    margin: 0;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* Fix for signature image */
+.signature-container img {
+    max-width: 150px;
+    max-height: 60px;
+}

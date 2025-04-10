@@ -1,4 +1,4 @@
-﻿namespace PhotonPiano.BusinessLogic.BusinessModel.Class
+namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 {
     public class CreateClassModel
     {

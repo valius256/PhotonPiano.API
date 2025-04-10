@@ -1,6 +1,6 @@
 ﻿namespace PhotonPiano.Api.Requests.Class
 {
-    public class UpdateStudentClassRequest
+    public record UpdateStudentClassRequest
     {
         public required Guid OldClassId { get; set; }
         public required Guid NewClassId { get; set; }

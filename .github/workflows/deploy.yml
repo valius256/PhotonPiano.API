@@ -108,10 +108,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
-            # Kiểm tra phiên bản Docker Compose
+            cd /root/photonpiano
             docker-compose --version || { echo "Docker Compose không được cài đặt!"; exit 1; }
-
-            # Kiểm tra xem Docker có đang chạy hay không
+            docker-compose pull photonpiano-api photonpiano-database
+            docker-compose down --remove-orphans --volumes
+            docker-compose up -d --force-recreate --renew-anon-volumes
+            docker ps --filter "name=api" --filter "status=running" || { echo "API container không chạy!"; exit 1; }
+            docker ps --filter "name=database" --filter "status=running" || { echo "Database container không chạy!"; exit 1; }
+       
             docker info || { echo "Docker không chạy!"; exit 1; }
 
             # Pull các image mới

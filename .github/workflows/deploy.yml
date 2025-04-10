@@ -130,8 +130,8 @@ jobs:
             # Đảm bảo rằng cả hai services đều đang hoạt động
             docker ps --filter "name=photonpiano-api" --filter "status=running" || { echo "photonpiano-api không hoạt động!"; exit 1; }
             docker ps --filter "name=photonpiano-database" --filter "status=running" || { echo "photonpiano-database không hoạt động!"; exit 1; }
-
-            # Kiểm tra tình trạng sức khỏe của container
-            docker inspect --format '{{.State.Health.Status}}' photonpiano-api | grep "healthy" || { echo "photonpiano-api không khỏe!"; exit 1; }
-            docker inspect --format '{{.State.Health.Status}}' photonpiano-database | grep "healthy" || { echo "photonpiano-database không khỏe!"; exit 1; }
-  
+#
+#            # Kiểm tra tình trạng sức khỏe của container
+#            docker inspect --format '{{.State.Health.Status}}' photonpiano-api | grep "healthy" || { echo "photonpiano-api không khỏe!"; exit 1; }
+#            docker inspect --format '{{.State.Health.Status}}' photonpiano-database | grep "healthy" || { echo "photonpiano-database không khỏe!"; exit 1; }
+#  

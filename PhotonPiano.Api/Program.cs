@@ -1,5 +1,8 @@
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Hangfire;
 using Mapster;
+using Microsoft.AspNetCore.Mvc.Razor;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
@@ -7,6 +10,7 @@ using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -27,29 +31,29 @@ builder.Services.AddApiDependencies(configuration)
 
 // Load wkhtmltopdf native libraries
 // Modify the path to point to wkhtmltox folder
-// var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
-// var context = new CustomAssemblyLoadContext();
-// context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
-//     RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
-//     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
-//     "libwkhtmltox.dylib"));
-//
-// // Add DinkToPdf services
-// builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
-//
-// builder.Services.AddControllersWithViews()
-//     .AddRazorRuntimeCompilation();
+var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
+var context = new CustomAssemblyLoadContext();
+context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
+     RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
+     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
+     "libwkhtmltox.dylib"));
+
+// Add DinkToPdf services
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+
+builder.Services.AddControllersWithViews()
+    .AddRazorRuntimeCompilation();
 builder.Services.AddRazorPages();
-//
-// builder.Services.Configure<RazorViewEngineOptions>(options =>
-// {
-//     options.ViewLocationFormats.Clear();
-//     options.ViewLocationFormats.Add("/Views/{0}" + RazorViewEngine.ViewExtension);
-//     options.ViewLocationFormats.Add("/Views/{0}.cshtml");
-//     options.ViewLocationFormats.Add("/{0}.cshtml");
-//     options.ViewLocationFormats.Add("/{0}");
-// });
-// Not Done Yet
+
+builder.Services.Configure<RazorViewEngineOptions>(options =>
+{
+    options.ViewLocationFormats.Clear();
+    options.ViewLocationFormats.Add("/Views/{0}" + RazorViewEngine.ViewExtension);
+    options.ViewLocationFormats.Add("/Views/{0}.cshtml");
+    options.ViewLocationFormats.Add("/{0}.cshtml");
+    options.ViewLocationFormats.Add("/{0}");
+});
+//Not Done Yet
 // builder.Services
 //     .AddOpenTelemetry()
 //     .ConfigureResource(resource => resource.AddService("PhotonPiano.Api"))
@@ -59,9 +63,8 @@ builder.Services.AddRazorPages();
 //             .AddAspNetCoreInstrumentation() // Tracking API request
 //             .AddHttpClientInstrumentation() // Tracking HTTP request
 //             .AddSqlClientInstrumentation();  // Tracking database queries
-//
-//         
-//         tracerProviderBuilder.AddOtlpExporter();
+
+//tracerProviderBuilder.AddOtlpExporter();
 //     });
 
 

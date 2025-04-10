@@ -1,7 +1,21 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+﻿# Base runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+
+# Cài các thư viện hệ thống cần thiết cho wkhtmltopdf
+RUN apt-get update && \
+    apt-get install -y \
+    libxrender1 \
+    libxext6 \
+    libx11-6 \
+    libssl1.1 \
+    fontconfig \
+    libjpeg62-turbo \
+    libpng16-16 \
+    libfreetype6 \
+    xfonts-75dpi \
+    xfonts-base \
+    && apt-get clean
+
 RUN useradd -m appuser
 USER $APP_UID
 WORKDIR /app
@@ -9,7 +23,7 @@ EXPOSE 8080
 EXPOSE 8081 
 
 
-# This stage is used to build the service project
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
@@ -24,15 +38,25 @@ COPY . .
 WORKDIR "/src/PhotonPiano.Api"
 RUN dotnet build "./PhotonPiano.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+
+# Publish stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./PhotonPiano.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+
+# Final stage
 FROM base AS final
 WORKDIR /app
+
+# Copy published app
 COPY --from=publish /app/publish .
+
+# Copy native wkhtmltox libs if you use them locally
+COPY PhotonPiano.Api/wkhtmltox /app/wkhtmltox
+
+# Set env for native lib to load properly
+ENV LD_LIBRARY_PATH=/app/wkhtmltox/v0.12.4:$LD_LIBRARY_PATH
 
 USER appuser
 

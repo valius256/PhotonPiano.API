@@ -2,22 +2,23 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
 # Cài các thư viện hệ thống cần thiết cho wkhtmltopdf
-RUN apt-get update && \
+RUN echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list && \
+    apt-get update && \
     apt-get install -y \
+    libssl1.1 \
     libxrender1 \
     libxext6 \
     libx11-6 \
-    libssl1.1 \
     fontconfig \
     libjpeg62-turbo \
     libpng16-16 \
     libfreetype6 \
     xfonts-75dpi \
-    xfonts-base \
-    && apt-get clean
+    xfonts-base && \
+    apt-get clean
 
 RUN useradd -m appuser
-USER $APP_UID
+USER appuser
 WORKDIR /app
 EXPOSE 8080 
 EXPOSE 8081 

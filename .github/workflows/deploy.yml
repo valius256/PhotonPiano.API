@@ -167,16 +167,7 @@ jobs:
                 pull_policy: always
                 networks:
                   - app-network
-            
-              photonpiano.cache:
-                image: redis:6.2
-                container_name: photonpiano.cache
-                ports:
-                  - "6379:6379"
-                restart: unless-stopped
-                networks:
-                  - app-network
-            
+          
             networks:
               app-network:
                 driver: bridge

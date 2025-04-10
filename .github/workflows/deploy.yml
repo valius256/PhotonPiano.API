@@ -108,18 +108,26 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
-            # Check if there is a need to pull new images or configurations
+            # Kiểm tra phiên bản Docker Compose
+            docker-compose --version || { echo "Docker Compose không được cài đặt!"; exit 1; }
+
+            # Kiểm tra xem Docker có đang chạy hay không
+            docker info || { echo "Docker không chạy!"; exit 1; }
+
+            # Pull các image mới
             docker-compose pull photonpiano-api photonpiano-database
-            
-            # Stop the services gracefully before applying changes
+
+            # Dừng các services hiện tại trước khi cập nhật
             docker-compose down --remove-orphans --volumes
-            
-            # Restart containers with updated configurations or images
+
+            # Khởi động lại các containers với cấu hình và image mới
             docker-compose up -d --force-recreate --renew-anon-volumes
-            
-            # Ensure that both services are healthy before confirming deployment
-            docker ps --filter "name=photonpiano-api" --filter "status=running" || exit 1
-            docker ps --filter "name=photonpiano-database" --filter "status=running" || exit 1
-            docker inspect --format '{{.State.Health.Status}}' photonpiano-api | grep "healthy" || exit 1
-            docker inspect --format '{{.State.Health.Status}}' photonpiano-database | grep "healthy" || exit 1
+
+            # Đảm bảo rằng cả hai services đều đang hoạt động
+            docker ps --filter "name=photonpiano-api" --filter "status=running" || { echo "photonpiano-api không hoạt động!"; exit 1; }
+            docker ps --filter "name=photonpiano-database" --filter "status=running" || { echo "photonpiano-database không hoạt động!"; exit 1; }
+
+            # Kiểm tra tình trạng sức khỏe của container
+            docker inspect --format '{{.State.Health.Status}}' photonpiano-api | grep "healthy" || { echo "photonpiano-api không khỏe!"; exit 1; }
+            docker inspect --format '{{.State.Health.Status}}' photonpiano-database | grep "healthy" || { echo "photonpiano-database không khỏe!"; exit 1; }
   

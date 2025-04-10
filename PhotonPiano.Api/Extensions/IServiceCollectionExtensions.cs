@@ -241,6 +241,10 @@ public static class IServiceCollectionExtensions
     {
 
         var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
+        if (string.IsNullOrEmpty(redisConnectionString))
+        {
+            redisConnectionString = "photonpiano-cache:6379";
+        }
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString!, options =>
             {

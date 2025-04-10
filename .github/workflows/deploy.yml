@@ -177,5 +177,5 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull images and deploy
-            docker-compose pull
-            docker-compose up -d --force-recreate 
+            docker compose pull
+            docker compose up -d --force-recreate --remove-orphans

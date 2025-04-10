@@ -27,14 +27,6 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
 
-
-
-// Load wkhtmltopdf native libraries
-// Modify the path to point to wkhtmltox folder
-//builder.Services.AddDataProtection()
-//    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "Keys")))
-//    .SetApplicationName("photonpiano");
-
 var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
 var context = new CustomAssemblyLoadContext();
 context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
@@ -82,16 +74,10 @@ builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration
 // add mapster 
 TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.WebHost.UseUrls("http://0.0.0.0:8080");
-}
-
 //builder.Configuration.AddUserSecrets<Program>();
 
 var app = builder.Build();
 app.UseRouting();
-//app.MapDefaultEndpoints();
 
 await app.ConfigureDatabaseAsync();
 
@@ -99,7 +85,7 @@ app.UseScalarConfig();
 
 app.UseCors("AllowAll");
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {

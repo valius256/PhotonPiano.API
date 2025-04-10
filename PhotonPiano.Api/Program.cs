@@ -2,6 +2,7 @@ using DinkToPdf;
 using DinkToPdf.Contracts;
 using Hangfire;
 using Mapster;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Razor;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
@@ -31,6 +32,10 @@ builder.Services.AddApiDependencies(configuration)
 
 // Load wkhtmltopdf native libraries
 // Modify the path to point to wkhtmltox folder
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "Keys")))
+    .SetApplicationName("photonpiano");
+
 var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
 var context = new CustomAssemblyLoadContext();
 context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,

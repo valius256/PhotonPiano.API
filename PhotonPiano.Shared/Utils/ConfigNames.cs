@@ -32,5 +32,7 @@
         public static readonly string TuitionPaymentDeadline = "Hạn chót thanh toán học phí";
         
         public static readonly string ReasonForCancelSlot = "Lý do hủy tiết";
+
+        public static readonly string ForceClassSize = "Bắt buộc đủ sĩ số để mở lớp";
     }
 }

@@ -241,15 +241,6 @@ public static class IServiceCollectionExtensions
     {
 
         var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
-        if (string.IsNullOrEmpty(redisConnectionString))
-        {
-            redisConnectionString = "photonpiano-cache:6379";
-        }
-        if (!_messagePrinted && Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
-        {
-            Console.WriteLine("This running is using redis connection string: " + redisConnectionString);
-            _messagePrinted = true;
-        }
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString!, options =>
             {

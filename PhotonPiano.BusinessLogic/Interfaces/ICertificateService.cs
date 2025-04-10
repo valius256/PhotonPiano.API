@@ -8,4 +8,5 @@ public interface ICertificateService
     Task<string> GenerateCertificateAsync(Guid studentClassId);
     Task<List<CertificateInfoModel>> GetStudentCertificatesAsync(AccountModel account);
     Task<Dictionary<string, string>> GenerateCertificatesForClassAsync(Guid classId);
+    Task<CertificateInfoModel> GetCertificateByIdAsync(Guid studentClassId);
 }

@@ -48,4 +48,14 @@ public class CertificateController : BaseController
         var certificates = await _serviceFactory.CertificateService.GenerateCertificatesForClassAsync(classId);
         return Ok(certificates);
     }
+    
+    [HttpGet("student/{studentClassId}")]
+    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
+    [EndpointDescription("Get a certificate by student class ID")]
+    public async Task<ActionResult<CertificateInfoModel>> GetCertificateById([FromRoute] Guid studentClassId)
+    {
+        var certificate = await _serviceFactory.CertificateService.GetCertificateByIdAsync(studentClassId);
+        return Ok(certificate);
+    }
+
 }

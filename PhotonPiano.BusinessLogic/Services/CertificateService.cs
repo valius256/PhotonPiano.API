@@ -81,6 +81,7 @@ public class CertificateService : ICertificateService
 
         return true;
     }
+
     public async Task<List<StudentClass>> GetEligibleStudentsWithoutCertificatesAsync(Guid classId)
     {
         // Get the class to check if it's finished
@@ -89,25 +90,25 @@ public class CertificateService : ICertificateService
         {
             throw new NotFoundException($"Class with ID {classId} not found");
         }
-        
+
         // Class must be finished to generate certificates
         if (classInfo.Status != ClassStatus.Finished)
         {
             return new List<StudentClass>();
         }
-        
+
         // Get all student classes for this class
         var studentClasses = await _unitOfWork.StudentClassRepository.Entities
             .Include(sc => sc.Student)
             .Include(sc => sc.Class)
             .ThenInclude(c => c.Level)
-            .Where(sc => 
-                sc.ClassId == classId && 
-                sc.IsPassed && 
+            .Where(sc =>
+                sc.ClassId == classId &&
+                sc.IsPassed &&
                 sc.GPA >= sc.Class.Level.MinimumTheoreticalScore &&
                 string.IsNullOrEmpty(sc.CertificateUrl))
             .ToListAsync();
-                
+
         return studentClasses;
     }
 
@@ -194,15 +195,15 @@ public class CertificateService : ICertificateService
                 Headers = new HeaderDictionary(),
                 ContentType = "image/png"
             };
-                    
+
             // Upload to Pinata
             var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
-                    
+
             // Update student class with Piñata URL
             studentClass.CertificateUrl = pinataUrl;
             await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
             await _unitOfWork.SaveChangesAsync();
-            
+
             return pinataUrl;
         }
         finally
@@ -333,8 +334,8 @@ public class CertificateService : ICertificateService
         var studentClass = await _unitOfWork.StudentClassRepository.Entities
             .Include(sc => sc.Class)
             .ThenInclude(c => c.Level)
-            .Where(sc => sc.StudentFirebaseId == account.AccountFirebaseId && 
-                         sc.IsPassed && 
+            .Where(sc => sc.StudentFirebaseId == account.AccountFirebaseId &&
+                         sc.IsPassed &&
                          sc.CertificateUrl != null)
             .ToListAsync();
 
@@ -372,6 +373,43 @@ public class CertificateService : ICertificateService
             }
 
         }
+
         return results;
+    }
+
+    public async Task<CertificateInfoModel> GetCertificateByIdAsync(Guid studentClassId)
+    {
+        var studentClass = await _unitOfWork.StudentClassRepository.Entities
+            .Include(sc => sc.Student)
+            .Include(sc => sc.Class)
+            .ThenInclude(c => c.Level)
+            .Include(sc => sc.Class)
+            .ThenInclude(c => c.Instructor)
+            .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
+
+        if (studentClass == null)
+        {
+            throw new NotFoundException($"Certificate with ID {studentClassId} not found");
+        }
+
+        if (string.IsNullOrEmpty(studentClass.CertificateUrl))
+        {
+            throw new NotFoundException($"No certificate found for student class with ID {studentClassId}");
+        }
+
+        return new CertificateInfoModel
+        {
+            StudentClassId = studentClass.Id,
+            ClassName = studentClass.Class.Name,
+            LevelName = studentClass.Class.Level.Name,
+            CompletionDate = studentClass.UpdatedAt ?? studentClass.CreatedAt,
+            CertificateUrl = studentClass.CertificateUrl,
+            GPA = studentClass.GPA ?? 0,
+            StudentName = studentClass.Student.FullName ?? studentClass.Student.UserName ?? "Unknown",
+            InstructorName = studentClass.Class.Instructor?.FullName ??
+                             studentClass.Class.Instructor?.UserName ?? "Unknown",
+            SkillsEarned = studentClass.Class.Level.SkillsEarned
+        };
+
     }
 }

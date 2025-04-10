@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   photonpiano-database:
     image: postgres:15
@@ -65,9 +67,8 @@ services:
     networks:
       - app-network
 
-  volumes:
-    redis-data:
-
+volumes:
+  redis-data:
 
 networks:
   app-network:

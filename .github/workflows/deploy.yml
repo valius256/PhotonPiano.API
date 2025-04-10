@@ -109,6 +109,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
+    
+            # Clean up old Docker resources
+            docker stop photonpiano-api || true
+            docker rm photonpiano-api || true
+            docker stop photonpiano-database || true
+            docker rm photonpiano-database || true
             
             # Create directory for deployment
             mkdir -p ~/photonpiano
@@ -178,4 +184,4 @@ jobs:
             
             # Pull images and deploy
             docker compose pull
-            docker compose up -d --force-recreate --remove-orphans
+            docker compose up -d --force-recreate 

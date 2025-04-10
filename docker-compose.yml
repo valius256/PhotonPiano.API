@@ -40,6 +40,8 @@ services:
       - VNPAY__TIMEZONEID=${VNPAY_TIMEZONEID}
       - VNPAY__VERSION=${VNPAY_VERSION}
       - VNPAY__COMMAND=${VNPAY_COMMAND}
+      - PINATA__JWTTOKEN=${ secrets.PINATA_JWTTOKEN }
+      - PINATA__GATEWAYBASEURL=${ secrets.PINATA_GATEWAYBASEURL }
       - Logging__LogLevel__Hangfire=Debug
       - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
     volumes:
@@ -49,14 +51,14 @@ services:
     networks:
       - app-network
 
-  photonpiano-cache:
-    image: redis:6.2
-    restart: always
-    container_name: photonpiano-cache
-    ports:
-      - "6379:6379"
-    networks:
-      - app-network
+#  photonpiano-cache:
+#    image: redis:6.2
+#    restart: always
+#    container_name: photonpiano-cache
+#    ports:
+#      - "6379:6379"
+#    networks:
+#      - app-network
 
 networks:
   app-network:

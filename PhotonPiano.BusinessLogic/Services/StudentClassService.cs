@@ -554,11 +554,12 @@ namespace PhotonPiano.BusinessLogic.Services
                         account.AccountFirebaseId);
 
                     // Calculate and update GPA based on weighted scores
-                    await UpdateStudentClassGPA(studentClass.Id,
+                    await UpdateStudentClassGpa(studentClass.Id,
                         account.AccountFirebaseId,
                         classDetails.Name);
                 }
-
+                
+                await _unitOfWork.SaveChangesAsync();
                 return true;
             });
         }
@@ -698,7 +699,7 @@ namespace PhotonPiano.BusinessLogic.Services
             }
         }
 
-        private async Task UpdateStudentClassGPA(Guid studentClassId, string accountFirebaseId, string className)
+        private async Task UpdateStudentClassGpa(Guid studentClassId, string accountFirebaseId, string className)
         {
             var studentClassScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
                 scs => scs.StudentClassId == studentClassId
@@ -913,7 +914,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _unitOfWork.StudentClassScoreRepository.UpdateAsync(score);
             }
 
-            await UpdateStudentClassGPA(model.StudentClassId, account.AccountFirebaseId, classInfo.Name);
+            await UpdateStudentClassGpa(model.StudentClassId, account.AccountFirebaseId, classInfo.Name);
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
@@ -1010,7 +1011,7 @@ namespace PhotonPiano.BusinessLogic.Services
                     // Update GPAs for all affected students
                     foreach (var studentClassId in studentClassIds)
                     {
-                        await UpdateStudentClassGPA(studentClassId, account.AccountFirebaseId, classInfo.Name);
+                        await UpdateStudentClassGpa(studentClassId, account.AccountFirebaseId, classInfo.Name);
                     }
                     return true;
                 }

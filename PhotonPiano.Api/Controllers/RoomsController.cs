@@ -21,7 +21,7 @@ public class RoomsController : BaseController
     }
 
     [HttpGet]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator, Role.Instructor])]
     [EndpointDescription("Get rooms with paging")]
     public async Task<ActionResult<List<RoomDetailModel>>> GetRooms(
         [FromQuery] QueryRoomRequest request)

@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Tạo Học Phí Mới</title>
+    <title>Nhắc Nhở Đóng Học Phí</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -31,7 +31,7 @@
         }
 
         .email-header {
-            background-color: #4CAF50;
+            background-color: #FF9800;
             color: white;
             padding: 10px 0;
             text-align: center;
@@ -63,7 +63,7 @@
         }
 
         .footer a {
-            color: #4CAF50;
+            color: #FF9800;
             text-decoration: none;
         }
 
@@ -75,14 +75,13 @@
 <body>
 <div class="email-container">
     <div class="email-header">
-        Thông Báo Tạo Học Phí Mới
+        Nhắc Nhở Đóng Học Phí
     </div>
 
     <div class="email-content">
         <p>Xin chào @studentName,</p>
 
-        <p>Chúng tôi vui mừng thông báo rằng học phí mới đã được tạo cho lớp học của bạn. Dưới đây là thông tin chi
-            tiết:</p>
+        <p>Đây là thông báo nhắc nhở về hạn chót đóng học phí cho lớp học <strong>@className</strong>. Vui lòng hoàn tất việc đóng học phí đúng hạn để đảm bảo quyền lợi học tập của bạn.</p>
 
         <table class="details-table">
             <tr>
@@ -90,24 +89,26 @@
                 <td>@className</td>
             </tr>
             <tr>
-                <th>Ngày bắt đầu:</th>
-                <td>@startDate</td>
+                <th>Thời gian học:</th>
+                <td>@startDate đến @endDate</td>
             </tr>
             <tr>
-                <th>Ngày kết thúc:</th>
-                <td>@endDate</td>
-            </tr>
-            <tr>
-                <th>Số tiền:</th>
+                <th>Số tiền học phí:</th>
                 <td>@amount VND</td>
+            </tr>
+            <tr>
+                <th>Hạn chót đóng:</th>
+                <td><strong>@endDate</strong></td>
             </tr>
         </table>
 
-        <p>Cảm ơn bạn đã sử dụng dịch vụ của PhotonPiano. Chúng tôi mong được phục vụ bạn trong thời gian tới!</p>
+        <p>Nếu bạn đã hoàn thành việc đóng học phí, vui lòng bỏ qua email này. Nếu chưa, vui lòng thực hiện càng sớm càng tốt.</p>
+
+        <p>Chân thành cảm ơn bạn đã đồng hành cùng PhotonPiano!</p>
     </div>
 
     <div class="footer">
-        <p>Nếu bạn có bất kỳ câu hỏi nào hoặc cần hỗ trợ, vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi tại <a
+        <p>Mọi thắc mắc hoặc cần hỗ trợ, bạn có thể liên hệ chúng tôi tại <a
                 href="mailto:support@photonpiano.com">support@photonpiano.com</a>.</p>
     </div>
 </div>

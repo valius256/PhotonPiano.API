@@ -610,10 +610,59 @@ public class EntranceTestService : IEntranceTestService
         });
     }
 
+    private static TimeOnly GetShiftEndTime(Shift shift)
+    {
+        return shift switch
+        {
+            Shift.Shift1_7h_8h30 => new TimeOnly(8, 30),
+            Shift.Shift2_8h45_10h15 => new TimeOnly(10, 15),
+            Shift.Shift3_10h45_12h => new TimeOnly(12, 0),
+            Shift.Shift4_12h30_14h00 => new TimeOnly(14, 0),
+            Shift.Shift5_14h15_15h45 => new TimeOnly(15, 45),
+            Shift.Shift6_16h00_17h30 => new TimeOnly(17, 30),
+            Shift.Shift7_18h_19h30 => new TimeOnly(19, 30),
+            Shift.Shift8_19h45_21h15 => new TimeOnly(21, 15),
+            _ => throw new ArgumentOutOfRangeException(nameof(shift), shift, null)
+        };
+    }
+
+    private static bool HasShiftEnded(DateOnly dateToCompare, Shift shift)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+
+        if (today > dateToCompare)
+        {
+            return true;
+        }
+
+        if (today == dateToCompare)
+        {
+            var shiftEndTime = GetShiftEndTime(shift);
+            var shiftEndDateTime = dateToCompare.ToDateTime(shiftEndTime);
+
+            return DateTime.Now > shiftEndDateTime;
+        }
+
+        return false;
+    }
+
+
     public async Task UpdateStudentsEntranceTestResults(UpdateStudentsEntranceTestResultsModel updateModel,
         Guid entranceTestId,
         AccountModel currentAccount)
     {
+        var entranceTest = await _unitOfWork.EntranceTestRepository.FindSingleAsync(e => e.Id == entranceTestId);
+
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("Entrance test not found.");
+        }
+
+        if (!HasShiftEnded(entranceTest.Date, entranceTest.Shift))
+        {
+            throw new BadRequestException("Entrance test has not ended.");
+        }
+
         var entranceTestStudents =
             await _unitOfWork.EntranceTestStudentRepository.GetEntranceTestStudentsWithResults(entranceTestId);
 
@@ -720,9 +769,19 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.EntranceTestRepository.FindSingleAsync(et => et.Id == id,
                 hasTrackings: false);
 
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("Entrance test not found.");
+        }
+
         if (currentAccount.Role == Role.Instructor && entranceTest!.InstructorId != currentAccount.AccountFirebaseId)
         {
             throw new ForbiddenMethodException("You cannot update the results.");
+        }
+        
+        if (!HasShiftEnded(entranceTest.Date, entranceTest.Shift))
+        {
+            throw new BadRequestException("Entrance test has not ended.");
         }
 
         List<EntranceTestResult> results = [];

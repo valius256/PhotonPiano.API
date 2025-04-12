@@ -6,9 +6,9 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 public interface IAuthService
 {
     Task<AuthModel> SignIn(string email, string password);
-
-    Task<AccountModel> SignUp(SignUpModel model);
-
+    
+    Task<AuthModel> SignUp(SignUpModel model);
+    
     Task<NewIdTokenModel> RefreshToken(string refreshToken);
 
     Task SendPasswordResetEmail(string email);

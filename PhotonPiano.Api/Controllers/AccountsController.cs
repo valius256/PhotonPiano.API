@@ -25,7 +25,7 @@ public class AccountsController : BaseController
     }
 
     [HttpGet]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator, Role.Instructor])]
     [EndpointDescription("Get accounts with paging")]
     public async Task<ActionResult<List<AccountModel>>> GetAccounts([FromQuery] QueryPagedAccountsRequest request)
     {
@@ -50,7 +50,7 @@ public class AccountsController : BaseController
     }
 
     [HttpGet("class-waiting")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get accounts with paging")]
     public async Task<ActionResult<List<AwaitingLevelsModel>>> GetWaitingStudentOfAllLevels()
     {
@@ -76,7 +76,7 @@ public class AccountsController : BaseController
     }
 
     [HttpGet("{firebase-id}/teacher")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor])]
     [EndpointDescription("Get teacher detail by id")]
     public async Task<ActionResult<TeacherDetailModel>> GetTeacherDetailById(
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)
@@ -87,7 +87,7 @@ public class AccountsController : BaseController
     }
 
     [HttpPut]
-    [FirebaseAuthorize]
+    [CustomAuthorize]
     [EndpointDescription("Update account info")]
     public async Task<ActionResult> UpdateAccountInfo([FromBody] UpdateAccountRequest request,
         [FromHeader(Name = "Authorization")] string bearerToken)
@@ -100,7 +100,7 @@ public class AccountsController : BaseController
     }
 
     [HttpPost("staff")]
-    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Create new staff")]
     public async Task<ActionResult> CreateNewStaff([FromBody] SignUpRequest request)
     {
@@ -111,7 +111,7 @@ public class AccountsController : BaseController
 
 
     [HttpPut("role")]
-    [FirebaseAuthorize(Roles = [Role.Administrator, Role.Staff /*for testing production*/])]
+    [CustomAuthorize(Roles = [Role.Administrator, Role.Staff /*for testing production*/])]
     [EndpointDescription("Change Role")]
     public async Task<ActionResult> ChangeRole([FromBody] ChangeRoleRequest request)
     {

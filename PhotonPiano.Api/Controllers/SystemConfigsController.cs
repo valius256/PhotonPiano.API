@@ -24,7 +24,7 @@ public class SystemConfigsController : BaseController
     }
 
     [HttpGet]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get all system configs")]
     public async Task<ActionResult<List<SystemConfigModel>>> GetAll()
     {
@@ -39,7 +39,7 @@ public class SystemConfigsController : BaseController
     }
 
     [HttpPut]
-    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Set a system config")]
     public async Task<IActionResult> SetConfig(UpdateSystemConfigModel updateSystemConfigModel)
     {
@@ -89,7 +89,7 @@ public class SystemConfigsController : BaseController
     }
 
     [HttpPut("survey")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Update survey system config")]
     public async Task<ActionResult> UpdateSurveySystemConfig([FromBody] UpdateSurveySystemConfigRequest request)
     {
@@ -100,7 +100,7 @@ public class SystemConfigsController : BaseController
     }
 
     [HttpPut("entrance-test")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Update entrance test system config")]
     public async Task<ActionResult> UpdateEntranceTestSystemConfig(
         [FromBody] UpdateEntranceTestSystemConfigRequest request)

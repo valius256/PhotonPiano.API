@@ -22,7 +22,7 @@ public class ApplicationsController : BaseController
 
     [HttpGet]
     [EndpointDescription("Get academic applications with paging")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
     public async Task<ActionResult<List<ApplicationModel>>> GetPagedApplications(
         [FromQuery] QueryPagedApplicationsRequest request)
     {
@@ -36,7 +36,7 @@ public class ApplicationsController : BaseController
     }
 
     [HttpPost]
-    [FirebaseAuthorize(Roles = [Role.Student])]
+    [CustomAuthorize(Roles = [Role.Student])]
     [EndpointDescription("Send an application")]
     public async Task<ActionResult> SendApplication([FromForm] SendApplicationRequest request)
     {
@@ -51,7 +51,7 @@ public class ApplicationsController : BaseController
     }
 
     [HttpPost("refund")]
-    [FirebaseAuthorize(Roles = [Role.Student])]
+    [CustomAuthorize(Roles = [Role.Student])]
     [EndpointDescription("Send a refund application")]
     public async Task<ActionResult> SendRefundApplication([FromForm] RefundApplicationRequest refundRequest)
     {
@@ -69,7 +69,7 @@ public class ApplicationsController : BaseController
     }
 
     [HttpPut("{id}/status")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Update an application status")]
     public async Task<ActionResult> UpdateApplicationStatus([FromRoute] Guid id,
         [FromBody] UpdateApplicationRequest request)

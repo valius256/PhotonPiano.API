@@ -14,4 +14,12 @@ public record SignUpModel
         email = Email;
         password = Password;
     }
+
+    public void Deconstruct(out string email, out string password, out string fullName, out string phone)
+    {
+        email = Email;
+        password = Password;
+        fullName = FullName;
+        phone = Phone;
+    }
 }

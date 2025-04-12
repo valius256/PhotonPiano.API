@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -21,7 +22,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student, Role.Administrator])]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Student, Role.Administrator])]
         [EndpointDescription("Get surveys with paging")]
         public async Task<ActionResult<List<PianoSurveyModel>>> GetSurveys([FromQuery] QueryPagedSurveysRequest request)
         {
@@ -35,7 +36,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
         [EndpointDescription("Get survey by id")]
         public async Task<ActionResult<PianoSurveyDetailsModel>> GetPianoSurveyDetails([FromRoute] Guid id)
         {
@@ -50,7 +51,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPost]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create piano survey")]
         public async Task<ActionResult<PianoSurveyDetailsModel>> CreatePianoSurvey(
             [FromBody] CreatePianoSurveyRequest request)
@@ -61,7 +62,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Update piano survey")]
         public async Task<ActionResult> UpdatePianoSurvey([FromRoute] Guid id,
             [FromBody] UpdatePianoSurveyRequest request)
@@ -73,7 +74,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Delete piano survey")]
         public async Task<ActionResult> DeletePianoSurvey([FromRoute] Guid id)
         {
@@ -83,12 +84,11 @@ namespace PhotonPiano.Api.Controllers
 
         [HttpPost("entrance-survey/answers")]
         [EndpointDescription("Send learner answers for entrance survey")]
-        public async Task<ActionResult<PianoSurveyDetailsModel>> CreateAnswersForPianoSurvey(
+        public async Task<ActionResult<AuthModel>> CreateAnswersForPianoSurvey(
             [FromBody] SendEntranceSurveyAnswersRequest request)
         {
-            await _serviceFactory.PianoSurveyService.SendEntranceSurveyAnswers(
-                request.Adapt<SendEntranceSurveyAnswersModel>());
-            return Ok();
+            return await _serviceFactory.PianoSurveyService.SendEntranceSurveyAnswers(
+                request.Adapt<SendEntranceSurveyAnswersModel>());;
         }
     }
 }

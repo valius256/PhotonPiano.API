@@ -19,4 +19,9 @@
         <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Migrations\20250411144924_Add_Password_And_RefreshToken_To_Table_Account.cs" />
+      <Compile Remove="Migrations\20250411144924_Add_Password_And_RefreshToken_To_Table_Account.Designer.cs" />
+    </ItemGroup>
+
 </Project>

@@ -42,7 +42,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPost]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create new article")]
         public async Task<ActionResult<ArticleModel>> CreateNewArticle([FromBody] CreateArticleRequest request)
         {
@@ -52,7 +52,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPut("{slug}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Update article")]
         public async Task<ActionResult> UpdateArticle([FromRoute] string slug, [FromBody] UpdateArticleRequest request)
         {
@@ -63,7 +63,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpDelete("{slug}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Delete article")]
         public async Task<ActionResult> DeleteArticle([FromRoute] string slug)
         {

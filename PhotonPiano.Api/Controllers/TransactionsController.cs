@@ -21,7 +21,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet]
-        [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Student, Role.Staff])]
         [EndpointDescription("Get transactions with paging")]
         public async Task<ActionResult<List<TransactionModel>>> GetPagedTransactions([FromQuery] QueryPagedTransactionsRequest request)
         {

@@ -36,7 +36,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Get Survey Question details")]
         public async Task<ActionResult<SurveyQuestionDetailsModel>> GetSurveyQuestionDetails([FromRoute] Guid id)
         {
@@ -44,7 +44,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet("{id}/answers")]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
         [EndpointDescription("Get answers of a question")]
         public async Task<ActionResult<List<LearnerAnswerWithLearnerModel>>> GetAnswersOfQuestion([FromRoute] Guid id,
             [FromQuery] QueryPagedAnswersRequest request)
@@ -58,7 +58,7 @@ namespace PhotonPiano.Api.Controllers
         }
         
         [HttpPost]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create Survey Question")]
         public async Task<ActionResult<SurveyQuestionModel>> CreateSurveyQuestion(
             [FromBody] CreateSurveyQuestionRequest request)
@@ -71,7 +71,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Update Survey Question")]
         public async Task<ActionResult> UpdateSurveyQuestion([FromRoute] Guid id,
             [FromBody] UpdateSurveyQuestionRequest request)
@@ -84,7 +84,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Delete Survey Question")]
         public async Task<ActionResult> DeleteSurveyQuestion([FromRoute] Guid id)
         {

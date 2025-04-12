@@ -30,7 +30,7 @@ public class TuitionController : BaseController
     }
 
     [HttpPost("tuition-fee")]
-    [FirebaseAuthorize(Roles = [Role.Student])]
+    [CustomAuthorize(Roles = [Role.Student])]
     public async Task<ActionResult> PayTuitionFee([FromBody] PayTuitionFeeRequest request)
     {
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
@@ -69,7 +69,7 @@ public class TuitionController : BaseController
     }
 
     [HttpGet]
-    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff])]
     [EndpointDescription("Get Tuition with paging")]
     public async Task<ActionResult<List<TuitionWithStudentClassResponse>>> GetPagedTuitions(
         [FromQuery] QueryTutionRequest request)
@@ -85,7 +85,7 @@ public class TuitionController : BaseController
     }
 
     [HttpGet("{id}")]
-    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff])]
     [EndpointDescription("Get Tuition details")]
     public async Task<ActionResult<TuitionWithStudentClassResponse>> GetTuitionDetails(
         [FromRoute] Guid id)

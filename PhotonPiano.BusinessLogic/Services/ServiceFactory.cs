@@ -90,6 +90,8 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IStudentClassScoreService> _studentClassScoreService;
     
     private readonly Lazy<ICertificateService> _certificateService;
+    
+    private readonly Lazy<ITokenService> _tokenService;
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IHubContext<ProgressHub> progressHubContext,
@@ -142,6 +144,8 @@ public class ServiceFactory : IServiceFactory
             httpContextAccessor, 
             converter));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
+
+        _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -208,4 +212,6 @@ public class ServiceFactory : IServiceFactory
     public IArticleService ArticleService => _articleService.Value;
     public IStudentClassScoreService StudentClassScoreService => _studentClassScoreService.Value;
     public ICertificateService CertificateService => _certificateService.Value;
+
+    public ITokenService TokenService => _tokenService.Value;
 }

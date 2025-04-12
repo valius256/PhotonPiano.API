@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPianoSurveyService, PianoSurveyService>();
         services.AddScoped<ILevelService, LevelService>();
         services.AddScoped<IArticleService, ArticleService>();
+        services.AddScoped<ITokenService, TokenService>();
         services.AddHttpClient();
         services.AddMapsterConfig();
         return services;

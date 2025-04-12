@@ -35,7 +35,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPost("auto-arrangement")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Arrange classes to students who are waiting for a class")]
         public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
          [FromBody] ArrangeClassModel arrangeClassModel)
@@ -52,7 +52,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet("{id}/scoreboard")]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
         [EndpointDescription("Get Class scoreboard by Id")]
         public async Task<ActionResult<ClassScoreboardModel>> GetClassScoreboard(
          [FromRoute] Guid id)
@@ -63,7 +63,7 @@ namespace PhotonPiano.Api.Controllers
 
 
         [HttpPost]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Create a class individually")]
         public async Task<ActionResult<ClassModel>> CreateClass(
         [FromBody] CreateClassRequest request)
@@ -75,7 +75,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Delete a class")]
         public async Task<ActionResult> DeleteClass([FromRoute] Guid id)
         {
@@ -84,7 +84,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPut]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Update a class")]
         public async Task<ActionResult> UpdateClass([FromBody] UpdateClassRequest request)
         {
@@ -95,7 +95,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPost("student-class")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Add many students to a class")]
         public async Task<ActionResult<StudentClassModel>> CreateStudentClass(
         [FromBody] CreateStudentClassRequest request)
@@ -107,7 +107,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpDelete("student-class")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Delete a studentClass")]
         public async Task<ActionResult> DeleteStudentClass([FromQuery] string studentId, [FromQuery] Guid classId, [FromQuery] bool IsExpelled = false)
         {
@@ -116,7 +116,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPut("student-class")]
-        [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
         [EndpointDescription("Change class of a student")]
         public async Task<ActionResult> ChangeClassOfStudent([FromBody] UpdateStudentClassRequest request)
         {
@@ -128,7 +128,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPatch("{classId}/publishing")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Publish a class")]
         public async Task<ActionResult> PublishClass([FromRoute] Guid classId)
         {
@@ -137,7 +137,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPatch("scheduling")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Schedule a class based on option")]
         public async Task<ActionResult> ScheduleClass([FromBody] ScheduleClassRequest scheduleClassRequest)
         {
@@ -146,7 +146,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpDelete("{id}/schedule")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Delete entire schedule a class")]
         public async Task<ActionResult> DeleteClassSchedule([FromRoute] Guid id)
         {

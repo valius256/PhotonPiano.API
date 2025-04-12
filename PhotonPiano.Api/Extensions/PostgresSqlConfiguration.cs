@@ -1,4 +1,5 @@
 ﻿using PhotonPiano.DataAccess.Models;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -16,6 +17,14 @@ public class PostgresSqlConfiguration
         return $"UPDATE public.\"Level\" " +
                $"SET \"MinimumPracticalScore\" = {practicalScore}, \"MinimumTheoreticalScore\" = {theoryScore} " +
                $"WHERE \"Id\" = '{levelId}'";
+    }
+
+    private string GetAccountUpdateQuery()
+    {
+        var hashedPassword = AuthUtils.HashPassword("123456");
+
+        return $"UPDATE public.\"Account\" " +
+               $"SET \"Password\" = '{hashedPassword}'";
     }
 
     public void Configure()
@@ -54,7 +63,8 @@ public class PostgresSqlConfiguration
                     context.Database.ExecuteSqlRaw(GetLevelUpdateQuery(Guid.Parse("3db94220-15db-4880-9b57-b6064b27c11b"), 4.0m, 4.0m));
                     context.Database.ExecuteSqlRaw(GetLevelUpdateQuery(Guid.Parse("0d232654-2ce8-4193-9bc3-acd3eddf2ff2"), 6.0m, 6.0m));
                     context.Database.ExecuteSqlRaw(GetLevelUpdateQuery(Guid.Parse("55974743-7c93-47ab-877e-eda4cb9f96c5"), 8.0m, 8.0m));
-
+                    
+                    context.Database.ExecuteSqlRaw(GetAccountUpdateQuery());
 
                     break; // If connection is successful, break loop
                 }

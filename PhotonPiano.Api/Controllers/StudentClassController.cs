@@ -22,7 +22,7 @@ public class StudentClassController : BaseController
     }
 
     [HttpPost("{classId}/publish-score")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Publish Score")]
     public async Task<IActionResult> PublishScore( [FromRoute] Guid classId)
     {
@@ -31,7 +31,7 @@ public class StudentClassController : BaseController
     }
     
     [HttpGet("{id}/grade-template")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Download Template Excel")]
     public async Task<IActionResult> DownloadGradeTemplate(Guid id)
     {
@@ -40,7 +40,7 @@ public class StudentClassController : BaseController
     }
 
     [HttpPost("{classId}/import-scores")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Import student scores from an Excel file")]
     public async Task<ActionResult> ImportScoresFromExcel([FromRoute] Guid classId, IFormFile file)
     {
@@ -50,7 +50,7 @@ public class StudentClassController : BaseController
     }
 
     [HttpPut("{studentFirebaseId}/status")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Change Student Status")]
     public async Task<IActionResult> UpdateStudentStatus([FromRoute] string studentFirebaseId, [FromBody] ChangeStudentStatusRequest request)
     {
@@ -60,7 +60,7 @@ public class StudentClassController : BaseController
     }
     
     [HttpPut]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Update a student's score for a specific criteria")]
     public async Task<IActionResult> UpdateStudentScore([FromBody] UpdateStudentScoreRequest request)
     {
@@ -76,7 +76,7 @@ public class StudentClassController : BaseController
     }
         
     [HttpPut("batch-update-scores")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Update scores for multiple students and criteria in a batch")]
     public async Task<IActionResult> UpdateBatchScores([FromBody] UpdateBatchStudentScoreRequest request)
     {
@@ -87,7 +87,7 @@ public class StudentClassController : BaseController
     }
     
     [HttpGet("{classId}/scores")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Get scores for all students in a class with criteria details")]
     public async Task<IActionResult> GetClassScores([FromRoute] Guid classId)
     {

@@ -12,6 +12,8 @@ public interface IAccountService
     Task<PagedResult<AccountModel>> GetTeachers(QueryPagedAccountsModel model);
 
     Task<List<AwaitingLevelsModel>> GetWaitingStudentOfAllLevels();
+    
+    Task<AccountModel> GetAccountFromIdAndEmail(string accountId, string email);
 
     Task<AccountModel> GetAndCreateAccountIfNotExistsCredentials(string firebaseId, string email,
         bool isEmailVerified = false,

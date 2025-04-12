@@ -24,16 +24,15 @@ using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
 using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OfficeOpenXml;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
-using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.Shared.Utils;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
 using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
-
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -46,7 +45,7 @@ public static class IServiceCollectionExtensions
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         
         services.AddControllerConfigurations()
-            .AddAuthConfigurations(configuration)
+            .AddJwtAuthConfigurations(configuration)
             .AddExceptionHandlerConfiguration()
             .AddScalarConfigurations()
             .AddSettingsOptions(configuration)
@@ -71,8 +70,9 @@ public static class IServiceCollectionExtensions
         services.AddProblemDetails();
         return services;
     }
-
-    private static IServiceCollection AddAuthConfigurations(this IServiceCollection services,
+    
+    
+    private static IServiceCollection AddJwtAuthConfigurations(this IServiceCollection services,
         IConfiguration configuration)
     {
         services.AddAuthentication(options =>
@@ -81,20 +81,25 @@ public static class IServiceCollectionExtensions
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(options =>
         {
-            options.Authority = configuration["Firebase:Auth:Authority"];
             options.TokenValidationParameters = new TokenValidationParameters
             {
+                ValidateIssuerSigningKey = true,
                 ValidateIssuer = true,
-                ValidIssuer = configuration["Firebase:Auth:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = configuration["Firebase:Auth:Audience"],
-                ValidateLifetime = true
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero,
+                ValidIssuer = configuration["JwtAuth:Issuer"],
+                ValidAudience = configuration["JwtAuth:Audience"],
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtAuth:Key"] ?? ""))
             };
-            options.IncludeErrorDetails = true;
         });
+
+        services.AddAuthorization();
+        
         return services;
     }
-
+    
     private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
     {
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()

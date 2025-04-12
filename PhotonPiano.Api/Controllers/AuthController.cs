@@ -35,7 +35,7 @@ public class AuthController : BaseController
     }
 
     [HttpGet("current-info")]
-    [FirebaseAuthorize]
+    [CustomAuthorize]
     [EndpointDescription("Get current account info")]
     public ActionResult<AccountModel?> GetCurrentAccountInfo()
     {

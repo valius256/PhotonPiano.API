@@ -20,7 +20,7 @@ public class CertificateController : BaseController
     }
 
     [HttpPost("student/{studentClassId}")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Generate a certificate for a student")]
     public async Task<IActionResult> GenerateCertificate([FromRoute] Guid studentClassId)
     {
@@ -29,7 +29,7 @@ public class CertificateController : BaseController
     }
     
     [HttpGet("my-certificates")]
-    [FirebaseAuthorize(Roles = [Role.Student])]
+    [CustomAuthorize(Roles = [Role.Student])]
     [EndpointDescription("Get all certificates for a specific student")]
     public async Task<ActionResult<List<CertificateInfoModel>>> GetMyStudentCertificates()
     {
@@ -41,7 +41,7 @@ public class CertificateController : BaseController
     }
 
     [HttpPost("class/{classId}")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Generate a certificate for a class")]
     public async Task<ActionResult<Dictionary<string, string>>> GenerateCertificatesForClass([FromRoute] Guid classId)
     {
@@ -50,7 +50,7 @@ public class CertificateController : BaseController
     }
     
     [HttpGet("student/{studentClassId}")]
-    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
     [EndpointDescription("Get a certificate by student class ID")]
     public async Task<ActionResult<CertificateInfoModel>> GetCertificateById([FromRoute] Guid studentClassId)
     {

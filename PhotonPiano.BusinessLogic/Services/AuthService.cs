@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Mapster;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -34,123 +35,127 @@ public class AuthService : IAuthService
         _apiKey = _configuration["Firebase:Auth:ApiKey"]!;
     }
 
+    private string HashPassword(string password)
+    {
+        using var sha256 = SHA256.Create();
+        // Convert the password string to bytes
+        byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+
+        // Compute the hash
+        byte[] hashBytes = sha256.ComputeHash(passwordBytes);
+
+        // Convert the hash to a hexadecimal string
+        string hashedPassword = string.Concat(hashBytes.Select(b => $"{b:x2}"));
+
+        return hashedPassword;
+    }
+
+    private bool VerifyPassword(string inputPassword, string dbHashedPassword)
+    {
+        string hashedPassword = HashPassword(inputPassword);
+
+        return (hashedPassword == dbHashedPassword);
+    }
+
     public async Task<AuthModel> SignIn(string email, string password)
     {
-        using var client = _httpClientFactory.CreateClient();
+        var account =
+            await _unitOfWork.AccountRepository.FindSingleAsync(a =>
+                a.Email == email && HashPassword(password) == a.Password);
 
-        var url =
-            $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={_apiKey}";
-
-        var jsonRequest = JsonConvert.SerializeObject(new
+        if (account is null)
         {
-            email,
-            password,
-            returnSecureToken = true
-        });
-
-        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-        var response = await client.PostAsync(url, content);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            Console.WriteLine(await response.Content.ReadAsStringAsync());
             throw new UnauthorizedException("Wrong email or password");
         }
 
-        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var idToken = _serviceFactory.TokenService.GenerateIdToken(account.Adapt<AccountModel>());
 
-        var responseObject = JsonConvert.DeserializeObject<AuthModel>(jsonResponse)!;
+        if (string.IsNullOrEmpty(account.RefreshToken))
+        {
+            var refreshToken = _serviceFactory.TokenService.GenerateRefreshToken();
 
-        var account = await _serviceFactory.AccountService.GetAndCreateAccountIfNotExistsCredentials(
-            responseObject.LocalId,
-            email);
+            account.RefreshToken = refreshToken;
+            account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(7);
+        }
 
-        responseObject.Role = account.Role;
-
-        // var notifications = await _serviceFactory.NotificationService.GetUserNotificationsAsync(responseObject.LocalId);
-        //
-        // foreach (var notification in notifications)
-        // {
-        //     // Split Content back into Title and Message
-        //     var splitContent = notification.Notification.Content.Split(new[] { ": " }, 2, StringSplitOptions.None);
-        //     var title = splitContent.Length > 1 ? splitContent[0] : "Notification";
-        //     var message = splitContent.Length > 1 ? splitContent[1] : notification.Notification.Content;
-        //
-        //     await _serviceFactory.NotificationServiceHub.SendNotificationAsync(
-        //         responseObject.LocalId,
-        //         account.UserName,
-        //         title,
-        //         message
-        //     );
-        // }
-
-        return responseObject;
+        return new AuthModel
+        {
+            Kind = account.Email,
+            LocalId = account.AccountFirebaseId,
+            Email = account.Email,
+            DisplayName = account.FullName ?? account.Email,
+            ExpiresIn = "3600",
+            IdToken = idToken,
+            RefreshToken = account.RefreshToken,
+            Role = account.Role,
+            Registered = true
+        };
     }
 
-    public async Task<AccountModel> SignUp(SignUpModel model)
+    public async Task<AuthModel> SignUp(SignUpModel model)
     {
         var (email, password) = model;
 
         if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == email))
+        {
             throw new ConflictException("Email already exists");
-
-        var firebaseId = await SignUpOnFirebase(email, password);
+        }
 
         var account = model.Adapt<Account>();
 
-        account.AccountFirebaseId = firebaseId;
+        account.AccountFirebaseId = Guid.NewGuid().ToString();
+        account.Password = HashPassword(password);
         account.Role = Role.Student;
         account.StudentStatus = StudentStatus.Unregistered;
 
-        await _unitOfWork.AccountRepository.AddAsync(account);
+        var idToken = _serviceFactory.TokenService.GenerateIdToken(account.Adapt<AccountModel>());
 
+        var refreshToken = _serviceFactory.TokenService.GenerateRefreshToken();
+
+        account.RefreshToken = refreshToken;
+        account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(7);
+        
+        await _unitOfWork.AccountRepository.AddAsync(account);
         await _unitOfWork.SaveChangesAsync();
 
-        return account.Adapt<AccountModel>();
+        return new AuthModel
+        {
+            Kind = account.Email,
+            LocalId = account.AccountFirebaseId,
+            Email = account.Email,
+            DisplayName = account.FullName ?? account.Email,
+            ExpiresIn = "3600",
+            IdToken = idToken,
+            RefreshToken = refreshToken,
+            Role = account.Role,
+            Registered = true
+        };
     }
 
     public async Task<NewIdTokenModel> RefreshToken(string refreshToken)
     {
-        using var client = _httpClientFactory.CreateClient();
+        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.RefreshToken == refreshToken);
 
-        var url = $"https://securetoken.googleapis.com/v1/token?key={_configuration["Firebase:Auth:ApiKey"]}";
-
-        var snakeCaseJsonSerializerSetting = new JsonSerializerSettings
+        if (account is null)
         {
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new SnakeCaseNamingStrategy()
-            }
-        };
-
-        var jsonRequest = JsonConvert.SerializeObject(new
-        {
-            grant_type = "refresh_token",
-            refresh_token = refreshToken
-        }, snakeCaseJsonSerializerSetting);
-
-        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-        var response = await client.PostAsync(url, content);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorResponse = await response.Content.ReadAsStringAsync();
-            var errorResponseObject = JsonConvert.DeserializeObject<FirebaseErrorResponseModel>(errorResponse)!;
-            throw new BadRequestException(errorResponseObject.Message);
+            throw new UnauthorizedException("Wrong refresh token");
         }
 
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var responseObject =
-            JsonConvert.DeserializeObject<NewIdTokenModel>(jsonResponse, snakeCaseJsonSerializerSetting)!;
+        if (account.RefreshToken == string.Empty || account.RefreshTokenExpiryDate < DateTime.UtcNow.AddHours(7))
+        {
+            throw new BadRequestException("Invalid refresh token or refresh token is expired");
+        }
 
-        var account =
-            await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == responseObject.UserId);
-
-        responseObject.Role = account!.Role.ToString();
-
-        return responseObject!;
+        return new NewIdTokenModel
+        {
+            Role = account.Role.ToString(),
+            ExpiresIn = "3600",
+            IdToken = _serviceFactory.TokenService.GenerateIdToken(account.Adapt<AccountModel>()),
+            ProjectId = "PhotonPiano",
+            RefreshToken = account.RefreshToken,
+            TokenType = "idToken",
+            UserId = account.AccountFirebaseId
+        };
     }
 
     public async Task SendPasswordResetEmail(string email)

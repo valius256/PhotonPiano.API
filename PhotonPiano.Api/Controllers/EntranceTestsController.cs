@@ -29,7 +29,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet]
-    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
     [EndpointDescription(
         "Get entrance tests with paging, field Keyword can search for EntranceTestName, InstructorName, RoomName")]
     public async Task<ActionResult<List<EntranceTestResponse>>> GetEntranceTest(
@@ -45,7 +45,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet("{id}")]
-    [FirebaseAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
     [EndpointDescription("Get an entrance test")]
     public async Task<ActionResult<EntranceTestDetailResponse>> GetEntranceTestById([FromRoute] Guid id)
     {
@@ -54,7 +54,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpPost]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Create an entrance test")]
     public async Task<ActionResult<EntranceTestResponse>> CreateEntranceTest(
         [FromBody] CreateEntranceTestRequest request)
@@ -66,7 +66,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpDelete("{id}")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Delete an entrance test")]
     public async Task<ActionResult> DeleteEntranceTest([FromRoute] Guid id)
     {
@@ -75,7 +75,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpPut("{id}")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Update an entrance test")]
     public async Task<ActionResult> UpdateEntranceTest([FromRoute] Guid id,
         [FromBody] UpdateEntranceTestRequest request)
@@ -87,7 +87,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet("{id}/students")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance tests students")]
     public async Task<ActionResult<List<EntranceTestStudentDetail>>> GetEntranceTestStudents([FromRoute] Guid id,
         [FromQuery] QueryPagedRequest query)
@@ -102,7 +102,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpGet("{id}/students/{student-id}")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance test student details")]
     public async Task<ActionResult<EntranceTestStudentDetailResponse>> GetEntranceTestStudentDetails(
         [FromRoute(Name = "id")] Guid id,
@@ -115,7 +115,7 @@ public class EntranceTestsController : BaseController
     }
 
     [HttpPost("enrollment-requests")]
-    [FirebaseAuthorize(Roles = [Role.Student])]
+    [CustomAuthorize(Roles = [Role.Student])]
     [EndpointDescription("Enroll student in entrance test")]
     public async Task<ActionResult<PaymentUrlResponse>> EnrollEntranceTest([FromBody] EnrollmentRequest request)
     {
@@ -147,7 +147,7 @@ public class EntranceTestsController : BaseController
 
     [HttpPost("auto-arrangement")]
     [EndpointDescription("Auto arrange entrance tests")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     public async Task<ActionResult> AutoArrangeEntranceTests(
         [FromBody] AutoArrangeEntranceTestsRequest request)
     {
@@ -158,7 +158,7 @@ public class EntranceTestsController : BaseController
 
 
     [HttpPut("{id}/results")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     [EndpointDescription("Update results of an entrance test")]
     public async Task<ActionResult> UpdateEntranceTestResults(
         [FromRoute] Guid id,
@@ -172,7 +172,7 @@ public class EntranceTestsController : BaseController
 
     [HttpPut("{id}/students/{student-id}/results")]
     [EndpointDescription("Update student entrance test results")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
     public async Task<ActionResult> UpdateStudentEntranceResults([FromRoute] Guid id,
         [FromRoute(Name = "student-id")] string studentId,
         [FromBody] UpdateEntranceTestResultsRequest updateRequest)

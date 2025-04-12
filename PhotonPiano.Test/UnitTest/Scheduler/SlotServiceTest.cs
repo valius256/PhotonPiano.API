@@ -100,7 +100,7 @@ public class SlotServiceTest
     [Fact]
     public void GetShiftStartTime_ThrowsException_ForInvalidShift()
     {
-        // Arrange
+        // Arrange        
         var invalidShift = (Shift)999;
 
         // Act & Assert

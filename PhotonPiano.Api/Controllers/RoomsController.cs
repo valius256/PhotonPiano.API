@@ -21,7 +21,7 @@ public class RoomsController : BaseController
     }
 
     [HttpGet]
-    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator, Role.Instructor])]
     [EndpointDescription("Get rooms with paging")]
     public async Task<ActionResult<List<RoomDetailModel>>> GetRooms(
         [FromQuery] QueryRoomRequest request)

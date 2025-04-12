@@ -25,7 +25,7 @@ var configuration = builder.Configuration;
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
-    .AddDataAccessDependencies();
+    .AddDataAccessDependencies(); 
 
 var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
 var context = new CustomAssemblyLoadContext();

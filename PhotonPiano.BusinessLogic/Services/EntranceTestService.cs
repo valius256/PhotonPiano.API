@@ -726,6 +726,9 @@ public class EntranceTestService : IEntranceTestService
                 entranceTestStudent.EntranceTestResults.Add(resultToAdd);
 
                 practicalScore += result.Score * (criteria.Weight / 100);
+                
+                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                    Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
             }
 
             entranceTestStudent.BandScore = ((decimal)theoryScore + practicalScore) / 2;

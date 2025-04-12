@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -83,12 +84,11 @@ namespace PhotonPiano.Api.Controllers
 
         [HttpPost("entrance-survey/answers")]
         [EndpointDescription("Send learner answers for entrance survey")]
-        public async Task<ActionResult<PianoSurveyDetailsModel>> CreateAnswersForPianoSurvey(
+        public async Task<ActionResult<AuthModel>> CreateAnswersForPianoSurvey(
             [FromBody] SendEntranceSurveyAnswersRequest request)
         {
-            await _serviceFactory.PianoSurveyService.SendEntranceSurveyAnswers(
-                request.Adapt<SendEntranceSurveyAnswersModel>());
-            return Ok();
+            return await _serviceFactory.PianoSurveyService.SendEntranceSurveyAnswers(
+                request.Adapt<SendEntranceSurveyAnswersModel>());;
         }
     }
 }

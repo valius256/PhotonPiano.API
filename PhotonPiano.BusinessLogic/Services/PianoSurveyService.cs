@@ -435,7 +435,7 @@ public class PianoSurveyService : IPianoSurveyService
         return survey;
     }
 
-    public async Task SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model)
+    public async Task<AuthModel> SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model)
     {
         var (email, password, fullName, phone, answers) = model;
 
@@ -504,5 +504,7 @@ public class PianoSurveyService : IPianoSurveyService
 
             await _unitOfWork.LearnerAnswerRepository.AddRangeAsync(learnerAnswers);
         });
+
+        return authData;
     }
 }

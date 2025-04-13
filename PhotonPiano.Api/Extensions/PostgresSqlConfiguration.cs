@@ -24,7 +24,8 @@ public class PostgresSqlConfiguration
         var hashedPassword = AuthUtils.HashPassword("123456");
 
         return $"UPDATE public.\"Account\" " +
-               $"SET \"Password\" = '{hashedPassword}'";
+               $"SET \"Password\" = '{hashedPassword}'" +
+               $"WHERE \"Password\" = ''";
     }
 
     public void Configure()

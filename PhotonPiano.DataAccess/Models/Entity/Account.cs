@@ -12,7 +12,11 @@ public class Account : BaseEntity
     
     public string RefreshToken { get; set; } = string.Empty;
 
-    public DateTime RefreshTokenExpiryDate { get; set; } 
+    public DateTime RefreshTokenExpiryDate { get; set; }
+
+    public string? ResetPasswordToken { get; set; }
+
+    public DateTime? ResetPasswordTokenExpiry { get; set; }
 
     public string? UserName { get; set; }
     public string? Phone { get; set; } = string.Empty;

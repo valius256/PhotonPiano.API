@@ -54,7 +54,6 @@ public class AuthController : BaseController
     public async Task<ActionResult> SendPasswordResetEmail([FromBody] SendPasswordResetEmailRequest request)
     {
         await _serviceFactory.AuthService.SendPasswordResetEmail(request.Email);
-
         return Ok();
     }
 
@@ -65,5 +64,13 @@ public class AuthController : BaseController
     {
         var (code, redirectUrl) = request;
         return await _serviceFactory.AuthService.HandleGoogleAuthCallback(code, redirectUrl);
+    }
+
+    [HttpPut("change-password")]
+    [EndpointDescription("Change password")]
+    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        await _serviceFactory.AuthService.ChangePassword(request.Adapt<ChangePasswordModel>());
+        return NoContent();
     }
 }

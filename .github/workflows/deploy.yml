@@ -139,10 +139,10 @@ jobs:
             VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
             VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
             VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
-            JWTAUTH__KEY=${{ secrets.JWT_AUTH_KEY }}
-            JWTAUTH__ISSUER=${{ secrets.JWT_AUTH_ISSUER }}
-            JWTAUTH__AUDIENCE=${{ secrets.JWT_AUTH_AUDIENCE }}
-            JWTAUTH__DURATIONINDAYS=${{ secrets.JWT_AUTH_DURATIONINDAYS }}
+            JWTAUTH_KEY=${{ secrets.JWT_AUTH_KEY }}
+            JWTAUTH_ISSUER=${{ secrets.JWT_AUTH_ISSUER }}
+            JWTAUTH_AUDIENCE=${{ secrets.JWT_AUTH_AUDIENCE }}
+            JWTAUTH_DURATIONINDAYS=${{ secrets.JWT_AUTH_DURATIONINDAYS }}
             VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
             VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
             VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}

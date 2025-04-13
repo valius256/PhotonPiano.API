@@ -37,7 +37,7 @@ public class SchedulerController : BaseController
             var result =
                 await _serviceFactory.SlotService.GetWeeklySchedule(request.Adapt<GetSlotModel>(),
                     CurrentAccount);
-            return Ok(result.Adapt<List<SlotSimpleModel>>());
+            return Ok(result.Adapt<List<SlotDetailModel>>());
         }
 
         return Unauthorized("The user is not authorized to access this resource.");

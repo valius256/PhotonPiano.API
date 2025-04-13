@@ -79,14 +79,14 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotSimpleModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
+    public async Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
     {
 
         // Tạo danh sách các ClassId cần truy vấn
         List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
 
         // Tạo danh sách kết quả
-        var result = new List<SlotSimpleModel>();
+        var result = new List<SlotDetailModel>();
 
         // Duyệt qua từng ClassId để lấy slot
         foreach (var classId in classIds)
@@ -94,7 +94,7 @@ public class SlotService : ISlotService
             string cacheKey = GenerateCacheKey(classId, slotModel.StartTime, accountModel.Role);
 
             // Kiểm tra cache
-            var cachedSlots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
+            var cachedSlots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotDetailModel>>(cacheKey);
             if (cachedSlots != null)
             {
                 result.AddRange(cachedSlots);
@@ -102,7 +102,7 @@ public class SlotService : ISlotService
             }
 
             // Nếu không có trong cache, truy vấn database
-            var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(
+            var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(
                 s => s.ClassId == classId &&
                      s.Date >= slotModel.StartTime &&
                      s.Date < slotModel.EndTime
@@ -147,7 +147,7 @@ public class SlotService : ISlotService
         return slots.Select(s => s.ClassId).Distinct().ToList();
     }
 
-    private List<SlotSimpleModel> ApplyAdditionalFilters(List<SlotSimpleModel> slots, GetSlotModel slotModel)
+    private List<SlotDetailModel> ApplyAdditionalFilters(List<SlotDetailModel> slots, GetSlotModel slotModel)
     {
         if (slotModel.Shifts.Any())
             slots = slots.Where(s => slotModel.Shifts.Contains(s.Shift)).ToList();

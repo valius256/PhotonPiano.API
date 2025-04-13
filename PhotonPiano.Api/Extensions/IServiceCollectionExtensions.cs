@@ -319,7 +319,8 @@ public static class IServiceCollectionExtensions
 
             recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
                 x => x.CronAutoChangeSlotStatus(),
-                Cron.Hourly());
+                "*/15 * * * *"); // Chạy mỗi 15 phút
+
 
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
                 x => x.CronForTuitionOverdue(),

@@ -76,6 +76,9 @@ public class SlotStudentService : ISlotStudentService
         }
 
         await _unitOfWork.SaveChangesAsync();
+        
+        // removed cache 
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule");
 
         return true;
     }

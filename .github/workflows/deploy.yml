@@ -196,7 +196,7 @@ jobs:
                   - VNPAY__VERSION=${VNPAY_VERSION}
                   - VNPAY__COMMAND=${VNPAY_COMMAND}
                   - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
-                  - JWRTAUTH__KEY=${JWTAUTH_KEY}
+                  - JWTAUTH__KEY=${JWTAUTH_KEY}
                   - JWTAUTH__ISSUER=${JWTAUTH_ISSUER}
                   - JWTAUTH__AUDIENCE=${JWTAUTH_AUDIENCE}
                   - JWTAUTH__DURATIONINDAYS=${JWTAUTH_DURATIONINDAYS}

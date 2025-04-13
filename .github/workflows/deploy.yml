@@ -32,9 +32,9 @@ env:
   VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
   VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
   PINATA__JWTTOKEN: ${{ secrets.PINATA_JWTTOKEN }}
-  JWTAUTH__KEY: ${{ secrets.JWT_AUTH_KEY }}
-  JWTAUTH__ISSUER: ${{ secrets.JWT_AUTH_ISSUER }}
-  JWTAUTH__AUDIENCE: ${{ secrets.JWT_AUTH_AUDIENCE }}
+  JWTAUTH__KEY: ${{ secrets.JWTAUTH_KEY }}
+  JWTAUTH__ISSUER: ${{ secrets.JWTAUTH_ISSUER }}
+  JWTAUTH__AUDIENCE: ${{ secrets.JWTAUTH_AUDIENCE }}
   JWTAUTH__DURATIONINDAYS: ${{ secrets.JWT_AUTH_DURATIONINDAYS }}
   CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
@@ -63,16 +63,17 @@ jobs:
       - name: ⚙️ Setup .NET 9 SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: ${{ env.DOTNET_VERSION }} 
 
       - name: 📦 Restore Dependencies
         run: dotnet restore PhotonPiano.API.sln
 
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
-#      i commment this cause the issue with get token by google has limit 
-#      - name: ✅ Run Tests
-#        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+
+      # Tạm thời bỏ qua chạy test (do giới hạn với token của Google)
+      # - name: ✅ Run Tests
+      #   run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
   docker-build-and-push:
     needs: build-and-test
@@ -92,7 +93,7 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME }} --all-tags
-          
+  
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
@@ -114,18 +115,18 @@ jobs:
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
             set -e # Dừng script nếu có lỗi
-    
+
             # Đảm bảo docker-compose down trước
-            cd ~/photonpiano 2>/dev/null && docker compose down || true
-    
+            cd ~/photonpiano || true && docker compose down || true
+
             # Xóa container cũ bằng cách tìm tất cả container có tên 'photonpiano'
             docker ps -a | grep photonpiano | awk '{print $1}' | xargs -r docker rm -f
-    
+
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano
-    
-            # Tạo .env file để sử dụng biến môi trường
+
+            # Tạo .env file từ GitHub Secrets
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
@@ -139,10 +140,10 @@ jobs:
             VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
             VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
             VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
-            JWTAUTH_KEY=${{ secrets.JWT_AUTH_KEY }}
-            JWTAUTH_ISSUER=${{ secrets.JWT_AUTH_ISSUER }}
-            JWTAUTH_AUDIENCE=${{ secrets.JWT_AUTH_AUDIENCE }}
-            JWTAUTH_DURATIONINDAYS=${{ secrets.JWT_AUTH_DURATIONINDAYS }}
+            JWTAUTH_KEY=${{ secrets.JWTAUTH_KEY }}
+            JWTAUTH_ISSUER=${{ secrets.JWTAUTH_ISSUER }}
+            JWTAUTH_AUDIENCE=${{ secrets.JWTAUTH_AUDIENCE }}
+            JWTAUTH_DURATIONINDAYS=${{ secrets.JWTAUTH_DURATIONINDAYS }}
             VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
             VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
             VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}
@@ -150,7 +151,7 @@ jobs:
             PINATA_GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
             REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
             EOF
-    
+
             # Viết docker-compose.yml
             cat > docker-compose.yml <<'EOF'
             version: "3.8"
@@ -195,9 +196,10 @@ jobs:
                   - VNPAY__VERSION=${VNPAY_VERSION}
                   - VNPAY__COMMAND=${VNPAY_COMMAND}
                   - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
-                  - JWTAUTH__ISSUER=${JWT_AUTH_ISSUER}
-                  - JWTAUTH__AUDIENCE=${secretsJWT_AUTH_AUDIENCE}
-                  - JWTAUTH__DURATIONINDAYS=${JWT_AUTH_DURATIONINDAYS}
+                  - JWTAUTH__KEY=${JWTAUTH_KEY}
+                  - JWTAUTH__ISSUER=${JWTAUTH_ISSUER}
+                  - JWTAUTH__AUDIENCE=${JWTAUTH_AUDIENCE}
+                  - JWTAUTH__DURATIONINDAYS=${JWTAUTH_DURATIONINDAYS}
                   - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
                   - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
                   - Logging__LogLevel__Hangfire=Debug
@@ -213,10 +215,10 @@ jobs:
               app-network:
                 driver: bridge
             EOF
-    
+
             # Đăng nhập vào GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-    
+
             # Pull images và deploy với project name cụ thể
             docker compose -p photonpiano pull
             docker compose -p photonpiano up -d --force-recreate

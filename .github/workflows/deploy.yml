@@ -70,7 +70,8 @@ jobs:
 
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
-#      i commment this cause the issue with get token by google has limit 
+
+      # Kiểm tra lỗi nếu cần
 #      - name: ✅ Run Tests
 #        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
@@ -88,11 +89,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏗️ Build and Push Docker Image
+      - name: 🏗️ Build Docker Image
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
-          docker push ${{ env.IMAGE_NAME }} --all-tags
-          
+
+      - name: 🛑 If Build fails, Rollback
+        if: failure()
+        run: |
+          echo "Build failed. Rolling back to previous image."
+          docker pull ${{ env.IMAGE_NAME }}:latest
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.IMAGE_NAME }}:latest
+
+      - name: Push Docker Image
+        run: docker push ${{ env.IMAGE_NAME }} --all-tags
+
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
@@ -113,110 +124,11 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
-            set -e # Dừng script nếu có lỗi
-    
-            # Đảm bảo docker-compose down trước
-            cd ~/photonpiano 2>/dev/null && docker compose down || true
-    
-            # Xóa container cũ bằng cách tìm tất cả container có tên 'photonpiano'
-            docker ps -a | grep photonpiano | awk '{print $1}' | xargs -r docker rm -f
-    
-            # Tạo directory cho deployment
-            mkdir -p ~/photonpiano
-            cd ~/photonpiano
-    
-            # Tạo .env file để sử dụng biến môi trường
-            cat > .env <<EOF
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
-            FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}
-            FIREBASE_AUTHORITY=${{ secrets.FIREBASE_AUTHORITY }}
-            FIREBASE_ISSUER=${{ secrets.FIREBASE_ISSUER }}
-            FIREBASE_AUDIENCE=${{ secrets.FIREBASE_AUDIENCE }}
-            VNPAY_BASEURL=${{ secrets.VNPAY_BASEURL }}
-            VNPAY_TMNCODE=${{ secrets.VNPAY_TMNCODE }}
-            VNPAY_HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
-            VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
-            VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
-            VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
-            JWTAUTH_KEY=${{ secrets.JWT_AUTH_KEY }}
-            JWTAUTH_ISSUER=${{ secrets.JWT_AUTH_ISSUER }}
-            JWTAUTH_AUDIENCE=${{ secrets.JWT_AUTH_AUDIENCE }}
-            JWTAUTH_DURATIONINDAYS=${{ secrets.JWT_AUTH_DURATIONINDAYS }}
-            VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
-            VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
-            VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}
-            PINATA_JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
-            PINATA_GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
-            REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
-            EOF
-    
-            # Viết docker-compose.yml
-            cat > docker-compose.yml <<'EOF'
-            version: "3.8"
-            services:
-              photonpiano-database:
-                image: postgres:15
-                container_name: photonpiano-database
-                environment:
-                  POSTGRES_USER: postgres
-                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-                  POSTGRES_DB: photonpiano
-                ports:
-                  - "5432:5432"
-                volumes:
-                  - /root/photonpiano/postgres-data:/var/lib/postgresql/data
-                restart: unless-stopped
-                networks:
-                  - app-network
-              photonpiano-api:
-                image: ghcr.io/valius256/photonpiano-api:latest
-                container_name: photonpiano-api
-                restart: unless-stopped
-                depends_on:
-                  - photonpiano-database
-                ports:
-                  - "8080:8080"  # HTTP
-                environment:
-                  - ASPNETCORE_URLS=http://0.0.0.0:8080
-                  - POSTGRES_CONNECTION=${POSTGRES_CONNECTION}
-                  - HangfireConnectionString=${POSTGRES_CONNECTION}
-                  - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}
-                  - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
-                  - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
-                  - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
-                  - VNPAY__BASEURL=${VNPAY_BASEURL}
-                  - VNPAY__TMNCODE=${VNPAY_TMNCODE}
-                  - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
-                  - VNPAY__RETURNURL=${VNPAY_RETURNURL}
-                  - VNPAY__CURRCODE=${VNPAY_CURRCODE}
-                  - VNPAY__LOCALE=${VNPAY_LOCALE}
-                  - VNPAY__TIMEZONEID=${VNPAY_TIMEZONEID}
-                  - VNPAY__VERSION=${VNPAY_VERSION}
-                  - VNPAY__COMMAND=${VNPAY_COMMAND}
-                  - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
-                  - JWTAUTH__ISSUER=${JWT_AUTH_ISSUER}
-                  - JWTAUTH__AUDIENCE=${secretsJWT_AUTH_AUDIENCE}
-                  - JWTAUTH__DURATIONINDAYS=${JWT_AUTH_DURATIONINDAYS}
-                  - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
-                  - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
-                  - Logging__LogLevel__Hangfire=Debug
-                  - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
-                volumes:
-                  - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
-                  - /root/.aspnet/https:/https:ro
-                networks:
-                  - app-network
-            volumes:
-              redis-data:
-            networks:
-              app-network:
-                driver: bridge
-            EOF
-    
-            # Đăng nhập vào GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-    
-            # Pull images và deploy với project name cụ thể
-            docker compose -p photonpiano pull
-            docker compose -p photonpiano up -d --force-recreate
+            set -e
+
+            # Pull the latest image
+            docker pull ${{ env.IMAGE_NAME }}:latest
+
+            # Run the container
+            docker-compose down || true
+            docker-compose up -d --force-recreate

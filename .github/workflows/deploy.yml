@@ -63,7 +63,7 @@ jobs:
       - name: ⚙️ Setup .NET 9 SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: ${{ env.DOTNET_VERSION }} 
 
       - name: 📦 Restore Dependencies
         run: dotnet restore PhotonPiano.API.sln

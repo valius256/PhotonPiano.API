@@ -64,4 +64,17 @@ public class LevelService : ILevelService
 
         return level.Id;
     }
+
+    public async Task<LevelDetailsModel> GetLevelDetailsAsync(Guid levelId)
+    {
+        var level = await _unitOfWork.LevelRepository.FindSingleProjectedAsync<LevelDetailsModel>(l => l.Id == levelId,
+            hasTrackings: false);
+
+        if (level is null)
+        {
+            throw new NotFoundException("Level not found");
+        }
+
+        return level;
+    }
 }

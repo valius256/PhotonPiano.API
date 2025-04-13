@@ -19,4 +19,18 @@ public static class AuthUtils
 
         return hashedPassword;
     }
+
+    public static string GenerateSecureToken(int size = 64)
+    {
+        var tokenBytes = new byte[size];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(tokenBytes);
+        }
+
+        return Convert.ToBase64String(tokenBytes)
+                      .Replace("+", "-")
+                      .Replace("/", "_")
+                      .Replace("=", ""); // URL-safe
+    }
 }

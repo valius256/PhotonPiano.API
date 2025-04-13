@@ -139,6 +139,10 @@ jobs:
             VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
             VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
             VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
+            JWTAUTH__KEY=${{ secrets.JWT_AUTH_KEY }}
+            JWTAUTH__ISSUER=${{ secrets.JWT_AUTH_ISSUER }}
+            JWTAUTH__AUDIENCE=${{ secrets.JWT_AUTH_AUDIENCE }}
+            JWTAUTH__DURATIONINDAYS=${{ secrets.JWT_AUTH_DURATIONINDAYS }}
             VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
             VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
             VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}
@@ -191,6 +195,9 @@ jobs:
                   - VNPAY__VERSION=${VNPAY_VERSION}
                   - VNPAY__COMMAND=${VNPAY_COMMAND}
                   - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
+                  - JWTAUTH__ISSUER=${JWT_AUTH_ISSUER}
+                  - JWTAUTH__AUDIENCE=${secretsJWT_AUTH_AUDIENCE}
+                  - JWTAUTH__DURATIONINDAYS=${JWT_AUTH_DURATIONINDAYS}
                   - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
                   - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
                   - Logging__LogLevel__Hangfire=Debug

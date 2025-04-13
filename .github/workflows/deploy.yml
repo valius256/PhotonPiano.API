@@ -32,9 +32,9 @@ env:
   VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
   VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
   PINATA__JWTTOKEN: ${{ secrets.PINATA_JWTTOKEN }}
-  JWTAUTH__KEY: ${{ secrets.JWT_AUTH_KEY }}
-  JWTAUTH__ISSUER: ${{ secrets.JWT_AUTH_ISSUER }}
-  JWTAUTH__AUDIENCE: ${{ secrets.JWT_AUTH_AUDIENCE }}
+  JWTAUTH__KEY: ${{ secrets.JWTAUTH_KEY }}
+  JWTAUTH__ISSUER: ${{ secrets.JWTAUTH_ISSUER }}
+  JWTAUTH__AUDIENCE: ${{ secrets.JWTAUTH_AUDIENCE }}
   JWTAUTH__DURATIONINDAYS: ${{ secrets.JWT_AUTH_DURATIONINDAYS }}
   CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
@@ -140,10 +140,10 @@ jobs:
             VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
             VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
             VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
-            JWTAUTH_KEY=${{ secrets.JWT_AUTH_KEY }}
-            JWTAUTH_ISSUER=${{ secrets.JWT_AUTH_ISSUER }}
-            JWTAUTH_AUDIENCE=${{ secrets.JWT_AUTH_AUDIENCE }}
-            JWTAUTH_DURATIONINDAYS=${{ secrets.JWT_AUTH_DURATIONINDAYS }}
+            JWTAUTH_KEY=${{ secrets.JWTAUTH_KEY }}
+            JWTAUTH_ISSUER=${{ secrets.JWTAUTH_ISSUER }}
+            JWTAUTH_AUDIENCE=${{ secrets.JWTAUTH_AUDIENCE }}
+            JWTAUTH_DURATIONINDAYS=${{ secrets.JWTAUTH_DURATIONINDAYS }}
             VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
             VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
             VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}

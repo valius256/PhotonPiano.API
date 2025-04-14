@@ -4,6 +4,7 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Scheduler;
 using PhotonPiano.Api.Responses.Scheduler;
 using PhotonPiano.Api.Responses.Slot;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -134,6 +135,21 @@ public class SchedulerController : BaseController
         var result = await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentUserFirebaseId);
         return Ok(result);
     }
-
-
+    
+    [HttpGet("available-teachers-for-slot/{slotId}")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Get All teacher can be assigned to this slot")]
+    public async Task<ActionResult> GetAllTeacherCanBeAssignedToThisSlot([FromRoute] Guid slotId)
+    {
+        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToThisSlot(slotId, CurrentUserFirebaseId);
+        return Ok(result.Adapt<List<AccountSimpleModel>>());
+    }
+    
+    [HttpPost("assign-teacher-to-slot")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Assign a teacher to a slot")]
+    public async Task<ActionResult> AssignTeacherToSlot([FromBody] AssignTeacherToSlotRequest request)
+    {
+        return Ok(await _serviceFactory.SlotService.AssignTeacherToSlot(request.SlotId, request.TeacherFirebaseId, request.Reason ,CurrentUserFirebaseId));
+    }
 }

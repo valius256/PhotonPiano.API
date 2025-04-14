@@ -31,4 +31,8 @@ public interface ISlotService
     Task<bool> CancelSlot(CancelSlotModel model, string accountFirebaseId);
 
     Task<SlotDetailModel> PublicNewSlot(PublicNewSlotModel model, string accountFirebaseId);
+    
+    Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToThisSlot(Guid slotId, string accountFirebaseId);
+    
+    Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string reason ,string staffAccountFirebaseId);
 }

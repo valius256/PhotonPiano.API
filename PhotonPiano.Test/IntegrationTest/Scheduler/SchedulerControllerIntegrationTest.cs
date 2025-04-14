@@ -184,7 +184,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     public async Task UpdateAttendance_ReturnsOkResult()
     {
         // Arrange
-        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
@@ -220,7 +220,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     public async Task UpdateAttendance_EmptyLists_ReturnsBadRequest()
     {
         // Arrange
-        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
@@ -244,7 +244,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     public async Task UpdateAttendance_InvalidSlotId_ReturnsNotFound()
     {
         // Arrange
-        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
 
         var request = new AttendanceRequest
@@ -272,7 +272,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     public async Task UpdateAttendance_NonExistentStudentIds_ReturnsBadRequest()
     {
         // Arrange
-        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "Quangphat12a3");
+        var teacherLoginedToken = await _client.GetAuthToken("teacherphatlord@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
@@ -307,7 +307,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     [Fact]
     public async Task GetBlankClassAndShift_ReturnsOkResult()
     {
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456@");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // Arrange
@@ -330,7 +330,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     [Fact]
     public async Task CancelSlot_ReturnsNotFound()
     {
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
 
@@ -352,7 +352,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     [Fact]
     public async Task CancelSlot_ReturnsNoContent()
     {
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
@@ -378,7 +378,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     public async Task PublicNewSlot_ReturnsIllegalArgument()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
@@ -407,7 +407,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     public async Task PublicNewSlot_ReturnsOk()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");

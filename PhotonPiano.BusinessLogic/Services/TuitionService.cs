@@ -412,15 +412,12 @@ public class TuitionService : ITuitionService
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
         var utcNowConvert = DateOnly.FromDateTime(utcNow);
-        var lastDayOfMonth = DateTime.DaysInMonth(utcNow.Year, utcNow.Month);
-        var endDate = new DateTime(utcNow.Year, utcNow.Month, lastDayOfMonth, 23, 59, 59, DateTimeKind.Utc);
 
+        var lastSlot = classDetailModel.Slots.MaxBy(x => x.Date);
+        var numberOfSlot = classDetailModel.Slots.Count;
         var tuitions = new List<Tuition>();
         foreach (var studentClass in classDetailModel.StudentClasses)
         {
-            var numOfSlotTillEndMonth =
-                classDetailModel.Slots.Count(x =>
-                    x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
             if (classDetailModel.Level != null)
             {
                 var tuition = new Tuition
@@ -428,17 +425,16 @@ public class TuitionService : ITuitionService
                     Id = Guid.NewGuid(),
                     StudentClassId = studentClass.Id,
                     StartDate = utcNow,
-                    EndDate = endDate,
+                    EndDate = lastSlot.Date.ToDateTime(new TimeOnly(23, 59, 59)),
                     CreatedAt = utcNow,
-                    Amount = classDetailModel.Level.PricePerSlot * numOfSlotTillEndMonth,
+                    Amount = classDetailModel.Level.PricePerSlot * numberOfSlot,
                     PaymentStatus = PaymentStatus.Pending
                 };
 
                 if (tuition.Amount > 0) tuitions.Add(tuition);
             }
         }
-
-
+        
         tuitions.AddRange(tuitions);
 
         await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
@@ -446,7 +442,7 @@ public class TuitionService : ITuitionService
         // Send emails in parallel
         var emailTasks = tuitions.Select(async result =>
         {
-            var student = classDetailModel.StudentClasses.Where(sc => sc.Id == result.StudentClassId).FirstOrDefault();
+            var student = classDetailModel.StudentClasses.FirstOrDefault(sc => sc.Id == result.StudentClassId);
 
             if (student != null)
             {

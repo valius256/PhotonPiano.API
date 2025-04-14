@@ -761,6 +761,9 @@ public class ClassService : IClassService
             await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(studentClassScores);
             await _unitOfWork.SaveChangesAsync();                
         });
+        
+        // create tuition when class is published
+        await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
 
         //Notification
         if (classInfo.IsPublic)

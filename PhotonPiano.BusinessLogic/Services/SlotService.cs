@@ -277,8 +277,8 @@ public class SlotService : ISlotService
                     cls.Status = ClassStatus.Ongoing;
                     classesToUpdate.Add(cls);
                     
-                    var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
-                    await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
+                    // var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
+                    // await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
                 }
             }
         }

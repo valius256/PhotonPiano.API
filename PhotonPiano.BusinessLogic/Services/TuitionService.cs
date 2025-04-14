@@ -10,6 +10,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 using SemaphoreSlim = System.Threading.SemaphoreSlim;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -439,6 +440,11 @@ public class TuitionService : ITuitionService
 
         await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
 
+        var deadlinePayTuition =
+            await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.TuitionPaymentDeadline);
+        
+        double.TryParse(deadlinePayTuition.ConfigValue, out double deadlineDays);
+        
         // Send emails in parallel
         var emailTasks = tuitions.Select(async result =>
         {
@@ -452,11 +458,12 @@ public class TuitionService : ITuitionService
                 { "className", $"{classDetailModel.Name}" },
                 { "amount", $"{result.Amount}" },
                 { "endDate", $"{result.EndDate:dd/MM/yyyy}" },
-                { "startDate", $"{result.StartDate:dd/MM/yyyy}"}
+                { "startDate", $"{result.StartDate:dd/MM/yyyy}"},
+                { "deadline", $"{DateTime.UtcNow.AddHours(7).AddDays(deadlineDays)}" }
             };
 
                 await _serviceFactory.EmailService.SendAsync("NotifyTuitionCreated",
-                    [student.Student.Email, "quangphat7a1@gmail.com"],
+                    [student.Student.Email],
                     null, emailParam);
             }
 

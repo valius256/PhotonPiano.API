@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 using PhotonPiano.Test.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.EntranceTest;

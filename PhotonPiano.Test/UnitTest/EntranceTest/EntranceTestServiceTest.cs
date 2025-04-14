@@ -16,6 +16,7 @@ using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 using PhotonPiano.Shared.Exceptions;
 using PhotonPiano.Shared.Utils;
 

@@ -1,4 +1,4 @@
-namespace PhotonPiano.DataAccess.Models.Enum;
+namespace PhotonPiano.Shared.Enums;
 
 public enum Shift
 {

@@ -2,6 +2,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.DataAccess.Models.Enum;
 using System.ComponentModel.DataAnnotations;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 

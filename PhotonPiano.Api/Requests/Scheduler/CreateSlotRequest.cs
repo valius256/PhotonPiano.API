@@ -1,5 +1,6 @@
 ﻿using PhotonPiano.DataAccess.Models.Enum;
 using System.ComponentModel.DataAnnotations;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.Api.Requests.Scheduler
 {

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Requests.Query;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.Api.Requests.EntranceTest;
 

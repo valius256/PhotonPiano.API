@@ -1,6 +1,7 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.Utils;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 

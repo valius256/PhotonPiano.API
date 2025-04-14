@@ -8,6 +8,7 @@ using PhotonPiano.Test.Extensions;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
+using PhotonPiano.Shared.Enums;
 using static PhotonPiano.Test.Extensions.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.Scheduler;

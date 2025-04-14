@@ -9,6 +9,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.BusinessLogic.Services;
 

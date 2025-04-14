@@ -12,6 +12,7 @@ using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Room;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.Test.UnitTest.Scheduler;
 

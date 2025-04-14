@@ -1,4 +1,5 @@
 ﻿using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.Api.Responses.EntranceTest;
 
@@ -34,4 +35,6 @@ public record EntranceTestResponse
     public required string CreatedById { get; init; }
 
     public int RegisterStudents { get; init; }
+
+    public EntranceTestStatus TestStatus { get; init; }
 }

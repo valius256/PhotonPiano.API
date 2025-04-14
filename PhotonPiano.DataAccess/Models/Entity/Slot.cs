@@ -6,6 +6,7 @@ public class Slot : BaseEntityWithId
 {
     public Guid ClassId { get; set; }
     public Guid? RoomId { get; set; }
+    public string? TeacherId { get; set; }
     public Shift Shift { get; set; }
     public DateOnly Date { get; set; }
     public SlotStatus Status { get; set; } = SlotStatus.NotStarted;
@@ -20,6 +21,7 @@ public class Slot : BaseEntityWithId
     public virtual Room Room { get; set; } = default!;
     public virtual Account UpdateBy { get; set; } = default!;
     public virtual Account CancelBy { get; set; } = default!;
+    public virtual Account Teacher { get; set; } = default!;
 
     public virtual ICollection<SlotStudent> SlotStudents { get; set; } = new List<SlotStudent>();
 }

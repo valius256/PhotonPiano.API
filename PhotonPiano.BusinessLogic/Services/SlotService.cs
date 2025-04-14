@@ -49,8 +49,7 @@ public class SlotService : ISlotService
     public async Task<SlotDetailModel> GetSlotDetailById(Guid id, AccountModel? accountModel = default)
     {
         var result = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<SlotDetailModel>(
-            s => s.Id == id,
-            false
+            s => s.Id == id
         );
 
 
@@ -728,6 +727,92 @@ public class SlotService : ISlotService
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
         return newSlot.Adapt<SlotDetailModel>();
 
+    }
+
+    public async Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToThisSlot(Guid slotId, string accountFirebaseId)
+    {
+        var currentSlot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(x => x.Id == slotId, hasTrackings: false);
+        if (currentSlot == null)
+        {
+            throw new NotFoundException("Slot not found");
+        }
+        
+        var allTeachers = await _unitOfWork.AccountRepository.FindAsync(a => 
+            a.Role == Role.Instructor && 
+            a.Status == AccountStatus.Active);
+        
+        var slotsAtSameTime = await _unitOfWork.SlotRepository.FindAsync(s => 
+            s.Id != slotId && 
+            s.Date == currentSlot.Date && 
+            s.Shift == currentSlot.Shift && 
+            s.Status != SlotStatus.Cancelled);
+        
+        var classIdsWithConflictingSlots = slotsAtSameTime.Select(s => s.ClassId).Distinct().ToList();
+        var classesWithTeachers = await _unitOfWork.ClassRepository.FindAsync(c => 
+            classIdsWithConflictingSlots.Contains(c.Id));
+    
+        var busyTeacherIds = classesWithTeachers
+            .Where(c => c.InstructorId != null)
+            .Select(c => c.InstructorId)
+            .Distinct()
+            .ToList();
+        
+        // Also exclude the instructor currently assigned to the slot 
+        if (currentSlot.Class?.InstructorId != null)
+        {
+            busyTeacherIds.Add(currentSlot.Class.InstructorId);
+        }
+        
+        // Filter available teachers
+        var availableTeachers = allTeachers
+            .Where(t => !busyTeacherIds.Contains(t.AccountFirebaseId))
+            .ToList();
+
+        if (!availableTeachers.Any())
+        {
+            throw new NotFoundException("No available teachers found for this slot.");
+        }
+        
+        return availableTeachers.Adapt<List<AccountSimpleModel>>();
+    }
+
+    public async Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string Reason ,string staffAccountFirebaseId)
+    {
+        var teacher = await _unitOfWork.AccountRepository.FindAsync(a => a.AccountFirebaseId == teacherFirebaseId && a.Role == Role.Instructor, hasTrackings: false);
+        
+        if (teacher == null)
+        {
+            throw new NotFoundException("Teacher not found");
+        }
+        
+        var slot = await _unitOfWork.SlotRepository.FindSingleAsync(s => s.Id == slotId, hasTrackings: false);
+       
+        if (slot == null)
+        {
+            throw new NotFoundException("Slot not found");
+        }
+        
+        if (slot.Status != SlotStatus.NotStarted)
+        {
+            throw new BadRequestException("Can only assign teacher to slots that are not started yet!");
+        }
+        
+      
+        
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            slot.TeacherId = teacherFirebaseId;
+            slot.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            slot.UpdateById = staffAccountFirebaseId;
+            slot.SlotNote = Reason;
+            
+            await _unitOfWork.SlotRepository.UpdateAsync(slot);
+            await _unitOfWork.SaveChangesAsync();
+        });
+
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
+        
+        return await GetSlotDetailById(slotId);
     }
 
 

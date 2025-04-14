@@ -1,17 +1,22 @@
-﻿namespace PhotonPiano.BusinessLogic.BusinessModel.Level;
+﻿using System.ComponentModel.DataAnnotations;
 
-public record LevelModel : BaseModel
+namespace PhotonPiano.Api.Requests.Level;
+
+public record CreateLevelRequest
 {
-    public required Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
+    [Required]
+    public required string Name { get; init; }
 
-    public string Description { get; init; } = string.Empty;
-
-    public List<string> SkillsEarned { get; init; } = [];
+    [Required]
+    public required string Description { get; init; }
+    
+    [Required]
+    public required List<string> SkillsEarned { get; init; } 
 
     public int SlotPerWeek { get; init; }
 
     public int TotalSlots { get; init; }
+
     public decimal PricePerSlot { get; init; }
 
     public decimal MinimumTheoreticalScore { get; init; }

@@ -83,4 +83,8 @@ public interface IGenericRepository<T> where T : BaseEntity
     void Detach(T entity);
 
     void ClearChangeTracker();
+    
+    void Attach(T entity);
+
+    void MarkAsModified(T entity);
 }

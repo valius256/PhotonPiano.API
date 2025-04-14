@@ -309,9 +309,9 @@ public static class IServiceCollectionExtensions
             var tuitionReminderDay = configService.GetConfig(ConfigNames.TuitionPaymentReminderDate).Result?.ConfigValue ?? "15";
             var tuitionOverdueDay = configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
             
-            recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
-                x => x.CronAutoCreateTuition(),
-                Cron.Monthly);
+            // recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+            //     x => x.CronAutoCreateTuition(),
+            //     Cron.Monthly);
 
             recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                 x => x.CronForTuitionReminder(),
@@ -328,7 +328,7 @@ public static class IServiceCollectionExtensions
 
             recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
                 x => x.CronJobAutoRemovedOutDateNotifications(),
-                Cron.Hourly(15));
+                Cron.Daily(15));
         }
     });
 

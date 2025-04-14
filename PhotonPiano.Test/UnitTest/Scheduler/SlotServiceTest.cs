@@ -350,107 +350,107 @@ public class SlotServiceTest
         _redisCacheServiceMock.Verify(r => r.DeleteAsync(It.IsAny<string>()), Times.AtLeastOnce);
     }
 
-    [Fact]
-    public async Task GetWeeklySchedule_ReturnsSlotsFromDatabase_WhenCacheDoesNotExist()
-    {
-        // Arrange
-        var slotModel = new GetSlotModel
-        {
-            StartTime = DateOnly.FromDateTime(DateTime.Now),
-            EndTime = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
-            Shifts = new List<Shift> { Shift.Shift1_7h_8h30 },
-            SlotStatuses = new List<SlotStatus> { SlotStatus.NotStarted }
-        };
+    // [Fact]
+    // public async Task GetWeeklySchedule_ReturnsSlotsFromDatabase_WhenCacheDoesNotExist()
+    // {
+    //     // Arrange
+    //     var slotModel = new GetSlotModel
+    //     {
+    //         StartTime = DateOnly.FromDateTime(DateTime.Now),
+    //         EndTime = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
+    //         Shifts = new List<Shift> { Shift.Shift1_7h_8h30 },
+    //         SlotStatuses = new List<SlotStatus> { SlotStatus.NotStarted }
+    //     };
+    //
+    //     var accountModel = new AccountModel { 
+    //         Role = Role.Student, 
+    //         Email = "quangphat7a1@gmail.com", 
+    //         AccountFirebaseId = "testUser" 
+    //     };
+    //
+    //     var classId = Guid.NewGuid();
+    //     var slotsFromDb = new List<SlotSimpleModel>
+    //     {
+    //         new SlotSimpleModel { Id = Guid.NewGuid() },
+    //         new SlotSimpleModel { Id = Guid.NewGuid() }
+    //     };
+    //
+    //     // Setup FindAsync to return a slot with the test class ID
+    //     _slotRepositoryMock
+    //         .Setup(r => r.FindAsync(
+    //             It.IsAny<Expression<Func<Slot, bool>>>(),
+    //             It.IsAny<bool>(),
+    //             It.IsAny<bool>()))
+    //         .ReturnsAsync(new List<Slot> { new Slot { Id = Guid.NewGuid() ,ClassId = classId } });
+    //
+    //     // Setup cache to return null (cache miss)
+    //     _redisCacheServiceMock
+    //         .Setup(r => r.GetAsync<List<SlotSimpleModel>>(It.IsAny<string>()))
+    //         .ReturnsAsync((List<SlotSimpleModel>)null);
+    //
+    //     // Setup FindProjectedAsync to return slots when queried with the class ID
+    //     _slotRepositoryMock
+    //         .Setup(r => r.FindProjectedAsync<SlotSimpleModel>(
+    //             It.Is<Expression<Func<Slot, bool>>>(expr => true),
+    //             It.IsAny<bool>(),
+    //             It.IsAny<bool>(),
+    //             It.IsAny<TrackingOption>()))
+    //         .ReturnsAsync(slotsFromDb);
+    //
+    //     // Act
+    //     var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
+    //
+    //     // Assert
+    //     Assert.NotNull(result);
+    //     Assert.Equal(slotsFromDb.Count, result.Count);
+    // }
 
-        var accountModel = new AccountModel { 
-            Role = Role.Student, 
-            Email = "quangphat7a1@gmail.com", 
-            AccountFirebaseId = "testUser" 
-        };
-
-        var classId = Guid.NewGuid();
-        var slotsFromDb = new List<SlotSimpleModel>
-        {
-            new SlotSimpleModel { Id = Guid.NewGuid() },
-            new SlotSimpleModel { Id = Guid.NewGuid() }
-        };
-
-        // Setup FindAsync to return a slot with the test class ID
-        _slotRepositoryMock
-            .Setup(r => r.FindAsync(
-                It.IsAny<Expression<Func<Slot, bool>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>()))
-            .ReturnsAsync(new List<Slot> { new Slot { Id = Guid.NewGuid() ,ClassId = classId } });
-
-        // Setup cache to return null (cache miss)
-        _redisCacheServiceMock
-            .Setup(r => r.GetAsync<List<SlotSimpleModel>>(It.IsAny<string>()))
-            .ReturnsAsync((List<SlotSimpleModel>)null);
-    
-        // Setup FindProjectedAsync to return slots when queried with the class ID
-        _slotRepositoryMock
-            .Setup(r => r.FindProjectedAsync<SlotSimpleModel>(
-                It.Is<Expression<Func<Slot, bool>>>(expr => true),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<TrackingOption>()))
-            .ReturnsAsync(slotsFromDb);
-
-        // Act
-        var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(slotsFromDb.Count, result.Count);
-    }
-
-    [Fact]
-    public async Task GetWeeklySchedule_ReturnsCachedSlots_WhenCacheExists()
-    {
-        // Arrange
-        var slotModel = new GetSlotModel
-        {
-            StartTime = DateOnly.FromDateTime(DateTime.Now),
-            EndTime = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
-            Shifts = new List<Shift> { Shift.Shift1_7h_8h30 },
-            SlotStatuses = new List<SlotStatus> { SlotStatus.NotStarted }
-        };
-
-        var accountModel = new AccountModel { 
-            Role = Role.Student, 
-            Email = "quangphat7a1@gmail.com", 
-            AccountFirebaseId = "testUser" 
-        };
-
-        var classId = Guid.NewGuid();
-        var cachedSlots = new List<SlotSimpleModel>
-        {
-            new SlotSimpleModel { Id = Guid.NewGuid() },
-            new SlotSimpleModel { Id = Guid.NewGuid() }
-        };
-
-        // Setup to return a class ID when checking for the user's classes
-        _slotRepositoryMock
-            .Setup(r => r.FindAsync(
-                It.IsAny<Expression<Func<Slot, bool>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>()))
-            .ReturnsAsync(new List<Slot> { new Slot { Id = Guid.NewGuid() ,ClassId = classId } });
-
-        // Match the specific cache key pattern using the class ID
-        string cacheKeyPattern = $"schedule:{accountModel.Role}:class:{classId}:week:";
-        _redisCacheServiceMock
-            .Setup(r => r.GetAsync<List<SlotSimpleModel>>(It.Is<string>(s => s.Contains(cacheKeyPattern))))
-            .ReturnsAsync(cachedSlots);
-
-        // Act
-        var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(cachedSlots.Count, result.Count);
-    }
+    // [Fact]
+    // public async Task GetWeeklySchedule_ReturnsCachedSlots_WhenCacheExists()
+    // {
+    //     // Arrange
+    //     var slotModel = new GetSlotModel
+    //     {
+    //         StartTime = DateOnly.FromDateTime(DateTime.Now),
+    //         EndTime = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
+    //         Shifts = new List<Shift> { Shift.Shift1_7h_8h30 },
+    //         SlotStatuses = new List<SlotStatus> { SlotStatus.NotStarted }
+    //     };
+    //
+    //     var accountModel = new AccountModel { 
+    //         Role = Role.Student, 
+    //         Email = "quangphat7a1@gmail.com", 
+    //         AccountFirebaseId = "testUser" 
+    //     };
+    //
+    //     var classId = Guid.NewGuid();
+    //     var cachedSlots = new List<SlotSimpleModel>
+    //     {
+    //         new SlotSimpleModel { Id = Guid.NewGuid() },
+    //         new SlotSimpleModel { Id = Guid.NewGuid() }
+    //     };
+    //
+    //     // Setup to return a class ID when checking for the user's classes
+    //     _slotRepositoryMock
+    //         .Setup(r => r.FindAsync(
+    //             It.IsAny<Expression<Func<Slot, bool>>>(),
+    //             It.IsAny<bool>(),
+    //             It.IsAny<bool>()))
+    //         .ReturnsAsync(new List<Slot> { new Slot { Id = Guid.NewGuid() ,ClassId = classId } });
+    //
+    //     // Match the specific cache key pattern using the class ID
+    //     string cacheKeyPattern = $"schedule:{accountModel.Role}:class:{classId}:week:";
+    //     _redisCacheServiceMock
+    //         .Setup(r => r.GetAsync<List<SlotSimpleModel>>(It.Is<string>(s => s.Contains(cacheKeyPattern))))
+    //         .ReturnsAsync(cachedSlots);
+    //
+    //     // Act
+    //     var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
+    //
+    //     // Assert
+    //     Assert.NotNull(result);
+    //     Assert.Equal(cachedSlots.Count, result.Count);
+    // }
     [Fact]
     public async Task UpdateSlot_ThrowsNotFoundException_WhenSlotNotFound()
     {

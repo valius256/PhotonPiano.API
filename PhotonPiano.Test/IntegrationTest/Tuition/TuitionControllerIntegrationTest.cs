@@ -181,7 +181,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     public async Task GetPagedTuitions_AsStaff_ReturnsAllTuitions()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Act
@@ -197,7 +197,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     public async Task GetPagedTuitions_WithFilters_ReturnsFitleredResults()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         var startDate = DateOnly.FromDateTime(DateTime.Now.AddMonths(-1));
@@ -217,7 +217,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     public async Task GetTuitionDetails_ExistingId_ReturnsTuitionDetails()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // First get a tuition id
@@ -240,7 +240,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     public async Task GetTuitionDetails_NonExistentId_ReturnsNotFound()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // Act
@@ -255,7 +255,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     {
         // Arrange
         // First get a tuition id as staff
-        var staffToken = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var staffToken = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", staffToken);
         
         var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&size=10");
@@ -316,7 +316,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     {
         // Arrange
         // First get a tuition id as staff that doesn't belong to learner035
-        var staffToken = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var staffToken = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", staffToken);
         
         var tuitionsResponse = await _client.GetAsync("/api/tuitions?page=1&size=20");
@@ -374,7 +374,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     public async Task GetPagedTuitions_WithPagination_ReturnsCorrectPage()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // First get total count from page 1
@@ -409,7 +409,7 @@ public class TuitionControllerIntegrationTest : BaseIntegrationTest, IDisposable
     public async Task GetPagedTuitions_WithSorting_ReturnsSortedResults()
     {
         // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // Act - get ascending order by amount

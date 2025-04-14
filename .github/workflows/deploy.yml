@@ -44,7 +44,7 @@ env:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 #cause the wkhtmltopdf is worked as expected on this version
     services:
       postgres:
         image: postgres:latest
@@ -63,7 +63,7 @@ jobs:
       - name: ⚙️ Setup .NET 9 SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }} 
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 📦 Restore Dependencies
         run: dotnet restore PhotonPiano.API.sln
@@ -71,9 +71,19 @@ jobs:
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-      # Tạm thời bỏ qua chạy test (do giới hạn với token của Google)
-      # - name: ✅ Run Tests
-      #   run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+      - name: 📚 Install wkhtmltopdf dependencies
+        run: sudo apt-get install -y libxrender1 libxext6 libfontconfig1
+
+
+
+      - name: 📥 Download wkhtmltopdf .deb
+        run: wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb
+
+      - name: 🧱 Install wkhtmltopdf
+        run: sudo apt install ./wkhtmltox_0.12.6-1.bionic_amd64.deb
+
+      - name: ✅ Run Tests
+        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
   docker-build-and-push:
     needs: build-and-test

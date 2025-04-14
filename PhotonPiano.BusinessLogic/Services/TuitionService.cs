@@ -426,7 +426,7 @@ public class TuitionService : ITuitionService
                     Id = Guid.NewGuid(),
                     StudentClassId = studentClass.Id,
                     StartDate = utcNow,
-                    EndDate = lastSlot.Date.ToDateTime(new TimeOnly(23, 59, 59)),
+                    EndDate = utcNow.AddDays(30), //Hạn lấy từ config (ko phải lấy slot cuối)
                     CreatedAt = utcNow,
                     Amount = classDetailModel.Level.PricePerSlot * numberOfSlot,
                     PaymentStatus = PaymentStatus.Pending

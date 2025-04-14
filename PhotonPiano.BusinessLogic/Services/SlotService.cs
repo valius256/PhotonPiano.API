@@ -341,6 +341,7 @@ public class SlotService : ISlotService
         }
 
         var slot = createSlotModel.Adapt<Slot>();
+        slot.TeacherId = classDetail.InstructorId;
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -415,7 +416,7 @@ public class SlotService : ISlotService
         }
 
         var notiMessage = "";
-        if (updateSlotModel.RoomId != null)
+        if (updateSlotModel.RoomId != null && updateSlotModel.RoomId != slot.RoomId)
         {
             var oldRoom = slot.RoomId != null ? (await _unitOfWork.RoomRepository.GetByIdAsync(slot.RoomId.Value)) : null;
             var room = await _unitOfWork.RoomRepository.GetByIdAsync(updateSlotModel.RoomId.Value);
@@ -429,13 +430,40 @@ public class SlotService : ISlotService
 
         if ((updateSlotModel.Date != null && updateSlotModel.Date != slot.Date) || (updateSlotModel.Shift != null && updateSlotModel.Shift != slot.Shift))
         {
+            if (await IsConflict(updateSlotModel.Shift ?? slot.Shift, updateSlotModel.Date ?? slot.Date, updateSlotModel.RoomId ?? slot.RoomId))
+            {
+                throw new ConflictException("Can not update slots because of a schedule conflict");
+            }
+
             notiMessage += $" Cập nhật thời gian học từ phòng ngày {slot.Date}, ca {(int)slot.Shift + 1} " +
                 $"sang ngày {updateSlotModel.Date ?? slot.Date}, ca {(int)(updateSlotModel.Shift ?? slot.Shift) + 1}.";
         }
 
-        if (await IsConflict(updateSlotModel.Shift ?? slot.Shift, updateSlotModel.Date ?? slot.Date, updateSlotModel.RoomId ?? slot.RoomId))
+        
+
+        string? oldTeacherId = null;
+        Account? newTeacher = null;
+        if (updateSlotModel.TeacherId != null && slot.TeacherId != updateSlotModel.TeacherId)
         {
-            throw new ConflictException("Can not update slots because of a schedule conflict");
+            var teacher = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == updateSlotModel.TeacherId);
+            if (teacher is null)
+            {
+                throw new NotFoundException("Teacher not found");
+            }
+            var slotOfTeacher = await _unitOfWork.SlotRepository.FindAsync(s => s.TeacherId == teacher.AccountFirebaseId, false);
+            foreach (var teacherSlot in slotOfTeacher)
+            {
+                if (teacherSlot.Shift == slot.Shift && teacherSlot.Date == slot.Date)
+                {
+                    throw new ConflictException("Teacher can not be assigned to this slot due to a schedule conflict");
+                }
+            }
+
+            oldTeacherId = slot.TeacherId;
+            newTeacher = teacher;
+
+            slot.TeacherId = updateSlotModel.TeacherId;
+            notiMessage += $" Cập nhật giáo viên thay thế {teacher.FullName ?? teacher.UserName}.";
         }
 
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
@@ -480,7 +508,18 @@ public class SlotService : ISlotService
                 notiMessage, "");
             if (classDetail.InstructorId != null)
             {
-                await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, notiMessage, "");
+                if (oldTeacherId == null)
+                {
+                    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, "", notiMessage);
+                } 
+                else if (newTeacher != null)
+                {
+                    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, "[Thông báo]", $"Trung tâm đã phân bổ bạn dạy thay cho buổi học " +
+                        $"ngày {slot.Date}, Ca {(int)slot.Shift + 1} của lớp {classDetail.Name}", $"");
+                    await _serviceFactory.NotificationService.SendNotificationAsync(oldTeacherId, "[Thông báo]", $"Trung tâm đã phân bổ ${newTeacher.FullName ?? newTeacher.UserName} dạy thay cho buổi học " +
+                        $"ngày {slot.Date}, Ca {(int)slot.Shift + 1} của bạn", $"{newTeacher.AvatarUrl}");
+
+                }
             }
         }
         return updatedSlot.Adapt<SlotModel>();

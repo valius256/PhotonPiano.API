@@ -57,13 +57,13 @@ public class NotificationService : INotificationService
         });
     }
 
-    public async Task SendNotificationAsync(string userFirebaseId, string title, string message)
+    public async Task SendNotificationAsync(string userFirebaseId, string title, string message, string thumbnail = "")
     {
         var notification = new Notification
         {
             Id = Guid.NewGuid(),
             Content = $"{title}: {message}",
-            Thumbnail = ""
+            Thumbnail = thumbnail
         };
 
         await _unitOfWork.NotificationRepository.AddAsync(notification);

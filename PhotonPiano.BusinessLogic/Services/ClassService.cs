@@ -115,7 +115,7 @@ public class ClassService : IClassService
                 q => level.Count == 0 || level.Contains(q.LevelId),
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
                 q => teacherId == null || q.InstructorId == teacherId,
-                q => studentId == null || q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId),
+                q => studentId == null || (q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId) && q.IsPublic),
                 q => isPublic == null || q.IsPublic == isPublic,
                 q =>
                     string.IsNullOrEmpty(keyword) ||
@@ -573,6 +573,9 @@ public class ClassService : IClassService
 
             classInfo.LevelId = model.LevelId.Value;
         }
+
+        var slotOfTeacher = new List<Slot>();
+        var slotOfClass = new List<Slot>();
         if (model.InstructorId != null && model.InstructorId != classInfo.InstructorId)
         {
             var teacher = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == model.InstructorId);
@@ -582,23 +585,29 @@ public class ClassService : IClassService
             }
 
             //Check instructor conflicts..
-            var slotOfTeacher = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class)
-                .Where(s => s.Class.InstructorId == model.InstructorId
-                    && s.Class.Status != ClassStatus.Finished
-                    && s.ClassId != model.Id).ToListAsync();
+            slotOfTeacher = await _unitOfWork.SlotRepository.Entities.Include(s => s.Class)
+                .Where(s => s.TeacherId == teacher.AccountFirebaseId
+                    && s.Status != SlotStatus.Finished)
+                .AsNoTracking()
+                .ToListAsync();
 
-            var slotOfClass = await _unitOfWork.SlotRepository.FindAsync(s => s.ClassId == classInfo.Id);
+            slotOfClass = await _unitOfWork.SlotRepository.FindAsync(s => s.ClassId == classInfo.Id, false);
 
-            foreach (var teacherSlot in slotOfTeacher)
+           
+            foreach (var classSlot in slotOfClass)
             {
-                foreach (var classSlot in slotOfClass)
+                foreach (var teacherSlot in slotOfTeacher)
                 {
-                    if (teacherSlot.Shift == classSlot.Shift && teacherSlot.Date == classSlot.Date)
+                    if (teacherSlot.Shift == classSlot.Shift && teacherSlot.Date == classSlot.Date && classSlot.TeacherId != teacher.AccountFirebaseId)
                     {
                         throw new ConflictException("Teacher can not be assigned to this class due to a schedule conflict");
                     }
                 }
+                classSlot.TeacherId = teacher.AccountFirebaseId;
             }
+
+            //Update slot
+
             oldTeacherId = classInfo.InstructorId;
             classInfo.InstructorId = model.InstructorId;
             newTeacherMessage = $"Chúc mừng! Giờ đây bạn là giảng viên chủ nhiệm của lớp {classInfo.Name}";
@@ -606,8 +615,14 @@ public class ClassService : IClassService
         classInfo.UpdateById = accountFirebaseId;
         classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
-        await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
-        await _unitOfWork.SaveChangesAsync();
+        //Update
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+            await _unitOfWork.SlotRepository.UpdateRangeAsync(slotOfClass);
+            await _unitOfWork.SaveChangesAsync();
+        });
+        
 
         if (classInfo.IsPublic)
         {

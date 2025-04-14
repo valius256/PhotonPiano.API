@@ -886,7 +886,8 @@ public class TuitionServiceTest
         _notificationServiceMock.Verify(s => s.SendNotificationAsync(
                 studentClass.Student.AccountFirebaseId,
                 It.IsAny<string>(),
-                It.IsAny<string>()),
+                It.IsAny<string>(),
+                string.Empty),
             Times.Once);
     }
     

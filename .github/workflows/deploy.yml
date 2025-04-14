@@ -74,10 +74,7 @@ jobs:
       - name: 📚 Install wkhtmltopdf dependencies
         run: sudo apt-get install -y libxrender1 libxext6 libfontconfig1
 
-      - name: 🧩 Install libssl1.1
-        run: |
-          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.1/libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb
-          sudo apt install ./libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb
+
 
       - name: 📥 Download wkhtmltopdf .deb
         run: wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb

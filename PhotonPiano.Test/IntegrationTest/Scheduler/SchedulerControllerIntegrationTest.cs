@@ -16,7 +16,8 @@ namespace PhotonPiano.Test.IntegrationTest.Scheduler;
 public class SchedulerControllerIntegrationTest : BaseIntegrationTest
 {
     private readonly HttpClient _client;
-    
+
+    private List<Guid> emptyRoomIds = new List<Guid>();
     public SchedulerControllerIntegrationTest(IntegrationTestWebAppFactory factory) : base(factory)
     {
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -307,7 +308,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     [Fact]
     public async Task GetBlankClassAndShift_ReturnsOkResult()
     {
-        var token = await _client.GetAuthToken("staff123@gmail.com", "123456@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // Arrange
@@ -325,6 +326,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         var result = await response.Content.ReadFromJsonAsync<List<BlankSlotModel>>();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
+        emptyRoomIds = result.Select(x => x.RoomId).ToList();
     }
 
     [Fact]
@@ -406,15 +408,19 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     [Fact]
     public async Task PublicNewSlot_ReturnsOk()
     {
+        await GetBlankClassAndShift_ReturnsOkResult();
         // Arrange
         var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
 
-        var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId!.Value;
+
+        var result34 = await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage);
         
-        var roomId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().RoomId!.Value;
+        var classId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().ClassId!.Value;
+
+        var roomId = emptyRoomIds.First();
         
         var request = new PublicNewSlotRequest
         {

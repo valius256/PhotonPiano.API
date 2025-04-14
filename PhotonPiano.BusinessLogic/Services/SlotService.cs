@@ -49,10 +49,10 @@ public class SlotService : ISlotService
     public async Task<SlotDetailModel> GetSlotDetailById(Guid id, AccountModel? accountModel = default)
     {
         var result = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<SlotDetailModel>(
-            s => s.Id == id
+            s => s.Id == id,
+            false
         );
-
-
+        
         if (result == null) throw new NotFoundException("Slot not found");
 
         return result;

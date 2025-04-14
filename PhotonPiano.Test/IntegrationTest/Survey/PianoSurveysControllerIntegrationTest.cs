@@ -51,7 +51,7 @@ public class PianoSurveysControllerIntegrationTest : BaseIntegrationTest
     public async Task CreatePianoSurvey_CreateSuccess_ReturnsCreatedStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var createRequest = _fixture.Build<CreatePianoSurveyRequest>()
@@ -97,7 +97,7 @@ public class PianoSurveysControllerIntegrationTest : BaseIntegrationTest
     public async Task GetSurveys_GetSuccess_ReturnsOkStatusWithCorrectMetadata()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         //Act
@@ -135,7 +135,7 @@ public class PianoSurveysControllerIntegrationTest : BaseIntegrationTest
     public async Task GetPianoSurveyDetails_SurveyNotFound_ReturnsNotFoundStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var id = Guid.NewGuid();
 
@@ -150,7 +150,7 @@ public class PianoSurveysControllerIntegrationTest : BaseIntegrationTest
     public async Task GetPianoSurveyDetails_GetSuccess_ReturnsOkStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         //Act
@@ -181,7 +181,7 @@ public class PianoSurveysControllerIntegrationTest : BaseIntegrationTest
     public async Task UpdatePianoSurvey_SurveyNotFound_ReturnsNotFoundStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var updateRequest = _fixture.Build<UpdatePianoSurveyRequest>()
             .Create();
@@ -202,7 +202,7 @@ public class PianoSurveysControllerIntegrationTest : BaseIntegrationTest
         //Arrange
         await CreatePianoSurvey_CreateSuccess_ReturnsCreatedStatus();
 
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var updateRequest = new UpdatePianoSurveyRequest
@@ -243,7 +243,7 @@ public class PianoSurveysControllerIntegrationTest : BaseIntegrationTest
         //Arrange
         await CreatePianoSurvey_CreateSuccess_ReturnsCreatedStatus();
         
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         //Act

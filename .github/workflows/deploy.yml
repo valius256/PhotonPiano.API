@@ -71,9 +71,8 @@ jobs:
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-      # Tạm thời bỏ qua chạy test (do giới hạn với token của Google)
-      # - name: ✅ Run Tests
-      #   run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+      - name: ✅ Run Tests
+        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
   docker-build-and-push:
     needs: build-and-test

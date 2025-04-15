@@ -171,7 +171,7 @@ public static class IServiceCollectionExtensions
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         services.AddOpenApi(options => { options.AddDocumentTransformer<OpenApiSecuritySchemeTransformer>(); });
         services.AddEndpointsApiExplorer();
-        return services;
+        return services;    
     }
 
     private static IServiceCollection AddCorsConfigurations(this IServiceCollection services)
@@ -185,7 +185,7 @@ public static class IServiceCollectionExtensions
                     .AllowAnyMethod()
                     // .AllowAnyOrigin()
                     .AllowCredentials()
-                // .SetIsOriginAllowed(_ => true)
+                // .SetIsOriginAllowed(_ => true)   
             )
         );
         return services;

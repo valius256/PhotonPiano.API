@@ -51,35 +51,42 @@ public class CertificateService : ICertificateService
     /// Validates if a student is eligible for a certificate
     private async Task<bool> IsEligibleForCertificateAsync(Guid? studentClassId)
     {
-        var studentClass = await _unitOfWork.StudentClassRepository.Entities
-            .Include(sc => sc.Student)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Level)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Instructor)
-            .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
-        if (studentClass == null)
+        try
         {
-            throw new NotFoundException($"Student class with ID {studentClassId} not found");
-        }
+            // Use AsNoTracking to avoid entity tracking issues
+            var studentClass = await _unitOfWork.StudentClassRepository.Entities
+                .AsNoTracking()
+                .Include(sc => sc.Student)
+                .Include(sc => sc.Class)
+                .ThenInclude(c => c.Level)
+                .Include(sc => sc.Class)
+                .ThenInclude(c => c.Instructor)
+                .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
 
-        if (studentClass.Class.Status != ClassStatus.Finished)
+            if (studentClass == null)
+            {
+                throw new NotFoundException($"Student class with ID {studentClassId} not found");
+            }
+
+            if (studentClass.Class.Status != ClassStatus.Finished)
+            {
+                return false;
+            }
+
+            if (!studentClass.IsPassed)
+            {
+                return false;
+            }
+            
+            return true;
+        }
+        catch (Exception ex) when (ex is not NotFoundException)
         {
-            return false;
+            // Log the error but don't throw - this helps with debugging
+            Console.WriteLine(
+                $"Error checking certificate eligibility for student class {studentClassId}: {ex.Message}");
+            throw;
         }
-
-        if (!studentClass.IsPassed)
-        {
-            return false;
-        }
-
-        var minimumGpa = studentClass.Class.Level.MinimumTheoreticalScore;
-        if (studentClass.GPA < minimumGpa)
-        {
-            return false;
-        }
-
-        return true;
     }
 
     public async Task<List<StudentClass>> GetEligibleStudentsWithoutCertificatesAsync(Guid classId)
@@ -116,103 +123,102 @@ public class CertificateService : ICertificateService
     //Generate a Certificate for a student class and returns the certificate URL
     public async Task<string> GenerateCertificateAsync(Guid studentClassId)
     {
-        if (!await IsEligibleForCertificateAsync(studentClassId))
-        {
-            throw new BadRequestException("Student is not eligible for a certificate");
-        }
-
-        var studentClass = await _unitOfWork.StudentClassRepository.Entities
-            .Include(sc => sc.Student)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Level)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Instructor)
-            .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
-        if (studentClass == null)
-        {
-            throw new NotFoundException($"Student class with ID {studentClassId} not found");
-        }
-
-        // Create certificate model
-        var certificateModel = new CertificateModel
-        {
-            StudentName = studentClass.Student.FullName ?? studentClass.Student.UserName ?? "Unknown",
-            ClassName = studentClass.Class.Name,
-            LevelName = studentClass.Class.Level.Name,
-            CompletionDate = DateTime.UtcNow.AddHours(7), // Vietnam time
-            GPA = studentClass.GPA ?? 0m, // Correctly handle nullable decimal
-            IsPassed = studentClass.IsPassed,
-            CertificateId = $"CERT-{DateTime.UtcNow.Year}-{studentClassId.ToString().Substring(0, 8).ToUpper()}",
-            SkillsEarned = studentClass.Class.Level.SkillsEarned, // Direct assignment since it's already List<string>
-            InstructorName = studentClass.Class.Instructor?.FullName ??
-                             studentClass.Class.Instructor?.UserName ?? "Unknown",
-            InstructorSignatureUrl = studentClass.Class.Instructor?.AvatarUrl ?? ""
-        };
-
-        // Generate HTML and PDF
-        var certificateHtml = await RenderViewToStringAsync("Certificate", certificateModel);
-        var pdfBytes = GeneratePdfFromHtml(certificateHtml);
-
-        // Convert PDF to high-quality image
-        var imageBytes = await ConvertPdfToImageWithPdfiumViewer(pdfBytes);
-
-        // Create temporary files
-        string certificateFileName = $"certificate_{studentClassId}.png";
-        string tempFilePath = Path.Combine(Path.GetTempPath(), certificateFileName);
-
-
-        // // Create directory if it doesn't exist
-        // if (!Directory.Exists(certificatesDirectory))
-        // {
-        //     Directory.CreateDirectory(certificatesDirectory);
-        // }
-        //     
-        // var certificatePath = Path.Combine(certificatesDirectory, certificateFileName);
-        // await File.WriteAllBytesAsync(certificatePath, pdfBytes);
-        //
-        // // Generate URL
-        // var certificateUrl = $"/certificates/{certificateFileName}";
-        //
-        // // Update student class with certificate URL
-        // studentClass.CertificateUrl = certificateUrl;
-        // await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
-        // await _unitOfWork.SaveChangesAsync();
-        //
-        // return certificateUrl;
         try
         {
-            await File.WriteAllBytesAsync(tempFilePath, imageBytes);
-
-            // Create FormFile from the temp file
-            using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
-            var formFile = new FormFile(
-                fileStream,
-                0,
-                fileStream.Length,
-                "certificate",
-                certificateFileName)
+            if (!await IsEligibleForCertificateAsync(studentClassId))
             {
-                Headers = new HeaderDictionary(),
-                ContentType = "image/png"
+                throw new BadRequestException("Student is not eligible for a certificate");
+            }
+
+            // Use AsNoTracking for the initial query to avoid tracking issues
+            var studentClass = await _unitOfWork.StudentClassRepository.Entities
+                .AsNoTracking()
+                .Include(sc => sc.Student)
+                .Include(sc => sc.Class)
+                .ThenInclude(c => c.Level)
+                .Include(sc => sc.Class)
+                .ThenInclude(c => c.Instructor)
+                .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
+
+            if (studentClass == null)
+            {
+                throw new NotFoundException($"Student class with ID {studentClassId} not found");
+            }
+
+            // Create certificate model
+            var certificateModel = new CertificateModel
+            {
+                StudentName = studentClass.Student.FullName ?? studentClass.Student.UserName ?? "Unknown",
+                ClassName = studentClass.Class.Name,
+                LevelName = studentClass.Class.Level.Name,
+                CompletionDate = DateTime.UtcNow.AddHours(7), // Vietnam time
+                GPA = studentClass.GPA ?? 0m, // Correctly handle nullable decimal
+                IsPassed = studentClass.IsPassed,
+                CertificateId = $"CERT-{DateTime.UtcNow.Year}-{studentClassId.ToString().Substring(0, 8).ToUpper()}",
+                SkillsEarned =
+                    studentClass.Class.Level.SkillsEarned, // Direct assignment since it's already List<string>
+                InstructorName = studentClass.Class.Instructor?.FullName ??
+                                 studentClass.Class.Instructor?.UserName ?? "Unknown",
+                InstructorSignatureUrl = studentClass.Class.Instructor?.AvatarUrl ?? ""
             };
 
-            // Upload to Pinata
-            var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
+            // Generate HTML and PDF
+            var certificateHtml = await RenderViewToStringAsync("Certificate", certificateModel);
+            var pdfBytes = GeneratePdfFromHtml(certificateHtml);
 
-            // Update student class with Piñata URL
-            studentClass.CertificateUrl = pinataUrl;
-            await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
-            await _unitOfWork.SaveChangesAsync();
+            // Convert PDF to high-quality image
+            var imageBytes = await ConvertPdfToImageWithPdfiumViewer(pdfBytes);
 
-            return pinataUrl;
-        }
-        finally
-        {
-            // Clean up temp file
-            if (File.Exists(tempFilePath))
+            // Create temporary files
+            string certificateFileName = $"certificate_{studentClassId}.png";
+            string tempFilePath = Path.Combine(Path.GetTempPath(), certificateFileName);
+
+            try
             {
-                File.Delete(tempFilePath);
+                await File.WriteAllBytesAsync(tempFilePath, imageBytes);
+
+                // Create FormFile from the temp file
+                using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
+                var formFile = new FormFile(
+                    fileStream,
+                    0,
+                    fileStream.Length,
+                    "certificate",
+                    certificateFileName)
+                {
+                    Headers = new HeaderDictionary(),
+                    ContentType = "image/png"
+                };
+
+                // Upload to Pinata
+                var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
+
+                // Get a fresh instance of the student class for updating
+                var studentClassToUpdate = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+                if (studentClassToUpdate != null)
+                {
+                    // Update student class with Piñata URL
+                    studentClassToUpdate.CertificateUrl = pinataUrl;
+                    await _unitOfWork.StudentClassRepository.UpdateAsync(studentClassToUpdate);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
+                return pinataUrl;
             }
+            finally
+            {
+                // Clean up temp file
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not BadRequestException && ex is not NotFoundException)
+        {
+            // Log the error but rethrow
+            Console.WriteLine($"Error generating certificate for student class {studentClassId}: {ex.Message}");
+            throw;
         }
     }
 
@@ -371,7 +377,6 @@ public class CertificateService : ICertificateService
                 // Log error but continue with other students
                 throw new Exception(ex.Message);
             }
-
         }
 
         return results;
@@ -410,6 +415,5 @@ public class CertificateService : ICertificateService
                              studentClass.Class.Instructor?.UserName ?? "Unknown",
             SkillsEarned = studentClass.Class.Level.SkillsEarned
         };
-
     }
 }

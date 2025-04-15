@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
@@ -149,6 +150,8 @@ public class UnitOfWork : IUnitOfWork
     public IFreeSlotRepository FreeSlotRepository => _freeSlotRepository.Value;
     
     public IArticleRepository ArticleRepository => _articleRepository.Value;
+    
+    public DatabaseFacade Database => _context.Database;
 
     public async Task<int> SaveChangesAsync()
     {

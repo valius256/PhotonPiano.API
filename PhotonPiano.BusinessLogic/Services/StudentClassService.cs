@@ -552,13 +552,30 @@ namespace PhotonPiano.BusinessLogic.Services
                     // Update individual criteria scores
                     await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
                         account.AccountFirebaseId);
+                }
+                
+                await _unitOfWork.SaveChangesAsync();
+                
+                // Then update GPAs after scores are saved
+                for (int row = studentStartRow; row <= rows; row++)
+                {
+                    string studentName = worksheet.Cells[row, 1].Text;
+                    if (string.IsNullOrEmpty(studentName))
+                        continue;
 
-                    // Calculate and update GPA based on weighted scores
-                    await UpdateStudentClassGPA(studentClass.Id,
+                    var studentClass = classDetails.StudentClasses.FirstOrDefault(sc =>
+                        string.Equals(sc.Student.FullName, studentName, StringComparison.OrdinalIgnoreCase));
+
+                    if (studentClass == null)
+                        continue;
+
+                    // Now calculate and update GPA based on the saved scores
+                    await UpdateStudentClassGpa(studentClass.Id,
                         account.AccountFirebaseId,
                         classDetails.Name);
                 }
-
+    
+                await _unitOfWork.SaveChangesAsync();
                 return true;
             });
         }
@@ -698,7 +715,7 @@ namespace PhotonPiano.BusinessLogic.Services
             }
         }
 
-        private async Task UpdateStudentClassGPA(Guid studentClassId, string accountFirebaseId, string className)
+        private async Task UpdateStudentClassGpa(Guid studentClassId, string accountFirebaseId, string className)
         {
             var studentClassScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
                 scs => scs.StudentClassId == studentClassId
@@ -913,7 +930,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _unitOfWork.StudentClassScoreRepository.UpdateAsync(score);
             }
 
-            await UpdateStudentClassGPA(model.StudentClassId, account.AccountFirebaseId, classInfo.Name);
+            await UpdateStudentClassGpa(model.StudentClassId, account.AccountFirebaseId, classInfo.Name);
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
@@ -1010,7 +1027,7 @@ namespace PhotonPiano.BusinessLogic.Services
                     // Update GPAs for all affected students
                     foreach (var studentClassId in studentClassIds)
                     {
-                        await UpdateStudentClassGPA(studentClassId, account.AccountFirebaseId, classInfo.Name);
+                        await UpdateStudentClassGpa(studentClassId, account.AccountFirebaseId, classInfo.Name);
                     }
                     return true;
                 }

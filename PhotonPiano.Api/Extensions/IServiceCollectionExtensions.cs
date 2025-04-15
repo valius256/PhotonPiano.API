@@ -54,7 +54,7 @@ public static class IServiceCollectionExtensions
             .AddCorsConfigurations()
             .AddMapsterConfig()
             .AddRedisCache(configuration)
-            .AddPostGresSqlConfiguration()
+            .AddPostGresSqlConfiguration() 
             .AddRazorTemplateWithConfigPath()
             .AddRateLimitedForAllEndpoints()
             .ConfigureResponseCompression()

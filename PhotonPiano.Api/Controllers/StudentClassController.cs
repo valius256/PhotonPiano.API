@@ -94,4 +94,12 @@ public class StudentClassController : BaseController
         var classScores = await _serviceFactory.StudentClassScoreService.GetClassScoresWithCriteria(classId);
         return Ok(classScores);
     }
+    
+    [HttpPost("{classId}/unpublish-score")]
+    [FirebaseAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    public async Task<IActionResult> UnpublishScore(Guid classId)
+    {
+        await _serviceFactory.StudentClassScoreService.UnpublishScore(classId, CurrentAccount!);
+        return Ok(new { message = "Scores unpublished successfully" });
+    }
 }

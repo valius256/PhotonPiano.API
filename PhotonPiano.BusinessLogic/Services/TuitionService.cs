@@ -91,9 +91,7 @@ public class TuitionService : ITuitionService
 
         if (account is null) throw new NotFoundException("Account not found");
 
-        await using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
-
-        try
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             transaction.PaymentStatus =
                 callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
@@ -135,12 +133,9 @@ public class TuitionService : ITuitionService
                 default:
                     throw new BadRequestException("Unknown payment status.");
             }
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync();
-            throw;
-        }
+        });
+
+
     }
 
 

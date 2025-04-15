@@ -72,14 +72,14 @@ jobs:
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
       - name: 📚 Install wkhtmltopdf dependencies
-
         run: sudo apt-get install -y libxrender1 libxext6 libfontconfig1
 
-      - name: 📥 Download wkhtmltopdf 0.12.4 .deb
-        run: wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.4/wkhtmltox_0.12.4-1.bionic_amd64.deb
+      - name: 📥 Download wkhtmltopdf 0.12.6 .deb
+        run: wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
 
       - name: 🧱 Install wkhtmltopdf
-        run: sudo dpkg -i wkhtmltox_0.12.4-1.bionic_amd64.deb || sudo apt-get install -f -y
+        run: sudo dpkg -i wkhtmltox_0.12.6-1.focal_amd64.deb || sudo apt-get install -f -y
+
 
 #      - name: ✅ Run Tests
 #        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal

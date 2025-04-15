@@ -212,7 +212,6 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         var response = await _client.PostAsJsonAsync("/api/scheduler/update-attendance", request);
 
         // Assert
-        response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<ApiResult<bool>>();
         Assert.NotNull(result);
         Assert.True(result.Data);

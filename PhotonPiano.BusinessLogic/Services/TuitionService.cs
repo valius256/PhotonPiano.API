@@ -435,7 +435,7 @@ public class TuitionService : ITuitionService
                     Id = Guid.NewGuid(),
                     StudentClassId = studentClass.Id,
                     StartDate = utcNow,
-                    EndDate = lastSlot.Date.ToDateTime(new TimeOnly(23, 59, 59)),
+                    EndDate = lastSlot.Date.ToDateTime(new TimeOnly(23, 59, 59), DateTimeKind.Utc),
                     CreatedAt = utcNow,
                     Amount = classDetailModel.Level.PricePerSlot * numberOfSlot,
                     PaymentStatus = PaymentStatus.Pending,

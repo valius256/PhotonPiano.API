@@ -80,6 +80,7 @@ public class RoomService : IRoomService
         return [.. availableRooms
             .DistinctBy(r => r.Id) // LINQ to remove duplicates
             .Select(r => r.Adapt<RoomModel>())];
+        
     }
 
 

@@ -252,10 +252,10 @@ public class TuitionService : ITuitionService
                 {
                     { "studentName", studentClass.Student.Email },
                     { "className", studentClass.Class.Name },
-                    { "startDate", $"{utcNow:yyyy-MM-dd}" },
-                    { "endDate", $"{endDateConverted}" },
+                    { "startDate", $"{utcNow:dd-MM-yyyy}" },
+                    { "endDate", $"{endDateConverted:dd-MM-yyyy}" },
                     { "amount", $"{tution.Amount}" },
-                    { "deadline", $"{tution.Deadline:yyyy-MM-dd}" }
+                    { "deadline", $"{tution.Deadline:dd-MM-yyyy}" }
                 };
 
                 await _serviceFactory.EmailService.SendAsync(
@@ -290,8 +290,8 @@ public class TuitionService : ITuitionService
             {
                 { "studentName", studentClass.Student.Email },
                 { "className", studentClass.Class.Name },
-                { "startDate", $"{tuition.StartDate:yyyy-MM-dd}" },
-                { "endDate", $"{tuition.EndDate:yyyy-MM-dd}" },
+                { "startDate", $"{tuition.StartDate:dd-MM-yyyy}" },
+                { "endDate", $"{tuition.EndDate:dd-MM-yyyy}" },
                 { "amount", $"{tuition.Amount}" }
             };
 

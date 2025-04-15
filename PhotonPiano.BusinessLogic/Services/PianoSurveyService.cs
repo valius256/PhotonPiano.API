@@ -435,7 +435,7 @@ public class PianoSurveyService : IPianoSurveyService
         return survey;
     }
 
-    public async Task SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model)
+    public async Task<AuthModel> SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model)
     {
         var (email, password, fullName, phone, answers) = model;
 
@@ -476,7 +476,7 @@ public class PianoSurveyService : IPianoSurveyService
             });
         }
 
-        var account = await _serviceFactory.AuthService.SignUp(new SignUpModel
+        var authData = await _serviceFactory.AuthService.SignUp(new SignUpModel
         {
             Email = email,
             Password = password,
@@ -487,9 +487,9 @@ public class PianoSurveyService : IPianoSurveyService
         var learnerSurvey = new LearnerSurvey
         {
             Id = Guid.NewGuid(),
-            LearnerId = account.AccountFirebaseId,
+            LearnerId = authData.LocalId,
             PianoSurveyId = surveyId,
-            LearnerEmail = account.Email,
+            LearnerEmail = authData.Email,
             LearnerAnswers = learnerAnswers,
         };
 
@@ -504,5 +504,7 @@ public class PianoSurveyService : IPianoSurveyService
 
             await _unitOfWork.LearnerAnswerRepository.AddRangeAsync(learnerAnswers);
         });
+
+        return authData;
     }
 }

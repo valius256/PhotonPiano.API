@@ -45,6 +45,10 @@ services:
       - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
       - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
       - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
+      - JWTAUTH__KEY=${JWTAUTH_KEY}
+      - JWTAUTH__ISSUER=${JWTAUTH_ISSUER}
+      - JWTAUTH__AUDIENCE=${JWTAUTH_AUDIENCE}
+      - JWTAUTH__DURATIONINDAYS=${JWTAUTH_DURATIONINDAYS}
       - Logging__LogLevel__Hangfire=Debug
       - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
     volumes:

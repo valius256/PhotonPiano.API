@@ -24,16 +24,15 @@ using PhotonPiano.DataAccess.Models.Entity;
 using StackExchange.Redis;
 using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OfficeOpenXml;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
-using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.Shared.Utils;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
 using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
-
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -44,9 +43,9 @@ public static class IServiceCollectionExtensions
     public static IServiceCollection AddApiDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-        
+
         services.AddControllerConfigurations()
-            .AddAuthConfigurations(configuration)
+            .AddJwtAuthConfigurations(configuration)
             .AddExceptionHandlerConfiguration()
             .AddScalarConfigurations()
             .AddSettingsOptions(configuration)
@@ -72,7 +71,8 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
-    private static IServiceCollection AddAuthConfigurations(this IServiceCollection services,
+
+    private static IServiceCollection AddJwtAuthConfigurations(this IServiceCollection services,
         IConfiguration configuration)
     {
         services.AddAuthentication(options =>
@@ -81,17 +81,22 @@ public static class IServiceCollectionExtensions
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(options =>
         {
-            options.Authority = configuration["Firebase:Auth:Authority"];
             options.TokenValidationParameters = new TokenValidationParameters
             {
+                ValidateIssuerSigningKey = true,
                 ValidateIssuer = true,
-                ValidIssuer = configuration["Firebase:Auth:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = configuration["Firebase:Auth:Audience"],
-                ValidateLifetime = true
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero,
+                ValidIssuer = configuration["JwtAuth:Issuer"],
+                ValidAudience = configuration["JwtAuth:Audience"],
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtAuth:Key"] ?? ""))
             };
-            options.IncludeErrorDetails = true;
         });
+
+        services.AddAuthorization();
+
         return services;
     }
 
@@ -99,8 +104,9 @@ public static class IServiceCollectionExtensions
     {
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
-            .Map(dest => dest.Status, src => src.RecordStatus);
-
+            .Map(dest => dest.Status, src => src.RecordStatus)
+            .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
+        
         TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.Status, src => src.RecordStatus);
 
@@ -118,8 +124,9 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
-            .Map(dest => dest.Status, src => src.RecordStatus);
-
+            .Map(dest => dest.Status, src => src.RecordStatus)
+            .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
+        
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
 
@@ -171,13 +178,14 @@ public static class IServiceCollectionExtensions
     {
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
-                .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app", "https://photon-piano.netlify.app")
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                // .AllowAnyOrigin()
-                .AllowCredentials()
-            // .SetIsOriginAllowed(_ => true)
+                    .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
+                    .WithOrigins("http://localhost:5173", "https://photon-piano.vercel.app",
+                        "https://photon-piano.netlify.app")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    // .AllowAnyOrigin()
+                    .AllowCredentials()
+                // .SetIsOriginAllowed(_ => true)
             )
         );
         return services;
@@ -246,7 +254,6 @@ public static class IServiceCollectionExtensions
 
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
-
         var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString!, options =>
@@ -273,61 +280,64 @@ public static class IServiceCollectionExtensions
     }
 
 
-    private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services, IConfiguration configuration)
-{
-    services.AddHangfire((_, config) =>
+    private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
+        IConfiguration configuration)
     {
-        config.UsePostgreSqlStorage(options =>
+        services.AddHangfire((_, config) =>
         {
-            options.UseNpgsqlConnection(GetConnectionString(configuration));
+            config.UsePostgreSqlStorage(options =>
+            {
+                options.UseNpgsqlConnection(GetConnectionString(configuration));
+            });
         });
-    });
 
-    var cultureInfo = new CultureInfo("vn-VN");
-    CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-    CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+        var cultureInfo = new CultureInfo("vn-VN");
+        CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+        CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-    services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
-    
-    services.AddHangfireServer((serviceProvider, cf) =>
-    {
-        cf.WorkerCount = 15;
-        cf.TimeZoneResolver = new DefaultTimeZoneResolver();
+        services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
 
-        var recurringJobManager = serviceProvider.GetRequiredService<IRecurringJobManager>();
-        
-
-        using (var scope = serviceProvider.CreateScope())
+        services.AddHangfireServer((serviceProvider, cf) =>
         {
-            var configService = scope.ServiceProvider.GetRequiredService<ISystemConfigService>();
+            cf.WorkerCount = 15;
+            cf.TimeZoneResolver = new DefaultTimeZoneResolver();
 
-            var tuitionReminderDay = configService.GetConfig(ConfigNames.TuitionPaymentReminderDate).Result?.ConfigValue ?? "15";
-            var tuitionOverdueDay = configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
-            
-            recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
-                x => x.CronAutoCreateTuition(),
-                Cron.Monthly);
+            var recurringJobManager = serviceProvider.GetRequiredService<IRecurringJobManager>();
 
-            recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
-                x => x.CronForTuitionReminder(),
-                $"0 0 {tuitionReminderDay} * *");
 
-            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
-                x => x.CronAutoChangeSlotStatus(),
-                Cron.Hourly());
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var configService = scope.ServiceProvider.GetRequiredService<ISystemConfigService>();
 
-            recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
-                x => x.CronForTuitionOverdue(),
-                $"0 0 {tuitionOverdueDay} * *");
+                var tuitionReminderDay =
+                    configService.GetConfig(ConfigNames.TuitionPaymentReminderDate).Result?.ConfigValue ?? "15";
+                var tuitionOverdueDay =
+                    configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
 
-            recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
-                x => x.CronJobAutoRemovedOutDateNotifications(),
-                Cron.Hourly(15));
-        }
-    });
+                recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                    x => x.CronAutoCreateTuition(),
+                    Cron.Monthly);
 
-    return services;
-}
+                recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
+                    x => x.CronForTuitionReminder(),
+                    $"0 0 {tuitionReminderDay} * *");
+
+                recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
+                    x => x.CronAutoChangeSlotStatus(),
+                    Cron.Hourly());
+
+                recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
+                    x => x.CronForTuitionOverdue(),
+                    $"0 0 {tuitionOverdueDay} * *");
+
+                recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
+                    x => x.CronJobAutoRemovedOutDateNotifications(),
+                    Cron.Hourly(15));
+            }
+        });
+
+        return services;
+    }
 
 
     private static IServiceCollection AddRateLimitedForAllEndpoints(this IServiceCollection services)
@@ -368,7 +378,7 @@ public static class IServiceCollectionExtensions
 
         return services;
     }
-    
+
     private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHealthChecks()

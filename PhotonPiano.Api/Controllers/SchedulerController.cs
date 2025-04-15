@@ -4,6 +4,7 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Scheduler;
 using PhotonPiano.Api.Responses.Scheduler;
 using PhotonPiano.Api.Responses.Slot;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -27,7 +28,7 @@ public class SchedulerController : BaseController
 
 
     [HttpGet("slots")]
-    [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
     [EndpointDescription("Get All Slots in this Week")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {
@@ -37,7 +38,7 @@ public class SchedulerController : BaseController
             var result =
                 await _serviceFactory.SlotService.GetWeeklySchedule(request.Adapt<GetSlotModel>(),
                     CurrentAccount);
-            return Ok(result.Adapt<List<SlotSimpleModel>>());
+            return Ok(result.Adapt<List<SlotDetailModel>>());
         }
 
         return Unauthorized("The user is not authorized to access this resource.");
@@ -45,7 +46,7 @@ public class SchedulerController : BaseController
 
     [HttpGet("attendance-status/{slotId}")]
     [PubSub(PubSubTopic.SCHEDULER_ATTENDANCE_GET_LIST)]
-    [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
     [EndpointDescription("Get Attendance Status for a Slot")]
     public async Task<ActionResult> GetAttendanceStatus([FromRoute] Guid slotId)
     {
@@ -55,7 +56,7 @@ public class SchedulerController : BaseController
 
 
     [HttpGet("slot/{id}")]
-    [FirebaseAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
     [EndpointDescription("Get Slot by Id")]
     public async Task<ActionResult> GetSlotById([FromRoute] Guid id)
     {
@@ -64,7 +65,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpPost("update-attendance")]
-    [FirebaseAuthorize(Roles = new[] { Role.Instructor })]
+    [CustomAuthorize(Roles = new[] { Role.Instructor })]
     [EndpointDescription("Update Attendance by Instructor")]
     public async Task<IApiResult<bool>> UpdateAttendance([FromBody] AttendanceRequest request)
     {
@@ -77,7 +78,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpPost]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Create a slot individually")]
     public async Task<ActionResult<GetSlotResponses>> CreateSlot(
         [FromBody] CreateSlotRequest request)
@@ -89,7 +90,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpDelete("{id}")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Delete a slot")]
     public async Task<ActionResult> DeleteSlot([FromRoute] Guid id)
     {
@@ -98,7 +99,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpPut]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Update a slot")]
     public async Task<ActionResult> UpdateSlot([FromBody] UpdateSlotRequest request)
     {
@@ -109,7 +110,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpPost("blank-slot")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Get All Blank Class and Shift in current Week")]
     public async Task<ActionResult> GetBlankClassAndShift([FromBody] BlankSlotAndShiftRequest request)
     {
@@ -118,7 +119,7 @@ public class SchedulerController : BaseController
     }
 
     [HttpPost("cancel-slot")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Cancel a slot")]
     public async Task<ActionResult> CancelSlot([FromBody] CancelSlotRequest request)
     {
@@ -127,13 +128,28 @@ public class SchedulerController : BaseController
     }
 
     [HttpPost("public-new-slot")]
-    [FirebaseAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Public a new slot")]
     public async Task<ActionResult> PublicNewSlot([FromBody] PublicNewSlotRequest request)
     {
         var result = await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentUserFirebaseId);
         return Ok(result);
     }
-
-
+    
+    [HttpGet("available-teachers-for-slot/{slotId}")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Get All teacher can be assigned to this slot")]
+    public async Task<ActionResult> GetAllTeacherCanBeAssignedToThisSlot([FromRoute] Guid slotId)
+    {
+        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToThisSlot(slotId, CurrentUserFirebaseId);
+        return Ok(result.Adapt<List<AccountSimpleModel>>());
+    }
+    
+    [HttpPost("assign-teacher-to-slot")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Assign a teacher to a slot")]
+    public async Task<ActionResult> AssignTeacherToSlot([FromBody] AssignTeacherToSlotRequest request)
+    {
+        return Ok(await _serviceFactory.SlotService.AssignTeacherToSlot(request.SlotId, request.TeacherFirebaseId, request.Reason ,CurrentUserFirebaseId));
+    }
 }

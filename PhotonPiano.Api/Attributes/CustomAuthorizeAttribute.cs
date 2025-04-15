@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace PhotonPiano.Api.Attributes;
 
-public class FirebaseAuthorizeAttribute : AuthorizeAttribute, IAsyncAuthorizationFilter
+public class CustomAuthorizeAttribute : AuthorizeAttribute, IAsyncAuthorizationFilter
 {
     public new Role[] Roles { get; set; } = [];
 
@@ -16,9 +16,9 @@ public class FirebaseAuthorizeAttribute : AuthorizeAttribute, IAsyncAuthorizatio
     {
         var user = context.HttpContext.User;
 
-        var firebaseId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var accountId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (string.IsNullOrEmpty(firebaseId))
+        if (string.IsNullOrEmpty(accountId))
         {
             context.Result = new UnauthorizedResult();
 
@@ -27,20 +27,26 @@ public class FirebaseAuthorizeAttribute : AuthorizeAttribute, IAsyncAuthorizatio
 
         var email = user.FindFirst(ClaimTypes.Email)?.Value;
 
-        if (string.IsNullOrEmpty(email)) throw new UnauthorizedException("Invalid email in claims");
-
-        var isEmailVerified = user.FindFirst(c => c.Type == "email_verified")?.Value == "true";
+        if (string.IsNullOrEmpty(email))
+        {
+            throw new UnauthorizedException("Invalid email in claims");
+        }
 
         var accountService = context.HttpContext.RequestServices.GetRequiredService<IAccountService>();
 
         var account =
-            await accountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email, isEmailVerified);
+            await accountService.GetAccountFromIdAndEmail(accountId, email);
 
         context.HttpContext.Items["Account"] = account;
 
-        if (Roles is []) return;
+        if (Roles is [])
+        {
+            return;
+        }
 
         if (!Roles.Contains(account.Role))
+        {
             throw new ForbiddenMethodException("You don't have permission to access this resource");
+        }
     }
 }

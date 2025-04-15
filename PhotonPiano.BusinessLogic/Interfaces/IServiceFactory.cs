@@ -70,5 +70,7 @@ public interface IServiceFactory
     IArticleService ArticleService { get; }
     IStudentClassScoreService StudentClassScoreService { get; }
     ICertificateService CertificateService { get; }
+    
+    ITokenService TokenService { get; }
 
 }

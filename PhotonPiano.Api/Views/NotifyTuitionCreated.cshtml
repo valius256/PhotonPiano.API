@@ -4,6 +4,7 @@
     var startDate = Model["startDate"];
     var endDate = Model["endDate"];
     var amount = Model["amount"];
+    var deadline = Model["deadline"];
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -75,7 +76,7 @@
 <body>
 <div class="email-container">
     <div class="email-header">
-        New Tuition Created Notification
+        Thông báo tạo học phí mới
     </div>
 
     <div class="email-content">
@@ -100,6 +101,16 @@
             <tr>
                 <th>Tổng Tiền:</th>
                 <td>@amount Vnd</td>
+            </tr>
+            
+            <tr>
+                <th>Trạng thái:</th>
+                <td>Chưa thanh toán</td>
+            </tr>
+            
+            <tr>
+                <th>Hạn chót thanh toán</th>
+                <td>@deadline</td>
             </tr>
         </table>
 

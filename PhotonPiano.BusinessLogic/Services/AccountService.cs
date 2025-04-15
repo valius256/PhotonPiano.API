@@ -51,14 +51,18 @@ public class AccountService : IAccountService
 
     public async Task<AccountDetailModel> GetAccountById(string firebaseId)
     {
-        var result = await _unitOfWork.AccountRepository.FindFirstProjectedAsync<AccountDetailModel>(x => x.AccountFirebaseId == firebaseId);
+        var result =
+            await _unitOfWork.AccountRepository.FindFirstProjectedAsync<AccountDetailModel>(x =>
+                x.AccountFirebaseId == firebaseId);
         if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
         return result;
     }
 
     public async Task<TeacherDetailModel> GetTeacherDetailById(string firebaseId)
     {
-        var result = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<TeacherDetailModel>(x => x.AccountFirebaseId == firebaseId);
+        var result =
+            await _unitOfWork.AccountRepository.FindSingleProjectedAsync<TeacherDetailModel>(x =>
+                x.AccountFirebaseId == firebaseId);
         if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
         return result;
     }
@@ -160,6 +164,18 @@ public class AccountService : IAccountService
             .ToListAsync();
     }
 
+    public async Task<AccountModel> GetAccountFromIdAndEmail(string accountId, string email)
+    {
+        var account = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a => a.AccountFirebaseId == accountId
+                                                                               && a.Email == email);
+        if (account is null)
+        {
+            throw new UnauthorizedException("Account not found.");
+        }
+
+        return account;
+    }
+
     public async Task<AccountModel> GetAndCreateAccountIfNotExistsCredentials(string firebaseId, string email,
         bool isEmailVerified = false, bool requireCheckingFirebaseId = true)
     {
@@ -201,15 +217,19 @@ public class AccountService : IAccountService
 
     public async Task ChangeRole(GrantRoleModel grantRoleModel)
     {
-        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == grantRoleModel.AccountFirebaseId);
+        var account =
+            await _unitOfWork.AccountRepository.FindFirstAsync(a =>
+                a.AccountFirebaseId == grantRoleModel.AccountFirebaseId);
         if (account == null)
         {
             throw new NotFoundException("Account not found");
         }
+
         if (account.Role != Role.Staff && account.Role != Role.Administrator)
         {
             throw new BadRequestException("Not applicable");
         }
+
         account.Role = grantRoleModel.Role;
         await _unitOfWork.AccountRepository.UpdateAsync(account);
         await _unitOfWork.SaveChangesAsync();

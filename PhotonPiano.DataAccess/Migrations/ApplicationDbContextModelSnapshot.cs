@@ -26,8 +26,7 @@ namespace PhotonPiano.DataAccess.Migrations
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.Account", b =>
                 {
                     b.Property<string>("AccountFirebaseId")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Address")
                         .HasColumnType("text");
@@ -80,6 +79,10 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<Guid?>("LevelId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Phone")
                         .HasColumnType("text");
 
@@ -89,6 +92,19 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<int>("RecordStatus")
                         .HasColumnType("integer");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RefreshTokenExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResetPasswordToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
@@ -120,7 +136,7 @@ namespace PhotonPiano.DataAccess.Migrations
             modelBuilder.Entity("PhotonPiano.DataAccess.Models.Entity.AccountNotification", b =>
                 {
                     b.Property<string>("AccountFirebaseId")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("NotificationId")
                         .HasColumnType("uuid");
@@ -163,7 +179,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ApprovedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -174,7 +190,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -183,7 +199,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FileUrl")
                         .HasColumnType("text");
@@ -211,7 +227,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("UpdatedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -241,13 +257,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsPublished")
                         .ValueGeneratedOnAdd()
@@ -272,7 +288,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -301,16 +317,16 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("InstructorId")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsPublic")
                         .HasColumnType("boolean");
@@ -338,7 +354,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -371,13 +387,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -393,7 +409,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -425,13 +441,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
@@ -446,7 +462,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -473,7 +489,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
@@ -482,13 +498,13 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<decimal>("Fee")
                         .HasColumnType("numeric");
 
                     b.Property<string>("InstructorId")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("InstructorName")
                         .HasColumnType("text");
@@ -516,7 +532,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -547,7 +563,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("CriteriaId")
                         .HasColumnType("uuid");
@@ -559,7 +575,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("EntranceTestStudentId")
                         .HasColumnType("uuid");
@@ -571,7 +587,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -608,13 +624,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("EntranceTestId")
                         .HasColumnType("uuid");
@@ -636,13 +652,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("StudentFirebaseId")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<double?>("TheoraticalScore")
                         .HasColumnType("double precision");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -675,7 +691,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("AccountId")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -757,7 +773,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("LearnerId")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("PianoSurveyId")
                         .HasColumnType("uuid");
@@ -850,7 +866,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("AccountFirebaseId")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -892,7 +908,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -917,7 +933,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -983,13 +999,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .HasColumnType("text");
@@ -1001,7 +1017,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1024,7 +1040,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("CancelById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
@@ -1053,8 +1069,11 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("TeacherId")
+                        .HasColumnType("text");
+
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1067,6 +1086,8 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.HasIndex("RoomId");
 
+                    b.HasIndex("TeacherId");
+
                     b.HasIndex("UpdateById");
 
                     b.ToTable("Slot");
@@ -1078,7 +1099,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("StudentFirebaseId")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("AttendanceComment")
                         .HasColumnType("text");
@@ -1091,13 +1112,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FingerNoteComment")
                         .HasColumnType("text");
@@ -1115,7 +1136,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1150,13 +1171,13 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<decimal?>("GPA")
                         .HasColumnType("numeric");
@@ -1172,10 +1193,10 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("StudentFirebaseId")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<string>("UpdateById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1247,7 +1268,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1279,7 +1300,7 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedById")
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -1344,7 +1365,7 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1405,6 +1426,9 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Deadline")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DeletedAt")
@@ -1891,6 +1915,10 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Teacher")
+                        .WithMany("Teacherslots")
+                        .HasForeignKey("TeacherId");
+
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
                         .WithMany("UpdatedSlots")
                         .HasForeignKey("UpdateById");
@@ -1900,6 +1928,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Room");
+
+                    b.Navigation("Teacher");
 
                     b.Navigation("UpdateBy");
                 });
@@ -2132,6 +2162,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("SlotStudents");
 
                     b.Navigation("StudentClasses");
+
+                    b.Navigation("Teacherslots");
 
                     b.Navigation("UpdatedApplications");
 

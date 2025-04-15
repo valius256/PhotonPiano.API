@@ -10,6 +10,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 using SemaphoreSlim = System.Threading.SemaphoreSlim;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -222,7 +223,8 @@ public class TuitionService : ITuitionService
                     EndDate = endDate,
                     CreatedAt = utcNow,
                     Amount = level.PricePerSlot * actualSlotsInMonth,
-                    PaymentStatus = PaymentStatus.Pending
+                    PaymentStatus = PaymentStatus.Pending,
+                    Deadline = utcNow.AddDays(4)
                 };
 
                 if (tution.Amount > 0) tutions.Add(tution);
@@ -250,9 +252,10 @@ public class TuitionService : ITuitionService
                 {
                     { "studentName", studentClass.Student.Email },
                     { "className", studentClass.Class.Name },
-                    { "startDate", $"{utcNow:yyyy-MM-dd}" },
-                    { "endDate", $"{endDateConverted}" },
-                    { "amount", $"{tution.Amount}" }
+                    { "startDate", $"{utcNow:dd-MM-yyyy}" },
+                    { "endDate", $"{endDateConverted:dd-MM-yyyy}" },
+                    { "amount", $"{tution.Amount}" },
+                    { "deadline", $"{tution.Deadline:dd-MM-yyyy}" }
                 };
 
                 await _serviceFactory.EmailService.SendAsync(
@@ -287,8 +290,8 @@ public class TuitionService : ITuitionService
             {
                 { "studentName", studentClass.Student.Email },
                 { "className", studentClass.Class.Name },
-                { "startDate", $"{tuition.StartDate:yyyy-MM-dd}" },
-                { "endDate", $"{tuition.EndDate:yyyy-MM-dd}" },
+                { "startDate", $"{tuition.StartDate:dd-MM-yyyy}" },
+                { "endDate", $"{tuition.EndDate:dd-MM-yyyy}" },
                 { "amount", $"{tuition.Amount}" }
             };
 
@@ -412,15 +415,19 @@ public class TuitionService : ITuitionService
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
         var utcNowConvert = DateOnly.FromDateTime(utcNow);
-        var lastDayOfMonth = DateTime.DaysInMonth(utcNow.Year, utcNow.Month);
-        var endDate = new DateTime(utcNow.Year, utcNow.Month, lastDayOfMonth, 23, 59, 59, DateTimeKind.Utc);
 
+        var lastSlot = classDetailModel.Slots.MaxBy(x => x.Date);
+        var numberOfSlot = classDetailModel.Slots.Count;
+        
+        
+        var deadlinePayTuition =
+            await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.TuitionPaymentDeadline);
+        
+        double.TryParse(deadlinePayTuition.ConfigValue, out double numOfDeadlineDays);
+        
         var tuitions = new List<Tuition>();
         foreach (var studentClass in classDetailModel.StudentClasses)
         {
-            var numOfSlotTillEndMonth =
-                classDetailModel.Slots.Count(x =>
-                    x.Date.Month == utcNowConvert.Month && x.ClassId == studentClass.ClassId);
             if (classDetailModel.Level != null)
             {
                 var tuition = new Tuition
@@ -428,52 +435,61 @@ public class TuitionService : ITuitionService
                     Id = Guid.NewGuid(),
                     StudentClassId = studentClass.Id,
                     StartDate = utcNow,
-                    EndDate = endDate,
+                    EndDate = lastSlot.Date.ToDateTime(new TimeOnly(23, 59, 59)),
                     CreatedAt = utcNow,
-                    Amount = classDetailModel.Level.PricePerSlot * numOfSlotTillEndMonth,
-                    PaymentStatus = PaymentStatus.Pending
+                    Amount = classDetailModel.Level.PricePerSlot * numberOfSlot,
+                    PaymentStatus = PaymentStatus.Pending,
+                    Deadline = DateTime.UtcNow.AddHours(7).AddDays(numOfDeadlineDays)
                 };
 
                 if (tuition.Amount > 0) tuitions.Add(tuition);
             }
         }
-
-
+        
         tuitions.AddRange(tuitions);
 
         await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
 
+        
         // Send emails in parallel
-        var emailTasks = tuitions.Select(async result =>
+        var notificationTasks = tuitions.Select(async result =>
         {
-            var student = classDetailModel.StudentClasses.Where(sc => sc.Id == result.StudentClassId).FirstOrDefault();
+            var student = classDetailModel.StudentClasses.FirstOrDefault(sc => sc.Id == result.StudentClassId);
 
             if (student != null)
             {
                 var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "studentName", $"{student.StudentFullName}" },
-                { "className", $"{classDetailModel.Name}" },
-                { "amount", $"{result.Amount}" },
-                { "endDate", $"{result.EndDate:dd/MM/yyyy}" },
-                { "startDate", $"{result.StartDate:dd/MM/yyyy}"}
-            };
+                {
+                    { "studentName", $"{student.StudentFullName}" },
+                    { "className", $"{classDetailModel.Name}" },
+                    { "amount", $"{result.Amount}" },
+                    { "endDate", $"{result.EndDate:dd/MM/yyyy}" },
+                    { "startDate", $"{result.StartDate:dd/MM/yyyy}"},
+                    { "deadline", $"{DateTime.UtcNow.AddHours(7).AddDays(numOfDeadlineDays)}" }
+                };
 
                 await _serviceFactory.EmailService.SendAsync("NotifyTuitionCreated",
-                    [student.Student.Email, "quangphat7a1@gmail.com"],
-                    null, emailParam);
+                    [student.Student.Email],
+                    null, 
+                    emailParam);
+                
+                await _serviceFactory.NotificationService.SendNotificationAsync(student.StudentFirebaseId,
+                    $"Học phí của lớp {classDetailModel.Name} đã được tạo. Hạn chót là {DateTime.UtcNow.AddHours(7).AddDays(numOfDeadlineDays):dd/MM/yyyy}",
+                    "Hãy thanh toán học phí để tiếp tục học tập");
             }
 
         });
-
-        await Task.WhenAll(emailTasks);
+        
+        
+        await Task.WhenAll(notificationTasks);
+        
     }
 
 
     private void ValidateTransaction(Transaction transaction)
     {
         if (transaction.TutionId is null)
-            throw new IllegalArgumentException("The TuitionId of this transaction must not be null.");
+            throw new NotFoundException("The TuitionId of this transaction must not be null.");
         
         if (transaction.PaymentStatus != PaymentStatus.Pending)
             throw new IllegalArgumentException("Payment Status of this transaction must be pending.");
@@ -488,9 +504,9 @@ public class TuitionService : ITuitionService
             throw new NotFoundException("No tuition found for this, please add tuition first.");
 
         if (tuition.PaymentStatus == PaymentStatus.Succeed)
-            throw new BadRequestException("This tuition has already been processed.");
+            throw new IllegalArgumentException("This tuition has already been processed.");
 
         if (tuition.StudentClass.StudentFirebaseId != userFirebaseId)
-            throw new BadRequestException("You are not allowed to pay this tuition.");
+            throw new IllegalArgumentException("You are not allowed to pay this tuition.");
     }
 }

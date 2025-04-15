@@ -1,4 +1,5 @@
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.Api.Requests.EntranceTest;
 

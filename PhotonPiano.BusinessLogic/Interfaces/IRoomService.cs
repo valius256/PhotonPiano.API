@@ -2,6 +2,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 

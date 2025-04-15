@@ -24,7 +24,7 @@ public class CriteriasController : BaseController
     }
 
     [HttpGet("all-minimal")]
-    [FirebaseAuthorize(Roles = [Role.Staff, Role.Student, Role.Instructor, Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student, Role.Instructor, Role.Administrator])]
     [EndpointDescription("Get all minimal criterias")]
     public async Task<ActionResult<List<MinimalCriteriaModel>>> GetMinimalCriterias(
         [FromQuery] QueryMinimalCriteriasRequest request)
@@ -53,7 +53,7 @@ public class CriteriasController : BaseController
     }
 
     [HttpPost]
-    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Create a criteria")]
     public async Task<ActionResult<CriteriaModel>> CreateCriteria(
         [FromBody] CreateCriteriaRequest request)
@@ -65,7 +65,7 @@ public class CriteriasController : BaseController
     }
 
     [HttpDelete("{id}")]
-    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Delete a criteria")]
     public async Task<ActionResult> DeleteCriteria([FromRoute] Guid id)
     {
@@ -74,7 +74,7 @@ public class CriteriasController : BaseController
     }
 
     [HttpPut]
-    [FirebaseAuthorize(Roles = [Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Update a criteria")]
     public async Task<ActionResult> UpdateCriteria([FromBody] BulkUpdateCriteriaRequest request)
     {

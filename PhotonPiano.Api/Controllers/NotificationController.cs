@@ -25,7 +25,7 @@ public class NotificationController : BaseController
 
     [HttpGet]
     [EndpointDescription("Get notifications with paging")]
-    [FirebaseAuthorize]
+    [CustomAuthorize]
     public async Task<ActionResult<List<NotificationDetailsModel>>> GetPagedNotifications([FromQuery] QueryPagedNotificationsRequest request)
     {
         var pagedResult =
@@ -38,7 +38,7 @@ public class NotificationController : BaseController
     }
 
     [EndpointDescription("For testing purpose")]
-    [FirebaseAuthorize]
+    [CustomAuthorize]
     [HttpPost("send")]
     public async Task<IActionResult> SendNotification(NotificationRequest request)
     {
@@ -49,7 +49,7 @@ public class NotificationController : BaseController
 
     [HttpPut("view-status")]
     [EndpointDescription("Toggle batch notifications view status")]
-    [FirebaseAuthorize]
+    [CustomAuthorize]
     public async Task<ActionResult> ToggleBatchViewStatus([FromBody] BatchUpdateNotificationsRequest request)
     {
         await _serviceFactory.NotificationService.ToggleBatchViewStatus(base.CurrentAccount!, request.NotificationIds);
@@ -59,7 +59,7 @@ public class NotificationController : BaseController
 
     [HttpPut("{id}/view-status")]
     [EndpointDescription("Toggle notification view status")]
-    [FirebaseAuthorize]
+    [CustomAuthorize]
     public async Task<ActionResult> ToggleNotificationViewStatus([FromRoute] Guid id)
     {
         await _serviceFactory.NotificationService.ToggleNotificationViewStatus(id, base.CurrentAccount!.AccountFirebaseId);

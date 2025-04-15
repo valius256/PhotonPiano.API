@@ -5,8 +5,18 @@ namespace PhotonPiano.DataAccess.Models.Entity;
 
 public class Account : BaseEntity
 {
-    [StringLength(30, ErrorMessage = "Account firebaseId cannot be longer than 30 characters.")]
+    // [StringLength(30, ErrorMessage = "Account firebaseId cannot be longer than 30 characters.")]
     public required string AccountFirebaseId { get; set; }
+
+    public string Password { get; set; } = string.Empty;
+    
+    public string RefreshToken { get; set; } = string.Empty;
+
+    public DateTime RefreshTokenExpiryDate { get; set; }
+
+    public string? ResetPasswordToken { get; set; }
+
+    public DateTime? ResetPasswordTokenExpiry { get; set; }
 
     public string? UserName { get; set; }
     public string? Phone { get; set; } = string.Empty;
@@ -108,9 +118,9 @@ public class Account : BaseEntity
 
     // New
     public virtual ICollection<Article> CreatedArticles { get; set; } = new List<Article>();
-    
+
     public virtual ICollection<Article> UpdatedArticles { get; set; } = new List<Article>();
-    
+
     public virtual ICollection<Article> DeletedArticles { get; set; } = new List<Article>();
 
     // DayOff
@@ -131,14 +141,12 @@ public class Account : BaseEntity
     // SurveyQuestion
     public virtual ICollection<SurveyQuestion> CreatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
     public virtual ICollection<SurveyQuestion> UpdatedSurveyQuestions { get; set; } = new List<SurveyQuestion>();
-    
-    
+
+
     // PianoSurvey
     public virtual ICollection<PianoSurvey> CreatedPianoSurveys { get; set; } = [];
-    
+
     public virtual ICollection<PianoSurvey> UpdatedPianoSurveys { get; set; } = [];
-    
-    
 
 
     // SurveyDetails
@@ -146,7 +154,11 @@ public class Account : BaseEntity
 
     // Slot 
     public virtual ICollection<Slot> UpdatedSlots { get; set; } = new List<Slot>();
+
     public virtual ICollection<Slot> CanceledSlots { get; set; } = new List<Slot>();
+    
+    public virtual ICollection<Slot> Teacherslots { get; set; } = new List<Slot>();
+
     //Free slot
     public virtual ICollection<FreeSlot> FreeSlots { get; set; } = new List<FreeSlot>();
 }

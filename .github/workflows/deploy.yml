@@ -32,6 +32,10 @@ env:
   VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
   VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
   PINATA__JWTTOKEN: ${{ secrets.PINATA_JWTTOKEN }}
+  JWTAUTH__KEY: ${{ secrets.JWTAUTH_KEY }}
+  JWTAUTH__ISSUER: ${{ secrets.JWTAUTH_ISSUER }}
+  JWTAUTH__AUDIENCE: ${{ secrets.JWTAUTH_AUDIENCE }}
+  JWTAUTH__DURATIONINDAYS: ${{ secrets.JWT_AUTH_DURATIONINDAYS }}
   CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
   Logging__LogLevel__Hangfire: Debug
@@ -40,7 +44,7 @@ env:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 #cause the wkhtmltopdf is worked as expected on this version
     services:
       postgres:
         image: postgres:latest
@@ -66,7 +70,18 @@ jobs:
 
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
-#      i commment this cause the issue with get token by google has limit 
+
+      - name: 📚 Install wkhtmltopdf dependencies
+        run: sudo apt-get install -y libxrender1 libxext6 libfontconfig1
+
+
+
+      - name: 📥 Download wkhtmltopdf .deb
+        run: wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb
+
+      - name: 🧱 Install wkhtmltopdf
+        run: sudo apt install ./wkhtmltox_0.12.6-1.bionic_amd64.deb
+
 #      - name: ✅ Run Tests
 #        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
@@ -88,7 +103,7 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME }} --all-tags
-          
+  
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
@@ -110,18 +125,18 @@ jobs:
           passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
             set -e # Dừng script nếu có lỗi
-    
+
             # Đảm bảo docker-compose down trước
-            cd ~/photonpiano 2>/dev/null && docker compose down || true
-    
+            cd ~/photonpiano || true && docker compose down || true
+
             # Xóa container cũ bằng cách tìm tất cả container có tên 'photonpiano'
             docker ps -a | grep photonpiano | awk '{print $1}' | xargs -r docker rm -f
-    
+
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano
-    
-            # Tạo .env file để sử dụng biến môi trường
+
+            # Tạo .env file từ GitHub Secrets
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
@@ -135,6 +150,10 @@ jobs:
             VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
             VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
             VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
+            JWTAUTH_KEY=${{ secrets.JWTAUTH_KEY }}
+            JWTAUTH_ISSUER=${{ secrets.JWTAUTH_ISSUER }}
+            JWTAUTH_AUDIENCE=${{ secrets.JWTAUTH_AUDIENCE }}
+            JWTAUTH_DURATIONINDAYS=${{ secrets.JWTAUTH_DURATIONINDAYS }}
             VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
             VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
             VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}
@@ -142,7 +161,7 @@ jobs:
             PINATA_GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
             REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
             EOF
-    
+
             # Viết docker-compose.yml
             cat > docker-compose.yml <<'EOF'
             version: "3.8"
@@ -187,6 +206,10 @@ jobs:
                   - VNPAY__VERSION=${VNPAY_VERSION}
                   - VNPAY__COMMAND=${VNPAY_COMMAND}
                   - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
+                  - JWTAUTH__KEY=${JWTAUTH_KEY}
+                  - JWTAUTH__ISSUER=${JWTAUTH_ISSUER}
+                  - JWTAUTH__AUDIENCE=${JWTAUTH_AUDIENCE}
+                  - JWTAUTH__DURATIONINDAYS=${JWTAUTH_DURATIONINDAYS}
                   - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
                   - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
                   - Logging__LogLevel__Hangfire=Debug
@@ -202,10 +225,10 @@ jobs:
               app-network:
                 driver: bridge
             EOF
-    
+
             # Đăng nhập vào GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-    
+
             # Pull images và deploy với project name cụ thể
             docker compose -p photonpiano pull
             docker compose -p photonpiano up -d --force-recreate

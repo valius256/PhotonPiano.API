@@ -23,7 +23,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet("all")]
-        [FirebaseAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff])]
         [EndpointDescription("Get free slots of all students")]
         public async Task<ActionResult<List<FreeSlotModel>>> GetAllFreeSlot()
         {
@@ -31,7 +31,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet]
-        [FirebaseAuthorize(Roles = [Role.Student])]
+        [CustomAuthorize(Roles = [Role.Student])]
         [EndpointDescription("Get free slots of a student")]
         public async Task<ActionResult<List<FreeSlotModel>>> GetFreeSlot()
         {
@@ -39,7 +39,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpPost]
-        [FirebaseAuthorize(Roles = [Role.Student])]
+        [CustomAuthorize(Roles = [Role.Student])]
         [EndpointDescription("Upsert student's free slot")]
         public async Task<IActionResult> UpsertFreeSlots([FromBody] CreateFreeSlotRequest request)
         {

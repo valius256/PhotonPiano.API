@@ -15,5 +15,5 @@ public interface IPianoSurveyService
 
     Task<PianoSurveyDetailsModel> GetEntranceSurvey();
 
-    Task SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model);
+    Task<AuthModel> SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model);
 }

@@ -21,13 +21,13 @@ public record SignUpRequest
     // [Required(ErrorMessage = "Level is required.")]
     // public required Guid Level { get; init; }
 
-    [Required(ErrorMessage = "Targets are required.")]
-    public required List<string> DesiredTargets { get; init; }
-
-    [Required(ErrorMessage = "Favorite music genres are required")]
-
-    public required List<string> FavoriteMusicGenres { get; init; }
-
-    [Required(ErrorMessage = "Preferred learning methods are required")]
-    public required List<string> PreferredLearningMethods { get; init; }
+    // [Required(ErrorMessage = "Targets are required.")]
+    // public required List<string> DesiredTargets { get; init; }
+    //
+    // [Required(ErrorMessage = "Favorite music genres are required")]
+    //
+    // public required List<string> FavoriteMusicGenres { get; init; }
+    //
+    // [Required(ErrorMessage = "Preferred learning methods are required")]
+    // public required List<string> PreferredLearningMethods { get; init; }
 }

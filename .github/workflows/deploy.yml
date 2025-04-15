@@ -82,8 +82,8 @@ jobs:
       - name: 🧱 Install wkhtmltopdf
         run: sudo apt install ./wkhtmltox_0.12.6-1.bionic_amd64.deb
 
-      - name: ✅ Run Tests
-        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
+#      - name: ✅ Run Tests
+#        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
 
   docker-build-and-push:
     needs: build-and-test

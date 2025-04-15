@@ -552,13 +552,29 @@ namespace PhotonPiano.BusinessLogic.Services
                     // Update individual criteria scores
                     await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
                         account.AccountFirebaseId);
+                }
+                
+                await _unitOfWork.SaveChangesAsync();
+                
+                // Then update GPAs after scores are saved
+                for (int row = studentStartRow; row <= rows; row++)
+                {
+                    string studentName = worksheet.Cells[row, 1].Text;
+                    if (string.IsNullOrEmpty(studentName))
+                        continue;
 
-                    // Calculate and update GPA based on weighted scores
+                    var studentClass = classDetails.StudentClasses.FirstOrDefault(sc =>
+                        string.Equals(sc.Student.FullName, studentName, StringComparison.OrdinalIgnoreCase));
+
+                    if (studentClass == null)
+                        continue;
+
+                    // Now calculate and update GPA based on the saved scores
                     await UpdateStudentClassGpa(studentClass.Id,
                         account.AccountFirebaseId,
                         classDetails.Name);
                 }
-                
+    
                 await _unitOfWork.SaveChangesAsync();
                 return true;
             });

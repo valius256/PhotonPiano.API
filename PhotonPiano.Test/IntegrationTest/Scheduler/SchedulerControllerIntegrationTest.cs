@@ -190,7 +190,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", teacherLoginedToken);
 
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
-        var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
+        var firstSlotId = (await DeserializeResponse<List<SlotDetailModel>>(listSlotResponseMessage)).Last().Id;
         var slotResponse = await _client.GetAsync($"/api/scheduler/attendance-status/{firstSlotId}");
         var slotDetails = await DeserializeResponse<List<StudentAttendanceResponse>>(slotResponse);
 

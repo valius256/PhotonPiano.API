@@ -27,7 +27,7 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies(); 
 
-var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.4");
+var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.6");
 var context = new CustomAssemblyLoadContext();
 context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
      RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :

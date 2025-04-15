@@ -53,7 +53,11 @@ public class StudentClassScoreService : IStudentClassScoreService
             {
                 throw new NotFoundException("Class not found or has already been finished");
             }
-
+            var currentDate = DateTime.UtcNow.AddHours(7); // Vietnam time
+            // if (classInfo.Slots..HasValue && classInfo.EndDate.Value > currentDate)
+            // {
+            //     throw new BadRequestException($"Cannot publish scores: The class has not ended yet. Class end date is {classInfo.EndDate.Value.ToString("dd/MM/yyyy")}.");
+            // }
             // Preload level with class to avoid separate query
             if (classInfo.Level == null)
             {

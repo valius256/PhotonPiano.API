@@ -10,6 +10,7 @@ public class Tuition : BaseEntityWithId
     public DateTime EndDate { get; set; }
     public PaymentStatus PaymentStatus { get; set; }
 
+    public DateTime Deadline { get; set; }
 
     // reference
     public virtual StudentClass StudentClass { get; set; } = default!;

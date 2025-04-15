@@ -10,4 +10,5 @@ public record TuitionModel
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
     public PaymentStatus PaymentStatus { get; init; }
+    public DateTime Deadline { get; init; }
 }

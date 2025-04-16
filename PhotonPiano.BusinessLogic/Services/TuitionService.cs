@@ -405,80 +405,108 @@ public class TuitionService : ITuitionService
         return result;
     }
 
-
     public async Task CreateTuitionWhenRegisterClass(ClassDetailModel classDetailModel)
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
-        var utcNowConvert = DateOnly.FromDateTime(utcNow);
-
-        var lastSlot = classDetailModel.Slots.MaxBy(x => x.Date);
-        var numberOfSlot = classDetailModel.Slots.Count;
         
+        var trialSlotConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.NumTrialSlot);
+        int.TryParse(trialSlotConfig.ConfigValue, out int trialSlotCount);
         
-        var deadlinePayTuition =
-            await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.TuitionPaymentDeadline);
-        
+        var deadlinePayTuition = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.TuitionPaymentDeadline);
         double.TryParse(deadlinePayTuition.ConfigValue, out double numOfDeadlineDays);
         
+        var sortedSlots = classDetailModel.Slots.OrderBy(s => s.Date).ToList();
+        var lastSlot = sortedSlots.LastOrDefault();
+
         var tuitions = new List<Tuition>();
-        foreach (var studentClass in classDetailModel.StudentClasses)
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            if (classDetailModel.Level != null)
+            foreach (var studentClass in classDetailModel.StudentClasses)
             {
-                var tuition = new Tuition
+                var hasUsedTrial = studentClass.Student.HasUsedTrial;
+
+                var paidSlots = hasUsedTrial
+                    ? sortedSlots
+                    : sortedSlots.Skip(trialSlotCount);
+
+                var paidSlotCount = paidSlots.Count();
+
+                if (classDetailModel.Level != null && paidSlotCount > 0)
                 {
-                    Id = Guid.NewGuid(),
-                    StudentClassId = studentClass.Id,
-                    StartDate = utcNow,
-                    EndDate = lastSlot.Date.ToDateTime(new TimeOnly(23, 59, 59), DateTimeKind.Utc),
-                    CreatedAt = utcNow,
-                    Amount = classDetailModel.Level.PricePerSlot * numberOfSlot,
-                    PaymentStatus = PaymentStatus.Pending,
-                    Deadline = DateTime.UtcNow.AddHours(7).AddDays(numOfDeadlineDays)
-                };
+                    // Tính deadline dựa trên buổi học thử cuối cùng nếu chưa dùng
+                    DateTime deadline;
+                    if (!hasUsedTrial && trialSlotCount > 0 && trialSlotCount <= sortedSlots.Count)
+                    {
+                        var lastTrialSlot = sortedSlots[trialSlotCount - 1];
+                        var trialEndDate = lastTrialSlot.Date.ToDateTime(new TimeOnly(0, 0), DateTimeKind.Utc);
+                        deadline = trialEndDate.AddDays(numOfDeadlineDays).AddHours(7);
+                    }
+                    else
+                    {
+                        deadline = utcNow.AddDays(numOfDeadlineDays);
+                    }
 
-                if (tuition.Amount > 0) tuitions.Add(tuition);
+                    var tuition = new Tuition
+                    {
+                        Id = Guid.NewGuid(),
+                        StudentClassId = studentClass.Id,
+                        StartDate = utcNow,
+                        EndDate = lastSlot?.Date.ToDateTime(new TimeOnly(23, 59, 59), DateTimeKind.Utc) ?? utcNow,
+                        CreatedAt = utcNow,
+                        Amount = classDetailModel.Level.PricePerSlot * paidSlotCount,
+                        PaymentStatus = PaymentStatus.Pending,
+                        Deadline = deadline
+                    };
+
+                    tuitions.Add(tuition);
+                }
+
+                // Đánh dấu đã dùng học thử
+                if (!hasUsedTrial)
+                {
+                    var account = await _unitOfWork.AccountRepository.FindSingleAsync(
+                        sc => sc.AccountFirebaseId == studentClass.StudentFirebaseId);
+                    account.HasUsedTrial = true;
+                    await _unitOfWork.AccountRepository.UpdateAsync(account);
+                }
             }
-        }
-        
-        tuitions.AddRange(tuitions);
 
-        await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
-
+            await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
+        });
         
-        // Send emails in parallel
-        var notificationTasks = tuitions.Select(async result =>
+      
+
+        // Gửi email và notification
+        foreach (var result in tuitions)
         {
             var student = classDetailModel.StudentClasses.FirstOrDefault(sc => sc.Id == result.StudentClassId);
-
             if (student != null)
             {
                 var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "studentName", $"{student.StudentFullName}" },
-                    { "className", $"{classDetailModel.Name}" },
-                    { "amount", $"{result.Amount}" },
-                    { "endDate", $"{result.EndDate:dd/MM/yyyy}" },
-                    { "startDate", $"{result.StartDate:dd/MM/yyyy}"},
-                    { "deadline", $"{DateTime.UtcNow.AddHours(7).AddDays(numOfDeadlineDays)}" }
+                    { "studentName", student.Student.FullName ?? student.Student.UserName},
+                    { "className", classDetailModel.Name },
+                    { "amount", result.Amount.ToString("N0") },
+                    { "endDate", result.EndDate.ToString("dd/MM/yyyy") },
+                    { "startDate", result.StartDate.ToString("dd/MM/yyyy") },
+                    { "deadline", result.Deadline.ToString("dd/MM/yyyy") }
                 };
 
                 await _serviceFactory.EmailService.SendAsync("NotifyTuitionCreated",
-                    [student.Student.Email],
-                    null, 
+                    [ student.Student.Email ],
+                    null,
                     emailParam);
-                
+
                 await _serviceFactory.NotificationService.SendNotificationAsync(student.StudentFirebaseId,
-                    $"Học phí của lớp {classDetailModel.Name} đã được tạo. Hạn chót là {DateTime.UtcNow.AddHours(7).AddDays(numOfDeadlineDays):dd/MM/yyyy}",
+                    $"Học phí của lớp {classDetailModel.Name} đã được tạo. Hạn chót là {result.Deadline:dd/MM/yyyy}",
                     "Hãy thanh toán học phí để tiếp tục học tập");
             }
+        }
 
-        });
-        
-        
-        await Task.WhenAll(notificationTasks);
-        
-    }
+    }   
+    
+    
 
 
     private void ValidateTransaction(Transaction transaction)
@@ -503,5 +531,20 @@ public class TuitionService : ITuitionService
 
         if (tuition.StudentClass.StudentFirebaseId != userFirebaseId)
             throw new IllegalArgumentException("You are not allowed to pay this tuition.");
+    }
+    
+    public async Task CreateTuitionForTestPurpose()
+    {
+        // Get a class ID (maybe from configuration or the first active class)
+        var activeClass = await _unitOfWork.ClassRepository
+            .FindSingleProjectedAsync<ClassDetailModel>(
+                c => c.Status == ClassStatus.Ongoing && c.IsPublic == true
+                && c.Id == Guid.Parse("f838e840-e4e5-48ae-aa09-fcb36638a698")
+                );
+            
+        if (activeClass != null)
+        {
+            await CreateTuitionWhenRegisterClass(activeClass);
+        }
     }
 }

@@ -49,7 +49,7 @@ public class Account : BaseEntity
 
     public virtual Class? CurrentClass { get; set; }
 
-
+    public bool HasUsedTrial { get; set; } // true nếu đã học thử
     // reference 
     // EntranceTest
     public virtual ICollection<EntranceTest> InstructorEntranceTests { get; set; } = new List<EntranceTest>();

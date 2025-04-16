@@ -1,11 +1,9 @@
 ﻿# Base runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
-# Copy the newer wkhtmltox native binaries (update your local files first!)
-COPY PhotonPiano.Api/wkhtmltox /app/wkhtmltox
 
 # Set the env path to match the new version
-ENV LD_LIBRARY_PATH=/app/wkhtmltox/v0.12.6:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/app/wkhtmltox/v0.12.4:$LD_LIBRARY_PATH
 
 # Add any required security sources (Debian-based image assumed)
 RUN echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list && \

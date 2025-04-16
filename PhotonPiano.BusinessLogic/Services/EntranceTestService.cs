@@ -278,7 +278,15 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.EntranceTestStudentRepository.FindFirstProjectedAsync<EntranceTestStudentDetail>(
                 ets => ets.EntranceTestId == entranceTestId && ets.StudentFirebaseId == studentId);
 
-        if (entranceTestStudent is null) throw new NotFoundException("Entrance test student not found");
+        if (entranceTestStudent is null)
+        {
+            throw new NotFoundException("Entrance test student not found or results has not been published.");
+        }
+
+        if (entranceTestStudent.EntranceTest?.IsAnnouncedScore == false)
+        {
+            entranceTestStudent.EntranceTestResults = [];
+        }
 
         if (currentAccount.Role == Role.Student &&
             entranceTestStudent.StudentFirebaseId != currentAccount.AccountFirebaseId)
@@ -302,7 +310,7 @@ public class EntranceTestService : IEntranceTestService
     public async Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress,
         string apiBaseUrl)
     {
-        var entranceTestConfigs = await _serviceFactory.SystemConfigService.GetAllEntranceTestConfigs();
+        var entranceTestConfigs = await _serviceFactory.SystemConfigService.GetEntranceTestConfigs();
 
         var allowRegisterConfig =
             entranceTestConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.AllowEntranceTestRegistering);
@@ -324,15 +332,20 @@ public class EntranceTestService : IEntranceTestService
                 "Student is must be in DropOut or Unregistered in order to be accepted to enroll in entrance test.");
         }
 
+        var feeConfig =
+            await _unitOfWork.SystemConfigRepository.FindSingleAsync(s => s.ConfigName == ConfigNames.TestFee);
+
         var transactionId = Guid.NewGuid();
 
         var transaction = new Transaction
         {
             Id = transactionId,
             TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.EntranceTestFee,
-                DateTime.UtcNow, transactionId),
-            Amount = 100_000,
-            CreatedAt = DateTime.UtcNow,
+                DateTime.UtcNow.AddHours(7), transactionId),
+            Amount = feeConfig != null && !string.IsNullOrEmpty(feeConfig.ConfigValue)
+                ? Convert.ToInt32(feeConfig.ConfigValue)
+                : 100_000,
+            CreatedAt = DateTime.UtcNow.AddHours(7),
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.EntranceTestFee,
             PaymentStatus = PaymentStatus.Pending,
@@ -370,7 +383,8 @@ public class EntranceTestService : IEntranceTestService
         transaction.PaymentStatus =
             callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
         transaction.TransactionCode = callbackModel.VnpTransactionNo;
-        transaction.UpdatedAt = DateTime.UtcNow;
+        transaction.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
         switch (transaction.PaymentStatus)
         {
             case PaymentStatus.Succeed:
@@ -610,7 +624,7 @@ public class EntranceTestService : IEntranceTestService
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
         });
     }
-    
+
     private static TimeOnly GetShiftStartTime(Shift shift)
     {
         return shift switch
@@ -658,11 +672,11 @@ public class EntranceTestService : IEntranceTestService
             var shiftEndDateTime = dateToCompare.ToDateTime(shiftEndTime);
 
             return DateTime.Now > shiftEndDateTime;
-        }   
+        }
 
         return false;
     }
-    
+
     public static EntranceTestStatus GetEntranceTestStatus(DateOnly testDate, Shift shift)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
@@ -677,7 +691,7 @@ public class EntranceTestService : IEntranceTestService
         {
             return EntranceTestStatus.Ended;
         }
-        
+
         var startTime = GetShiftStartTime(shift);
         var endTime = GetShiftEndTime(shift);
 
@@ -777,7 +791,7 @@ public class EntranceTestService : IEntranceTestService
                 entranceTestStudent.EntranceTestResults.Add(resultToAdd);
 
                 practicalScore += result.Score * (criteria.Weight / 100);
-                
+
                 entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
                     Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
             }
@@ -789,6 +803,28 @@ public class EntranceTestService : IEntranceTestService
         {
             await _unitOfWork.EntranceTestResultRepository.AddRangeAsync(entranceTestResultsToAdd);
         });
+    }
+
+    private async Task<(int theoryPercentage, int practicalPercentage)> GetScorePercentagesAsync()
+    {
+        var configs =
+            await _serviceFactory.SystemConfigService.GetEntranceTestConfigs(
+                ConfigNames.TheoryPercentage, ConfigNames.PracticePercentage
+            );
+
+        var theoryConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.TheoryPercentage);
+
+        var practiceConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.PracticePercentage);
+
+        var theoryPercentage = theoryConfig is not null && !string.IsNullOrEmpty(theoryConfig.ConfigValue)
+            ? Convert.ToInt32(theoryConfig.ConfigValue)
+            : 50;
+
+        var practicalPercentage = practiceConfig is not null && !string.IsNullOrEmpty(practiceConfig.ConfigValue)
+            ? Convert.ToInt32(practiceConfig.ConfigValue)
+            : 50;
+
+        return (theoryPercentage, practicalPercentage);
     }
 
     public async Task UpdateStudentEntranceResults(Guid id, string studentId,
@@ -832,11 +868,13 @@ public class EntranceTestService : IEntranceTestService
         {
             throw new ForbiddenMethodException("You cannot update the results.");
         }
-        
+
         if (!HasShiftEnded(entranceTest.Date, entranceTest.Shift))
         {
             throw new BadRequestException("Entrance test has not ended.");
         }
+
+        var (theoryPercentage, practicalPercentage) = await GetScorePercentagesAsync();
 
         List<EntranceTestResult> results = [];
         decimal bandScore = 0;
@@ -864,7 +902,7 @@ public class EntranceTestService : IEntranceTestService
                 var criteria = criterias.FirstOrDefault(c => c.Id == score.CriteriaId);
                 results.Add(new EntranceTestResult
                 {
-                    Id = Guid.CreateVersion7(),
+                    Id = Guid.NewGuid(),
                     EntranceTestStudentId = entranceTestStudent.Id,
                     CriteriaId = score.CriteriaId,
                     CriteriaName = criteria?.Name,
@@ -881,14 +919,13 @@ public class EntranceTestService : IEntranceTestService
                 ? Convert.ToDecimal(entranceTestStudent.TheoraticalScore.Value)
                 : decimal.Zero;
 
-            bandScore = (theoryScore + practicalScore) / 2;
+            bandScore = (theoryScore * theoryPercentage / 100 + practicalScore * practicalPercentage / 100);
         }
-
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             updateModel.Adapt(entranceTestStudent);
-
+            
             var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
                 etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
                 hasTrackings: false);
@@ -896,8 +933,9 @@ public class EntranceTestService : IEntranceTestService
             decimal practicalScore = dbResults.Aggregate(decimal.Zero,
                 (current, result) => current + result.Score!.Value * (result.Weight!.Value / 100));
 
-            if (updateModel.UpdateScoreRequests.Count > 0)
+            if (updateModel.UpdateScoreRequests.Count > 0 && currentAccount.Role == Role.Instructor)
             {
+                entranceTestStudent.InstructorComment = updateModel.InstructorComment;
                 entranceTestStudent.BandScore = bandScore;
                 entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
                     Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
@@ -908,13 +946,14 @@ public class EntranceTestService : IEntranceTestService
                 await _unitOfWork.EntranceTestResultRepository.AddRangeAsync(results);
             }
 
-            if (updateModel.TheoraticalScore.HasValue)
+            if (updateModel.TheoraticalScore.HasValue && currentAccount.Role == Role.Staff)
             {
+                entranceTestStudent.TheoraticalScore = updateModel.TheoraticalScore;
                 decimal theoryScore = updateModel.TheoraticalScore.HasValue
                     ? Convert.ToDecimal(updateModel.TheoraticalScore.Value)
                     : decimal.Zero;
 
-                bandScore = (theoryScore + practicalScore) / 2;
+                bandScore = (theoryScore * theoryPercentage / 100 + practicalScore * practicalPercentage / 100);
 
                 entranceTestStudent.BandScore = bandScore;
                 entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(

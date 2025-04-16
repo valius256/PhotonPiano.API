@@ -145,7 +145,7 @@ public class EntranceTestServiceTest
     {
         //Arrange
 
-        _systemConfigServiceMock.Setup(service => service.GetAllEntranceTestConfigs()).ReturnsAsync(_systemConfigs);
+        _systemConfigServiceMock.Setup(service => service.GetEntranceTestConfigs(new List<string>())).ReturnsAsync(_systemConfigs);
 
         //Act
         var record =
@@ -160,7 +160,7 @@ public class EntranceTestServiceTest
     public async Task EnrollEntranceTest_StudentIsNotValidToEnroll_ThrowsBadRequestException()
     {
         //Arrange
-        _systemConfigServiceMock.Setup(service => service.GetAllEntranceTestConfigs()).ReturnsAsync([
+        _systemConfigServiceMock.Setup(service => service.GetEntranceTestConfigs(new List<string>())).ReturnsAsync([
             new SystemConfigModel
             {
                 Id = Guid.NewGuid(),

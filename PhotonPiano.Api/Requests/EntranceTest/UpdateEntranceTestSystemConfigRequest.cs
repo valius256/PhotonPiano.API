@@ -12,6 +12,12 @@ public record UpdateEntranceTestSystemConfigRequest : IValidatableObject
 
     public bool? AllowEntranceTestRegistering { get; init; }
 
+    public int? TestFee { get; init; }
+
+    public decimal? TheoryPercentage { get; init; }
+    
+    public decimal? PracticePercentage { get; init; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (MinStudentsPerEntranceTest > MaxStudentsPerEntranceTest)

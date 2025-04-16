@@ -333,6 +333,12 @@ public static class IServiceCollectionExtensions
                 recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
                     x => x.CronJobAutoRemovedOutDateNotifications(),
                     Cron.Hourly(15));
+      
+                
+                /// remove this when we push
+                recurringJobManager.AddOrUpdate<TuitionService>("Test tinh tien",
+                    x => x.CreateTuitionForTestPurpose(),
+                    Cron.Daily()); 
             }
         });
 

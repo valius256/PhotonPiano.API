@@ -34,5 +34,7 @@
         public static readonly string ReasonForCancelSlot = "Lý do hủy tiết";
 
         public static readonly string ForceClassSize = "Bắt buộc đủ sĩ số để mở lớp";
+        
+        public static readonly string NumTrialSlot  = "Số buổi học thử";
     }
 }

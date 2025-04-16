@@ -17,5 +17,5 @@ public interface ISystemConfigService
     Task UpdateSurveySystemConfig(UpdateSurveySystemConfigModel updateModel);
     Task UpdateEntranceTestSystemConfig(UpdateEntranceTestSystemConfigModel updateModel);
     Task<List<SystemConfigModel>> GetAllSurveyConfigs();
-    Task<List<SystemConfigModel>> GetAllEntranceTestConfigs();
+    Task<List<SystemConfigModel>> GetEntranceTestConfigs(params List<string> configNames);
 }

@@ -11,6 +11,12 @@
         public static readonly string MaxStudentsInTest = "Số học viên tối đa của ca thi";
 
         public static readonly string MinStudentsInTest = "Số học viên tối thiểu của ca thi";
+        
+        public static readonly string TestFee = "Lệ phí thi";
+
+        public static readonly string TheoryPercentage = "Tỉ lệ lý thuyết";
+
+        public static readonly string PracticePercentage = "Tỉ lệ thực hành";
 
         public static readonly string AllowEntranceTestRegistering = "Cho phép đăng ký thi đầu vào";
 

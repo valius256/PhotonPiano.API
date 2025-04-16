@@ -178,7 +178,25 @@ public class SystemConfigService : ISystemConfigService
             if (updateModel.AllowEntranceTestRegistering.HasValue)
             {
                 await UpsertSystemConfig(ConfigNames.AllowEntranceTestRegistering, SystemConfigType.Text,
-                    updateModel.AllowEntranceTestRegistering.Value == true ? "true" : "false"); 
+                    updateModel.AllowEntranceTestRegistering.Value == true ? "true" : "false");
+            }
+
+            if (updateModel.TestFee.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TestFee, SystemConfigType.UnsignedInt,
+                    updateModel.TestFee.Value.ToString());
+            }
+
+            if (updateModel.TheoryPercentage.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TheoryPercentage, SystemConfigType.UnsignedInt,
+                    updateModel.TheoryPercentage.Value.ToString());
+            }
+
+            if (updateModel.PracticePercentage.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TheoryPercentage, SystemConfigType.UnsignedInt,
+                    updateModel.PracticePercentage.Value.ToString());
             }
         });
     }
@@ -193,11 +211,13 @@ public class SystemConfigService : ISystemConfigService
         return surveyConfigs;
     }
 
-    public async Task<List<SystemConfigModel>> GetAllEntranceTestConfigs()
+    public async Task<List<SystemConfigModel>> GetEntranceTestConfigs(params List<string> configNames)
     {
         return await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
             expression: c =>
-                _entranceTestConfigNames.Contains(c.ConfigName),
+                configNames.Count == 0
+                    ? _entranceTestConfigNames.Contains(c.ConfigName)
+                    : configNames.Contains(c.ConfigName),
             hasTrackings: false);
     }
 

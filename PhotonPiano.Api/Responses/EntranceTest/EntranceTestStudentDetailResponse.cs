@@ -9,6 +9,6 @@ public record EntranceTestStudentDetailResponse : EntranceTestStudentResponse
 {
     public EntranceTestDetailResponse? EntranceTest { get; init; }
     public AccountResponse? Student { get; init; }
-    public List<EntranceTestResultModel> EntranceTestResults { get; init; } = [];
+    public List<EntranceTestResultWithCriteriaModel> EntranceTestResults { get; init; } = [];
     public LevelModel? Level { get; init; }
 }

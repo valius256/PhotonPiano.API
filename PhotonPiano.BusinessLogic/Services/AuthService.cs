@@ -75,6 +75,8 @@ public class AuthService : IAuthService
 
             account.RefreshToken = refreshToken;
             account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(7);
+
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return new AuthModel

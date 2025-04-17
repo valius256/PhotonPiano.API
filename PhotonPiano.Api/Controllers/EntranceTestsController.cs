@@ -51,7 +51,7 @@ public class EntranceTestsController : BaseController
     {
         var entranceTest =
             await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id, base.CurrentAccount!);
-        
+
         return entranceTest.Adapt<EntranceTestDetailResponse>();
     }
 
@@ -110,10 +110,27 @@ public class EntranceTestsController : BaseController
         [FromRoute(Name = "id")] Guid id,
         [FromRoute(Name = "student-id")] string studentId)
     {
+        var (theoryPercentage, practicalPercentage) =
+            await _serviceFactory.EntranceTestService.GetScorePercentagesAsync();
+
+        HttpContext.Response.Headers.Append("X-Theory-Percentage", theoryPercentage.ToString());
+        HttpContext.Response.Headers.Append("X-Practical-Percentage", practicalPercentage.ToString());
+
         var result = await _serviceFactory.EntranceTestService.GetEntranceTestStudentDetail(id, studentId,
             base.CurrentAccount!);
 
         return result.Adapt<EntranceTestStudentDetailResponse>();
+    }
+
+    [HttpDelete("{id}/students/{student-id}")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
+    [EndpointDescription("Remove a student from a test")]
+    public async Task<ActionResult> RemoveStudentFromTest([FromRoute(Name = "id")] Guid id,
+        [FromRoute(Name = "student-id")] string studentId)
+    {
+        await _serviceFactory.EntranceTestService.RemoveStudentFromTest(id, studentId, base.CurrentAccount!);
+        
+        return NoContent();
     }
 
     [HttpPost("enrollment-requests")]

@@ -105,7 +105,7 @@ public class SlotService : ISlotService
             var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(
                 s => s.ClassId == classId &&
                      s.Date >= slotModel.StartTime &&
-                     s.Date < slotModel.EndTime
+                     s.Date <= slotModel.EndTime
             );
 
             // Lưu vào cache

@@ -103,6 +103,20 @@ public class EntranceTestsController : BaseController
         return pagedResult.Items;
     }
 
+    [HttpPost("{id}/students")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Add student to entrance test")]
+    public async Task<ActionResult> AddStudentsToEntranceTest(
+        [FromRoute] Guid id,
+        [FromBody] AddStudentsToEntranceTestRequest request)
+    {
+        await _serviceFactory.EntranceTestService.AddStudentsToEntranceTest(id,
+            request.Adapt<AddStudentsToEntranceTestModel>(),
+            base.CurrentAccount!);
+        
+        return Created();
+    }
+
     [HttpGet("{id}/students/{student-id}")]
     [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance test student details")]
@@ -129,7 +143,7 @@ public class EntranceTestsController : BaseController
         [FromRoute(Name = "student-id")] string studentId)
     {
         await _serviceFactory.EntranceTestService.RemoveStudentFromTest(id, studentId, base.CurrentAccount!);
-        
+
         return NoContent();
     }
 

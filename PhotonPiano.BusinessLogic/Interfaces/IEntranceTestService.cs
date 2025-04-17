@@ -25,6 +25,8 @@ public interface IEntranceTestService
     Task<PagedResult<EntranceTestStudentDetail>>
         GetPagedEntranceTestStudent(QueryPagedModel query, Guid entranceTestId, AccountModel currentAccount);
 
+    Task AddStudentsToEntranceTest(Guid testId, AddStudentsToEntranceTestModel model, AccountModel currentAccount);
+
     Task<EntranceTestStudentDetail> GetEntranceTestStudentDetail(Guid entranceTestId, string studentId,
         AccountModel currentAccount);
     

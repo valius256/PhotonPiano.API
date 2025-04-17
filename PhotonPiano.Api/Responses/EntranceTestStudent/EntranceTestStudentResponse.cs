@@ -1,6 +1,6 @@
 namespace PhotonPiano.Api.Responses.EntranceTestStudent;
 
-public record EntranceTestStudentResponse
+public record EntranceTestStudentResponse : BaseResponse
 {
     public required Guid Id { get; init; }
     
@@ -15,6 +15,8 @@ public record EntranceTestStudentResponse
     public decimal? BandScore { get; init; }
 
     public double? TheoraticalScore { get; init; }
+    
+    public DateTime? LevelAdjustedAt { get; init; }
 
     public int? Year { get; init; }
 

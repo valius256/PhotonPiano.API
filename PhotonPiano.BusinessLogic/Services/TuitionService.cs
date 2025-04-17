@@ -371,7 +371,7 @@ public class TuitionService : ITuitionService
         var endDateTimeUtc = endDate.HasValue
             ? DateTime.SpecifyKind(endDate.Value.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc)
             : (DateTime?)null;
-
+        
         var result = await _unitOfWork.TuitionRepository.GetPaginatedWithProjectionAsync<TuitionWithStudentClassModel>(
             page, pageSize, sortColumn, orderByDesc,
             expressions:
@@ -384,6 +384,20 @@ public class TuitionService : ITuitionService
                 x => account != null && (account.Role == Role.Staff ||
                                          x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
             ]);
+        
+        var currentYear = DateTime.UtcNow.Year;
+
+        var currentTaxRateConfig = await _serviceFactory.SystemConfigService.GetTaxesRateConfig(currentYear);
+
+        var currentTaxRate = double.TryParse(currentTaxRateConfig?.ConfigValue, out var taxRate) ? taxRate : 0;
+
+        // var currentTaxAmount = paymentTuition!.Amount * (decimal)currentTaxRate;
+        
+        foreach (var tuitionWithStudentClassModel in result.Items)
+        {
+            var currentTaxAmount = tuitionWithStudentClassModel.Amount * (decimal)currentTaxRate;
+            tuitionWithStudentClassModel.Fee = (double)currentTaxAmount;
+        }
 
         return result;
     }

@@ -295,6 +295,34 @@ public class EntranceTestService : IEntranceTestService
         return entranceTestStudent;
     }
 
+    public async Task RemoveStudentFromTest(Guid testId, string studentId, AccountModel currentAccount)
+    {
+        var entranceTestStudent =
+            await _unitOfWork.EntranceTestStudentRepository.FindFirstAsync(
+                ets => ets.EntranceTestId == testId && ets.StudentFirebaseId == studentId);
+
+        if (entranceTestStudent is null)
+        {
+            throw new NotFoundException("Entrance test student not found or results has not been published.");
+        }
+
+        var entranceTest =
+            await _unitOfWork.EntranceTestRepository.FindSingleProjectedAsync<EntranceTestWithStudentsModel>(
+                e => e.Id == testId,
+                hasTrackings: false);
+
+        if (entranceTest?.EntranceTestStudents.Count <= 1)
+        {
+            throw new BadRequestException("Only 1 student is in the entrance test.");
+        }
+
+        entranceTestStudent.RecordStatus = RecordStatus.IsDeleted;
+        entranceTestStudent.DeletedAt = DateTime.UtcNow.AddHours(7);
+        entranceTestStudent.DeletedById = currentAccount.AccountFirebaseId;
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+
     private async Task InvalidateEntranceTestCache(Guid? id = null)
     {
         // Invalidate general cache
@@ -925,7 +953,7 @@ public class EntranceTestService : IEntranceTestService
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             updateModel.Adapt(entranceTestStudent);
-            
+
             var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
                 etr => etr.EntranceTestStudentId == entranceTestStudent.Id,
                 hasTrackings: false);

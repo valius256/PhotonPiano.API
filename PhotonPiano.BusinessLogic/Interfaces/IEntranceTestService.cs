@@ -27,6 +27,8 @@ public interface IEntranceTestService
 
     Task<EntranceTestStudentDetail> GetEntranceTestStudentDetail(Guid entranceTestId, string studentId,
         AccountModel currentAccount);
+    
+    Task RemoveStudentFromTest(Guid testId, string studentId, AccountModel currentAccount);
 
     Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress, string apiBaseUrl);
 

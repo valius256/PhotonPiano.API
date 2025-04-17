@@ -313,6 +313,39 @@ public class EntranceTestService : IEntranceTestService
         });
     }
 
+    public async Task RemoveStudentsFromTest(Guid testId, AccountModel currentAccount, params List<string> studentIds)
+    {
+        var entranceTestStudents =
+            await _unitOfWork.EntranceTestStudentRepository.FindAsync(ets => ets.EntranceTestId == testId);
+
+        if (entranceTestStudents.Count == 0)
+        {
+            throw new BadRequestException("Invalid entrance test");
+        }
+
+        var studentIdsInTest = entranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+
+        foreach (var studentId in studentIds)
+        {
+            if (!studentIdsInTest.Contains(studentId))
+            {
+                throw new BadRequestException("Invalid student");
+            }
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(ets => ets.EntranceTestId == testId
+                    && studentIds.Contains(ets.StudentFirebaseId),
+                setter => setter.SetProperty(x => x.RecordStatus, RecordStatus.IsDeleted)
+                    .SetProperty(x => x.DeletedAt, DateTime.UtcNow.AddHours(7))
+                    .SetProperty(x => x.DeletedById, currentAccount.AccountFirebaseId));
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+        });
+    }
+
     public async Task<EntranceTestStudentDetail> GetEntranceTestStudentDetail(Guid entranceTestId, string studentId,
         AccountModel currentAccount)
     {

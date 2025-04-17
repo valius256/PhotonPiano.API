@@ -113,8 +113,19 @@ public class EntranceTestsController : BaseController
         await _serviceFactory.EntranceTestService.AddStudentsToEntranceTest(id,
             request.Adapt<AddStudentsToEntranceTestModel>(),
             base.CurrentAccount!);
-        
+
         return Created();
+    }
+
+    [HttpDelete("{id}/students")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
+    [EndpointDescription("Remove students from a test")]
+    public async Task<ActionResult> RemoveStudentsFromTest([FromRoute(Name = "id")] Guid id,
+        [FromQuery] RemoveStudentsFromEntranceTestRequest request)
+    {
+        await _serviceFactory.EntranceTestService.RemoveStudentsFromTest(id, base.CurrentAccount!, request.StudentIds);
+
+        return NoContent();
     }
 
     [HttpGet("{id}/students/{student-id}")]

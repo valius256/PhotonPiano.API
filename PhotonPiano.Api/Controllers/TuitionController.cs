@@ -67,7 +67,7 @@ public class TuitionController : BaseController
 
         return Redirect(clientRedirectUrl);
     }
-
+ 
     [HttpGet]
     [CustomAuthorize(Roles = [Role.Student, Role.Staff])]
     [EndpointDescription("Get Tuition with paging")]

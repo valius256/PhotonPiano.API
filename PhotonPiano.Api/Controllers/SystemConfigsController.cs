@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.Api.Requests.SystemConfig;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
@@ -26,9 +27,9 @@ public class SystemConfigsController : BaseController
     [HttpGet]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get all system configs")]
-    public async Task<ActionResult<List<SystemConfigModel>>> GetAll()
+    public async Task<ActionResult<List<SystemConfigModel>>> GetConfigs([FromQuery] QuerySystemConfigsRequest request)
     {
-        return await _serviceFactory.SystemConfigService.GetAllConfigs();
+        return await _serviceFactory.SystemConfigService.GetConfigs(request.Names);
     }
 
     [HttpGet("{name}")]

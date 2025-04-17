@@ -25,7 +25,8 @@ public class SystemConfigService : ISystemConfigService
 
     private readonly List<string> _entranceTestConfigNames =
     [
-        ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest, ConfigNames.AllowEntranceTestRegistering
+        ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest, ConfigNames.AllowEntranceTestRegistering,
+        ConfigNames.TestFee, ConfigNames.TheoryPercentage, ConfigNames.PracticePercentage,
     ];
 
     public SystemConfigService(IUnitOfWork unitOfWork)
@@ -33,10 +34,11 @@ public class SystemConfigService : ISystemConfigService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<List<SystemConfigModel>> GetAllConfigs()
+    public async Task<List<SystemConfigModel>> GetConfigs(params List<string> names)
     {
-        var configs = await _unitOfWork.SystemConfigRepository.GetAllAsync(hasTrackings: false);
-        return configs.Adapt<List<SystemConfigModel>>();
+        return await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
+            expression: s => names.Count == 0 || names.Contains(s.ConfigName),
+            hasTrackings: false);
     }
 
     public async Task<SystemConfigModel> GetConfig(string name)
@@ -195,7 +197,7 @@ public class SystemConfigService : ISystemConfigService
 
             if (updateModel.PracticePercentage.HasValue)
             {
-                await UpsertSystemConfig(ConfigNames.TheoryPercentage, SystemConfigType.UnsignedInt,
+                await UpsertSystemConfig(ConfigNames.PracticePercentage, SystemConfigType.UnsignedInt,
                     updateModel.PracticePercentage.Value.ToString());
             }
         });

@@ -7,7 +7,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface ISystemConfigService
 {
-    Task<List<SystemConfigModel>> GetAllConfigs();
+    Task<List<SystemConfigModel>> GetConfigs(params List<string> names);
     Task<SystemConfigModel> GetConfig(string name);
     Task SetConfigValue(UpdateSystemConfigModel updateSystemConfigModel);
     Task<GetSystemConfigOnLevelModel> GetSystemConfigValueBaseOnLevel(int level);

@@ -39,4 +39,6 @@ public interface IEntranceTestService
     Task UpdateStudentEntranceResults(Guid id, string studentId, UpdateEntranceTestResultsModel updateModel, AccountModel currentAccount);
 
     Task UpdateEntranceTestsMaxStudents(int maxStudents, AccountModel currentAccount);
+
+    Task<(int theoryPercentage, int practicalPercentage)> GetScorePercentagesAsync();
 }

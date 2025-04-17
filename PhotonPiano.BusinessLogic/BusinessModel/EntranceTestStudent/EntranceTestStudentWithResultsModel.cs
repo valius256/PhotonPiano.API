@@ -6,7 +6,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 
 public record EntranceTestStudentWithResultsModel : EntranceTestStudentModel
 {
-    public ICollection<EntranceTestResultModel> EntranceTestResults { get; init; } = [];
+    public ICollection<EntranceTestResultWithCriteriaModel> EntranceTestResults { get; init; } = [];
 
     public LevelModel? Level { get; init; }
 

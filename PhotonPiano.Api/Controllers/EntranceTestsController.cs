@@ -49,8 +49,10 @@ public class EntranceTestsController : BaseController
     [EndpointDescription("Get an entrance test")]
     public async Task<ActionResult<EntranceTestDetailResponse>> GetEntranceTestById([FromRoute] Guid id)
     {
-        var result = await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id, base.CurrentAccount!);
-        return result.Adapt<EntranceTestDetailResponse>();
+        var entranceTest =
+            await _serviceFactory.EntranceTestService.GetEntranceTestDetailById(id, base.CurrentAccount!);
+        
+        return entranceTest.Adapt<EntranceTestDetailResponse>();
     }
 
     [HttpPost]

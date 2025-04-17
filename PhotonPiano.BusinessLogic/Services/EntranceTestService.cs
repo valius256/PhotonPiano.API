@@ -805,7 +805,7 @@ public class EntranceTestService : IEntranceTestService
         });
     }
 
-    private async Task<(int theoryPercentage, int practicalPercentage)> GetScorePercentagesAsync()
+    public async Task<(int theoryPercentage, int practicalPercentage)> GetScorePercentagesAsync()
     {
         var configs =
             await _serviceFactory.SystemConfigService.GetEntranceTestConfigs(

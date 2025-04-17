@@ -11,6 +11,7 @@ using PhotonPiano.PubSub;
 using Serilog;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Ghostscript.NET.Rasterizer;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -27,15 +28,23 @@ builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies(); 
 
-var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.6");
-var context = new CustomAssemblyLoadContext();
-context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
-     RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
-     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
-     "libwkhtmltox.dylib"));
+// var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.6");
+// var context = new CustomAssemblyLoadContext();
+// context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
+//      RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
+//      RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
+//      "libwkhtmltox.dylib"));
 
 // Add DinkToPdf services
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+
+// Register Ghostscript.NET services
+builder.Services.AddSingleton<GhostscriptRasterizer>(provider => {
+    // You can optionally set a specific Ghostscript version path here if needed:
+    // var gsPath = Path.Combine(Directory.GetCurrentDirectory(), "ghostscript", "gsdll32.dll");
+    // GhostscriptVersionInfo gsVersion = new GhostscriptVersionInfo(gsPath);
+    return new GhostscriptRasterizer();
+});
 
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();

@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using DinkToPdf;
 using DinkToPdf.Contracts;
+using Ghostscript.NET.Rasterizer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
-using PdfiumViewer;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Certificate;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -19,6 +19,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
+using static System.Drawing.Imaging.ImageCodecInfo;
 using ColorMode = DinkToPdf.ColorMode;
 using PaperKind = DinkToPdf.PaperKind;
 using RouteData = Microsoft.AspNetCore.Routing.RouteData;
@@ -77,7 +78,7 @@ public class CertificateService : ICertificateService
             {
                 return false;
             }
-            
+
             return true;
         }
         catch (Exception ex) when (ex is not NotFoundException)
@@ -132,7 +133,6 @@ public class CertificateService : ICertificateService
 
             // Use AsNoTracking for the initial query to avoid tracking issues
             var studentClass = await _unitOfWork.StudentClassRepository.Entities
-                .AsNoTracking()
                 .Include(sc => sc.Student)
                 .Include(sc => sc.Class)
                 .ThenInclude(c => c.Level)
@@ -166,8 +166,8 @@ public class CertificateService : ICertificateService
             var certificateHtml = await RenderViewToStringAsync("Certificate", certificateModel);
             var pdfBytes = GeneratePdfFromHtml(certificateHtml);
 
-            // Convert PDF to high-quality image
-            var imageBytes = await ConvertPdfToImageWithPdfiumViewer(pdfBytes);
+            // Convert PDF to high-quality image using Ghostscript
+            var imageBytes = await ConvertPdfToImage(pdfBytes);
 
             // Create temporary files
             string certificateFileName = $"certificate_{studentClassId}.png";
@@ -221,6 +221,7 @@ public class CertificateService : ICertificateService
             throw;
         }
     }
+
 
     //Renders a Razor view to string
     private async Task<string> RenderViewToStringAsync(string viewName, object model)
@@ -287,52 +288,82 @@ public class CertificateService : ICertificateService
     }
 
     // Converts a PDF to a high-quality image using PdfiumViewer
-    private async Task<byte[]> ConvertPdfToImageWithPdfiumViewer(byte[] pdfBytes)
+    private async Task<byte[]> ConvertPdfToImage(byte[] pdfBytes)
     {
         return await Task.Run(() =>
         {
-            // Use a high DPI for better quality
-            const float dpi = 300f;
+            // Create a memory stream from the PDF bytes
+            using var memoryStream = new MemoryStream(pdfBytes);
 
-            using var stream = new MemoryStream(pdfBytes);
-            using var pdfDocument = PdfDocument.Load(stream);
+            // Create a Ghostscript rasterizer
+            using var rasterizer = new GhostscriptRasterizer();
 
-            // Get the size of the first page
-            var pageSize = pdfDocument.PageSizes[0];
+            // Open the PDF from the memory stream
+            rasterizer.Open(memoryStream);
 
-            // Calculate the image dimensions based on DPI
-            int width = (int)(pageSize.Width / 72.0f * dpi);
-            int height = (int)(pageSize.Height / 72.0f * dpi);
+            // Set high DPI for better quality
+            const int dpi = 300;
 
-            // Render the first page to an image
-            using var image = pdfDocument.Render(0, width, height, dpi, dpi, PdfRenderFlags.Annotations);
+            // Page numbers in Ghostscript are 1-based
+            using var pageImage = rasterizer.GetPage(dpi, 1);
 
-            // Enhance the image quality
-            using var enhancedImage = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-            using var graphics = Graphics.FromImage(enhancedImage);
+            // Create a new high-quality image with a white background
+            if (pageImage != null)
+            {
+                using var enhancedImage = new Bitmap(pageImage.Width, pageImage.Height, PixelFormat.Format32bppArgb);
+                using var graphics = Graphics.FromImage(enhancedImage);
 
-            // Set high quality rendering
-            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                // Set high quality rendering
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
 
-            // Fill with white background
-            graphics.FillRectangle(Brushes.White, 0, 0, width, height);
+                // Fill with white background
+                graphics.FillRectangle(Brushes.White, 0, 0, enhancedImage.Width, enhancedImage.Height);
 
-            // Draw the PDF image
-            graphics.DrawImage(image, 0, 0, width, height);
+                // Draw the PDF image
+                graphics.DrawImage(pageImage, 0, 0, pageImage.Width, pageImage.Height);
 
-            // Add a subtle border
-            int borderWidth = 2;
-            graphics.DrawRectangle(new Pen(Color.FromArgb(230, 230, 230), borderWidth),
-                borderWidth / 2, borderWidth / 2, width - borderWidth, height - borderWidth);
+                // Add a subtle border
+                int borderWidth = 2;
+                graphics.DrawRectangle(new Pen(Color.FromArgb(230, 230, 230), borderWidth),
+                    borderWidth / 2, borderWidth / 2,
+                    enhancedImage.Width - borderWidth, enhancedImage.Height - borderWidth);
 
-            // Convert to PNG
-            using var memoryStream = new MemoryStream();
-            enhancedImage.Save(memoryStream, ImageFormat.Png);
-            return memoryStream.ToArray();
+                // Save to memory stream as PNG
+                using var outputStream = new MemoryStream();
+
+                // Use high quality PNG encoding
+                var encoderParameters = new EncoderParameters(1);
+                encoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, 100L);
+
+                // Get PNG encoder
+                var pngEncoder = GetEncoder(ImageFormat.Png);
+
+                // Save with high quality
+                enhancedImage.Save(outputStream, pngEncoder, encoderParameters);
+                return outputStream.ToArray();
+            }
+
+            // Return empty byte array if pageImage is null
+            return new byte[0];
         });
+    }
+
+    // Helper method to get image encoder
+    private static ImageCodecInfo GetEncoder(ImageFormat format)
+    {
+        var codecs = GetImageEncoders();
+        foreach (var codec in codecs)
+        {
+            if (codec.FormatID == format.Guid)
+            {
+                return codec;
+            }
+        }
+
+        return null;
     }
 
     public async Task<List<CertificateInfoModel>> GetStudentCertificatesAsync(AccountModel account)

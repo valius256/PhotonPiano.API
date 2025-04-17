@@ -10,9 +10,11 @@ public class EntranceTestStudent : BaseEntityWithId
     public double? TheoraticalScore { get; set; }
 
     public int? Year { get; set; }
+    
     public bool IsScoreAnnounced { get; set; } = false;
     public string? InstructorComment { get; set; }
 
+    public DateTime? LevelAdjustedAt { get; set; }
     public required string CreatedById { get; set; }
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }

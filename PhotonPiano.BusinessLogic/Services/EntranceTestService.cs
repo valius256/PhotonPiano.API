@@ -883,6 +883,14 @@ public class EntranceTestService : IEntranceTestService
             throw new ForbiddenMethodException("You cannot update the practical score results.");
         }
 
+        if (updateModel.LevelId.HasValue)
+        {
+            if (!await _unitOfWork.LevelRepository.AnyAsync(l => l.Id == updateModel.LevelId.Value))
+            {
+                throw new NotFoundException("Level not found.");
+            }
+        }
+
         var entranceTest =
             await _unitOfWork.EntranceTestRepository.FindSingleAsync(et => et.Id == id,
                 hasTrackings: false);
@@ -952,6 +960,8 @@ public class EntranceTestService : IEntranceTestService
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
+            var oldLevelId = entranceTestStudent.LevelId;
+
             updateModel.Adapt(entranceTestStudent);
 
             var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
@@ -983,9 +993,19 @@ public class EntranceTestService : IEntranceTestService
 
                 bandScore = (theoryScore * theoryPercentage / 100 + practicalScore * practicalPercentage / 100);
 
+                if (entranceTestStudent.LevelId.HasValue && updateModel.LevelId.HasValue &&
+                    updateModel.LevelId != oldLevelId)
+                {
+                    entranceTestStudent.LevelId = updateModel.LevelId;
+                    entranceTestStudent.LevelAdjustedAt = DateTime.UtcNow.AddHours(7);
+                }
+                else
+                {
+                    entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                        theoryScore, practicalScore);
+                }
+
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
-                    theoryScore, practicalScore);
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
             }

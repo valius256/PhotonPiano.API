@@ -381,6 +381,21 @@ public class EntranceTestService : IEntranceTestService
             throw new BadRequestException("Invalid entrance test");
         }
 
+        var minStudentsConfig =
+            await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == ConfigNames.MinStudentsInTest);
+
+        if (minStudentsConfig is not null)
+        {
+            var minStudents = !string.IsNullOrEmpty(minStudentsConfig.ConfigValue)
+                ? Convert.ToInt32(minStudentsConfig.ConfigValue)
+                : 1;
+
+            if (entranceTestStudents.Count - studentIds.Count < minStudents)
+            {
+                throw new BadRequestException($"Entrance test must have at least {minStudents} learners");
+            }
+        }
+
         var studentIdsInTest = entranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
 
         foreach (var studentId in studentIds)

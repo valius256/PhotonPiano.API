@@ -14,7 +14,7 @@ public interface IEntranceTestService
 
     Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id, AccountModel currentAccount);
 
-    Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudentModel,
+    Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel createModel,
         AccountModel currentAccount);
 
     Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default);

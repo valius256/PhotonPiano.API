@@ -141,7 +141,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get All teacher can be assigned to this slot")]
     public async Task<ActionResult> GetAllTeacherCanBeAssignedToThisSlot([FromRoute] Guid slotId)
     {
-        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToThisSlot(slotId, CurrentUserFirebaseId);
+        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToSlot(slotId, CurrentUserFirebaseId);
         return Ok(result.Adapt<List<AccountSimpleModel>>());
     }
     

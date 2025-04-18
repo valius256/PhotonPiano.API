@@ -81,7 +81,9 @@ public class SlotService : ISlotService
 
     public async Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
     {
-
+        if(slotModel.StartTime > slotModel.EndTime)
+            throw new BadRequestException("Start time must be less than end time");
+        
         // Tạo danh sách các ClassId cần truy vấn
         List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
 
@@ -574,20 +576,7 @@ public class SlotService : ISlotService
 
     public async Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate)
     {
-        var vietnamTime = DateTime.UtcNow.AddHours(7);
-        if (startDate == null || startDate == DateOnly.FromDateTime(vietnamTime))
-        {
-            // Start from yesterday instead of today
-            startDate = DateOnly.FromDateTime(vietnamTime.AddDays(1));
-        }
-
-        if (endDate == null)
-        {
-            var futureDate = vietnamTime.AddDays(7);
-            endDate = DateOnly.FromDateTime(futureDate);
-        }
-
-        // Get all active rooms
+        // Get all activems
         var rooms = await _unitOfWork.RoomRepository.FindAsync(r => r.Status == RoomStatus.Opened);
 
         // Get all existing slots with rooms (without date filtering)
@@ -769,7 +758,7 @@ public class SlotService : ISlotService
 
     }
 
-    public async Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToThisSlot(Guid slotId, string accountFirebaseId)
+    public async Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToSlot(Guid slotId, string accountFirebaseId)
     {
         var currentSlot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(x => x.Id == slotId, hasTrackings: false);
         if (currentSlot == null)

@@ -6,6 +6,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -129,37 +130,94 @@ public class EntranceTestService : IEntranceTestService
         return entranceTest;
     }
 
-    public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudent,
+    public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel createModel,
         AccountModel currentAccount)
     {
-        var entranceTestModel = entranceTestStudent.Adapt<EntranceTest>();
-        entranceTestModel.CreatedById = currentAccount.AccountFirebaseId;
+        var entranceTestId = Guid.NewGuid();
+        var entranceTestStudents = new List<EntranceTestStudent>();
+
+        if (createModel.StudentIds.Count > 0)
+        {
+            var students =
+                await _unitOfWork.AccountRepository.FindAsync(a =>
+                    createModel.StudentIds.Contains(a.AccountFirebaseId)
+                    && a.Role == Role.Student
+                    && a.StudentStatus == StudentStatus.WaitingForEntranceTestArrangement, hasTrackings: false);
+
+            if (students.Count != createModel.StudentIds.Count)
+            {
+                throw new BadRequestException("Some students are invalid.");
+            }
+
+            entranceTestStudents = createModel.StudentIds.Select(studentId =>
+                new EntranceTestStudent
+                {
+                    Id = Guid.NewGuid(),
+                    StudentFirebaseId = studentId,
+                    EntranceTestId = entranceTestId,
+                    CreatedAt = DateTime.UtcNow.AddHours(7),
+                    CreatedById = currentAccount.AccountFirebaseId,
+                }).ToList();
+        }
+
+        var entranceTest = createModel.Adapt<EntranceTest>();
+        entranceTest.Id = entranceTestId;
+        entranceTest.CreatedById = currentAccount.AccountFirebaseId;
 
         // check room is exist 
-        var roomDetailModel = await _serviceFactory.RoomService.GetRoomDetailById(entranceTestModel.RoomId);
-        // check Instructor is Exist in db
-        var instructorDetailModel =
-            await _serviceFactory.AccountService.GetAccountById(entranceTestModel.InstructorId!);
-        if (instructorDetailModel.Role != Role.Instructor)
-            throw new BadRequestException("This is not Instructor, please try again");
+        var roomDetailModel = await _serviceFactory.RoomService.GetRoomDetailById(entranceTest.RoomId);
 
-        EntranceTest? createdEntranceTest = null;
-        entranceTestModel.RoomName = roomDetailModel.Name;
-        entranceTestModel.InstructorName = instructorDetailModel.UserName;
-        entranceTestModel.RoomCapacity = roomDetailModel.Capacity;
+        // check Instructor is Exist in db
+        var instructor =
+            await _serviceFactory.AccountService.GetAccountById(entranceTest.InstructorId!);
+
+        if (instructor.Role != Role.Instructor)
+        {
+            throw new BadRequestException("This is not Instructor, please try again");
+        }
+
+        if (await _unitOfWork.EntranceTestRepository.AnyAsync(t => t.Date == createModel.Date
+                                                                   && t.RoomId == entranceTest.RoomId
+                                                                   && t.Shift == entranceTest.Shift))
+        {
+            throw new ConflictException("There is already an entrance test with the same date, shift and room.");
+        }
+
+        var slots =
+            await _unitOfWork.SlotRepository.FindProjectedAsync<SlotWithClassModel>(
+                s => s.Status != SlotStatus.NotStarted && s.TeacherId == instructor.AccountFirebaseId,
+                hasTrackings: false);
+
+        if (slots.Any(s => s.Date == createModel.Date && s.Shift == createModel.Shift))
+        {
+            throw new BadRequestException($"Instructor {instructor.FullName ?? instructor.Email} is already busy " +
+                                          $"at this time.");
+        }
+
+        entranceTest.RoomName = roomDetailModel.Name;
+        entranceTest.InstructorName = instructor.UserName;
+        entranceTest.RoomCapacity = roomDetailModel.Capacity;
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var createdEntranceTestEntity = await _unitOfWork.EntranceTestRepository.AddAsync(entranceTestModel);
-            createdEntranceTest = createdEntranceTestEntity;
+            await _unitOfWork.EntranceTestRepository.AddAsync(entranceTest);
+
+            if (createModel.StudentIds.Count > 0 && entranceTestStudents.Count > 0)
+            {
+                await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(entranceTestStudents);
+
+                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
+                    a => createModel.StudentIds.Contains(a.AccountFirebaseId),
+                    setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
+            }
         });
 
         await InvalidateEntranceTestCache();
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{createdEntranceTest!.Id}",
-            createdEntranceTest.Adapt<EntranceTestDetailModel>(),
+        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{entranceTest!.Id}",
+            entranceTest.Adapt<EntranceTestDetailModel>(),
             TimeSpan.FromHours(5));
 
-        return await GetEntranceTestDetailById(createdEntranceTest.Id, currentAccount);
+        return await GetEntranceTestDetailById(entranceTest.Id, currentAccount);
     }
 
     public async Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default)

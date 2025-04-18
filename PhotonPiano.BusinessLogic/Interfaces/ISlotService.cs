@@ -33,7 +33,7 @@ public interface ISlotService
 
     Task<SlotDetailModel> PublicNewSlot(PublicNewSlotModel model, string accountFirebaseId);
     
-    Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToThisSlot(Guid slotId, string accountFirebaseId);
+    Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToSlot(Guid slotId, string accountFirebaseId);
     
     Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string reason ,string staffAccountFirebaseId);
 }

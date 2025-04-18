@@ -30,7 +30,7 @@ public class SlotStudentService : ISlotStudentService
         if (model.SlotStudentInfoRequests.Count == 0 || model.SlotStudentInfoRequests == null)
             throw new IllegalArgumentException("Student list sending cannot be empty.");
 
-        if (slotEntity == null) throw new IllegalArgumentException("The specified slot does not exist.");
+        if (slotEntity == null) throw new NotFoundException("The specified slot does not exist.");
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
 

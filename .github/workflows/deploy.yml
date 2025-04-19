@@ -113,11 +113,10 @@ jobs:
 
       - name: Set up SSH key
         run: |
-          set -x  # Bật chế độ debug
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -v -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts || { echo "ssh-keyscan failed"; exit 1; }
+          echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config
 
       - name: 🚀 Deploy to Server via SSH
         uses: appleboy/ssh-action@master
@@ -125,8 +124,6 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
             set -e # Dừng script nếu có lỗi
             

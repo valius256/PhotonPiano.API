@@ -114,7 +114,6 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
           ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-
       - name: 🚀 Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:

@@ -9,6 +9,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
+using OfficeOpenXml.Packaging.Ionic.Zip;
 using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -79,7 +80,7 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
+    public async Task<List<SlotDetailModel>> GetWeeklyScheduler(GetSlotModel slotModel, AccountModel accountModel)
     {
         if(slotModel.StartTime > slotModel.EndTime)
             throw new BadRequestException("Start time must be less than end time");
@@ -799,7 +800,7 @@ public class SlotService : ISlotService
 
         if (!availableTeachers.Any())
         {
-            throw new NotFoundException("No available teachers found for this slot.");
+            throw new BadReadException("No available teachers found for this slot.");
         }
         
         return availableTeachers.Adapt<List<AccountSimpleModel>>();
@@ -807,9 +808,9 @@ public class SlotService : ISlotService
 
     public async Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string Reason ,string staffAccountFirebaseId)
     {
-        var teacher = await _unitOfWork.AccountRepository.FindAsync(a => a.AccountFirebaseId == teacherFirebaseId && a.Role == Role.Instructor, hasTrackings: false);
+        var teacher = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == teacherFirebaseId && a.Role == Role.Instructor, hasTrackings: false);
         
-        if (teacher == null)
+        if (teacher is null)
         {
             throw new NotFoundException("Teacher not found");
         }
@@ -825,8 +826,6 @@ public class SlotService : ISlotService
         {
             throw new BadRequestException("Can only assign teacher to slots that are not started yet!");
         }
-        
-      
         
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

@@ -15,7 +15,7 @@ public interface ISlotService
     TimeOnly GetShiftStartTime(Shift shift);
 
 
-    Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, [Required] AccountModel accountModel);
+    Task<List<SlotDetailModel>> GetWeeklyScheduler(GetSlotModel slotModel, [Required] AccountModel accountModel);
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatus(Guid slotId);
 

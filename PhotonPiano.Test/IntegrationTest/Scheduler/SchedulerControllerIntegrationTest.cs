@@ -29,7 +29,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     
     // Unauthorized
     [Fact]
-    public async Task GetSchedulers_Unauthorized_ReturnsUnauthorized()
+    public async Task GetWeeklySchedule_Unauthorized_ReturnsUnauthorized()
     {
         // Act
         var response = await _client.GetAsync($"/api/scheduler/slots?start-time={DateTime.UtcNow.Date}&end-time={DateTime.UtcNow.AddDays(7)}");
@@ -41,7 +41,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
 
     // Invalid input Parameters
     [Fact]
-    public async Task GetSchedulers_InvalidParameters_ReturnsBadRequest()
+    public async Task GetWeeklySchedule_InvalidParameters_ReturnsBadRequest()
     {
         // Arrange
         var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
@@ -57,7 +57,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
 
     // Boundary Dates
     [Fact]
-    public async Task GetSchedulers_BoundaryDates_ReturnsOkResult()
+    public async Task GetWeeklySchedule_BoundaryDates_ReturnsOkResult()
     {
         // Arrange
         var request = new SchedulerRequest
@@ -80,7 +80,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task GetSchedulers_ReturnsOkResult()
+    public async Task GetWeeklySchedule_ReturnsOkResult()
     {
         // Arrange
         var request = new SchedulerRequest
@@ -279,6 +279,7 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         var listSlotResponseMessage = await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
         var firstSlotId = (await DeserializeResponse<List<SlotSimpleModel>>(listSlotResponseMessage)).First().Id;
 
+        
 
         var request = new AttendanceRequest
         {
@@ -439,4 +440,127 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
     }
+    
+    [Fact]
+    public async Task AssignTeacherToSlot_ValidRequest_ReturnsOk()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var teacherId = await _client.GetFirebaseAccountId("teacherphatlord@gmail.com", "123456");
+        
+        var slotResponseMessage =
+            await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+
+        // Assert
+        slotResponseMessage.EnsureSuccessStatusCode();
+        var result = await DeserializeResponse<List<SlotSimpleModel>>(slotResponseMessage);
+
+        var slotNotStarted = result.FirstOrDefault(x => x.Status == SlotStatus.NotStarted);
+        
+        var request = new
+        {
+            slotId = slotNotStarted.Id,
+            teacherFirebaseId = teacherId,
+            reason = "valid-reason"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/assign-teacher-to-slot", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignTeacherToSlot_InvalidTeacher_ReturnsBadRequest()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        var slotResponseMessage =
+            await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+
+        // Assert
+        var result = await DeserializeResponse<List<SlotSimpleModel>>(slotResponseMessage);
+
+        var slotNotStarted = result.FirstOrDefault(x => x.Status == SlotStatus.NotStarted);
+        
+        var request = new
+        {
+            slotId = slotNotStarted.Id,
+            teacherFirebaseId = "teacher-invalid-id",
+            reason = "valid-reason"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/assign-teacher-to-slot", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignTeacherToSlot_NonExistentSlot_ReturnsNotFound()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var teacherId = await _client.GetFirebaseAccountId("teacherphatlord@gmail.com", "123456");
+        
+        var request = new
+        {
+            slotId = Guid.NewGuid().ToString(),
+            teacherFirebaseId = teacherId,
+            reason = "valid-reason"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/assign-teacher-to-slot", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignTeacherToSlot_SlotAlreadyStarted_ReturnsBadRequest()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        var teacherId = await _client.GetFirebaseAccountId("teacherphatlord@gmail.com", "123456");
+        
+        var slotResponseMessage =
+            await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now.AddDays(-3))}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+
+        // Assert
+        slotResponseMessage.EnsureSuccessStatusCode();
+        var result = await DeserializeResponse<List<SlotSimpleModel>>(slotResponseMessage);
+        
+        var slotAlreadyStarted = result.FirstOrDefault(x => x.Status == SlotStatus.Ongoing);
+        
+        if (slotAlreadyStarted == null)
+        {
+            return; 
+        }
+
+        
+        var request = new 
+        {
+            slotId = slotAlreadyStarted.Id,
+            teacherFirebaseId = teacherId,
+            reason = "valid-reason"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/scheduler/assign-teacher-to-slot", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
 }

@@ -29,14 +29,14 @@ public class SchedulerController : BaseController
 
     [HttpGet("slots")]
     [CustomAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
-    [EndpointDescription("Get All Slots in this Week")]
+    [EndpointDescription("Get Weekly scheduler")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {
 
         if (CurrentAccount != null)
         {
             var result =
-                await _serviceFactory.SlotService.GetWeeklySchedule(request.Adapt<GetSlotModel>(),
+                await _serviceFactory.SlotService.GetWeeklyScheduler(request.Adapt<GetSlotModel>(),
                     CurrentAccount);
             return Ok(result.Adapt<List<SlotDetailModel>>());
         }

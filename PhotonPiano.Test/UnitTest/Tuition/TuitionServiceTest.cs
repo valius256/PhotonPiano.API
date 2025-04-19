@@ -257,7 +257,7 @@ public class TuitionServiceTest
     public async Task HandleTuitionPaymentCallback_SuccessfulPayment_UpdatesStatusAndSendsEmail()
     {
         // Arrange
-        var callbackModel = new VnPayCallbackModel
+        var callbackModel = new VnPayCallbackModel 
         {
             VnpTxnRef = Guid.NewGuid().ToString(),
             VnpResponseCode = "00",

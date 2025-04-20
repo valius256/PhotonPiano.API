@@ -42,5 +42,7 @@
         public static readonly string ForceClassSize = "Bắt buộc đủ sĩ số để mở lớp";
         
         public static readonly string NumTrialSlot  = "Số buổi học thử";
+
+        public static readonly string AttendanceThreshold = "Tỉ lệ điểm danh tối thiểu để qua";
     }
 }

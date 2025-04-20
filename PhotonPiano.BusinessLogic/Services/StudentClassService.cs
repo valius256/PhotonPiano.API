@@ -1033,5 +1033,28 @@ namespace PhotonPiano.BusinessLogic.Services
                 }
             );
         }
+
+        public async Task<bool> UpdateAttendancePercentageStudentClassStatus(Guid classId, string staffAccountFirebaseId)
+        {
+            var studentClasses = await _unitOfWork.StudentClassRepository
+                .FindAsync(sc => sc.ClassId == classId);
+
+            foreach (var studentClass in studentClasses)
+            {
+                var slotStudents = await _unitOfWork.SlotStudentRepository
+                    .FindAsync(ss => ss.StudentFirebaseId == studentClass.StudentFirebaseId);
+                
+                var totalSlots = slotStudents.Count;
+                var attendedSlots = slotStudents.Count(ss => ss.AttendanceStatus == AttendanceStatus.Attended);
+                
+                studentClass.AttendancePercentage =  (decimal)attendedSlots / totalSlots * 100;
+                studentClass.UpdateById = staffAccountFirebaseId;
+                studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            }
+            
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
     }
 }

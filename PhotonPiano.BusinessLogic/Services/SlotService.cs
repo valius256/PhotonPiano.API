@@ -11,6 +11,7 @@ using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
 using OfficeOpenXml.Packaging.Ionic.Zip;
 using PhotonPiano.Shared.Enums;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -841,6 +842,60 @@ public class SlotService : ISlotService
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
         
         return await GetSlotDetailById(slotId);
+    }
+
+    public async Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId)
+    {
+        var systemConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AttendanceThreshold);
+        if (systemConfig == null)
+        {
+            throw new NotFoundException("System config not found");
+        }
+
+        decimal.TryParse(systemConfig.ConfigValue, out decimal attendanceThreshold);
+
+        var currentClass = await _serviceFactory.ClassService.GetClassDetailById(classId);
+        
+        if (currentClass == null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        
+        var studentAttendanceResults = new List<StudentAttendanceResult>();
+        
+        var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == classId);
+
+        foreach (var studentClass in studentClasses)
+        {
+            var studentAttendanceResult = new StudentAttendanceResult
+            {
+                StudentId = studentClass.StudentFirebaseId,
+                AttendancePercentage = 0,
+                TotalSlots = 0,
+                AttendedSlots = 0,
+                IsPassed = false
+            };
+
+            var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => ss.StudentFirebaseId == studentClass.StudentFirebaseId);
+            var totalSlots = studentSlots.Count;
+            var attendedSlots = studentSlots.Count(ss => ss.AttendanceStatus == AttendanceStatus.Attended);
+
+            if (totalSlots > 0)
+            {
+                studentAttendanceResult.AttendancePercentage = (decimal)attendedSlots / totalSlots * 100;
+            }
+
+            studentAttendanceResult.TotalSlots = totalSlots;
+            studentAttendanceResult.AttendedSlots = attendedSlots;
+
+            if (studentAttendanceResult.AttendancePercentage < attendanceThreshold)
+            {
+                studentAttendanceResult.IsPassed = true;
+                studentAttendanceResults.Add(studentAttendanceResult);
+            }
+        }
+        
+        return studentAttendanceResults;
     }
 
 

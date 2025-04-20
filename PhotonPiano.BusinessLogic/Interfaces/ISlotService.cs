@@ -36,4 +36,6 @@ public interface ISlotService
     Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToSlot(Guid slotId, string accountFirebaseId);
     
     Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string reason ,string staffAccountFirebaseId);
+    
+    Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId);
 }

@@ -21,5 +21,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces
         Task<bool> UpdateStudentScore(UpdateStudentScoreModel model, AccountModel account);
         Task<bool> UpdateBatchStudentClassScores(UpdateBatchStudentClassScoreModel model,
             AccountModel account);
+        Task<bool> UpdateAttendancePercentageStudentClassStatus(Guid classId, string staffAccountFirebaseId);
+        
     }
 }

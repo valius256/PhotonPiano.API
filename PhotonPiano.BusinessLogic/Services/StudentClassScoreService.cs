@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
@@ -16,6 +18,8 @@ public class StudentClassScoreService : IStudentClassScoreService
 
     private readonly IServiceFactory _serviceFactory;
 
+    private readonly IServiceProvider _serviceProvider;
+
     // Constants for notification templates
     private const string PassedNotificationTemplate =
         "Chúc mừng! Bạn đã hoàn thành lớp {0}. Bạn đã được chuyển lên cấp độ tiếp theo và đang chờ xếp lớp mới.";
@@ -26,13 +30,15 @@ public class StudentClassScoreService : IStudentClassScoreService
     private const string InstructorNotificationTemplate =
         "Điểm số của lớp {0} đã được công bố cho học viên.";
 
-    // Config keys for passing grades
     private const decimal DefaultPassingGrade = 5.0m;
+    private const int BatchSize = 50;
 
-    public StudentClassScoreService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
+    public StudentClassScoreService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory,
+        IServiceProvider serviceProvider)
     {
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
+        _serviceProvider = serviceProvider;
     }
 
 
@@ -43,96 +49,18 @@ public class StudentClassScoreService : IStudentClassScoreService
             throw new ArgumentException("Invalid class ID", nameof(classId));
         }
 
+        if (account == null || string.IsNullOrEmpty(account.AccountFirebaseId))
+        {
+            throw new ArgumentException("Invalid account information", nameof(account));
+        }
+
         try
         {
-            // Load all required data at once to minimize database round trips
-            var classInfo = await _unitOfWork.ClassRepository.FindSingleAsync(c =>
-                c.Id == classId && c.Status != ClassStatus.Finished);
+            var classInfo = await ValidateAndGetClass(classId);
+            var now = DateTime.UtcNow.AddHours(7);
 
-            if (classInfo == null)
-            {
-                throw new NotFoundException("Class not found or has already been finished");
-            }
-            var currentDate = DateTime.UtcNow.AddHours(7); // Vietnam time
-            // if (classInfo.Slots..HasValue && classInfo.EndDate.Value > currentDate)
-            // {
-            //     throw new BadRequestException($"Cannot publish scores: The class has not ended yet. Class end date is {classInfo.EndDate.Value.ToString("dd/MM/yyyy")}.");
-            // }
-            // Preload level with class to avoid separate query
-            if (classInfo.Level == null)
-            {
-                classInfo.Level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classInfo.LevelId);
-                if (classInfo.Level == null)
-                {
-                    throw new NotFoundException($"Level not found for class {classId}");
-                }
-            }
-
-            // Get all students in this class in one query
-            var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == classId);
-            if (!studentClasses.Any())
-            {
-                throw new BadRequestException("No students enrolled in this class.");
-            }
-
-            // Get all student accounts in one query for better performance
-            var studentFirebaseIds = studentClasses.Select(sc => sc.StudentFirebaseId).Distinct().ToList();
-            var studentAccounts =
-                await _unitOfWork.AccountRepository.FindAsync(a => studentFirebaseIds.Contains(a.AccountFirebaseId));
-            var studentAccountMap = studentAccounts.ToDictionary(a => a.AccountFirebaseId);
-
-            var now = DateTime.UtcNow.AddHours(7); // Vietnam time
-
-            // Prepare collections for batch updates
-            var studentClassUpdates = new List<StudentClass>();
-            var studentUpdates = new List<Account>();
-            var passedStudents = new List<StudentClass>();
-
-            // Process all students in memory to minimize DB interactions
-            foreach (var studentClass in studentClasses)
-            {
-                if (!studentClass.GPA.HasValue)
-                {
-                    Console.WriteLine($"Student {studentClass.StudentFirebaseId} in class has no GPA value, skipping");
-                    continue;
-                }
-
-                if (!studentAccountMap.TryGetValue(studentClass.StudentFirebaseId, out var student))
-                {
-                    Console.WriteLine(
-                        $"Student with FirebaseId {studentClass.StudentFirebaseId} not found in database");
-                    continue;
-                }
-
-                // Update student class data
-                bool isPassed = studentClass.GPA.Value >= DefaultPassingGrade;
-                studentClass.IsPassed = isPassed;
-                studentClass.UpdateById = account.AccountFirebaseId;
-                studentClass.UpdatedAt = now;
-                studentClassUpdates.Add(studentClass);
-
-                if (isPassed)
-                {
-                    passedStudents.Add(studentClass);
-                }
-
-                // Update student level if passed
-                if (isPassed && classInfo.Level.NextLevelId.HasValue)
-                {
-                    student.LevelId = classInfo.Level.NextLevelId.Value;
-                    student.StudentStatus = StudentStatus.WaitingForClass;
-                    student.UpdatedAt = now;
-                }
-                else
-                {
-                    // Still update status for failed students
-                    student.StudentStatus = StudentStatus.WaitingForClass;
-                    student.UpdatedAt = now;
-                }
-
-                // Track student for update
-                studentUpdates.Add(student);
-            }
+            var (studentClasses, studentUpdates, passedStudents) =
+                await PrepareStudentDataForScorePublishing(classId, classInfo, account, now);
 
             // Update class status
             classInfo.IsScorePublished = true;
@@ -140,45 +68,23 @@ public class StudentClassScoreService : IStudentClassScoreService
             classInfo.UpdateById = account.AccountFirebaseId;
             classInfo.UpdatedAt = now;
 
-            // Execute all updates in a single transaction for consistency
-            var strategy = _unitOfWork.Database.CreateExecutionStrategy();
-            await strategy.ExecuteAsync(async () =>
+            // Execute all database operations in a single transaction
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                // Start a new transaction
-                using var transaction = await _unitOfWork.BeginTransactionAsync();
-                try
-                {
-                    // Update class first
-                    await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+                // Update class first
+                await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
 
-                    // Update student classes and accounts in optimized batches
-                    await UpdateStudentClassesInBatch(studentClassUpdates);
-                    await UpdateStudentAccountsInBatch(studentUpdates);
-
-                    // Commit the transaction
-                    await transaction.CommitAsync();
-                }
-                catch
-                {
-                    // Rollback on error
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                // Update student classes and accounts in batches
+                await UpdateEntitiesInBatches(studentClasses, _unitOfWork.StudentClassRepository.UpdateAsync);
+                await UpdateEntitiesInBatches(studentUpdates, _unitOfWork.AccountRepository.UpdateAsync);
             });
 
-            // Process certificates sequentially after the main transaction
             if (passedStudents.Any())
             {
-                await ProcessCertificatesSequentially(passedStudents);
+                await ProcessCertificates(passedStudents);
             }
 
-            // Send notifications sequentially
-            await SendClassCompletionNotificationsSequentially(studentClassUpdates, classInfo);
-
-            int passedCount = studentClassUpdates.Count(sc => sc.IsPassed);
-            int failedCount = studentClassUpdates.Count(sc => !sc.IsPassed);
-            Console.WriteLine(
-                $"Successfully published scores for class {classId}. Passed: {passedCount}, Failed: {failedCount}");
+            await SendClassCompletionNotifications(studentClasses, classInfo);
         }
         catch (Exception ex)
         {
@@ -187,163 +93,233 @@ public class StudentClassScoreService : IStudentClassScoreService
         }
     }
 
-    // Sequential notification method
-    private async Task SendClassCompletionNotificationsSequentially(List<StudentClass> studentClasses, Class classInfo)
+    private async Task<Class> ValidateAndGetClass(Guid classId)
+    {
+        var classInfo = await _unitOfWork.ClassRepository.FindSingleAsync(c => c.Id == classId);
+        if (classInfo == null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+
+        switch (classInfo.Status)
+        {
+            case ClassStatus.Ongoing:
+                break;
+            case ClassStatus.Finished:
+                throw new BadRequestException("Cannot publish scores: The class has already been finished.");
+            case ClassStatus.NotStarted:
+                throw new BadRequestException("Cannot publish scores: The class has not started yet.");
+            default:
+                throw new BadRequestException(
+                    $"Cannot publish scores: The class status ({classInfo.Status}) is invalid for publishing scores.");
+        }
+
+        // Load level if needed
+        if (classInfo.Level == null && classInfo.LevelId != Guid.Empty)
+        {
+            classInfo.Level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classInfo.LevelId);
+            if (classInfo.Level == null)
+            {
+                throw new NotFoundException($"Level not found for class {classId}");
+            }
+        }
+
+        return classInfo;
+    }
+
+    private async Task<(List<StudentClass> StudentClasses, List<Account> StudentUpdates, List<StudentClass>
+            PassedStudents)>
+        PrepareStudentDataForScorePublishing(Guid classId, Class classInfo, AccountModel account,
+            DateTime updateTime)
+    {
+        var studentClasses = await _unitOfWork.StudentClassRepository
+            .FindAsync(sc => sc.ClassId == classId);
+
+        if (!studentClasses.Any())
+        {
+            throw new BadRequestException("No students enrolled in this class.");
+        }
+
+        // Get all student accounts in one query for better performance
+        var studentFirebaseIds = studentClasses.Select(sc => sc.StudentFirebaseId).Distinct().ToList();
+        var studentAccounts = await _unitOfWork.AccountRepository
+            .FindAsync(a => studentFirebaseIds.Contains(a.AccountFirebaseId));
+        var studentAccountMap = studentAccounts.ToDictionary(a => a.AccountFirebaseId);
+
+        // Validate that all students have GPA values before proceeding
+        var studentsWithoutGpa = studentClasses.Where(sc => !sc.GPA.HasValue).ToList();
+        if (studentsWithoutGpa.Any())
+        {
+            var missingGpaCount = studentsWithoutGpa.Count;
+            throw new BadRequestException(
+                $"Cannot publish scores: {missingGpaCount} student(s) are missing GPA values. Please ensure all students have been graded.");
+        }
+
+        // Validate that all students exist in the database
+        var missingStudents = studentClasses
+            .Select(sc => sc.StudentFirebaseId)
+            .Except(studentAccountMap.Keys)
+            .ToList();
+
+
+        if (missingStudents.Any())
+        {
+            throw new BadRequestException(
+                $"Cannot publish scores: {missingStudents.Count} student(s) could not be found in the database. Please refresh the page and try again.");
+        }
+
+
+        // Prepare collections for updates
+        var studentClassUpdates = new List<StudentClass>();
+        var studentUpdates = new List<Account>();
+        var passedStudents = new List<StudentClass>();
+
+        foreach (var studentClass in studentClasses)
+        {
+            var student = studentAccountMap[studentClass.StudentFirebaseId];
+            // Update student class data
+            var isPassed = studentClass.GPA.Value >= DefaultPassingGrade;
+            studentClass.IsPassed = isPassed;
+            studentClass.UpdateById = account.AccountFirebaseId;
+            studentClass.UpdatedAt = updateTime;
+            studentClassUpdates.Add(studentClass);
+
+            if (isPassed)
+            {
+                passedStudents.Add(studentClass);
+            }
+
+            // Update student level if passed
+            if (isPassed && classInfo.Level?.NextLevelId.HasValue == true)
+            {
+                student.LevelId = classInfo.Level.NextLevelId.Value;
+                student.StudentStatus = StudentStatus.WaitingForClass;
+                student.UpdatedAt = updateTime;
+            }
+            else
+            {
+                // Still update status for failed students
+                student.StudentStatus = StudentStatus.WaitingForClass;
+                student.UpdatedAt = updateTime;
+            }
+
+            studentUpdates.Add(student);
+        }
+
+        return (studentClassUpdates, studentUpdates, passedStudents);
+    }
+
+    private async Task UpdateEntitiesInBatches<T>(List<T> entities, Func<T, Task> updateFunc) where T : class
+    {
+        if (!entities.Any()) return;
+
+        for (int i = 0; i < entities.Count; i += BatchSize)
+        {
+            var batch = entities.Skip(i).Take(BatchSize).ToList();
+            var updateTasks = batch.Select(updateFunc);
+            await Task.WhenAll(updateTasks);
+            await _unitOfWork.SaveChangesAsync();
+        }
+    }
+
+    private async Task ProcessCertificates(List<StudentClass> passedStudents)
+    {
+        if (!passedStudents.Any()) return;
+
+        var now = DateTime.UtcNow.AddHours(7);
+        foreach (var studentClass in passedStudents)
+        {
+            try
+            {
+                if (studentClass.GPA.HasValue && studentClass.IsPassed)
+                {
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var serviceFactory = scope.ServiceProvider.GetRequiredService<IServiceFactory>();
+                        var certificateUrl = await serviceFactory.CertificateService
+                            .GenerateCertificateAsync(studentClass.Id);
+
+                        if (string.IsNullOrEmpty(certificateUrl))
+                            continue;
+                        var updateUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                        await updateUnitOfWork.ExecuteInTransactionAsync(async () =>
+                        {
+                            var sc = await updateUnitOfWork.StudentClassRepository.FindSingleAsync(x =>
+                                x.Id == studentClass.Id);
+                            if (sc != null)
+                            {
+                                sc.CertificateUrl = certificateUrl;
+                                sc.UpdatedAt = now;
+                                await updateUnitOfWork.StudentClassRepository.UpdateAsync(sc);
+                                await updateUnitOfWork.SaveChangesAsync();
+                            }
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing certificate for student {studentClass.Id}: {ex.Message}");
+                // Continue with next student
+            }
+        }
+    }
+    
+    private async Task SendClassCompletionNotifications(List<StudentClass> studentClasses, Class classInfo)
     {
         try
         {
-            // Process notifications one by one
-            foreach (var studentClass in studentClasses)
+            // First, prepare all notification data without sending
+            var notifications = new List<(string recipientId, string title, string content)>();
+
+            foreach (var studentClass in studentClasses.Where(sc => sc.GPA.HasValue))
             {
-                try
-                {
-                    bool isPassed = studentClass.IsPassed;
-                    var title = isPassed ? "Thông báo hoàn thành khóa học" : "Thông báo kết thúc khóa học";
-                    var content = isPassed
-                        ? string.Format(PassedNotificationTemplate, classInfo.Name)
-                        : string.Format(FailedNotificationTemplate, classInfo.Name);
+                bool isPassed = studentClass.IsPassed;
+                var title = isPassed ? "Thông báo hoàn thành khóa học" : "Thông báo kết thúc khóa học";
+                var content = isPassed
+                    ? string.Format(PassedNotificationTemplate, classInfo.Name)
+                    : string.Format(FailedNotificationTemplate, classInfo.Name);
 
-                    await _serviceFactory.NotificationService.SendNotificationAsync(
-                        studentClass.StudentFirebaseId,
-                        title,
-                        content
-                    );
-
-                    // Add a small delay between notifications to reduce database pressure
-                    await Task.Delay(50);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(
-                        $"Error sending notification to student {studentClass.StudentFirebaseId}: {ex.Message}");
-                    // Continue with next student even if this one fails
-                }
+                notifications.Add((studentClass.StudentFirebaseId, title, content));
             }
 
-            // Send notification to instructor
+            // Add instructor notification if an instructor exists
             if (!string.IsNullOrEmpty(classInfo.InstructorId))
             {
-                try
+                notifications.Add((
+                    classInfo.InstructorId,
+                    "Điểm đã được công bố",
+                    string.Format(InstructorNotificationTemplate, classInfo.Name)
+                ));
+            }
+
+            // Process notifications in batches using a separate scope for each batch
+            int batchSize = 5;
+            for (int i = 0; i < notifications.Count; i += batchSize)
+            {
+                var batch = notifications.Skip(i).Take(batchSize).ToList();
+
+                // Process each recipient one at a time (avoid parallel processing with shared DbContext)
+                foreach (var (recipientId, title, content) in batch)
                 {
-                    await _serviceFactory.NotificationService.SendNotificationAsync(
-                        classInfo.InstructorId,
-                        "Điểm đã được công bố",
-                        string.Format(InstructorNotificationTemplate, classInfo.Name)
-                    );
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(
-                        $"Error sending notification to instructor {classInfo.InstructorId}: {ex.Message}");
+                    try
+                    {
+                        // Use the notification service to send the notification
+                        // This should internally create its own DbContext scope
+                        await _serviceFactory.NotificationService.SendNotificationAsync(recipientId, title, content);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending notification to {recipientId}: {ex.Message}");
+                        // Continue with the next notification even if this one fails
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Log but don't rethrow - notifications are not critical
             Console.WriteLine($"Error sending notifications: {ex.Message}");
-        }
-    }
-
-    private async Task UpdateStudentClassesInBatch(List<StudentClass> studentClasses)
-    {
-        if (!studentClasses.Any()) return;
-
-        const int BATCH_SIZE = 50;
-
-        for (int i = 0; i < studentClasses.Count; i += BATCH_SIZE)
-        {
-            var batch = studentClasses.Skip(i).Take(BATCH_SIZE).ToList();
-            foreach (var item in batch)
-            {
-                await _unitOfWork.StudentClassRepository.UpdateAsync(item);
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-        }
-    }
-
-    private async Task UpdateStudentAccountsInBatch(List<Account> students)
-    {
-        if (!students.Any()) return;
-
-        const int BATCH_SIZE = 50;
-
-        for (int i = 0; i < students.Count; i += BATCH_SIZE)
-        {
-            var batch = students.Skip(i).Take(BATCH_SIZE).ToList();
-
-            foreach (var item in batch)
-            {
-                await _unitOfWork.AccountRepository.UpdateAsync(item);
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-        }
-    }
-
-    private async Task ProcessCertificatesSequentially(List<StudentClass> passedStudents)
-    {
-        if (!passedStudents.Any()) return;
-
-        var now = DateTime.UtcNow.AddHours(7);
-
-        // Process certificates one by one
-        foreach (var studentClass in passedStudents)
-        {
-            try
-            {
-                // Check if the student is eligible for a certificate directly here
-                // instead of relying on CertificateService.IsEligibleForCertificateAsync
-                if (studentClass.GPA.HasValue && studentClass.IsPassed)
-                {
-                    // Generate certificate
-                    var certificateUrl =
-                        await _serviceFactory.CertificateService.GenerateCertificateAsync(studentClass.Id);
-
-                    if (certificateUrl != null)
-                    {
-                        // Update certificate URL in database
-                        var strategy = _unitOfWork.Database.CreateExecutionStrategy();
-                        await strategy.ExecuteAsync(async () =>
-                        {
-                            using var transaction = await _unitOfWork.BeginTransactionAsync();
-                            try
-                            {
-                                var sc = await _unitOfWork.StudentClassRepository.FindSingleAsync(x =>
-                                    x.Id == studentClass.Id);
-                                if (sc != null)
-                                {
-                                    sc.CertificateUrl = certificateUrl;
-                                    sc.UpdatedAt = now;
-                                    await _unitOfWork.StudentClassRepository.UpdateAsync(sc);
-                                    await _unitOfWork.SaveChangesAsync();
-                                }
-
-                                await transaction.CommitAsync();
-                            }
-                            catch
-                            {
-                                await transaction.RollbackAsync();
-                                throw;
-                            }
-                        });
-                    }
-                }
-                else
-                {
-                    Console.WriteLine(
-                        $"Student {studentClass.Id} is not eligible for a certificate. GPA: {studentClass.GPA}, IsPassed: {studentClass.IsPassed}");
-                }
-
-                // Add a small delay between certificate generations to reduce database pressure
-                await Task.Delay(100);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error generating certificate for student {studentClass.Id}: {ex.Message}");
-                // Continue with next student even if this one fails
-            }
+            // Log but don't rethrow - we don't want notification failures to roll back the transaction
         }
     }
 
@@ -544,7 +520,7 @@ public class StudentClassScoreService : IStudentClassScoreService
             var studentsToUpdate = new List<Account>();
             var studentIdsForStatusUpdate = new List<string>();
             var now = DateTime.UtcNow.AddHours(7); // Vietnam time
-            
+
             classInfo.Status = ClassStatus.Ongoing;
             await _unitOfWork.SaveChangesAsync();
             // First, process all data in memory

@@ -98,7 +98,7 @@ public class ServiceFactory : IServiceFactory
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine,
         IRazorViewEngine razorViewEngine,  IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider, IHttpContextAccessor httpContextAccessor,
-        IConverter converter)
+        IConverter converter, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork, this));
@@ -134,7 +134,7 @@ public class ServiceFactory : IServiceFactory
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
         _articleService = new Lazy<IArticleService>(() => new ArticleService(unitOfWork));
-        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this));
+        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this, serviceProvider));
         _certificateService = new Lazy<ICertificateService>(() => new CertificateService(
             this, 
             unitOfWork, 
@@ -142,7 +142,7 @@ public class ServiceFactory : IServiceFactory
             webHostEnvironment, 
             tempDataProvider, 
             httpContextAccessor, 
-            converter));
+            converter, serviceProvider));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
 
         _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));

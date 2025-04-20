@@ -273,21 +273,27 @@ public class TuitionService : ITuitionService
     // note: this function will run in 15th of month
     public async Task CronForTuitionReminder()
     {
-        var allNotPaidTuition =
-            await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
-                t => t.PaymentStatus == PaymentStatus.Pending,
-                false);
-        foreach (var tuition in allNotPaidTuition)
+        var today = DateTime.Today;
+
+        // Lấy học phí chưa thanh toán, còn thời gian (deadline > hôm nay)
+        var upcomingTuitions = await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
+            t => t.PaymentStatus == PaymentStatus.Pending &&
+                 t.Deadline > today, // Từ hôm nay đến trước deadline
+            false
+        );
+
+        foreach (var tuition in upcomingTuitions)
         {
-            var studentClass =
-                await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
+            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
+
             var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "studentName", studentClass.Student.Email },
+                { "studentName", studentClass.Student.FullName ?? studentClass.Student.UserName }, 
                 { "className", studentClass.Class.Name },
                 { "startDate", $"{tuition.StartDate:dd-MM-yyyy}" },
                 { "endDate", $"{tuition.EndDate:dd-MM-yyyy}" },
-                { "amount", $"{tuition.Amount}" }
+                { "amount", $"{tuition.Amount:#,##0}" },
+                { "deadline", $"{tuition.Deadline:dd-MM-yyyy}" }
             };
 
             await _serviceFactory.EmailService.SendAsync(
@@ -297,50 +303,63 @@ public class TuitionService : ITuitionService
                 emailParam
             );
 
-            await _serviceFactory.NotificationService.SendNotificationAsync(studentClass.Student.AccountFirebaseId,
+            await _serviceFactory.NotificationService.SendNotificationAsync(
+                studentClass.Student.AccountFirebaseId,
                 $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} chưa thanh toán",
-                "Hãy thanh toán học phí để tiếp tục học tập");
+                $"Hạn chót là {tuition.Deadline:dd-MM}. Vui lòng thanh toán để không bị gián đoạn việc học."
+            );
         }
     }
 
+
+
     public async Task CronForTuitionOverdue()
     {
+        var today = DateTime.Today;
+        
         var overdueTuitions = await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
-            t => t.PaymentStatus == PaymentStatus.Pending,
-            false);
+            t => t.PaymentStatus == PaymentStatus.Pending &&
+                 t.Deadline < today &&
+                 t.IsOverdueProcessed == false, 
+            false
+        );
 
         foreach (var tuition in overdueTuitions)
         {
-            var studentClass =
-                await _unitOfWork.StudentClassRepository.Entities
+            var studentClass = await _unitOfWork.StudentClassRepository.Entities
                 .Include(sc => sc.Student)
                 .Include(sc => sc.Class)
                 .SingleOrDefaultAsync(sc => sc.Id == tuition.StudentClassId);
 
             if (studentClass is null) continue;
 
+            // Xử lý transaction: xoá dữ liệu & cập nhật trạng thái
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(
-                    ss => ss.StudentFirebaseId == studentClass!.StudentFirebaseId
+                    ss => ss.StudentFirebaseId == studentClass.StudentFirebaseId
                 );
 
                 await _unitOfWork.StudentClassRepository.ExecuteDeleteAsync(
-                    sc => sc.StudentFirebaseId == studentClass!.StudentFirebaseId
+                    sc => sc.StudentFirebaseId == studentClass.StudentFirebaseId
                 );
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
-                    account => account.AccountFirebaseId == studentClass!.StudentFirebaseId,
-                    account => account.SetProperty(a => a.StudentStatus, StudentStatus.DropOut)
+                    acc => acc.AccountFirebaseId == studentClass.StudentFirebaseId,
+                    acc => acc.SetProperty(a => a.StudentStatus, StudentStatus.DropOut)
                 );
             });
+
+            // Cập nhật flag IsOverdueProcessed
+            tuition.IsOverdueProcessed = true;
+            await _unitOfWork.TuitionRepository.UpdateAsync(tuition);
 
             var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "studentName", studentClass.Student.Email },
                 { "className", studentClass.Class.Name },
-                { "dueDate", tuition.EndDate.ToString("dd-MM-yyyy") },
-                { "amount", $"{tuition.Amount}" }
+                { "dueDate", tuition.Deadline.ToString("dd-MM-yyyy") },
+                { "amount", $"{tuition.Amount:#,##0}" }
             };
 
             await _serviceFactory.EmailService.SendAsync(
@@ -350,11 +369,16 @@ public class TuitionService : ITuitionService
                 emailParam
             );
 
-            await _serviceFactory.NotificationService.SendNotificationAsync(studentClass.Student.AccountFirebaseId,
-                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} đã quá hạn bạn đã ",
-                "Hãy thanh toán học phí để tránh bị gián đoạn học tập");
+            await _serviceFactory.NotificationService.SendNotificationAsync(
+                studentClass.Student.AccountFirebaseId,
+                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} đã quá hạn",
+                "Bạn đã bị xoá khỏi lớp do chưa thanh toán học phí. Vui lòng liên hệ để được hỗ trợ."
+            );
         }
     }
+
+
+
 
 
     public async Task<PagedResult<TuitionWithStudentClassModel>> GetTuitionsPaged(QueryTuitionModel queryTuitionModel,

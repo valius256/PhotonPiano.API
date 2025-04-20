@@ -102,39 +102,41 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME }} --all-tags
-  
+
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Set up SSH keys
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
-          ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config
 
       - name: 🚀 Deploy to Server via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
           script: |
             set -e # Dừng script nếu có lỗi
-
+            
             # Đảm bảo docker-compose down trước
             cd ~/photonpiano || true && docker compose down || true
-
+            
             # Xóa container cũ bằng cách tìm tất cả container có tên 'photonpiano'
             docker ps -a | grep photonpiano | awk '{print $1}' | xargs -r docker rm -f
-
+            
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano
-
+            
             # Tạo .env file từ GitHub Secrets
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
@@ -160,7 +162,7 @@ jobs:
             PINATA_GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
             REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
             EOF
-
+            
             # Viết docker-compose.yml
             cat > docker-compose.yml <<'EOF'
             version: "3.8"
@@ -224,10 +226,10 @@ jobs:
               app-network:
                 driver: bridge
             EOF
-
+            
             # Đăng nhập vào GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
+            
             # Pull images và deploy với project name cụ thể
             docker compose -p photonpiano pull
             docker compose -p photonpiano up -d --force-recreate

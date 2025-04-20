@@ -15,7 +15,7 @@ public interface ISlotService
     TimeOnly GetShiftStartTime(Shift shift);
 
 
-    Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, [Required] AccountModel accountModel);
+    Task<List<SlotDetailModel>> GetWeeklyScheduler(GetSlotModel slotModel, [Required] AccountModel accountModel);
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatus(Guid slotId);
 
@@ -33,7 +33,9 @@ public interface ISlotService
 
     Task<SlotDetailModel> PublicNewSlot(PublicNewSlotModel model, string accountFirebaseId);
     
-    Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToThisSlot(Guid slotId, string accountFirebaseId);
+    Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToSlot(Guid slotId, string accountFirebaseId);
     
     Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string reason ,string staffAccountFirebaseId);
+    
+    Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId);
 }

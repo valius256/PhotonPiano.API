@@ -28,8 +28,10 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OfficeOpenXml;
+using PhotonPiano.Api.Requests.DayOff;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.BusinessLogic.BusinessModel.DayOff;
 using PhotonPiano.Shared.Utils;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
 using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
@@ -54,7 +56,7 @@ public static class IServiceCollectionExtensions
             .AddCorsConfigurations()
             .AddMapsterConfig()
             .AddRedisCache(configuration)
-            .AddPostGresSqlConfiguration() 
+            .AddPostGresSqlConfiguration()
             .AddRazorTemplateWithConfigPath()
             .AddRateLimitedForAllEndpoints()
             .ConfigureResponseCompression()
@@ -106,7 +108,7 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus)
             .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
-        
+
         TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.Status, src => src.RecordStatus);
 
@@ -126,7 +128,7 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus)
             .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
-        
+
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
 
@@ -145,6 +147,22 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<FreeSlot, FreeSlotModel>.NewConfig()
             .Map(dest => dest.LevelId, src => src.Account.LevelId);
+
+        TypeAdapterConfig<CreateDayOffRequest, CreateDayOffModel>.NewConfig()
+            .Map(dest => dest.StartTime, src => DateTime.SpecifyKind(src.StartTime, DateTimeKind.Utc))
+            .Map(dest => dest.EndTime, src => DateTime.SpecifyKind(src.EndTime, DateTimeKind.Utc));
+
+        TypeAdapterConfig<UpdateDayOffRequest, UpdateDayOffModel>.NewConfig()
+            .Map(dest => dest.StartTime,
+                src => src.StartTime.HasValue
+                    ? DateTime.SpecifyKind(src.StartTime.Value, DateTimeKind.Utc)
+                    : src.StartTime)
+            .Map(dest => dest.EndTime,
+                src => src.EndTime.HasValue ? 
+                    DateTime.SpecifyKind(src.EndTime.Value, DateTimeKind.Utc) : src.EndTime);
+
+        TypeAdapterConfig<UpdateDayOffModel, DayOff>.NewConfig().IgnoreNullValues(true);
+        
         return services;
     }
 
@@ -171,7 +189,7 @@ public static class IServiceCollectionExtensions
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         services.AddOpenApi(options => { options.AddDocumentTransformer<OpenApiSecuritySchemeTransformer>(); });
         services.AddEndpointsApiExplorer();
-        return services;    
+        return services;
     }
 
     private static IServiceCollection AddCorsConfigurations(this IServiceCollection services)
@@ -320,19 +338,27 @@ public static class IServiceCollectionExtensions
 
                 recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                     x => x.CronForTuitionReminder(),
-                    $"0 0 {tuitionReminderDay} * *");
+                    Cron.Daily);
 
                 recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
                     x => x.CronAutoChangeSlotStatus(),
                     Cron.Hourly());
 
-                recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
+                recurringJobManager.AddOrUpdate<TuitionService>(
+                    "TuitionOverdue",
                     x => x.CronForTuitionOverdue(),
-                    $"0 0 {tuitionOverdueDay} * *");
+                    Cron.Daily // chạy mỗi ngày để kiểm tra những học phí đã quá hạn
+                );
 
                 recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
                     x => x.CronJobAutoRemovedOutDateNotifications(),
                     Cron.Hourly(15));
+
+
+                /// remove this when we push
+                recurringJobManager.AddOrUpdate<TuitionService>("Test tinh tien",
+                    x => x.CreateTuitionForTestPurpose(),
+                    Cron.Daily());
             }
         });
 

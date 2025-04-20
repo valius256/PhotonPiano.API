@@ -9,7 +9,9 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
+using OfficeOpenXml.Packaging.Ionic.Zip;
 using PhotonPiano.Shared.Enums;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -79,9 +81,11 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
+    public async Task<List<SlotDetailModel>> GetWeeklyScheduler(GetSlotModel slotModel, AccountModel accountModel)
     {
-
+        if(slotModel.StartTime > slotModel.EndTime)
+            throw new BadRequestException("Start time must be less than end time");
+        
         // Tạo danh sách các ClassId cần truy vấn
         List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
 
@@ -105,7 +109,7 @@ public class SlotService : ISlotService
             var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(
                 s => s.ClassId == classId &&
                      s.Date >= slotModel.StartTime &&
-                     s.Date < slotModel.EndTime
+                     s.Date <= slotModel.EndTime
             );
 
             // Lưu vào cache
@@ -574,20 +578,7 @@ public class SlotService : ISlotService
 
     public async Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate)
     {
-        var vietnamTime = DateTime.UtcNow.AddHours(7);
-        if (startDate == null || startDate == DateOnly.FromDateTime(vietnamTime))
-        {
-            // Start from yesterday instead of today
-            startDate = DateOnly.FromDateTime(vietnamTime.AddDays(1));
-        }
-
-        if (endDate == null)
-        {
-            var futureDate = vietnamTime.AddDays(7);
-            endDate = DateOnly.FromDateTime(futureDate);
-        }
-
-        // Get all active rooms
+        // Get all activems
         var rooms = await _unitOfWork.RoomRepository.FindAsync(r => r.Status == RoomStatus.Opened);
 
         // Get all existing slots with rooms (without date filtering)
@@ -769,7 +760,7 @@ public class SlotService : ISlotService
 
     }
 
-    public async Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToThisSlot(Guid slotId, string accountFirebaseId)
+    public async Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToSlot(Guid slotId, string accountFirebaseId)
     {
         var currentSlot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(x => x.Id == slotId, hasTrackings: false);
         if (currentSlot == null)
@@ -810,7 +801,7 @@ public class SlotService : ISlotService
 
         if (!availableTeachers.Any())
         {
-            throw new NotFoundException("No available teachers found for this slot.");
+            throw new BadReadException("No available teachers found for this slot.");
         }
         
         return availableTeachers.Adapt<List<AccountSimpleModel>>();
@@ -818,9 +809,9 @@ public class SlotService : ISlotService
 
     public async Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string Reason ,string staffAccountFirebaseId)
     {
-        var teacher = await _unitOfWork.AccountRepository.FindAsync(a => a.AccountFirebaseId == teacherFirebaseId && a.Role == Role.Instructor, hasTrackings: false);
+        var teacher = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == teacherFirebaseId && a.Role == Role.Instructor, hasTrackings: false);
         
-        if (teacher == null)
+        if (teacher is null)
         {
             throw new NotFoundException("Teacher not found");
         }
@@ -837,8 +828,6 @@ public class SlotService : ISlotService
             throw new BadRequestException("Can only assign teacher to slots that are not started yet!");
         }
         
-      
-        
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             slot.TeacherId = teacherFirebaseId;
@@ -853,6 +842,60 @@ public class SlotService : ISlotService
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
         
         return await GetSlotDetailById(slotId);
+    }
+
+    public async Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId)
+    {
+        var systemConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AttendanceThreshold);
+        if (systemConfig == null)
+        {
+            throw new NotFoundException("System config not found");
+        }
+
+        decimal.TryParse(systemConfig.ConfigValue, out decimal attendanceThreshold);
+
+        var currentClass = await _serviceFactory.ClassService.GetClassDetailById(classId);
+        
+        if (currentClass == null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        
+        var studentAttendanceResults = new List<StudentAttendanceResult>();
+        
+        var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == classId);
+
+        foreach (var studentClass in studentClasses)
+        {
+            var studentAttendanceResult = new StudentAttendanceResult
+            {
+                StudentId = studentClass.StudentFirebaseId,
+                AttendancePercentage = 0,
+                TotalSlots = 0,
+                AttendedSlots = 0,
+                IsPassed = false
+            };
+
+            var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => ss.StudentFirebaseId == studentClass.StudentFirebaseId);
+            var totalSlots = studentSlots.Count;
+            var attendedSlots = studentSlots.Count(ss => ss.AttendanceStatus == AttendanceStatus.Attended);
+
+            if (totalSlots > 0)
+            {
+                studentAttendanceResult.AttendancePercentage = (decimal)attendedSlots / totalSlots * 100;
+            }
+
+            studentAttendanceResult.TotalSlots = totalSlots;
+            studentAttendanceResult.AttendedSlots = attendedSlots;
+
+            if (studentAttendanceResult.AttendancePercentage < attendanceThreshold)
+            {
+                studentAttendanceResult.IsPassed = true;
+                studentAttendanceResults.Add(studentAttendanceResult);
+            }
+        }
+        
+        return studentAttendanceResults;
     }
 
 

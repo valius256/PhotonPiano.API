@@ -5,6 +5,8 @@ public record UpdateEntranceTestResultsModel
     public string? InstructorComment { get; init; }
 
     public double? TheoraticalScore { get; init; }
+    
+    public Guid? LevelId { get; init; }
 
     public List<UpdateEntranceTestScoreModel> UpdateScoreRequests { get; init; } = [];
 }

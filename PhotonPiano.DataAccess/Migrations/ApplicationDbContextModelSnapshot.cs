@@ -70,6 +70,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int?>("Gender")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("HasUsedTrial")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
@@ -644,6 +647,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<bool>("IsScoreAnnounced")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LevelAdjustedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("LevelId")
                         .HasColumnType("uuid");
 
@@ -1160,6 +1166,9 @@ namespace PhotonPiano.DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("AttendancePercentage")
+                        .HasColumnType("numeric");
+
                     b.Property<string>("CertificateUrl")
                         .HasColumnType("text");
 
@@ -1436,6 +1445,9 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsOverdueProcessed")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("integer");

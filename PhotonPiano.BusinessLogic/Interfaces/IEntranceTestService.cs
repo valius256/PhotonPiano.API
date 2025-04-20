@@ -14,19 +14,25 @@ public interface IEntranceTestService
 
     Task<EntranceTestDetailModel> GetEntranceTestDetailById(Guid id, AccountModel currentAccount);
 
-    Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudentModel,
+    Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel createModel,
         AccountModel currentAccount);
 
     Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default);
 
-    Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel entranceTestStudentModel,
+    Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel updateModel,
         string? currentUserFirebaseId = default);
 
     Task<PagedResult<EntranceTestStudentDetail>>
         GetPagedEntranceTestStudent(QueryPagedModel query, Guid entranceTestId, AccountModel currentAccount);
 
+    Task AddStudentsToEntranceTest(Guid testId, AddStudentsToEntranceTestModel model, AccountModel currentAccount);
+    
+    Task RemoveStudentsFromTest(Guid testId, AccountModel currentAccount, params List<string> studentIds);
+
     Task<EntranceTestStudentDetail> GetEntranceTestStudentDetail(Guid entranceTestId, string studentId,
         AccountModel currentAccount);
+    
+    Task RemoveStudentFromTest(Guid testId, string studentId, AccountModel currentAccount);
 
     Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress, string apiBaseUrl);
 
@@ -39,4 +45,6 @@ public interface IEntranceTestService
     Task UpdateStudentEntranceResults(Guid id, string studentId, UpdateEntranceTestResultsModel updateModel, AccountModel currentAccount);
 
     Task UpdateEntranceTestsMaxStudents(int maxStudents, AccountModel currentAccount);
+
+    Task<(int theoryPercentage, int practicalPercentage)> GetScorePercentagesAsync();
 }

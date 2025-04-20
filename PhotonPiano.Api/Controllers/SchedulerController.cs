@@ -29,14 +29,14 @@ public class SchedulerController : BaseController
 
     [HttpGet("slots")]
     [CustomAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
-    [EndpointDescription("Get All Slots in this Week")]
+    [EndpointDescription("Get Weekly scheduler")]
     public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
     {
 
         if (CurrentAccount != null)
         {
             var result =
-                await _serviceFactory.SlotService.GetWeeklySchedule(request.Adapt<GetSlotModel>(),
+                await _serviceFactory.SlotService.GetWeeklyScheduler(request.Adapt<GetSlotModel>(),
                     CurrentAccount);
             return Ok(result.Adapt<List<SlotDetailModel>>());
         }
@@ -141,7 +141,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get All teacher can be assigned to this slot")]
     public async Task<ActionResult> GetAllTeacherCanBeAssignedToThisSlot([FromRoute] Guid slotId)
     {
-        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToThisSlot(slotId, CurrentUserFirebaseId);
+        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToSlot(slotId, CurrentUserFirebaseId);
         return Ok(result.Adapt<List<AccountSimpleModel>>());
     }
     

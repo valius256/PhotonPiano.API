@@ -6,6 +6,8 @@ public record UpdateEntranceTestResultsRequest
 {
     public string? InstructorComment { get; init; }
 
+    public Guid? LevelId { get; init; }
+
     [Range(0, 10, ErrorMessage = "Score must be between 0 and 10")]
     public double? TheoraticalScore { get; init; }
 

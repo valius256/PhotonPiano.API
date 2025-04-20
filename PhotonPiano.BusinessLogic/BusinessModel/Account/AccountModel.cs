@@ -50,4 +50,5 @@ public record AccountModel
     public Guid? CurrentClassId { get; init; }
 
     public LevelModel? Level { get; init; }
+    public bool HasUsedTrial { get; init; } 
 }

@@ -19,7 +19,7 @@ public interface IEntranceTestService
 
     Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default);
 
-    Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel entranceTestStudentModel,
+    Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel updateModel,
         string? currentUserFirebaseId = default);
 
     Task<PagedResult<EntranceTestStudentDetail>>

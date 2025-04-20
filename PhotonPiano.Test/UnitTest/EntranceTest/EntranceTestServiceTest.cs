@@ -430,7 +430,7 @@ public class EntranceTestServiceTest
         var entranceTestId = Guid.NewGuid();
 
         var updateModel = _fixture.Build<UpdateEntranceTestModel>()
-            .With(x => x.StartTime, DateOnly.FromDateTime(DateTime.UtcNow))
+            .With(x => x.Date, DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
             .Create();
 
         _entranceTestRepositoryMock.Setup(repo => repo.FindSingleAsync(e => e.Id == entranceTestId, true, false))
@@ -455,7 +455,7 @@ public class EntranceTestServiceTest
 
         var updateModel = _fixture.Build<UpdateEntranceTestModel>()
             .With(x => x.RoomId, roomId)
-            .With(x => x.StartTime, DateOnly.FromDateTime(DateTime.UtcNow))
+            .With(x => x.Date, DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
             .Create();
 
         _entranceTestRepositoryMock.Setup(repo => repo.FindSingleAsync(e => e.Id == entranceTestId, true, false))
@@ -492,7 +492,7 @@ public class EntranceTestServiceTest
 
         var updateModel = _fixture.Build<UpdateEntranceTestModel>()
             .With(x => x.RoomId, roomId)
-            .With(x => x.StartTime, DateOnly.FromDateTime(DateTime.UtcNow))
+            .With(x => x.Date, DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
             .With(x => x.IsAnnouncedScore, true)
             .Create();
 

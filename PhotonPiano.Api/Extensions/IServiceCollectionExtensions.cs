@@ -320,15 +320,17 @@ public static class IServiceCollectionExtensions
 
                 recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                     x => x.CronForTuitionReminder(),
-                    $"0 0 {tuitionReminderDay} * *");
+                    Cron.Daily);
 
                 recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
                     x => x.CronAutoChangeSlotStatus(),
                     Cron.Hourly());
 
-                recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
+                recurringJobManager.AddOrUpdate<TuitionService>(
+                    "TuitionOverdue",
                     x => x.CronForTuitionOverdue(),
-                    $"0 0 {tuitionOverdueDay} * *");
+                    Cron.Daily // chạy mỗi ngày để kiểm tra những học phí đã quá hạn
+                );
 
                 recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
                     x => x.CronJobAutoRemovedOutDateNotifications(),

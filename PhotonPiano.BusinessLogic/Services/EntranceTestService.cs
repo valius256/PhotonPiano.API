@@ -183,6 +183,18 @@ public class EntranceTestService : IEntranceTestService
             throw new ConflictException("There is already an entrance test with the same date, shift and room.");
         }
 
+        var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
+
+        foreach (var dayOff in dayOffs)
+        {
+            if (createModel.Date >= DateOnly.FromDateTime(dayOff.StartTime) &&
+                createModel.Date <= DateOnly.FromDateTime(dayOff.EndTime))
+            {
+                throw new BadRequestException(
+                    $"Entrance test date is in the day off range: {dayOff.StartTime:yyyy-MM-dd} and {dayOff.EndTime:yyyy-MM-dd}");
+            }
+        }
+
         var slots =
             await _unitOfWork.SlotRepository.FindProjectedAsync<SlotWithClassModel>(
                 s => s.Status != SlotStatus.NotStarted && s.TeacherId == instructor.AccountFirebaseId,
@@ -235,22 +247,67 @@ public class EntranceTestService : IEntranceTestService
             TimeSpan.FromHours(5));
     }
 
-    public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel entranceTestStudentModel,
+    public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel updateModel,
         string? currentUserFirebaseId = default)
     {
-        var entranceTestEntity = await _unitOfWork.EntranceTestRepository.FindSingleAsync(q => q.Id == id);
+        var entranceTest = await _unitOfWork.EntranceTestRepository.FindSingleAsync(q => q.Id == id);
 
-        if (entranceTestEntity is null)
+        if (entranceTest is null)
         {
             throw new NotFoundException("This EntranceTest not found.");
         }
+        
+        updateModel.Adapt(entranceTest);
 
-        entranceTestStudentModel.Adapt(entranceTestEntity);
+        if (updateModel.Date.HasValue || updateModel.RoomId.HasValue || updateModel.Shift.HasValue)
+        {
+            if (await _unitOfWork.EntranceTestRepository.AnyAsync(t => t.Date == updateModel.Date
+                                                                       && t.RoomId == updateModel.RoomId
+                                                                       && t.Shift == updateModel.Shift))
+            {
+                throw new ConflictException("There is already an entrance test with the same date, shift and room.");
+            }
 
-        if (entranceTestStudentModel.RoomId.HasValue)
+            var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
+
+            foreach (var dayOff in dayOffs)
+            {
+                if (updateModel.Date >= DateOnly.FromDateTime(dayOff.StartTime) &&
+                    updateModel.Date <= DateOnly.FromDateTime(dayOff.EndTime))
+                {
+                    throw new BadRequestException(
+                        $"Entrance test date is in the day off range: {dayOff.StartTime:yyyy-MM-dd} and {dayOff.EndTime:yyyy-MM-dd}");
+                }
+            }
+        }
+        
+        if (!string.IsNullOrEmpty(updateModel.InstructorId))
+        {
+            // check Instructor is Exist in db
+            var instructor =
+                await _serviceFactory.AccountService.GetAccountById(updateModel.InstructorId!);
+
+            if (instructor.Role != Role.Instructor)
+            {
+                throw new BadRequestException("This is not Instructor, please try again");
+            }
+
+            var slots =
+                await _unitOfWork.SlotRepository.FindProjectedAsync<SlotWithClassModel>(
+                    s => s.Status != SlotStatus.NotStarted && s.TeacherId == instructor.AccountFirebaseId,
+                    hasTrackings: false);
+
+            if (slots.Any(s => s.Date == entranceTest.Date && s.Shift == entranceTest.Shift))
+            {
+                throw new BadRequestException($"Instructor {instructor.FullName ?? instructor.Email} is already busy " +
+                                              $"at this time.");
+            }
+        }
+
+        if (updateModel.RoomId.HasValue)
         {
             var room = await _unitOfWork.RoomRepository.FindSingleAsync(
-                r => r.Id == entranceTestStudentModel.RoomId.Value,
+                r => r.Id == updateModel.RoomId.Value,
                 hasTrackings: false);
 
             if (room is null)
@@ -258,10 +315,10 @@ public class EntranceTestService : IEntranceTestService
                 throw new NotFoundException("Room not found.");
             }
 
-            entranceTestEntity.RoomName = room.Name;
+            entranceTest.RoomName = room.Name;
         }
 
-        if (entranceTestStudentModel.IsAnnouncedScore.HasValue)
+        if (updateModel.IsAnnouncedScore.HasValue)
         {
             bool isFullScoreUpdated = true;
             var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository
@@ -283,13 +340,13 @@ public class EntranceTestService : IEntranceTestService
                 throw new BadRequestException("Can't publish the score of this entrance test");
             }
 
-            if (entranceTestStudentModel.IsAnnouncedScore.Value)
+            if (updateModel.IsAnnouncedScore.Value)
             {
                 var studentIds = entranceTestStudents.Select(x => x.StudentFirebaseId);
 
                 await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(ets => ets.EntranceTestId == id,
                     setter => setter.SetProperty(x => x.IsScoreAnnounced,
-                        entranceTestStudentModel.IsAnnouncedScore.Value));
+                        updateModel.IsAnnouncedScore.Value));
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
                     setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
@@ -299,11 +356,13 @@ public class EntranceTestService : IEntranceTestService
             }
         }
 
-        entranceTestEntity.UpdateById = currentUserFirebaseId;
-        entranceTestEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
+        entranceTest.Name = GetEntranceTestName(entranceTest);
+
+        entranceTest.UpdateById = currentUserFirebaseId;
+        entranceTest.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.SaveChangesAsync();
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTestEntity,
+        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTest,
             TimeSpan.FromHours(5));
         await InvalidateEntranceTestCache(id);
     }

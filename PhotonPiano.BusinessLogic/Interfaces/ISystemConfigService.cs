@@ -1,4 +1,5 @@
-﻿using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+﻿using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
@@ -22,6 +23,7 @@ public interface ISystemConfigService
     Task UpdateTuitionSystemConfig(UpdateTuitionSystemConfigModel updateModel);
     
     Task UpdateSchedulerSystemConfig(UpdateSchedulerSystemConfigModel updateModel);
+    Task UpdateClassSystemConfig(UpdateClassSystemConfigModel updateModel);
     Task<List<SystemConfigModel>> GetAllSurveyConfigs();
     Task<List<SystemConfigModel>> GetEntranceTestConfigs(params List<string> configNames);
 }

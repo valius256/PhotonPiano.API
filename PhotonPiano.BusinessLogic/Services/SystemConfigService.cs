@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
@@ -297,5 +298,34 @@ public class SystemConfigService : ISystemConfigService
         await _unitOfWork.SystemConfigRepository.AddAsync(dbConfig);
 
         return dbConfig.Adapt<SystemConfigModel>();
+    }
+
+    public async Task UpdateClassSystemConfig(UpdateClassSystemConfigModel updateModel)
+    {
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.MaximumClassSize.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MaximumStudents, SystemConfigType.UnsignedInt,
+                    updateModel.MaximumClassSize.Value.ToString());
+            }
+
+            if (updateModel.MinimumClassSize.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MinimumStudents, SystemConfigType.UnsignedInt,
+                    updateModel.MinimumClassSize.Value.ToString());
+            }
+
+            if (updateModel.DeadlineChangingClass.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.ChangingClassDeadline, SystemConfigType.Boolean,
+                    updateModel.DeadlineChangingClass.Value.ToString());
+            }
+            if (updateModel.AllowSkippingLevel.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.AllowSkippingLevel, SystemConfigType.UnsignedInt,
+                    updateModel.AllowSkippingLevel.Value == true ? "true" : "false");
+            }
+        });
     }
 }

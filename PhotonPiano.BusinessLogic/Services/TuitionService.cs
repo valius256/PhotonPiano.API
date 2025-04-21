@@ -348,11 +348,12 @@ public class TuitionService : ITuitionService
                     acc => acc.AccountFirebaseId == studentClass.StudentFirebaseId,
                     acc => acc.SetProperty(a => a.StudentStatus, StudentStatus.DropOut)
                 );
-            });
 
-            // Cập nhật flag IsOverdueProcessed
-            tuition.IsOverdueProcessed = true;
-            await _unitOfWork.TuitionRepository.UpdateAsync(tuition);
+                await _unitOfWork.TuitionRepository.ExecuteUpdateAsync(
+                    t => t.Id == tuition.Id,
+                    t => t.SetProperty(tuition => tuition.IsOverdueProcessed, true)
+                );
+            });
 
             var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {

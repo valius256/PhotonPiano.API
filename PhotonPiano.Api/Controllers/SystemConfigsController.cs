@@ -1,11 +1,13 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Scheduler;
 using PhotonPiano.Api.Requests.Survey;
 using PhotonPiano.Api.Requests.SystemConfig;
 using PhotonPiano.Api.Requests.Tution;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
@@ -123,5 +125,15 @@ public class SystemConfigsController : BaseController
         
         return NoContent();
     }
+    [HttpPut("classes")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Update tuition system config")]
+    public async Task<ActionResult> UpdateClassConfig(
+        [FromBody] UpdateClassSystemConfigRequest request)
+    {
+        await _serviceFactory.SystemConfigService.UpdateClassSystemConfig(
+            request.Adapt<UpdateClassSystemConfigModel>());
 
+        return NoContent();
+    }
 }

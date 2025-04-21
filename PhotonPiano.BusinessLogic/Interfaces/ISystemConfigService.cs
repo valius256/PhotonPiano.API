@@ -1,6 +1,8 @@
 ﻿using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
@@ -16,6 +18,10 @@ public interface ISystemConfigService
     Task<SystemConfigModel> UpsertSystemConfig(string configName, SystemConfigType type, string value);
     Task UpdateSurveySystemConfig(UpdateSurveySystemConfigModel updateModel);
     Task UpdateEntranceTestSystemConfig(UpdateEntranceTestSystemConfigModel updateModel);
+    
+    Task UpdateTuitionSystemConfig(UpdateTuitionSystemConfigModel updateModel);
+    
+    Task UpdateSchedulerSystemConfig(UpdateSchedulerSystemConfigModel updateModel);
     Task<List<SystemConfigModel>> GetAllSurveyConfigs();
     Task<List<SystemConfigModel>> GetEntranceTestConfigs(params List<string> configNames);
 }

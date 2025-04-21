@@ -15,4 +15,7 @@ public record SlotModel
     public string? SlotNote { get; init; }
     public string? TeacherId { get; init; }
     public AccountModel? Teacher { get; init; } 
+    
+    public int? SlotNo { get; set; }
+    public int? SlotTotal { get; set; }
 }

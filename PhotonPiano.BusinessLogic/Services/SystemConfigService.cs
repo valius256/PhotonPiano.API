@@ -2,8 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -202,6 +204,53 @@ public class SystemConfigService : ISystemConfigService
             }
         });
     }
+
+    public async Task UpdateTuitionSystemConfig(UpdateTuitionSystemConfigModel updateModel)
+    {
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.DeadlineForPayTuition.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TuitionPaymentDeadline, SystemConfigType.UnsignedInt,
+                    updateModel.DeadlineForPayTuition.Value.ToString());
+            }
+
+            if (updateModel.SlotTrial.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.NumTrialSlot, SystemConfigType.UnsignedInt,
+                    updateModel.SlotTrial.Value.ToString());
+            }
+
+            if (updateModel.TaxRates.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TaxRates, SystemConfigType.Text,
+                    updateModel.TaxRates.Value.ToString());
+            }
+
+          
+        });
+    }
+
+    public async Task UpdateSchedulerSystemConfig(UpdateSchedulerSystemConfigModel updateModel)
+    {
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.DeadlineAttendance.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.AttendanceDeadline, SystemConfigType.UnsignedInt,
+                    updateModel.DeadlineAttendance.Value.ToString());
+            }
+
+            if (updateModel.ReasonCancelSlot != null)
+            {
+                var jsonReasons = JsonConvert.SerializeObject(updateModel.ReasonCancelSlot);
+            
+                await UpsertSystemConfig(ConfigNames.ReasonForCancelSlot, SystemConfigType.Text, jsonReasons);
+            }
+        });
+    }
+    
+    
 
     public async Task<List<SystemConfigModel>> GetAllSurveyConfigs()
     {

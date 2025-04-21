@@ -111,7 +111,7 @@ public class NotificationService : INotificationService
         }
     }
 
-    public async Task CronJobAutoRemovedOutDateNotifications()
+    public async Task CronAutoRemovedOutDateNotifications()
     {
         // && x.CreatedAt.Date < DateTime.Now.Date.AddDays(15)
 

@@ -273,7 +273,7 @@ public class TuitionService : ITuitionService
     // note: this function will run in 15th of month
     public async Task CronForTuitionReminder()
     {
-        var today = DateTime.Today;
+        var today = DateTime.UtcNow.AddHours(7);
 
         // Lấy học phí chưa thanh toán, còn thời gian (deadline > hôm nay)
         var upcomingTuitions = await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
@@ -284,7 +284,7 @@ public class TuitionService : ITuitionService
 
         foreach (var tuition in upcomingTuitions)
         {
-            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId);
+            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId, false);
 
             var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -315,7 +315,7 @@ public class TuitionService : ITuitionService
 
     public async Task CronForTuitionOverdue()
     {
-        var today = DateTime.Today;
+        var today = DateTime.UtcNow.AddHours(7);
         
         var overdueTuitions = await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
             t => t.PaymentStatus == PaymentStatus.Pending &&

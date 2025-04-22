@@ -864,7 +864,7 @@ public class SlotService : ISlotService
 
     public async Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId)
     {
-        var systemConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AttendanceThreshold);
+        var systemConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaxAbsenceRate);
         if (systemConfig == null)
         {
             throw new NotFoundException("System config not found");

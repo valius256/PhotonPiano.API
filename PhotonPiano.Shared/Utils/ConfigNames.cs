@@ -43,7 +43,7 @@
         
         public static readonly string NumTrialSlot  = "Số buổi học thử";
 
-        public static readonly string AttendanceThreshold = "Tỉ lệ điểm danh tối thiểu để qua";
+        public static readonly string MaxAbsenceRate = "Tỉ lệ điểm danh tối đa để qua";
 
         public static readonly string AttendanceDeadline = "Deadline cho điểm danh 2025";
 

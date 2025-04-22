@@ -248,6 +248,12 @@ public class SystemConfigService : ISystemConfigService
             
                 await UpsertSystemConfig(ConfigNames.ReasonForCancelSlot, SystemConfigType.Text, jsonReasons);
             }
+            
+            if (updateModel.MaxAbsenceRate.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MaxAbsenceRate, SystemConfigType.UnsignedInt,
+                    updateModel.MaxAbsenceRate.Value.ToString());
+            }
         });
     }
     

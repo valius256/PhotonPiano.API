@@ -133,8 +133,37 @@ public class EntranceTestService : IEntranceTestService
     public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel createModel,
         AccountModel currentAccount)
     {
+        var configs = await _serviceFactory.SystemConfigService.GetConfigs([
+            ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest
+        ]);
+
+        var minConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MinStudentsInTest);
+        
+        var maxConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MaxStudentsInTest);
+
+        if (minConfig is not null && !string.IsNullOrEmpty(minConfig.ConfigValue))
+        {
+            int minStudents = Convert.ToInt32(minConfig.ConfigValue);
+
+            if (createModel.StudentIds.Count < minStudents)
+            {
+                throw new BadRequestException($"Test must have at least {minStudents} learners");
+            }
+        }
+        
+        if (maxConfig is not null && !string.IsNullOrEmpty(maxConfig.ConfigValue))
+        {
+            int maxStudents = Convert.ToInt32(maxConfig.ConfigValue);
+
+            if (createModel.StudentIds.Count > maxStudents)
+            {
+                throw new BadRequestException($"Test can only have maximum of {maxStudents} learners");
+            }
+        }
+        
         var entranceTestId = Guid.NewGuid();
         var entranceTestStudents = new List<EntranceTestStudent>();
+        
 
         if (createModel.StudentIds.Count > 0)
         {

@@ -152,4 +152,12 @@ public class SchedulerController : BaseController
     {
         return Ok(await _serviceFactory.SlotService.AssignTeacherToSlot(request.SlotId, request.TeacherFirebaseId, request.Reason ,CurrentUserFirebaseId));
     }
+    
+    [HttpGet("class-attendance/{classId}")]
+    [EndpointDescription("Get attendance results for all students in a class")]
+    public async Task<ActionResult> GetAllAttendanceResultByClassId([FromRoute] Guid classId)
+    {
+        var result = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
+        return Ok(result.Adapt<List<StudentAttendanceResultResponse>>());
+    }
 }

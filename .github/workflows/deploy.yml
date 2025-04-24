@@ -38,6 +38,7 @@ env:
   JWTAUTH__DURATIONINDAYS: ${{ secrets.JWT_AUTH_DURATIONINDAYS }}
   CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
+  PINATA__DEFAULTGROUPID: ${{ secrets.PINATA_DEFAULTGROUPID }}
   Logging__LogLevel__Hangfire: Debug
   Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"
@@ -153,6 +154,7 @@ jobs:
             PINATA_JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
             PINATA_GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
             REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
+            PINATA_DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
             EOF
             
             # Viết docker-compose.yml
@@ -204,6 +206,7 @@ jobs:
                   - JWTAUTH__AUDIENCE=${JWTAUTH_AUDIENCE}
                   - JWTAUTH__DURATIONINDAYS=${JWTAUTH_DURATIONINDAYS}
                   - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
+                  - PINATA__DEFAULTGROUPID=${PINATA_DEFAULTGROUPID}
                   - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
                   - Logging__LogLevel__Hangfire=Debug
                   - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information

@@ -82,7 +82,7 @@ public class StudentClassScoreService : IStudentClassScoreService
             if (passedStudents.Any())
             {
                 var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
-                backgroundJobClient.Enqueue<CertificateService>(x => x.CronAutoGenerateCertificatesAsync(classId));
+                backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId));
             }
 
             await SendClassCompletionNotifications(studentClasses, classInfo);

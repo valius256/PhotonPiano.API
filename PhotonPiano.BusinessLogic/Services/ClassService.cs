@@ -537,7 +537,7 @@ public class ClassService : IClassService
         {
             throw new NotFoundException("Class not found");
         }
-        if (classInfo.Status != ClassStatus.NotStarted && (model.LevelId.HasValue))
+        if (classInfo.Status != ClassStatus.NotStarted && (model.LevelId.HasValue && model.LevelId != classInfo.LevelId))
         {
             throw new BadRequestException("Cannot update level of classes that are started");
         }

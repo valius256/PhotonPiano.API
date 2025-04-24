@@ -34,14 +34,12 @@ public class SlotStudentService : ISlotStudentService
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
 
-        var teacherAccount = await _serviceFactory.AccountService.GetAccountById(teacherId);
-
         var slotDateTime = slotEntity.Date.ToDateTime(shiftStartTime);
         var currentDateTime = DateTime.UtcNow.AddHours(7);
 
         // Validate if the slot has passed 24 hours
-        // if ((currentDateTime - slotDateTime).TotalHours > 24)
-        //     throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
+        if ((currentDateTime - slotDateTime).TotalHours > 24)
+            throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
 
 
         foreach (var studentModel in model.SlotStudentInfoRequests)

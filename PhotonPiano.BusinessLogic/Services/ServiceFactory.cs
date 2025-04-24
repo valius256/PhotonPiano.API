@@ -147,7 +147,7 @@ public class ServiceFactory : IServiceFactory
             webHostEnvironment, 
             tempDataProvider, 
             httpContextAccessor, 
-            converter, serviceProvider));
+            converter));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
 
         _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));

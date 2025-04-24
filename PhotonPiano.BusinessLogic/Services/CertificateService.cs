@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Certificate;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -38,11 +39,10 @@ public class CertificateService : ICertificateService
     private readonly ITempDataProvider _tempDataProvider;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConverter _converter;
-    private readonly IServiceProvider _serviceProvider;
 
     public CertificateService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork, IRazorViewEngine razorViewEngine,
         IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider,
-        IHttpContextAccessor httpContextAccessor, IConverter converter, IServiceProvider serviceProvider)
+        IHttpContextAccessor httpContextAccessor, IConverter converter)
     {
         _serviceFactory = serviceFactory;
         _unitOfWork = unitOfWork;
@@ -51,16 +51,14 @@ public class CertificateService : ICertificateService
         _tempDataProvider = tempDataProvider;
         _httpContextAccessor = httpContextAccessor;
         _converter = converter;
-        _serviceProvider = serviceProvider;
     }
 
     /// Validates if a student is eligible for a certificate
-    private async Task<bool> IsEligibleForCertificateAsync(Guid? studentClassId, IUnitOfWork unitOfWork = null)
+    private async Task<bool> IsEligibleForCertificateAsync(Guid? studentClassId)
     {
-        unitOfWork = unitOfWork ?? _unitOfWork;
         try
         {
-            var studentClass = await unitOfWork.StudentClassRepository.Entities
+            var studentClass = await _unitOfWork.StudentClassRepository.Entities
                 .Include(sc => sc.Student)
                 .Include(sc => sc.Class)
                 .ThenInclude(c => c.Level)
@@ -93,102 +91,79 @@ public class CertificateService : ICertificateService
             throw;
         }
     }
-    
+
     //Generate a Certificate for a student class and returns the certificate URL
-    public async Task<string> GenerateCertificateAsync(Guid studentClassId)
+    public async Task<(string certificateUrl, Guid studentClassId)> GenerateCertificateAsync(Guid studentClassId)
     {
-        using var scope = _serviceProvider.CreateScope();
-    
-        try
+        // Get all required services from the new scope
+
+        if (!await IsEligibleForCertificateAsync(studentClassId))
         {
-            // Get all required services from the new scope
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var pinataService = scope.ServiceProvider.GetRequiredService<IPinataService>();
-            var viewRenderService = _serviceFactory.ViewRenderService;
-            if (!await IsEligibleForCertificateAsync(studentClassId, unitOfWork))
-            {
-                throw new BadRequestException("Student is not eligible for a certificate");
-            }
-            
-            var studentClass = await unitOfWork.StudentClassRepository.Entities
-                .Include(sc => sc.Student)
-                .Include(sc => sc.Class)
-                .ThenInclude(c => c.Level)
-                .Include(sc => sc.Class)
-                .ThenInclude(c => c.Instructor)
-                .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
-
-            if (studentClass == null)
-            {
-                throw new NotFoundException($"Student class with ID {studentClassId} not found");
-            }
-
-            // Create certificate model
-            var certificateModel = new CertificateModel
-            {
-                StudentName = studentClass.Student.FullName ?? studentClass.Student.UserName ?? "Unknown",
-                ClassName = studentClass.Class.Name,
-                LevelName = studentClass.Class.Level.Name,
-                CompletionDate = DateTime.UtcNow.AddHours(7), // Vietnam time
-                GPA = studentClass.GPA ?? 0m, // Correctly handle nullable decimal
-                IsPassed = studentClass.IsPassed,
-                CertificateId = $"CERT-{DateTime.UtcNow.Year}-{studentClassId.ToString().Substring(0, 8).ToUpper()}",
-                SkillsEarned =
-                    studentClass.Class.Level.SkillsEarned, // Direct assignment since it's already List<string>
-                InstructorName = studentClass.Class.Instructor?.FullName ??
-                                 studentClass.Class.Instructor?.UserName ?? "Unknown",
-                InstructorSignatureUrl = studentClass.Class.Instructor?.AvatarUrl ?? ""
-            };
-
-            // Generate HTML
-            var certificateHtml = await viewRenderService.RenderToStringAsync("Certificate", certificateModel);
-
-            // Generate image directly from HTML (skipping PDF generation)
-            var imageBytes = await GenerateImageFromHtml(certificateHtml);
-
-            // Create temporary file
-            var certificateFileName = $"certificate_{studentClassId}.png";
-            var tempFilePath = Path.Combine(Path.GetTempPath(), certificateFileName);
-
-            try
-            {
-                await File.WriteAllBytesAsync(tempFilePath, imageBytes);
-
-                // Create FormFile from the temp file
-                using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
-                var formFile = new FormFile(
-                    fileStream,
-                    0,
-                    fileStream.Length,
-                    "certificate",
-                    certificateFileName)
-                {
-                    Headers = new HeaderDictionary(),
-                    ContentType = "image/png"
-                };
-                var pinataUrl = await pinataService.UploadFile(formFile, certificateFileName);
-
-                // Update the same instance of studentClass we already have
-                studentClass.CertificateUrl = pinataUrl;
-                await unitOfWork.SaveChangesAsync();
-
-                return pinataUrl;
-            }
-            finally
-            {
-                // Clean up temp file
-                if (File.Exists(tempFilePath))
-                {
-                    File.Delete(tempFilePath);
-                }
-            }
+            throw new BadRequestException("Student is not eligible for a certificate");
         }
-        catch (Exception ex) when (ex is not BadRequestException && ex is not NotFoundException)
+
+        var studentClass =
+            await _unitOfWork.StudentClassRepository.FindFirstProjectedAsync<StudentClassDetailModel>(
+                sc => sc.Id == studentClassId
+            );
+
+        if (studentClass is null)
         {
-            // Log the error but rethrow
-            Console.WriteLine($"Error generating certificate for student class {studentClassId}: {ex.Message}");
-            throw;
+            throw new NotFoundException($"Student class with ID {studentClassId} not found");
         }
+
+        // Create certificate model
+        var certificateModel = new CertificateModel
+        {
+            StudentName = studentClass.Student.FullName ?? studentClass.Student.UserName ?? "Unknown",
+            ClassName = studentClass.Class.Name,
+            LevelName = studentClass.Class.Level!.Name,
+            CompletionDate = DateTime.UtcNow.AddHours(7), // Vietnam time
+            GPA = studentClass.GPA ?? 0m, // Correctly handle nullable decimal
+            IsPassed = studentClass.IsPassed,
+            CertificateId = $"CERT-{DateTime.UtcNow.Year}-{studentClassId.ToString().Substring(0, 8).ToUpper()}",
+            SkillsEarned =
+                studentClass.Class.Level.SkillsEarned, // Direct assignment since it's already List<string>
+            InstructorName = studentClass.Class.Instructor?.FullName ??
+                             studentClass.Class.Instructor?.UserName ?? "Unknown",
+            InstructorSignatureUrl = studentClass.Class.Instructor?.AvatarUrl ?? ""
+        };
+
+        // Generate HTML
+        var certificateHtml =
+            await _serviceFactory.ViewRenderService.RenderToStringAsync("Certificate", certificateModel);
+
+        // Generate image directly from HTML (skipping PDF generation)
+        var imageBytes = await GenerateImageFromHtml(certificateHtml);
+
+        // Create temporary file
+        var certificateFileName = $"certificate_{studentClassId}.png";
+        var tempFilePath = Path.Combine(Path.GetTempPath(), certificateFileName);
+
+
+        await File.WriteAllBytesAsync(tempFilePath, imageBytes);
+
+        // Create FormFile from the temp file
+        await using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
+
+        var formFile = new FormFile(
+            fileStream,
+            0,
+            fileStream.Length,
+            "certificate",
+            certificateFileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "image/png"
+        };
+        
+        var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
+
+        // Update the same instance of studentClass we already have
+        studentClass.CertificateUrl = pinataUrl;
+        await _unitOfWork.SaveChangesAsync();
+        return (certificateUrl: pinataUrl, studentClassId: studentClassId);
+        
     }
 
 
@@ -359,37 +334,37 @@ public class CertificateService : ICertificateService
             // Download Chrome browser if needed (can be moved to app startup)
             var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();
-        
+
             // Launch browser
-            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions 
-            { 
+            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
                 Headless = true,
                 Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
             });
-        
+
             // Open new page
             using var page = await browser.NewPageAsync();
 
             await page.SetViewportAsync(new ViewPortOptions
             {
-                Width = 794,  
-                Height = 1123,  
-                DeviceScaleFactor = 1.5 
+                Width = 794,
+                Height = 1123,
+                DeviceScaleFactor = 1.5
             });
-        
+
             // Set content - use your existing HTML with base64 images working
             await page.SetContentAsync(html);
-        
+
             // Wait for any images to load (using Task.Delay as a reliable alternative)
             await Task.Delay(1500);
-        
+
             // Take screenshot with high quality
             var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
             {
                 FullPage = true,
                 Type = ScreenshotType.Png,
             });
-        
+
             return screenshotBytes;
         }
         catch (Exception ex)
@@ -433,7 +408,7 @@ public class CertificateService : ICertificateService
         {
             try
             {
-                string certificateUrl = await GenerateCertificateAsync(studentClass.Id);
+                var (certificateUrl, _) = await GenerateCertificateAsync(studentClass.Id);
                 results.Add(studentClass.StudentFirebaseId, certificateUrl);
             }
             catch (Exception ex)
@@ -480,7 +455,21 @@ public class CertificateService : ICertificateService
             SkillsEarned = studentClass.Class.Level.SkillsEarned
         };
     }
-    
+
+    public async Task AutoGenerateCertificatesAsync(Guid classId)
+    {
+        var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(
+            sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl));
+        
+         foreach (var studentClass in studentClasses)
+         {
+             var (url, _) = await GenerateCertificateAsync(studentClass.Id);
+             studentClass.CertificateUrl = url;
+         }
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+
     public async Task<List<StudentClass>> GetEligibleStudentsWithoutCertificatesAsync(Guid classId)
     {
         // Get the class to check if it's finished
@@ -511,121 +500,117 @@ public class CertificateService : ICertificateService
         return studentClasses;
     }
 
-        // public async Task<CertificateEligibilityResultModel> CheckCertificateEligibilityAsync(Guid studentClassId)
-        // {
-        //     try
-        //     {
-        //         var unitOfWork = _unitOfWork;
-        //         var studentClass = await unitOfWork.StudentClassRepository.Entities
-        //             .Include(sc => sc.Student)
-        //             .Include(sc => sc.Class)
-        //             .ThenInclude(c => c.Level)
-        //             .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
-        //         
-        //         if (studentClass == null)
-        //         {
-        //             return new CertificateEligibilityResultModel
-        //             {
-        //                 IsEligible = false,
-        //                 Reason = "Student class not found"
-        //             };
-        //         }
-        //         
-        //         var result = new CertificateEligibilityResultModel();
-        //         
-        //         // 2. Check passing grade
-        //         result.GradePassed = studentClass.IsPassed;
-        //         if (!result.GradePassed)
-        //         {
-        //             result.IsEligible = false;
-        //             result.Reason = "Student did not pass the class";
-        //             return result;
-        //         }
-        //
-        //         // 3. Check attendance
-        //         var systemConfig = await unitOfWork.SystemConfigRepository.FindSingleAsync(
-        //             sc => sc.ConfigName == ConfigNames.AttendanceThreshold);
-        //         
-        //         decimal minAttendancePercentage = 80; // Defaul
-        //         if (systemConfig != null && decimal.TryParse(systemConfig.ConfigValue, out var value))
-        //         {
-        //             minAttendancePercentage = value;
-        //         }
-        //     
-        //         result.AttendancePercentage = studentClass.AttendancePercentage;
-        //         result.AttendanceMinimumRequired = minAttendancePercentage;
-        //         result.AttendanceSufficient = studentClass.AttendancePercentage >= minAttendancePercentage;
-        //         
-        //         if (!result.AttendanceSufficient)
-        //         {
-        //             result.IsEligible = false;
-        //             result.Reason = $"Insufficient attendance: {studentClass.AttendancePercentage}% (minimum required: {minAttendancePercentage}%)";
-        //             return result;
-        //         }
-        //         
-        //         result.IsEligible = true;
-        //         return result;
-        //     }
-        //     
-        //     catch (Exception ex)
-        //     {
-        //         return new CertificateEligibilityResultModel
-        //         {
-        //             IsEligible = false,
-        //             Reason = $"Error checking eligibility: {ex.Message}"
-        //         };
-        //     }
-        // }
+    // public async Task<CertificateEligibilityResultModel> CheckCertificateEligibilityAsync(Guid studentClassId)
+    // {
+    //     try
+    //     {
+    //         var unitOfWork = _unitOfWork;
+    //         var studentClass = await unitOfWork.StudentClassRepository.Entities
+    //             .Include(sc => sc.Student)
+    //             .Include(sc => sc.Class)
+    //             .ThenInclude(c => c.Level)
+    //             .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
+    //         
+    //         if (studentClass == null)
+    //         {
+    //             return new CertificateEligibilityResultModel
+    //             {
+    //                 IsEligible = false,
+    //                 Reason = "Student class not found"
+    //             };
+    //         }
+    //         
+    //         var result = new CertificateEligibilityResultModel();
+    //         
+    //         // 2. Check passing grade
+    //         result.GradePassed = studentClass.IsPassed;
+    //         if (!result.GradePassed)
+    //         {
+    //             result.IsEligible = false;
+    //             result.Reason = "Student did not pass the class";
+    //             return result;
+    //         }
+    //
+    //         // 3. Check attendance
+    //         var systemConfig = await unitOfWork.SystemConfigRepository.FindSingleAsync(
+    //             sc => sc.ConfigName == ConfigNames.AttendanceThreshold);
+    //         
+    //         decimal minAttendancePercentage = 80; // Defaul
+    //         if (systemConfig != null && decimal.TryParse(systemConfig.ConfigValue, out var value))
+    //         {
+    //             minAttendancePercentage = value;
+    //         }
+    //     
+    //         result.AttendancePercentage = studentClass.AttendancePercentage;
+    //         result.AttendanceMinimumRequired = minAttendancePercentage;
+    //         result.AttendanceSufficient = studentClass.AttendancePercentage >= minAttendancePercentage;
+    //         
+    //         if (!result.AttendanceSufficient)
+    //         {
+    //             result.IsEligible = false;
+    //             result.Reason = $"Insufficient attendance: {studentClass.AttendancePercentage}% (minimum required: {minAttendancePercentage}%)";
+    //             return result;
+    //         }
+    //         
+    //         result.IsEligible = true;
+    //         return result;
+    //     }
+    //     
+    //     catch (Exception ex)
+    //     {
+    //         return new CertificateEligibilityResultModel
+    //         {
+    //             IsEligible = false,
+    //             Reason = $"Error checking eligibility: {ex.Message}"
+    //         };
+    //     }
+    // }
 
-    public async Task CronAutoGenerateCertificatesAsync(Guid classId)
-    {
-        var passedStudentsIds = await _unitOfWork.StudentClassRepository
-            .Entities
-            .Where(sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl))
-            .Select(sc => sc.Id)
-            .ToListAsync();
-        
-        if(!passedStudentsIds.Any())  return;
-
-        var semaphore = new SemaphoreSlim(5);
-        var certificateTasks =  passedStudentsIds.Select(async studentClassId =>
-        {
-            await semaphore.WaitAsync();
-            try
-            {
-                using var scope = _serviceProvider.CreateScope();
-                var scopedServiceProvider = scope.ServiceProvider;
-                var unitOfWork = scopedServiceProvider.GetRequiredService<IUnitOfWork>();
-                
-                await unitOfWork.ExecuteInTransactionAsync(async () =>
-                {
-                    // Double-check that the certificate is still needed (may have been created by another process)
-                    var studentClass = await unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
-                    if (studentClass == null || !string.IsNullOrEmpty(studentClass.CertificateUrl))
-                        return;
-                
-                    // Generate the certificate (this method already creates its own scope internally)
-                    var certificateUrl = await GenerateCertificateAsync(studentClassId);
-                
-                    if (string.IsNullOrEmpty(certificateUrl))
-                        return;
-                
-                    // Update the student class with the certificate URL
-                    studentClass.CertificateUrl = certificateUrl;
-                    studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
-                    await unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
-                    await unitOfWork.SaveChangesAsync();
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing certificate for student {studentClassId}: {ex.Message}");
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        });
-        await Task.WhenAll(certificateTasks);
-    }
+    // public async Task CronAutoGenerateCertificatesAsync(Guid classId)
+    // {
+    //     var passedStudents = await _unitOfWork.StudentClassRepository
+    //         .Entities
+    //         .Where(sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl))
+    //         .Select(sc => sc.Id)
+    //         .ToListAsync();
+    //     
+    //     if(!passedStudents.Any())  return;
+    //
+    //     var semaphore = new SemaphoreSlim(5);
+    //     var certificateTasks =  passedStudents.Select(async studentClassId =>
+    //     {
+    //         await semaphore.WaitAsync();
+    //         try
+    //         {
+    //             await _unitOfWork.ExecuteInTransactionAsync(async () =>
+    //             {
+    //                 // Double-check that the certificate is still needed (may have been created by another process)
+    //                 var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+    //                 if (studentClass == null || !string.IsNullOrEmpty(studentClass.CertificateUrl))
+    //                     return;
+    //             
+    //                 // Generate the certificate (this method already creates its own scope internally)
+    //                 var certificateUrl = await GenerateCertificateAsync(studentClassId);
+    //             
+    //                 if (string.IsNullOrEmpty(certificateUrl))
+    //                     return;
+    //             
+    //                 // Update the student class with the certificate URL
+    //                 studentClass.CertificateUrl = certificateUrl;
+    //                 studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+    //                 await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
+    //                 
+    //             });
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             Console.WriteLine($"Error processing certificate for student {studentClassId}: {ex.Message}");
+    //         }
+    //         finally
+    //         {
+    //             semaphore.Release();
+    //         }
+    //     });
+    //     await Task.WhenAll(certificateTasks);
+    // }
 }

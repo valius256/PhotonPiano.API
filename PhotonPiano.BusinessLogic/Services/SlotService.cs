@@ -55,8 +55,23 @@ public class SlotService : ISlotService
             s => s.Id == id,
             false
         );
-        
+    
         if (result == null) throw new NotFoundException("Slot not found");
+
+        // Get the slot to access its ClassId and Date
+        var slot = await _unitOfWork.SlotRepository.FindSingleAsync(x => x.Id == id);
+    
+        // Get total number of slots for this class
+        var totalSlots = await _unitOfWork.SlotRepository.CountAsync(s => s.ClassId == slot.ClassId);
+    
+        // Calculate the slot number by counting slots up to this date
+        var slotNo = await _unitOfWork.SlotRepository.CountAsync(
+            s => s.ClassId == slot.ClassId && s.Date <= slot.Date
+        );
+
+        // Assign the calculated values
+        result.SlotNo = slotNo;
+        result.SlotTotal = totalSlots;
 
         return result;
     }
@@ -85,46 +100,49 @@ public class SlotService : ISlotService
     {
         if(slotModel.StartTime > slotModel.EndTime)
             throw new BadRequestException("Start time must be less than end time");
-        
-        // Tạo danh sách các ClassId cần truy vấn
+    
         List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
-
-        // Tạo danh sách kết quả
         var result = new List<SlotDetailModel>();
 
-        // Duyệt qua từng ClassId để lấy slot
         foreach (var classId in classIds)
         {
             string cacheKey = GenerateCacheKey(classId, slotModel.StartTime, accountModel.Role);
 
-            // Kiểm tra cache
-            var cachedSlots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotDetailModel>>(cacheKey);
-            if (cachedSlots != null)
+            var slots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotDetailModel>>(cacheKey);
+            if (slots == null)
             {
-                result.AddRange(cachedSlots);
-                continue;
+                slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(
+                    s => s.ClassId == classId &&
+                         s.Date >= slotModel.StartTime &&
+                         s.Date <= slotModel.EndTime
+                );
+
+                // Lấy tổng số slot của lớp
+                var totalSlots = await _unitOfWork.SlotRepository.CountAsync(s => s.ClassId == classId);
+
+                // Cập nhật SlotNo và SlotTotal cho mỗi slot
+                foreach (var slot in slots)
+                {
+                    // Lấy số thứ tự của slot trong lớp
+                    var slotNo = await _unitOfWork.SlotRepository.CountAsync(
+                        s => s.ClassId == classId && s.Date <= slot.Date
+                    );
+                
+                    slot.SlotNo = slotNo;
+                    slot.SlotTotal = totalSlots;
+                }
+
+                await _serviceFactory.RedisCacheService.SaveAsync(
+                    cacheKey,
+                    slots,
+                    TimeSpan.FromMinutes(DefaultCacheDurationMinutes)
+                );
             }
-
-            // Nếu không có trong cache, truy vấn database
-            var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(
-                s => s.ClassId == classId &&
-                     s.Date >= slotModel.StartTime &&
-                     s.Date <= slotModel.EndTime
-            );
-
-            // Lưu vào cache
-            await _serviceFactory.RedisCacheService.SaveAsync(
-                cacheKey,
-                slots,
-                TimeSpan.FromMinutes(DefaultCacheDurationMinutes)
-            );
 
             result.AddRange(slots);
         }
 
-        // Lọc thêm nếu có các bộ lọc khác
         result = ApplyAdditionalFilters(result, slotModel);
-
         return result;
     }
 
@@ -846,7 +864,7 @@ public class SlotService : ISlotService
 
     public async Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId)
     {
-        var systemConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AttendanceThreshold);
+        var systemConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaxAbsenceRate);
         if (systemConfig == null)
         {
             throw new NotFoundException("System config not found");

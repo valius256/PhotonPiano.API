@@ -614,6 +614,7 @@ public class CertificateService : ICertificateService
                     studentClass.CertificateUrl = certificateUrl;
                     studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
                     await unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
+                    await unitOfWork.SaveChangesAsync();
                 });
             }
             catch (Exception ex)

@@ -19,6 +19,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 using PuppeteerSharp;
 using PuppeteerSharp.Media;
 using static System.Drawing.Imaging.ImageCodecInfo;
@@ -59,7 +60,6 @@ public class CertificateService : ICertificateService
         unitOfWork = unitOfWork ?? _unitOfWork;
         try
         {
-            // Use AsNoTracking to avoid entity tracking issues
             var studentClass = await unitOfWork.StudentClassRepository.Entities
                 .Include(sc => sc.Student)
                 .Include(sc => sc.Class)
@@ -104,7 +104,7 @@ public class CertificateService : ICertificateService
             // Get all required services from the new scope
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var pinataService = scope.ServiceProvider.GetRequiredService<IPinataService>();
-        
+            var viewRenderService = _serviceFactory.ViewRenderService;
             if (!await IsEligibleForCertificateAsync(studentClassId, unitOfWork))
             {
                 throw new BadRequestException("Student is not eligible for a certificate");
@@ -141,7 +141,7 @@ public class CertificateService : ICertificateService
             };
 
             // Generate HTML
-            var certificateHtml = await RenderViewToStringAsync("Certificate", certificateModel);
+            var certificateHtml = await viewRenderService.RenderToStringAsync("Certificate", certificateModel);
 
             // Generate image directly from HTML (skipping PDF generation)
             var imageBytes = await GenerateImageFromHtml(certificateHtml);
@@ -166,17 +166,11 @@ public class CertificateService : ICertificateService
                     Headers = new HeaderDictionary(),
                     ContentType = "image/png"
                 };
-
                 var pinataUrl = await pinataService.UploadFile(formFile, certificateFileName);
 
-                // Update student class with Piñata URL
-                var studentClassToUpdate = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
-                if (studentClassToUpdate != null)
-                {
-                    studentClassToUpdate.CertificateUrl = pinataUrl;
-                    await _unitOfWork.StudentClassRepository.UpdateAsync(studentClassToUpdate);
-                    await _unitOfWork.SaveChangesAsync();
-                }
+                // Update the same instance of studentClass we already have
+                studentClass.CertificateUrl = pinataUrl;
+                await unitOfWork.SaveChangesAsync();
 
                 return pinataUrl;
             }
@@ -199,37 +193,40 @@ public class CertificateService : ICertificateService
 
 
     //Renders a Razor view to string
-    private async Task<string> RenderViewToStringAsync(string viewName, object model)
-    {
-        var actionContext = new ActionContext(
-            new DefaultHttpContext { RequestServices = _httpContextAccessor.HttpContext.RequestServices },
-            new RouteData(),
-            new ActionDescriptor());
-        using (var sw = new StringWriter())
-        {
-            var viewResult = _razorViewEngine.GetView("~/", $"Views/{viewName}.cshtml", false);
-            if (viewResult.View == null)
-            {
-                throw new InvalidOperationException($"Could not find view '{viewName}'");
-            }
-
-            var viewDictionary =
-                new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
-                {
-                    Model = model
-                };
-            var viewContext = new ViewContext(
-                actionContext,
-                viewResult.View,
-                viewDictionary,
-                new TempDataDictionary(actionContext.HttpContext, _tempDataProvider),
-                sw,
-                new HtmlHelperOptions()
-            );
-            await viewResult.View.RenderAsync(viewContext);
-            return sw.ToString();
-        }
-    }
+    // private async Task<string> RenderViewToStringAsync(string viewName, object model)
+    // {
+    //     var httpContext = _httpContextAccessor.HttpContext ?? 
+    //                       new DefaultHttpContext { RequestServices = _serviceProvider };
+    //     
+    //     var actionContext = new ActionContext(
+    //         httpContext,
+    //         new RouteData(),
+    //         new ActionDescriptor());
+    //     using (var sw = new StringWriter())
+    //     {
+    //         var viewResult = _razorViewEngine.GetView("~/", $"Views/{viewName}.cshtml", false);
+    //         if (viewResult.View == null)
+    //         {
+    //             throw new InvalidOperationException($"Could not find view '{viewName}'");
+    //         }
+    //
+    //         var viewDictionary =
+    //             new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+    //             {
+    //                 Model = model
+    //             };
+    //         var viewContext = new ViewContext(
+    //             actionContext,
+    //             viewResult.View,
+    //             viewDictionary,
+    //             new TempDataDictionary(actionContext.HttpContext, _tempDataProvider),
+    //             sw,
+    //             new HtmlHelperOptions()
+    //         );
+    //         await viewResult.View.RenderAsync(viewContext);
+    //         return sw.ToString();
+    //     }
+    // }
 
     // Converts HTML to PDF
     // private async Task<byte[]> GeneratePdfFromHtml(string html)
@@ -512,5 +509,122 @@ public class CertificateService : ICertificateService
             .ToListAsync();
 
         return studentClasses;
+    }
+
+        // public async Task<CertificateEligibilityResultModel> CheckCertificateEligibilityAsync(Guid studentClassId)
+        // {
+        //     try
+        //     {
+        //         var unitOfWork = _unitOfWork;
+        //         var studentClass = await unitOfWork.StudentClassRepository.Entities
+        //             .Include(sc => sc.Student)
+        //             .Include(sc => sc.Class)
+        //             .ThenInclude(c => c.Level)
+        //             .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
+        //         
+        //         if (studentClass == null)
+        //         {
+        //             return new CertificateEligibilityResultModel
+        //             {
+        //                 IsEligible = false,
+        //                 Reason = "Student class not found"
+        //             };
+        //         }
+        //         
+        //         var result = new CertificateEligibilityResultModel();
+        //         
+        //         // 2. Check passing grade
+        //         result.GradePassed = studentClass.IsPassed;
+        //         if (!result.GradePassed)
+        //         {
+        //             result.IsEligible = false;
+        //             result.Reason = "Student did not pass the class";
+        //             return result;
+        //         }
+        //
+        //         // 3. Check attendance
+        //         var systemConfig = await unitOfWork.SystemConfigRepository.FindSingleAsync(
+        //             sc => sc.ConfigName == ConfigNames.AttendanceThreshold);
+        //         
+        //         decimal minAttendancePercentage = 80; // Defaul
+        //         if (systemConfig != null && decimal.TryParse(systemConfig.ConfigValue, out var value))
+        //         {
+        //             minAttendancePercentage = value;
+        //         }
+        //     
+        //         result.AttendancePercentage = studentClass.AttendancePercentage;
+        //         result.AttendanceMinimumRequired = minAttendancePercentage;
+        //         result.AttendanceSufficient = studentClass.AttendancePercentage >= minAttendancePercentage;
+        //         
+        //         if (!result.AttendanceSufficient)
+        //         {
+        //             result.IsEligible = false;
+        //             result.Reason = $"Insufficient attendance: {studentClass.AttendancePercentage}% (minimum required: {minAttendancePercentage}%)";
+        //             return result;
+        //         }
+        //         
+        //         result.IsEligible = true;
+        //         return result;
+        //     }
+        //     
+        //     catch (Exception ex)
+        //     {
+        //         return new CertificateEligibilityResultModel
+        //         {
+        //             IsEligible = false,
+        //             Reason = $"Error checking eligibility: {ex.Message}"
+        //         };
+        //     }
+        // }
+
+    public async Task CronAutoGenerateCertificatesAsync(Guid classId)
+    {
+        var passedStudentsIds = await _unitOfWork.StudentClassRepository
+            .Entities
+            .Where(sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl))
+            .Select(sc => sc.Id)
+            .ToListAsync();
+        
+        if(!passedStudentsIds.Any())  return;
+
+        var semaphore = new SemaphoreSlim(5);
+        var certificateTasks =  passedStudentsIds.Select(async studentClassId =>
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var scopedServiceProvider = scope.ServiceProvider;
+                var unitOfWork = scopedServiceProvider.GetRequiredService<IUnitOfWork>();
+                
+                await unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    // Double-check that the certificate is still needed (may have been created by another process)
+                    var studentClass = await unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+                    if (studentClass == null || !string.IsNullOrEmpty(studentClass.CertificateUrl))
+                        return;
+                
+                    // Generate the certificate (this method already creates its own scope internally)
+                    var certificateUrl = await GenerateCertificateAsync(studentClassId);
+                
+                    if (string.IsNullOrEmpty(certificateUrl))
+                        return;
+                
+                    // Update the student class with the certificate URL
+                    studentClass.CertificateUrl = certificateUrl;
+                    studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+                    await unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing certificate for student {studentClassId}: {ex.Message}");
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+        await Task.WhenAll(certificateTasks);
     }
 }

@@ -92,6 +92,7 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ICertificateService> _certificateService;
     
     private readonly Lazy<ITokenService> _tokenService;
+    private readonly Lazy<IViewRenderService> _viewRenderService;
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IHubContext<ProgressHub> progressHubContext,
@@ -146,6 +147,8 @@ public class ServiceFactory : IServiceFactory
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
 
         _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));
+        
+        _viewRenderService = new Lazy<IViewRenderService>(() => new ViewRenderService(razorViewEngine, tempDataProvider, serviceProvider));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -214,4 +217,5 @@ public class ServiceFactory : IServiceFactory
     public ICertificateService CertificateService => _certificateService.Value;
 
     public ITokenService TokenService => _tokenService.Value;
+    public IViewRenderService ViewRenderService => _viewRenderService.Value;
 }

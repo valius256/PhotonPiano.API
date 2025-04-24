@@ -4,7 +4,6 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
-using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -93,13 +92,5 @@ public class StudentClassController : BaseController
     {
         var classScores = await _serviceFactory.StudentClassScoreService.GetClassScoresWithCriteria(classId);
         return Ok(classScores);
-    }
-    
-    [HttpPost("{classId}/unpublish-score")]
-    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
-    public async Task<IActionResult> UnpublishScore(Guid classId)
-    {
-        await _serviceFactory.StudentClassScoreService.UnpublishScore(classId, CurrentAccount!);
-        return Ok(new { message = "Scores unpublished successfully" });
     }
 }

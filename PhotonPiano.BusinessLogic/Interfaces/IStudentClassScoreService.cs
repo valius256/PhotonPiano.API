@@ -7,5 +7,4 @@ public interface IStudentClassScoreService
 {
     Task PublishScore(Guid classId, AccountModel account);
     Task<ClassScoreViewModel> GetClassScoresWithCriteria(Guid classId);
-    Task UnpublishScore(Guid classId, AccountModel account);
 }

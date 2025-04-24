@@ -72,5 +72,6 @@ public interface IServiceFactory
     ICertificateService CertificateService { get; }
     
     ITokenService TokenService { get; }
-
+    
+    IViewRenderService ViewRenderService { get; }
 }

@@ -38,15 +38,16 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return await _context.Set<T>().AnyAsync(expression);
     }
 
-    public async Task DeleteAsync(T TEntity)
+    public Task DeleteAsync(T TEntity)
     {
         TEntity.DeletedAt = DateTime.UtcNow.AddHours(7);
         TEntity.RecordStatus = RecordStatus.IsDeleted;
         _context.Update(TEntity);
-        await _context.SaveChangesAsync();
+        return Task.CompletedTask;
+        //await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteRangeAsync(IEnumerable<T> entities)
+    public Task DeleteRangeAsync(IEnumerable<T> entities)
     {
         foreach (var entity in entities)
         {
@@ -55,7 +56,8 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         }
 
         _context.UpdateRange(entities);
-        await _context.SaveChangesAsync();
+        return Task.CompletedTask;
+        //await _context.SaveChangesAsync();
     }
 
 
@@ -207,14 +209,14 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         _context.Set<T>().Update(TEntity);
         return Task.CompletedTask;
     }
-    public async Task UpdateRangeAsync(IEnumerable<T> entities)
+    public Task UpdateRangeAsync(IEnumerable<T> entities)
     {
         var enumerable = entities as T[] ?? entities.ToArray();
         if (enumerable.Any())
         {
             _context.Set<T>().UpdateRange(enumerable);
-            await _context.SaveChangesAsync();
         }
+        return Task.CompletedTask;
     }
 
     public async Task<int> CountAsync(Expression<Func<T, bool>>? expression, bool hasTrackings = true,

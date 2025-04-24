@@ -399,7 +399,7 @@ public class SlotServiceTest
     //         .ReturnsAsync(slotsFromDb);
     //
     //     // Act
-    //     var result = await _slotService.GetWeeklyScheduler(slotModel, accountModel);
+    //     var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
     //
     //     // Assert
     //     Assert.NotNull(result);
@@ -446,7 +446,7 @@ public class SlotServiceTest
     //         .ReturnsAsync(cachedSlots);
     //
     //     // Act
-    //     var result = await _slotService.GetWeeklyScheduler(slotModel, accountModel);
+    //     var result = await _slotService.GetWeeklySchedule(slotModel, accountModel);
     //
     //     // Assert
     //     Assert.NotNull(result);

@@ -96,7 +96,7 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotDetailModel>> GetWeeklyScheduler(GetSlotModel slotModel, AccountModel accountModel)
+    public async Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
     {
         if(slotModel.StartTime > slotModel.EndTime)
             throw new BadRequestException("Start time must be less than end time");

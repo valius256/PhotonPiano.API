@@ -284,7 +284,7 @@ public class TuitionService : ITuitionService
 
         foreach (var tuition in upcomingTuitions)
         {
-            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.Id == tuition.StudentClassId, false);
+            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleProjectedAsync<StudentClass>(sc => sc.Id == tuition.StudentClassId, false);
 
             var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {

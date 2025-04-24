@@ -93,4 +93,13 @@ public class StudentClassController : BaseController
         var classScores = await _serviceFactory.StudentClassScoreService.GetClassScoresWithCriteria(classId);
         return Ok(classScores);
     }
+
+    [HttpGet("{studentClassId}/detailed-scores")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor, Role.Student])]
+    [EndpointDescription("Get detailed scores for a specific student in a class")]
+    public async Task<IActionResult> GetStudentDetailedScores([FromRoute] Guid studentClassId)
+    {
+        var detailedScores = await _serviceFactory.StudentClassScoreService.GetStudentDetailedScores(studentClassId);
+        return Ok(detailedScores);
+    }
 }

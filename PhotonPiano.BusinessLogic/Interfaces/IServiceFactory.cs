@@ -1,6 +1,7 @@
 ﻿using PhotonPiano.BackgroundJob;
 using PhotonPiano.PubSub.Notification;
 using PhotonPiano.PubSub.Progress;
+using PhotonPiano.PubSub.StudentClassScore;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
@@ -74,4 +75,6 @@ public interface IServiceFactory
     ITokenService TokenService { get; }
     
     IViewRenderService ViewRenderService { get; }
+    
+    IStudentClassScoreServiceHub StudentClassScoreServiceHub { get; }
 }

@@ -1,7 +1,4 @@
-using System.Collections.Concurrent;
 using Hangfire;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -10,10 +7,8 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
-using PhotonPiano.PubSub.Notification;
-using PhotonPiano.PubSub.Pubsub;
+using PhotonPiano.PubSub.StudentClassScore;
 using PhotonPiano.Shared.Exceptions;
-using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -86,7 +81,7 @@ public class StudentClassScoreService : IStudentClassScoreService
 
             if (passedStudents.Any())
             {
-                var backgroundJobClient  = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
+                var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
                 backgroundJobClient.Enqueue<CertificateService>(x => x.CronAutoGenerateCertificatesAsync(classId));
             }
 
@@ -136,21 +131,22 @@ public class StudentClassScoreService : IStudentClassScoreService
     private async Task<Dictionary<string, bool>> ValidStudentsAttendance(Guid classId,
         List<StudentClass> studentClasses)
     {
-        try {
+        try
+        {
             // Get attendance results using the existing service method
-            var attendanceResults 
+            var attendanceResults
                 = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
-            
+
             var result = attendanceResults.ToDictionary(
                 ar => ar.StudentId,
                 ar => ar.IsPassed
             );
-            
+
             foreach (var studentClass in studentClasses)
             {
                 result.TryAdd(studentClass.StudentFirebaseId, false);
             }
-        
+
             return result;
         }
         catch (Exception ex)
@@ -203,7 +199,7 @@ public class StudentClassScoreService : IStudentClassScoreService
             throw new BadRequestException(
                 $"Cannot publish scores: {missingStudents.Count} student(s) could not be found in the database. Please refresh the page and try again.");
         }
-        
+
         var attendanceResults = await ValidStudentsAttendance(classId, studentClasses);
 
         // Prepare collections for updates
@@ -214,12 +210,13 @@ public class StudentClassScoreService : IStudentClassScoreService
         foreach (var studentClass in studentClasses)
         {
             var student = studentAccountMap[studentClass.StudentFirebaseId];
-            
+
             // Get student's attendance status
-            bool meetsAttendanceThreshold = attendanceResults.TryGetValue(studentClass.StudentFirebaseId, out bool attendanceStatus) 
-                ? attendanceStatus 
-                : false;
-            
+            bool meetsAttendanceThreshold =
+                attendanceResults.TryGetValue(studentClass.StudentFirebaseId, out bool attendanceStatus)
+                    ? attendanceStatus
+                    : false;
+
             // Update student class data
             var isPassed = studentClass.GPA.Value >= DefaultPassingGrade;
             studentClass.IsPassed = isPassed;
@@ -361,20 +358,6 @@ public class StudentClassScoreService : IStudentClassScoreService
                 ));
             }
 
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var pubSubService = scope.ServiceProvider.GetRequiredService<IPubSubService>();
-            
-                // Publish a message about score publication
-                await pubSubService.PublishAsync(new string[] { "score", "published" }, 
-                    System.Text.Json.JsonSerializer.Serialize(new {
-                        ClassId = classInfo.Id,
-                        ClassName = classInfo.Name,
-                        PublishedAt = DateTime.UtcNow
-                    })
-                );
-            }
-            
             int batchSize = 5;
             for (int i = 0; i < notifications.Count; i += batchSize)
             {
@@ -388,8 +371,22 @@ public class StudentClassScoreService : IStudentClassScoreService
                         await _serviceFactory.NotificationService.SendNotificationAsync(recipientId, title, content);
                         var studentClass = studentClasses.FirstOrDefault(sc => sc.StudentFirebaseId == recipientId);
                         var isPassed = studentClass?.IsPassed ?? true;
-                        // Send SignalR notification to specific user with class completion status
-                       
+                        // try
+                        // {
+                        //     var scoreHub = _serviceProvider.GetRequiredService<IStudentClassScoreServiceHub>();
+                        //     await scoreHub.SendScorePublishedNotificationAsync(studentClass.StudentFirebaseId, new
+                        //     {
+                        //         classId = classInfo.Id,
+                        //         className = classInfo.Name,
+                        //         isPassed = studentClass.IsPassed
+                        //     });
+                        // }
+                        // catch (Exception signalREx)
+                        // {
+                        //     Console.WriteLine(
+                        //         $"Error sending SignalR notification to {recipientId}: {signalREx.Message}");
+                        //     // Don't rethrow - continue with other notifications
+                        // }
                     }
                     catch (Exception ex)
                     {
@@ -535,5 +532,92 @@ public class StudentClassScoreService : IStudentClassScoreService
             Console.WriteLine($"Error getting scores for class {classId}: {ex.Message}");
             throw;
         }
+    }
+
+    public async Task<StudentDetailedScoreViewModel> GetStudentDetailedScores(Guid studentClassId)
+    {
+        // Validate input
+        if (studentClassId == Guid.Empty)
+        {
+            throw new ArgumentException("Invalid student class ID", nameof(studentClassId));
+        }
+
+        // Get student class information
+        var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+        if (studentClass == null)
+        {
+            throw new NotFoundException($"Student class with ID {studentClassId} not found");
+        }
+
+        // Get class information
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(studentClass.ClassId);
+        if (classInfo == null)
+        {
+            throw new NotFoundException($"Class with ID {studentClass.ClassId} not found");
+        }
+
+        // Get student information
+        var student = await _unitOfWork.AccountRepository.FindFirstAsync(a =>
+            a.AccountFirebaseId == studentClass.StudentFirebaseId);
+        if (student == null)
+        {
+            throw new NotFoundException($"Student with ID {studentClass.StudentFirebaseId} not found");
+        }
+
+        // Get all scores for this student in the class
+        var scores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
+            scs => scs.StudentClassId == studentClassId);
+
+        // Get all criteria IDs from the scores
+        var criteriaIds = scores.Select(s => s.CriteriaId).Distinct().ToList();
+
+        // Get all criteria details
+        var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => criteriaIds.Contains(c.Id));
+        var criteriaDict = criteria.ToDictionary(c => c.Id);
+
+        // Create detailed score view models
+        var detailedScores = new List<CriteriaScoreViewModel>();
+        foreach (var score in scores)
+        {
+            if (criteriaDict.TryGetValue(score.CriteriaId, out var criteriaInfo))
+            {
+                detailedScores.Add(new CriteriaScoreViewModel
+                {
+                    CriteriaId = score.CriteriaId,
+                    CriteriaName = criteriaInfo.Name,
+                    Weight = criteriaInfo.Weight,
+                    Score = score.Score
+                });
+            }
+            else
+            {
+                // Handle missing criteria information
+                detailedScores.Add(new CriteriaScoreViewModel
+                {
+                    CriteriaId = score.CriteriaId,
+                    CriteriaName = "Unknown Criteria",
+                    Weight = 0,
+                    Score = score.Score
+                });
+            }
+        }
+
+        // Sort criteria scores by weight for consistency
+        var sortedScores = detailedScores.OrderBy(cs => cs.Weight).ToList();
+
+        // Create and return the view model
+        return new StudentDetailedScoreViewModel
+        {
+            StudentId = studentClass.StudentFirebaseId,
+            StudentName = student.FullName ?? student.UserName ?? "Unknown Student",
+            StudentClassId = studentClassId,
+            ClassId = studentClass.ClassId,
+            ClassName = classInfo.Name,
+            Gpa = studentClass.GPA,
+            IsPassed = studentClass.IsPassed,
+            CriteriaScores = sortedScores,
+            InstructorComment = studentClass.InstructorComment,
+            CertificateUrl = studentClass.CertificateUrl
+        };
     }
 }

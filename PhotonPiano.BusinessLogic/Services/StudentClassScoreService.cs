@@ -1,5 +1,6 @@
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
@@ -19,6 +20,8 @@ public class StudentClassScoreService : IStudentClassScoreService
     private readonly IServiceFactory _serviceFactory;
 
     private readonly IServiceProvider _serviceProvider;
+    
+    private readonly ILogger<ServiceFactory> _logger;
 
     // Constants for notification templates
     private const string PassedNotificationTemplate =
@@ -34,11 +37,12 @@ public class StudentClassScoreService : IStudentClassScoreService
     private const int BatchSize = 50;
 
     public StudentClassScoreService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider, ILogger<ServiceFactory> logger)
     {
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
 

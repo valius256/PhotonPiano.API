@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Certificate;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -40,9 +41,12 @@ public class CertificateService : ICertificateService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConverter _converter;
 
+    private readonly ILogger<ServiceFactory> _logger;
+    
+
     public CertificateService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork, IRazorViewEngine razorViewEngine,
         IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider,
-        IHttpContextAccessor httpContextAccessor, IConverter converter)
+        IHttpContextAccessor httpContextAccessor, IConverter converter, ILogger<ServiceFactory> logger)
     {
         _serviceFactory = serviceFactory;
         _unitOfWork = unitOfWork;
@@ -51,6 +55,7 @@ public class CertificateService : ICertificateService
         _tempDataProvider = tempDataProvider;
         _httpContextAccessor = httpContextAccessor;
         _converter = converter;
+        _logger = logger;
     }
 
     /// Validates if a student is eligible for a certificate
@@ -159,7 +164,9 @@ public class CertificateService : ICertificateService
         
         var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
 
-        Console.WriteLine($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
+        // Console.WriteLine($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
+        
+        _logger.LogCritical($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
         
         // Update the same instance of studentClass we already have
         studentClass.CertificateUrl = pinataUrl;
@@ -468,6 +475,8 @@ public class CertificateService : ICertificateService
              var (url, _) = await GenerateCertificateAsync(studentClass.Id);
              
              Console.WriteLine($"Generated certificate for student class in code [AutoGenerateCertificatesAsync] {studentClass.Id}, url: {url}");
+             
+             
              studentClass.CertificateUrl = url;
          }
 

@@ -353,7 +353,7 @@ public class CertificateService : ICertificateService
             });
 
             // Open new page
-            using var page = await browser.NewPageAsync();
+            await using var page = await browser.NewPageAsync();
 
             await page.SetViewportAsync(new ViewPortOptions
             {

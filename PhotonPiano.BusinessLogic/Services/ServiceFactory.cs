@@ -139,7 +139,7 @@ public class ServiceFactory : IServiceFactory
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
         _articleService = new Lazy<IArticleService>(() => new ArticleService(unitOfWork));
-        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this, serviceProvider));
+        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this, serviceProvider, logger));
         _certificateService = new Lazy<ICertificateService>(() => new CertificateService(
             this, 
             unitOfWork, 
@@ -147,7 +147,9 @@ public class ServiceFactory : IServiceFactory
             webHostEnvironment, 
             tempDataProvider, 
             httpContextAccessor, 
-            converter));
+            converter,
+            logger
+            ));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
 
         _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));

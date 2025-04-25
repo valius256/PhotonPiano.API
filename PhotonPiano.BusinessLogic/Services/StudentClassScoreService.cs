@@ -79,8 +79,10 @@ public class StudentClassScoreService : IStudentClassScoreService
                 await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
 
                 // Update student classes and accounts in batches
-                await UpdateEntitiesInBatches(studentClasses, _unitOfWork.StudentClassRepository.UpdateAsync);
-                await UpdateEntitiesInBatches(studentUpdates, _unitOfWork.AccountRepository.UpdateAsync);
+                await _unitOfWork.StudentClassRepository.UpdateRangeAsync(studentClasses);
+                await _unitOfWork.AccountRepository.UpdateRangeAsync(studentUpdates);
+                //await UpdateEntitiesInBatches(studentClasses, _unitOfWork.StudentClassRepository.UpdateAsync);
+                //await UpdateEntitiesInBatches(studentUpdates, _unitOfWork.AccountRepository.UpdateAsync);
             });
 
             if (passedStudents.Any())

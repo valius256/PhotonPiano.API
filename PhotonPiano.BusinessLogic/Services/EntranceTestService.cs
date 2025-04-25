@@ -381,7 +381,7 @@ public class EntranceTestService : IEntranceTestService
                     setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
 
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
-                    "Điểm thi đầu vào của bạn đã được công bố!", "");
+                    "Your entrance test results have been published!", "");
             }
         }
 
@@ -675,7 +675,7 @@ public class EntranceTestService : IEntranceTestService
                     account.UpdatedAt = DateTime.UtcNow;
                     await _unitOfWork.SaveChangesAsync();
                     await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
-                        $"Học viên {account.FullName} vừa đăng ký thi đầu vào", "");
+                        $"Learner {account.FullName} has just registered for entrance test", "");
                 });
 
 
@@ -891,6 +891,8 @@ public class EntranceTestService : IEntranceTestService
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
         });
+        
+        
     }
 
     private static TimeOnly GetShiftStartTime(Shift shift)

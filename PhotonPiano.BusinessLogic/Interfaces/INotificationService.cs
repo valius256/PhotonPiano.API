@@ -16,6 +16,6 @@ public interface INotificationService
     Task<List<AccountNotification>> GetUserNotificationsAsync(string userId);
     Task ToggleNotificationViewStatus(Guid id, string accountId);
     Task SendNotificationsToAllStaffsAsync(string title, string message);
-    Task SendNotificationToManyAsync(List<string> userFirebaseIds, string message, string thumbnail);
+    Task SendNotificationToManyAsync(List<string> userFirebaseIds, string message, string thumbnail, bool requiresSavingChanges = true);
     Task CronAutoRemovedOutDateNotifications();
 }

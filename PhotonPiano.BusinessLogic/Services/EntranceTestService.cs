@@ -138,7 +138,7 @@ public class EntranceTestService : IEntranceTestService
         ]);
 
         var minConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MinStudentsInTest);
-        
+
         var maxConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MaxStudentsInTest);
 
         if (minConfig is not null && !string.IsNullOrEmpty(minConfig.ConfigValue))
@@ -150,7 +150,7 @@ public class EntranceTestService : IEntranceTestService
                 throw new BadRequestException($"Test must have at least {minStudents} learners");
             }
         }
-        
+
         if (maxConfig is not null && !string.IsNullOrEmpty(maxConfig.ConfigValue))
         {
             int maxStudents = Convert.ToInt32(maxConfig.ConfigValue);
@@ -160,10 +160,10 @@ public class EntranceTestService : IEntranceTestService
                 throw new BadRequestException($"Test can only have maximum of {maxStudents} learners");
             }
         }
-        
+
         var entranceTestId = Guid.NewGuid();
         var entranceTestStudents = new List<EntranceTestStudent>();
-        
+
 
         if (createModel.StudentIds.Count > 0)
         {
@@ -285,7 +285,7 @@ public class EntranceTestService : IEntranceTestService
         {
             throw new NotFoundException("This EntranceTest not found.");
         }
-        
+
         updateModel.Adapt(entranceTest);
 
         if (updateModel.Date.HasValue || updateModel.RoomId.HasValue || updateModel.Shift.HasValue)
@@ -309,7 +309,7 @@ public class EntranceTestService : IEntranceTestService
                 }
             }
         }
-        
+
         if (!string.IsNullOrEmpty(updateModel.InstructorId))
         {
             // check Instructor is Exist in db
@@ -878,9 +878,16 @@ public class EntranceTestService : IEntranceTestService
 
         var arrangedStudentIds = students.Select(s => s.AccountFirebaseId);
 
+        List<Task> notiTasks = [];
+
         foreach (var test in entranceTests)
         {
             test.Name = GetEntranceTestName(test);
+
+            var studentIdsToPushNotification = test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+
+            notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(studentIdsToPushNotification,
+                $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -890,9 +897,9 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
+            
+            await Task.WhenAll(notiTasks);
         });
-        
-        
     }
 
     private static TimeOnly GetShiftStartTime(Shift shift)

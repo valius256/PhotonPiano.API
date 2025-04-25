@@ -159,6 +159,8 @@ public class CertificateService : ICertificateService
         
         var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
 
+        Console.WriteLine($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
+        
         // Update the same instance of studentClass we already have
         studentClass.CertificateUrl = pinataUrl;
         await _unitOfWork.SaveChangesAsync();
@@ -464,6 +466,8 @@ public class CertificateService : ICertificateService
          foreach (var studentClass in studentClasses)
          {
              var (url, _) = await GenerateCertificateAsync(studentClass.Id);
+             
+             Console.WriteLine($"Generated certificate for student class in code [AutoGenerateCertificatesAsync] {studentClass.Id}, url: {url}");
              studentClass.CertificateUrl = url;
          }
 

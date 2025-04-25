@@ -51,4 +51,6 @@ public record AccountModel
 
     public LevelModel? Level { get; init; }
     public bool HasUsedTrial { get; init; } 
+    
+    public bool WantToContinue { get; set; } = true;
 }

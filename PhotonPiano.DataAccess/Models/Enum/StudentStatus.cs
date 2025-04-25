@@ -1,12 +1,12 @@
-namespace PhotonPiano.DataAccess.Models.Enum;
+    namespace PhotonPiano.DataAccess.Models.Enum;
 
-public enum StudentStatus
-{
-    Unregistered,
-    WaitingForEntranceTestArrangement,
-    AttemptingEntranceTest,
-    WaitingForClass,
-    InClass,
-    DropOut, // buoc thoi hoc
-    Leave // tu nguyen 
-}
+    public enum StudentStatus
+    {
+        Unregistered,
+        WaitingForEntranceTestArrangement,
+        AttemptingEntranceTest,
+        WaitingForClass,
+        InClass,
+        DropOut, // buoc thoi hoc
+        Leave // tu nguyen 
+    }

@@ -532,6 +532,7 @@ public class CertificateService : ICertificateService
             studentClass.CertificateUrl = url;
         }
 
+
         await _unitOfWork.SaveChangesAsync();
     }
 

@@ -73,7 +73,8 @@ public class CertificateService : ICertificateService
 
             if (studentClass == null)
             {
-                throw new NotFoundException($"Student class with ID {studentClassId} not found");
+                //throw new NotFoundException($"Student class with ID {studentClassId} not found");
+                return false;
             }
 
             if (studentClass.Class.Status != ClassStatus.Finished)
@@ -98,13 +99,13 @@ public class CertificateService : ICertificateService
     }
 
     //Generate a Certificate for a student class and returns the certificate URL
-    public async Task<(string certificateUrl, Guid studentClassId)> GenerateCertificateAsync(Guid studentClassId)
+    public async Task<(string? certificateUrl, Guid studentClassId)> GenerateCertificateAsync(Guid studentClassId)
     {
         // Get all required services from the new scope
 
         if (!await IsEligibleForCertificateAsync(studentClassId))
         {
-            throw new BadRequestException("Student is not eligible for a certificate");
+            return (null, studentClassId);
         }
 
         var studentClass =
@@ -114,7 +115,7 @@ public class CertificateService : ICertificateService
 
         if (studentClass is null)
         {
-            throw new NotFoundException($"Student class with ID {studentClassId} not found");
+            return (null, studentClassId);
         }
 
         // Create certificate model

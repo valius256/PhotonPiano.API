@@ -7,8 +7,8 @@ public record BlankSlotAndShiftRequest
 {
     [Required(ErrorMessage = "The Start date is required")]
     [FromQuery(Name = "start-date")]
-    public DateOnly? StartDate { get; init; }
+    public DateOnly StartDate { get; init; }
     [Required(ErrorMessage = "The End date is required")]
     [FromQuery(Name = "end-date")]
-    public DateOnly? EndDate { get; init; }
+    public DateOnly EndDate { get; init; }
 }

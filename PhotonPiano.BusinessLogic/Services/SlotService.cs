@@ -386,7 +386,7 @@ public class SlotService : ISlotService
         //Notification
         if (classDetail.IsPublic)
         {
-            var notiMessage = $"Một buổi học mới đã được thêm vào lớp ${classDetail.Name} của bạn. Ngày {slot.Date}, Ca {(int)slot.Shift + 1}, Địa điểm : {room.Name}";
+            var notiMessage = $"A new slot has been added to your class ${classDetail.Name}. Day {slot.Date}, Shift {(int)slot.Shift + 1}, Room : {room.Name}";
             var studentSlots = classDetail.StudentClasses.Select(sc => new SlotStudent
             {
                 CreatedById = accountFirebaseId,
@@ -448,7 +448,7 @@ public class SlotService : ISlotService
                 throw new NotFoundException("Room not found");
             }
             slot.RoomId = updateSlotModel.RoomId;
-            notiMessage += $" Cập nhật phòng học từ phòng {oldRoom?.Name} sang {room.Name}.";
+            notiMessage += $" Update from room {oldRoom?.Name} to {room.Name}.";
         }
 
         if ((updateSlotModel.Date != null && updateSlotModel.Date != slot.Date) || (updateSlotModel.Shift != null && updateSlotModel.Shift != slot.Shift))
@@ -458,8 +458,8 @@ public class SlotService : ISlotService
                 throw new ConflictException("Can not update slots because of a schedule conflict");
             }
 
-            notiMessage += $" Cập nhật thời gian học từ phòng ngày {slot.Date}, ca {(int)slot.Shift + 1} " +
-                $"sang ngày {updateSlotModel.Date ?? slot.Date}, ca {(int)(updateSlotModel.Shift ?? slot.Shift) + 1}.";
+            notiMessage += $" Update time from day {slot.Date}, shift {(int)slot.Shift + 1} " +
+                $"to day {updateSlotModel.Date ?? slot.Date}, shift {(int)(updateSlotModel.Shift ?? slot.Shift) + 1}.";
         }
 
         
@@ -486,7 +486,7 @@ public class SlotService : ISlotService
             newTeacher = teacher;
 
             slot.TeacherId = updateSlotModel.TeacherId;
-            notiMessage += $" Cập nhật giáo viên thay thế {teacher.FullName ?? teacher.UserName}.";
+            notiMessage += $" Update substitute teacher {teacher.FullName ?? teacher.UserName}.";
         }
 
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
@@ -518,9 +518,9 @@ public class SlotService : ISlotService
         {
             if (updateSlotModel.Reason != null)
             {
-                notiMessage += " Lí do: " + updateSlotModel.Reason;
+                notiMessage += " Reason: " + updateSlotModel.Reason;
             }
-            notiMessage = $"Một buổi học đã được cập nhật tại lớp {classDetail.Name} của bạn." + notiMessage;
+            notiMessage = $"A slot has been updated in your class {classDetail.Name}." + notiMessage;
             var studentSlots = classDetail.StudentClasses.Select(sc => new SlotStudent
             {
                 CreatedById = accountFirebaseId,
@@ -537,10 +537,10 @@ public class SlotService : ISlotService
                 } 
                 else if (newTeacher != null)
                 {
-                    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, "[Thông báo]", $"Trung tâm đã phân bổ bạn dạy thay cho buổi học " +
-                        $"ngày {slot.Date}, Ca {(int)slot.Shift + 1} của lớp {classDetail.Name}", $"");
-                    await _serviceFactory.NotificationService.SendNotificationAsync(oldTeacherId, "[Thông báo]", $"Trung tâm đã phân bổ ${newTeacher.FullName ?? newTeacher.UserName} dạy thay cho buổi học " +
-                        $"ngày {slot.Date}, Ca {(int)slot.Shift + 1} của bạn", $"{newTeacher.AvatarUrl}");
+                    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, "[Notification]", $"Center has assigned you to this class" +
+                        $"day {slot.Date}, shift {(int)slot.Shift + 1} of the class {classDetail.Name}", $"");
+                    await _serviceFactory.NotificationService.SendNotificationAsync(oldTeacherId, "[Notification]", $"Center has assigned you to ${newTeacher.FullName ?? newTeacher.UserName} to be a substitue teacher of slot  " +
+                        $"day {slot.Date}, shift {(int)slot.Shift + 1} of the class {classDetail.Name}", $"{newTeacher.AvatarUrl}");
 
                 }
             }
@@ -583,7 +583,7 @@ public class SlotService : ISlotService
 
         if (classDetail != null && classDetail.IsPublic)
         {
-            var notiMessage = $"Một buổi học đã bị xóa khỏi lớp ${classDetail.Name} của bạn. Ngày {slot.Date}, Ca {(int)slot.Shift + 1}";
+            var notiMessage = $"A slot has been removed from your ${classDetail.Name}. Date {slot.Date}, Shift {(int)slot.Shift + 1}";
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(slotStudents.Select(ss => ss.StudentFirebaseId).ToList(),
                 notiMessage, "");
             if (classDetail.InstructorId != null)
@@ -594,8 +594,9 @@ public class SlotService : ISlotService
 
     }
 
-    public async Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate)
+    public async Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly startDate, DateOnly endDate)
     {
+
         // Get all activems
         var rooms = await _unitOfWork.RoomRepository.FindAsync(r => r.Status == RoomStatus.Opened);
 
@@ -604,14 +605,14 @@ public class SlotService : ISlotService
 
         // Filter in memory to avoid PostgreSQL date conversion issues
         var filteredSlots = existingSlots.Where(s =>
-            s.Date >= startDate.Value &&
-            s.Date <= endDate.Value).ToList();
+            s.Date >= startDate &&
+            s.Date <= endDate).ToList();
 
         var blankSlots = new List<BlankSlotModel>();
         const int maxResults = 50;
 
         // Check every combination of date, shift, and room
-        for (var date = startDate.Value; date <= endDate.Value; date = date.AddDays(1))
+        for (var date = startDate; date <= endDate; date = date.AddDays(1))
         {
             foreach (Shift shift in Enum.GetValues(typeof(Shift)))
             {
@@ -767,7 +768,7 @@ public class SlotService : ISlotService
         //Notification
         await _serviceFactory.NotificationService.SendNotificationToManyAsync(
             studentIds,
-            $"Lớp {classInDb.Name} sẽ có một buổi học mới vào ngày {newSlot.Date}, tại phòng {roomInDb.Name}.",
+            $"Class {classInDb.Name} will have a new slot in {newSlot.Date}, at room {roomInDb.Name}.",
             ""
         );
 

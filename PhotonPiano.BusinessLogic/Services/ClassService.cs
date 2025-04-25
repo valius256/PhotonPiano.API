@@ -183,7 +183,7 @@ public class ClassService : IClassService
         if (arrangeClassModel.StartWeek.DayOfWeek != DayOfWeek.Monday)
             throw new BadRequestException("Incorrect start week");
 
-        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Đang lấy dữ liệu học viên", 0);
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Gathering learner data", 0);
         //Get awaited students
         var students = await _unitOfWork.AccountRepository.Entities
             .Include(a => a.FreeSlots)
@@ -201,11 +201,11 @@ public class ClassService : IClassService
         var levels = await _unitOfWork.LevelRepository.GetAllAsync();
         var progressLevel = 25 / (1.0 * levels.Count);
         var currentProgress = 5.0;
-        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Bắt đầu xếp lớp...", currentProgress);
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Starting...", currentProgress);
         foreach (var level in levels)
         {
             currentProgress += progressLevel;
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Bắt đầu phân bổ học viên cho LEVEL {level.Name}", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Assigning learners of LEVEL {level.Name}", currentProgress);
             await Task.Delay(100);
 
             var studentsOfLevel = students.Where(s => s.Level == level).ToList();
@@ -278,7 +278,7 @@ public class ClassService : IClassService
                 });
             }        
         }
-        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đã đến lúc phân bổ lịch học! Đang chuẩn bị cấu hình và ngày nghỉ...", currentProgress);
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Time to schedule! Preparing configuration and holidays...", currentProgress);
         await Task.Delay(500);
         //2. IT's SCHEDULE TIME!  (30%)
         Random random = new();
@@ -297,7 +297,7 @@ public class ClassService : IClassService
         {
             var classDraft = classes[i];
 
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang xếp lịch cho lớp {classDraft.Name}", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Scheduling {classDraft.Name}", currentProgress);
             var level = levels.FirstOrDefault(l => l.Id == classDraft.LevelId) ?? throw new NotFoundException("Level not found");
             int slotsPerWeek = level.SlotPerWeek;
 
@@ -353,7 +353,7 @@ public class ClassService : IClassService
             currentProgress += progressEachClass;
         }
 
-        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu vào cơ sở dữ liệu...", currentProgress);
+        await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Saving to database...", currentProgress);
         await Task.Delay(500);
         //3. Now save them to database (40%)
         var result = await SaveClasses(classes, students, userId, currentProgress, levels);
@@ -386,7 +386,7 @@ public class ClassService : IClassService
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             //Create classes
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu các lớp...", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Saving Classes...", currentProgress);
             var mappedClasses = classes.Adapt<List<Class>>();
             var monthDict = new Dictionary<int, int>();
             foreach (var classInfo in mappedClasses)
@@ -421,7 +421,7 @@ public class ClassService : IClassService
             currentProgress += 5;
 
             //Create StudentClasses
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu danh sách học sinh các lớp...", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Saving learners of classes...", currentProgress);
             var studentClasses = new List<StudentClass>();
             foreach (var c in classes)
                 studentClasses.AddRange(c.StudentIds.Select(s => new StudentClass
@@ -435,7 +435,7 @@ public class ClassService : IClassService
             currentProgress += 5;
 
             //Create Slots
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu danh sách buổi học các lớp...", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Saving slots...", currentProgress);
             var slots = new List<Slot>();
             foreach (var c in classes)
                 slots.AddRange(c.Slots.Select(s => new Slot
@@ -451,7 +451,7 @@ public class ClassService : IClassService
             currentProgress += 5;
 
             //Create studentSlots
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang lưu các bảng điểm danh...", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Saving slot data...", currentProgress);
             var studentSlots = new List<SlotStudent>();
             foreach (var studentClass in studentClasses)
             {
@@ -469,7 +469,7 @@ public class ClassService : IClassService
             currentProgress += 5;
 
             //Change student status and current class
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang cập nhật lại trạng thái các học viên...", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Updating status of learners...", currentProgress);
             var studentToUpdate = await _unitOfWork.AccountRepository.FindAsQueryable(a =>
                     a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass).ToListAsync();
 
@@ -488,7 +488,7 @@ public class ClassService : IClassService
             await _unitOfWork.AccountRepository.UpdateRangeAsync(studentToUpdate);
             currentProgress += 5;
 
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Đang hoàn tất...", currentProgress);
+            await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Completing...", currentProgress);
             await _unitOfWork.SaveChangesAsync();
             currentProgress += 10;
 
@@ -542,7 +542,7 @@ public class ClassService : IClassService
             throw new BadRequestException("Cannot update level of classes that are started");
         }
 
-        var message = $"Đã có thay đổi với lớp học {classInfo.Name} của bạn.";
+        var message = $"There is a change to your class {classInfo.Name}.";
 
         if (model.Name != null && model.Name != classInfo.Name)
         {
@@ -559,7 +559,7 @@ public class ClassService : IClassService
         }
 
         string? oldTeacherId = null;
-        string oldTeacherMessage = $"Bạn đã không còn phụ trách lớp {classInfo.Name} nữa.";
+        string oldTeacherMessage = $"You are no longer teaching {classInfo.Name}.";
         string? newTeacherMessage = null;
 
         if (model.LevelId.HasValue && model.LevelId.Value != classInfo.LevelId)
@@ -610,7 +610,7 @@ public class ClassService : IClassService
 
             oldTeacherId = classInfo.InstructorId;
             classInfo.InstructorId = model.InstructorId;
-            newTeacherMessage = $"Chúc mừng! Giờ đây bạn là giảng viên chủ nhiệm của lớp {classInfo.Name}";
+            newTeacherMessage = $"Congratulations! You are now the homeroom teacher of the class {classInfo.Name}";
         }
         classInfo.UpdateById = accountFirebaseId;
         classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
@@ -786,11 +786,11 @@ public class ClassService : IClassService
         {
             if (classInfo.InstructorId != null)
             {
-                await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, "Thông tin lớp mới",
-                $"Bạn đã được giao cho phụ trách lớp mới {classInfo.Name}, LEVEL {level.Name}. Vui lòng kiểm tra lại lịch học. Chúc bạn và lớp làm việc hiệu quả và thành công!");
+                await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId, "New Class Information",
+                $"You're assigned to class {classInfo.Name}, LEVEL {level.Name}. Please check your schedule! Wish you and your class a success work");
             }
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(classDetail.StudentClasses.Select(c => c.StudentFirebaseId).ToList(),
-                $"Chúc mừng bạn đã được xếp vào lớp {classInfo.Name}, LEVEL {level.Name}. Vui lòng kiểm tra lại lịch học. Chúc bạn đạt được nhiều thành công!", "");
+                $"Congratulations! You have been assigned to class {classInfo.Name}, LEVEL {level.Name}. Please check your schedule! Best Wishes!", "");
         }
     }
 
@@ -893,7 +893,7 @@ public class ClassService : IClassService
             receiverIds.AddRange(classDetail.StudentClasses.Select(s => s.StudentFirebaseId).ToList());
 
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
-                $"Lớp {classDetail.Name} đã cập nhật lịch học mới. Vui lòng kiểm tra lại. Chúc bạn đạt được nhiều thành công!", "");
+                $"Class {classDetail.Name} has updated its schedule. Please check again. Regards!", "");
         }
 
     }

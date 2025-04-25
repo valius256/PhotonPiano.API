@@ -27,7 +27,7 @@ public interface ISlotService
 
     Task DeleteSlot(Guid slotId, string accountFirebaseId);
 
-    Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate);
+    Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly startDate, DateOnly endDate);
 
     Task<bool> CancelSlot(CancelSlotModel model, string accountFirebaseId);
 

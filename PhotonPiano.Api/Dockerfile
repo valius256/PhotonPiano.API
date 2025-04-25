@@ -1,7 +1,7 @@
 ﻿# Base runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
-
+RUN apt-get update && apt-get install -y curl
 ## Set the env path to match the new version
 #ENV LD_LIBRARY_PATH=/app/wkhtmltox/v0.12.4:$LD_LIBRARY_PATH
 #

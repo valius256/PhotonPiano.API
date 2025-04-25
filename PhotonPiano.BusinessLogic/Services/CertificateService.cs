@@ -162,7 +162,7 @@ public class CertificateService : ICertificateService
             Headers = new HeaderDictionary(),
             ContentType = "image/png"
         };
-        
+
         var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
 
         // Console.WriteLine($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
@@ -173,7 +173,6 @@ public class CertificateService : ICertificateService
         studentClass.CertificateUrl = pinataUrl;
         await _unitOfWork.SaveChangesAsync();
         return (certificateUrl: pinataUrl, studentClassId: studentClassId);
-        
     }
 
 
@@ -368,14 +367,13 @@ public class CertificateService : ICertificateService
             }
         });
 
-        // Open new page
+        // Open new page with LANDSCAPE orientation matching your HTML dimensions
         await using var page = await browser.NewPageAsync();
-
         await page.SetViewportAsync(new ViewPortOptions
         {
-            Width = 794,
-            Height = 1123,
-            DeviceScaleFactor = 1.5
+            Width = 1123, // Match your CSS width
+            Height = 794, // Match your CSS height
+            DeviceScaleFactor = 2.0 // Higher resolution
         });
 
         // Set content
@@ -384,12 +382,44 @@ public class CertificateService : ICertificateService
             WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
         });
 
-        // Take screenshot with high quality
-        var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
-        {
-            FullPage = true,
-            Type = ScreenshotType.Png,
-        });
+         await page.AddStyleTagAsync(new AddTagOptions
+            {
+                Content = @"
+                @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap');
+            "
+            });
+
+         await page.EvaluateExpressionAsync(@"
+            document.fonts.ready.then(() => {
+                console.log('All fonts loaded');
+            });
+        ");
+
+            // Fix any layout or orientation issues
+            await page.EvaluateExpressionAsync(@"
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.body.style.width = '1123px';
+            document.body.style.height = '794px';
+            document.body.style.overflow = 'hidden';
+            document.querySelector('.certificate-container').style.transform = 'none';
+        ");
+
+
+            // Take screenshot of the FULL area needed
+            var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
+            {
+                FullPage = false, // Use false to capture just viewport
+                Type = ScreenshotType.Png,
+                Clip = new Clip // Explicitly set the clip area to match your certificate
+                {
+                    X = 0,
+                    Y = 0,
+                    Width = 1123,
+                    Height = 794
+                }
+            });
 
         return screenshotBytes;
     }
@@ -495,16 +525,12 @@ public class CertificateService : ICertificateService
     {
         var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(
             sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl));
-        
-         foreach (var studentClass in studentClasses)
-         {
-             var (url, _) = await GenerateCertificateAsync(studentClass.Id);
-             
-             Console.WriteLine($"Generated certificate for student class in code [AutoGenerateCertificatesAsync] {studentClass.Id}, url: {url}");
-             
-             
-             studentClass.CertificateUrl = url;
-         }
+
+        foreach (var studentClass in studentClasses)
+        {
+            var (url, _) = await GenerateCertificateAsync(studentClass.Id);
+            studentClass.CertificateUrl = url;
+        }
 
         await _unitOfWork.SaveChangesAsync();
     }

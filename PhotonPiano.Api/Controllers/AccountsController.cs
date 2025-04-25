@@ -119,6 +119,17 @@ public class AccountsController : BaseController
         return NoContent();
     }
 
+    [HttpPut("continuation-status")]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
+    [EndpointDescription("Update student continuation status")]
+    public async Task<IActionResult> UpdateContinuationStatus([FromBody] UpdateContinuationStatusRequest request)
+    {
+        var result = await _serviceFactory.AccountService.UpdateContinuingLearningStatus(
+            CurrentAccount!.AccountFirebaseId, 
+            request.WantToContinue);
+        return Ok(result);
+    }
+
 
     //[HttpGet("{account-id}/attempt-stats")]
     //[FirebaseAuthorize]

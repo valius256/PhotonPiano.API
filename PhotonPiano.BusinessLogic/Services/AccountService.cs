@@ -166,8 +166,9 @@ public class AccountService : IAccountService
 
     public async Task<AccountModel> GetAccountFromIdAndEmail(string accountId, string email)
     {
-        var account = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a => a.AccountFirebaseId == accountId
-                                                                               && a.Email == email);
+        var account = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a =>
+            a.AccountFirebaseId == accountId
+            && a.Email == email);
         if (account is null)
         {
             throw new UnauthorizedException("Account not found.");
@@ -247,5 +248,45 @@ public class AccountService : IAccountService
         var createAccount = await _unitOfWork.AccountRepository.AddAsync(staffAccount);
         await _unitOfWork.SaveChangesAsync();
         return createAccount.Adapt<AccountModel>();
+    }
+
+    public async Task<AccountModel> UpdateContinuingLearningStatus(string firebaseId, bool wantToContinue)
+    {
+        var account = await _unitOfWork.AccountRepository.FindSingleAsync(a => 
+            a.AccountFirebaseId == firebaseId && a.Role == Role.Student);
+    
+        if (account is null)
+        {
+            throw new NotFoundException($"Student account with ID: {firebaseId} not found.");
+        }
+        account.WantToContinue = wantToContinue;
+        StudentStatus? targetStatus = null;
+        
+        if (wantToContinue)
+        {
+            if (account.StudentStatus == StudentStatus.Leave)
+            {
+                targetStatus = StudentStatus.WaitingForClass;
+            }
+        }
+        else
+        {
+            if (account.StudentStatus == StudentStatus.WaitingForClass || 
+                account.StudentStatus == StudentStatus.InClass)
+            {
+               targetStatus = StudentStatus.Leave;
+            }
+        }
+        
+        if (targetStatus.HasValue && account.StudentStatus != targetStatus.Value)
+        {
+            if (!_serviceFactory.StudentClassService.IsValidStatusTransition(account.StudentStatus!.Value, targetStatus.Value))
+            {
+                throw new BadRequestException($"Invalid status transition from {account.StudentStatus} to {targetStatus}");
+            }
+            account.StudentStatus = targetStatus.Value;
+        }
+        await _unitOfWork.SaveChangesAsync();
+        return account.Adapt<AccountModel>();
     }
 }

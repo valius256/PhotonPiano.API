@@ -6,7 +6,6 @@ using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
-using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -558,8 +557,13 @@ namespace PhotonPiano.BusinessLogic.Services
 
         public async Task<bool> ImportScores(Guid classId, Stream excelFileStream, AccountModel account)
         {
+            
             var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
-
+            if (classDetails.Status == ClassStatus.Finished)
+            {
+                throw new BadRequestException("The class has already been finished.");
+            }
+            
             var classCriteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
 
             if (!classCriteria.Any())
@@ -609,7 +613,6 @@ namespace PhotonPiano.BusinessLogic.Services
 
                 await _unitOfWork.SaveChangesAsync();
 
-                // Then update GPAs after scores are saved
                 for (int row = studentStartRow; row <= rows; row++)
                 {
                     string studentName = worksheet.Cells[row, 1].Text;
@@ -635,24 +638,11 @@ namespace PhotonPiano.BusinessLogic.Services
 
         private void ValidateExcelTemplate(ExcelWorksheet worksheet, int expectedCriteriaCount)
         {
-            if (worksheet.Dimension.Columns < expectedCriteriaCount + 1) // +1 for student name column
+            if (worksheet.Dimension.Columns < expectedCriteriaCount + 1) 
             {
                 throw new BadRequestException("Invalid Excel template: Missing required columns");
             }
-
-            // string courseName = worksheet.Cells[2, 1].Text;
-            // string instructorName = worksheet.Cells[3, 1].Text;
-            // string assignmentsHeader = worksheet.Cells[4, 1].Text;
-
-            // if (string.IsNullOrEmpty(courseName) || !courseName.StartsWith("Course:") ||
-            //     string.IsNullOrEmpty(instructorName) || !instructorName.StartsWith("Instructor:") ||
-            //     string.IsNullOrEmpty(assignmentsHeader) ||
-            //     !assignmentsHeader.Equals("Assignments", StringComparison.OrdinalIgnoreCase))
-            // {
-            //     throw new BadRequestException(
-            //         "Invalid Excel template: Header structure does not match required format");
-            // }
-
+            
             // Check for student column
             string studentHeader = worksheet.Cells[7, 1].Text;
             if (string.IsNullOrEmpty(studentHeader) ||
@@ -667,14 +657,6 @@ namespace PhotonPiano.BusinessLogic.Services
         {
             int startCol = 2;
             var mapping = new Dictionary<string, (int Column, Guid Id)>(StringComparer.OrdinalIgnoreCase);
-
-            Console.WriteLine("Available criteria:");
-            foreach (var criteria in classCriteria)
-            {
-                Console.WriteLine($"- {criteria.Name} (ID: {criteria.Id})");
-            }
-
-            Console.WriteLine("Mapping columns to criteria:");
             
             for (int col = startCol; col <= worksheet.Dimension.Columns; col++)
             {
@@ -691,12 +673,6 @@ namespace PhotonPiano.BusinessLogic.Services
                     if (matchingCriteria != null)
                     {
                         mapping[criteriaName] = (col, matchingCriteria.Id);
-                        Console.WriteLine($"- Column {col}: {criteriaName} -> ID {matchingCriteria.Id}");
-                    }
-                    else
-                    {
-                        Console.WriteLine(
-                            $"- Warning: No matching criteria found for '{criteriaName}' at column {col}");
                     }
                 }
             }
@@ -727,13 +703,10 @@ namespace PhotonPiano.BusinessLogic.Services
                 {
                     score = parsedScore;
                 }
-
-                // Find existing score record or create new one
                 var scoreRecord = existingScores.FirstOrDefault(s => s.CriteriaId == criteriaId);
 
                 if (scoreRecord != null)
                 {
-                    // Update existing record
                     scoreRecord.Score = score;
                     scoreRecord.UpdatedAt = DateTime.UtcNow.AddHours(7);
                     scoresToUpdate.Add(scoreRecord);
@@ -770,13 +743,11 @@ namespace PhotonPiano.BusinessLogic.Services
                 scs => scs.StudentClassId == studentClassId
             );
 
-            // Calculate weighted GPA
             decimal totalWeightedScore = 0;
             decimal totalWeight = 0;
 
             foreach (var score in studentClassScores)
             {
-                // Get the weight of each criteria
                 var criteria = await _unitOfWork.CriteriaRepository.GetByIdAsync(score.CriteriaId);
 
                 if (score.Score.HasValue && criteria != null)
@@ -865,7 +836,6 @@ namespace PhotonPiano.BusinessLogic.Services
 
             var currentStatus = student.StudentStatus ?? StudentStatus.Unregistered;
 
-            //Check Valid Status for Student
             if (!IsValidStatusTransition(currentStatus, newStatus))
             {
                 throw new InvalidOperationException(
@@ -890,7 +860,7 @@ namespace PhotonPiano.BusinessLogic.Services
 
 
         /// Validates if the status transition is allowed according to the state diagram
-        private bool IsValidStatusTransition(StudentStatus fromStatus, StudentStatus toStatus)
+        public bool IsValidStatusTransition(StudentStatus fromStatus, StudentStatus toStatus)
         {
             return (fromStatus, toStatus) switch
             {
@@ -898,6 +868,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 (StudentStatus.AttemptingEntranceTest, StudentStatus.WaitingForClass) => true,
                 (StudentStatus.AttemptingEntranceTest, StudentStatus.DropOut) => true,
                 (StudentStatus.WaitingForClass, StudentStatus.InClass) => true,
+                (StudentStatus.WaitingForClass, StudentStatus.Leave) => true,
                 (StudentStatus.InClass, StudentStatus.DropOut) => true,
                 (StudentStatus.InClass, StudentStatus.Leave) => true,
                 (StudentStatus.InClass, StudentStatus.WaitingForClass) => true, // End of class, waiting for next
@@ -909,23 +880,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 _ => false
             };
         }
-
-        // Handle specific requirements for different status transitions
-        // private async Task ValidateClassForTransition(Guid? classId)
-        // {
-        //     // Validate class exists and is in appropriate status
-        //     if (!classId.HasValue)
-        //     {
-        //         throw new ArgumentException("Class ID is required when changing status to InClass");
-        //     }
-        //
-        //     var targetClass = await _unitOfWork.ClassRepository.GetByIdAsync(classId.Value);
-        //     if (targetClass == null || targetClass.Status == ClassStatus.Finished)
-        //     {
-        //         throw new InvalidOperationException("Class does not exist or is already finished");
-        //     }
-        // }
-
+        
         //Update a specific score for a specific criteria
         public async Task<bool> UpdateStudentScore(UpdateStudentScoreModel model, AccountModel account)
         {

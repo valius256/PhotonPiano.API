@@ -88,7 +88,7 @@ public class StudentClassScoreService : IStudentClassScoreService
             if (passedStudents.Any())
             {
                 var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
-                backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId));
+                backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId)); 
             }
 
             await SendClassCompletionNotifications(studentClasses, classInfo);
@@ -338,73 +338,37 @@ public class StudentClassScoreService : IStudentClassScoreService
 
     private async Task SendClassCompletionNotifications(List<StudentClass> studentClasses, Class classInfo)
     {
-        try
+        var notifications = new List<(string recipientId, string title, string content)>();
+
+        foreach (var studentClass in studentClasses.Where(sc => sc.GPA.HasValue))
         {
-            // First, prepare all notification data without sending
-            var notifications = new List<(string recipientId, string title, string content)>();
+            bool isPassed = studentClass.IsPassed;
+            var title = isPassed ? "Class Completion Notification" : "Class End Notification";
+            var content = isPassed
+                ? string.Format(PassedNotificationTemplate, classInfo.Name)
+                : string.Format(FailedNotificationTemplate, classInfo.Name);
 
-            foreach (var studentClass in studentClasses.Where(sc => sc.GPA.HasValue))
-            {
-                bool isPassed = studentClass.IsPassed;
-                var title = isPassed ? "Class Completion Notification" : "Class End Notification";
-                var content = isPassed
-                    ? string.Format(PassedNotificationTemplate, classInfo.Name)
-                    : string.Format(FailedNotificationTemplate, classInfo.Name);
-
-                notifications.Add((studentClass.StudentFirebaseId, title, content));
-            }
-
-            // Add instructor notification if an instructor exists
-            if (!string.IsNullOrEmpty(classInfo.InstructorId))
-            {
-                notifications.Add((
-                    classInfo.InstructorId,
-                    "Điểm đã được công bố",
-                    string.Format(InstructorNotificationTemplate, classInfo.Name)
-                ));
-            }
-
-            int batchSize = 5;
-            for (int i = 0; i < notifications.Count; i += batchSize)
-            {
-                var batch = notifications.Skip(i).Take(batchSize).ToList();
-
-                // Process each recipient one at a time (avoid parallel processing with shared DbContext)
-                foreach (var (recipientId, title, content) in batch)
-                {
-                    try
-                    {
-                        await _serviceFactory.NotificationService.SendNotificationAsync(recipientId, title, content);
-                        var studentClass = studentClasses.FirstOrDefault(sc => sc.StudentFirebaseId == recipientId);
-                        var isPassed = studentClass?.IsPassed ?? true;
-                        // try
-                        // {
-                        //     var scoreHub = _serviceProvider.GetRequiredService<IStudentClassScoreServiceHub>();
-                        //     await scoreHub.SendScorePublishedNotificationAsync(studentClass.StudentFirebaseId, new
-                        //     {
-                        //         classId = classInfo.Id,
-                        //         className = classInfo.Name,
-                        //         isPassed = studentClass.IsPassed
-                        //     });
-                        // }
-                        // catch (Exception signalREx)
-                        // {
-                        //     Console.WriteLine(
-                        //         $"Error sending SignalR notification to {recipientId}: {signalREx.Message}");
-                        //     // Don't rethrow - continue with other notifications
-                        // }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error sending notification to {recipientId}: {ex.Message}");
-                    }
-                }
-            }
+            notifications.Add((studentClass.StudentFirebaseId, title, content));
         }
-        catch (Exception ex)
+
+        // Add instructor notification if an instructor exists
+        if (!string.IsNullOrEmpty(classInfo.InstructorId))
         {
-            Console.WriteLine($"Error sending notifications: {ex.Message}");
-            // Log but don't rethrow - we don't want notification failures to roll back the transaction
+            notifications.Add((
+                classInfo.InstructorId,
+                "Scores have been published",
+                string.Format(InstructorNotificationTemplate, classInfo.Name)
+            ));
+        }
+
+        int batchSize = 5;
+        for (int i = 0; i < notifications.Count; i += batchSize)
+        {
+            var batch = notifications.Skip(i).Take(batchSize).ToList();
+            foreach (var (recipientId, title, content) in batch)
+            {
+                await _serviceFactory.NotificationService.SendNotificationAsync(recipientId, title, content);
+            }
         }
     }
 

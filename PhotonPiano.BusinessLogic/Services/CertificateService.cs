@@ -339,49 +339,74 @@ public class CertificateService : ICertificateService
 
     private async Task<byte[]> GenerateImageFromHtml(string html)
     {
-        try
+    try
+    {
+        // Specify Chrome download folder explicitly
+        var browserFetcherOptions = new BrowserFetcherOptions 
+        { 
+            Path = "/tmp/.local-chromium", // Use /tmp for better permissions in Docker
+            Browser = SupportedBrowser.Chromium,
+        };
+        var browserFetcher = new BrowserFetcher(browserFetcherOptions);
+        
+
+        var revisionInfo = await browserFetcher.DownloadAsync();
+        
+        
+        // Launch browser with explicit path
+        await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
         {
-            // Download Chrome browser if needed (can be moved to app startup)
-            var browserFetcher = new BrowserFetcher();
-            await browserFetcher.DownloadAsync();
+            Headless = true,
+            ExecutablePath = revisionInfo.GetExecutablePath(),
+            Args = new[] { 
+                "--no-sandbox", 
+                "--disable-setuid-sandbox", 
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-extensions",
+                "--single-process" // Try this if still having issues
+            }
+        });
 
-            // Launch browser
-            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-            {
-                Headless = true,
-                Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
-            });
+        // Open new page
+        await using var page = await browser.NewPageAsync();
 
-            // Open new page
-            using var page = await browser.NewPageAsync();
-
-            await page.SetViewportAsync(new ViewPortOptions
-            {
-                Width = 794,
-                Height = 1123,
-                DeviceScaleFactor = 1.5
-            });
-
-            // Set content - use your existing HTML with base64 images working
-            await page.SetContentAsync(html);
-
-            // Wait for any images to load (using Task.Delay as a reliable alternative)
-            await Task.Delay(1500);
-
-            // Take screenshot with high quality
-            var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
-            {
-                FullPage = true,
-                Type = ScreenshotType.Png,
-            });
-
-            return screenshotBytes;
-        }
-        catch (Exception ex)
+        await page.SetViewportAsync(new ViewPortOptions
         {
-            Console.WriteLine($"Error generating image from HTML: {ex.Message}");
-            throw;
+            Width = 794,
+            Height = 1123,
+            DeviceScaleFactor = 1.5
+        });
+
+        // Set content
+        await page.SetContentAsync(html, new NavigationOptions
+        {
+            WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+        });
+
+        // Take screenshot with high quality
+        var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
+        {
+            FullPage = true,
+            Type = ScreenshotType.Png,
+        });
+
+        return screenshotBytes;
+    }
+    catch (Exception ex)
+    {
+        // Log the full exception details for better debugging
+        _logger.LogError($"Error generating image from HTML: {ex.Message}");
+        _logger.LogError($"Stack trace: {ex.StackTrace}");
+        
+        if (ex.InnerException != null)
+        {
+            _logger.LogError($"Inner exception: {ex.InnerException.Message}");
+            _logger.LogError($"Inner stack trace: {ex.InnerException.StackTrace}");
         }
+        
+        throw;
+    }
     }
 
     public async Task<List<CertificateInfoModel>> GetStudentCertificatesAsync(AccountModel account)

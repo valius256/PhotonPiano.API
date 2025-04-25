@@ -29,54 +29,50 @@ public class ViewRenderService : IViewRenderService
 
     public async Task<string> RenderToStringAsync(string viewName, object model)
     {
-        using (var scope = _serviceProvider.CreateScope())
+        using var scope = _serviceProvider.CreateScope();
+        var httpContext = new DefaultHttpContext
         {
-            var httpContext = new DefaultHttpContext
+            RequestServices = scope.ServiceProvider
+        };
+
+        var actionContext = new ActionContext(
+            httpContext,
+            new RouteData(),
+            new ActionDescriptor());
+
+        await using var sw = new StringWriter();
+        var viewPath = $"~/Views/{viewName}.cshtml";
+        var viewEngineResult = _razorViewEngine.FindView(actionContext, viewName, false);
+
+        if (!viewEngineResult.Success)
+        {
+            viewEngineResult = _razorViewEngine.GetView(null, viewPath, false);
+            if (!viewEngineResult.Success)
             {
-                RequestServices = scope.ServiceProvider
-            };
-
-            var actionContext = new ActionContext(
-                httpContext,
-                new RouteData(),
-                new ActionDescriptor());
-
-            using (var sw = new StringWriter())
-            {
-                var viewPath = $"~/Views/{viewName}.cshtml";
-                var viewEngineResult = _razorViewEngine.FindView(actionContext, viewName, false);
-
-                if (!viewEngineResult.Success)
-                {
-                    viewEngineResult = _razorViewEngine.GetView(null, viewPath, false);
-                    if (!viewEngineResult.Success)
-                    {
-                        throw new FileNotFoundException($"Could not find view '{viewName}'");
-                    }
-                }
-
-                var viewData = new ViewDataDictionary(
-                    new EmptyModelMetadataProvider(),
-                    new ModelStateDictionary())
-                {
-                    Model = model
-                };
-
-                var tempData = new TempDataDictionary(
-                    httpContext,
-                    _tempDataProvider);
-
-                var viewContext = new ViewContext(
-                    actionContext,
-                    viewEngineResult.View,
-                    viewData,
-                    tempData,
-                    sw,
-                    new HtmlHelperOptions());
-
-                await viewEngineResult.View.RenderAsync(viewContext);
-                return sw.ToString();
+                throw new FileNotFoundException($"Could not find view '{viewName}'");
             }
         }
+
+        var viewData = new ViewDataDictionary(
+            new EmptyModelMetadataProvider(),
+            new ModelStateDictionary())
+        {
+            Model = model
+        };
+
+        var tempData = new TempDataDictionary(
+            httpContext,
+            _tempDataProvider);
+
+        var viewContext = new ViewContext(
+            actionContext,
+            viewEngineResult.View,
+            viewData,
+            tempData,
+            sw,
+            new HtmlHelperOptions());
+
+        await viewEngineResult.View.RenderAsync(viewContext);
+        return sw.ToString();
     }
 }

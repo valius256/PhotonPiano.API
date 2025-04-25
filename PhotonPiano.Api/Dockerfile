@@ -1,28 +1,30 @@
 ﻿# Base runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    libglib2.0-0 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libxshmfence1 \
+    libglu1 \
+    --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-## Set the env path to match the new version
-#ENV LD_LIBRARY_PATH=/app/wkhtmltox/v0.12.4:$LD_LIBRARY_PATH
-#
-## Add any required security sources (Debian-based image assumed)
-#RUN echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list && \
-#    apt-get update && \
-#    apt-get install -y \
-#    libssl1.1 \
-#    libxrender1 \
-#    libxext6 \
-#    libx11-6 \
-#    libxau6 \
-#    libxdmcp6 \
-#    fontconfig \
-#    libjpeg62-turbo \
-#    libpng16-16 \
-#    libfreetype6 \
-#    xfonts-75dpi \
-#    xfonts-base \
-#    libxcb1 \
-#    && apt-get clean
 
 
 RUN useradd -m appuser

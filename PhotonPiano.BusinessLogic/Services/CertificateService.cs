@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Certificate;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -40,9 +41,12 @@ public class CertificateService : ICertificateService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConverter _converter;
 
+    private readonly ILogger<ServiceFactory> _logger;
+    
+
     public CertificateService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork, IRazorViewEngine razorViewEngine,
         IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider,
-        IHttpContextAccessor httpContextAccessor, IConverter converter)
+        IHttpContextAccessor httpContextAccessor, IConverter converter, ILogger<ServiceFactory> logger)
     {
         _serviceFactory = serviceFactory;
         _unitOfWork = unitOfWork;
@@ -51,6 +55,7 @@ public class CertificateService : ICertificateService
         _tempDataProvider = tempDataProvider;
         _httpContextAccessor = httpContextAccessor;
         _converter = converter;
+        _logger = logger;
     }
 
     /// Validates if a student is eligible for a certificate
@@ -68,7 +73,8 @@ public class CertificateService : ICertificateService
 
             if (studentClass == null)
             {
-                throw new NotFoundException($"Student class with ID {studentClassId} not found");
+                //throw new NotFoundException($"Student class with ID {studentClassId} not found");
+                return false;
             }
 
             if (studentClass.Class.Status != ClassStatus.Finished)
@@ -93,13 +99,13 @@ public class CertificateService : ICertificateService
     }
 
     //Generate a Certificate for a student class and returns the certificate URL
-    public async Task<(string certificateUrl, Guid studentClassId)> GenerateCertificateAsync(Guid studentClassId)
+    public async Task<(string? certificateUrl, Guid studentClassId)> GenerateCertificateAsync(Guid studentClassId)
     {
         // Get all required services from the new scope
 
         if (!await IsEligibleForCertificateAsync(studentClassId))
         {
-            throw new BadRequestException("Student is not eligible for a certificate");
+            return (null, studentClassId);
         }
 
         var studentClass =
@@ -109,7 +115,7 @@ public class CertificateService : ICertificateService
 
         if (studentClass is null)
         {
-            throw new NotFoundException($"Student class with ID {studentClassId} not found");
+            return (null, studentClassId);
         }
 
         // Create certificate model
@@ -159,6 +165,10 @@ public class CertificateService : ICertificateService
 
         var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
 
+        // Console.WriteLine($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
+        
+        _logger.LogCritical($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
+        
         // Update the same instance of studentClass we already have
         studentClass.CertificateUrl = pinataUrl;
         await _unitOfWork.SaveChangesAsync();
@@ -328,35 +338,51 @@ public class CertificateService : ICertificateService
 
     private async Task<byte[]> GenerateImageFromHtml(string html)
     {
-        try
+    try
+    {
+        // Specify Chrome download folder explicitly
+        var browserFetcherOptions = new BrowserFetcherOptions 
+        { 
+            Path = "/tmp/.local-chromium", // Use /tmp for better permissions in Docker
+            Browser = SupportedBrowser.Chromium,
+        };
+        var browserFetcher = new BrowserFetcher(browserFetcherOptions);
+        
+
+        var revisionInfo = await browserFetcher.DownloadAsync();
+        
+        
+        // Launch browser with explicit path
+        await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
         {
-            // Download Chrome browser if needed
-            var browserFetcher = new BrowserFetcher();
-            await browserFetcher.DownloadAsync();
+            Headless = true,
+            ExecutablePath = revisionInfo.GetExecutablePath(),
+            Args = new[] { 
+                "--no-sandbox", 
+                "--disable-setuid-sandbox", 
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-extensions",
+                "--single-process" // Try this if still having issues
+            }
+        });
 
-            // Launch browser with proper settings
-            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-            {
-                Headless = true,
-                Args = new[]
-                {
-                    "--no-sandbox",
-                    "--disable-setuid-sandbox",
-                    "--font-render-hinting=medium"
-                }
-            });
+        // Open new page with LANDSCAPE orientation matching your HTML dimensions
+        await using var page = await browser.NewPageAsync();
+        await page.SetViewportAsync(new ViewPortOptions
+        {
+            Width = 1123, // Match your CSS width
+            Height = 794, // Match your CSS height
+            DeviceScaleFactor = 2.0 // Higher resolution
+        });
 
-            // Open new page with LANDSCAPE orientation matching your HTML dimensions
-            using var page = await browser.NewPageAsync();
-            await page.SetViewportAsync(new ViewPortOptions
-            {
-                Width = 1123, // Match your CSS width
-                Height = 794, // Match your CSS height
-                DeviceScaleFactor = 2.0 // Higher resolution
-            });
+        // Set content
+        await page.SetContentAsync(html, new NavigationOptions
+        {
+            WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+        });
 
-            // Load web fonts before setting content
-            await page.AddStyleTagAsync(new AddTagOptions
+         await page.AddStyleTagAsync(new AddTagOptions
             {
                 Content = @"
                 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
@@ -364,11 +390,7 @@ public class CertificateService : ICertificateService
             "
             });
 
-            // Set content and wait for rendering
-            await page.SetContentAsync(html);
-
-            // Wait for fonts to load
-            await page.EvaluateExpressionAsync(@"
+         await page.EvaluateExpressionAsync(@"
             document.fonts.ready.then(() => {
                 console.log('All fonts loaded');
             });
@@ -384,8 +406,6 @@ public class CertificateService : ICertificateService
             document.querySelector('.certificate-container').style.transform = 'none';
         ");
 
-            // Wait for complete rendering
-            await Task.Delay(2000);
 
             // Take screenshot of the FULL area needed
             var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
@@ -401,13 +421,22 @@ public class CertificateService : ICertificateService
                 }
             });
 
-            return screenshotBytes;
-        }
-        catch (Exception ex)
+        return screenshotBytes;
+    }
+    catch (Exception ex)
+    {
+        // Log the full exception details for better debugging
+        _logger.LogError($"Error generating image from HTML: {ex.Message}");
+        _logger.LogError($"Stack trace: {ex.StackTrace}");
+        
+        if (ex.InnerException != null)
         {
-            Console.WriteLine($"Error generating image from HTML: {ex.Message}");
-            throw;
+            _logger.LogError($"Inner exception: {ex.InnerException.Message}");
+            _logger.LogError($"Inner stack trace: {ex.InnerException.StackTrace}");
         }
+        
+        throw;
+    }
     }
 
     public async Task<List<CertificateInfoModel>> GetStudentCertificatesAsync(AccountModel account)

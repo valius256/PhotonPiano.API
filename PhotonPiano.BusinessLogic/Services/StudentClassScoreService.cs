@@ -1,5 +1,6 @@
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
@@ -19,6 +20,8 @@ public class StudentClassScoreService : IStudentClassScoreService
     private readonly IServiceFactory _serviceFactory;
 
     private readonly IServiceProvider _serviceProvider;
+    
+    private readonly ILogger<ServiceFactory> _logger;
 
     // Constants for notification templates
     private const string PassedNotificationTemplate =
@@ -34,11 +37,12 @@ public class StudentClassScoreService : IStudentClassScoreService
     private const int BatchSize = 50;
 
     public StudentClassScoreService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider, ILogger<ServiceFactory> logger)
     {
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
 
@@ -75,8 +79,10 @@ public class StudentClassScoreService : IStudentClassScoreService
                 await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
 
                 // Update student classes and accounts in batches
-                await UpdateEntitiesInBatches(studentClasses, _unitOfWork.StudentClassRepository.UpdateAsync);
-                await UpdateEntitiesInBatches(studentUpdates, _unitOfWork.AccountRepository.UpdateAsync);
+                await _unitOfWork.StudentClassRepository.UpdateRangeAsync(studentClasses);
+                await _unitOfWork.AccountRepository.UpdateRangeAsync(studentUpdates);
+                //await UpdateEntitiesInBatches(studentClasses, _unitOfWork.StudentClassRepository.UpdateAsync);
+                //await UpdateEntitiesInBatches(studentUpdates, _unitOfWork.AccountRepository.UpdateAsync);
             });
 
             if (passedStudents.Any())
@@ -104,10 +110,10 @@ public class StudentClassScoreService : IStudentClassScoreService
 
         switch (classInfo.Status)
         {
-            case ClassStatus.Ongoing:
-                break;
             case ClassStatus.Finished:
-                throw new BadRequestException("Cannot publish scores: The class has already been finished.");
+                break;
+            case ClassStatus.Ongoing:
+                throw new BadRequestException("Cannot publish scores: The class has not finished.");
             case ClassStatus.NotStarted:
                 throw new BadRequestException("Cannot publish scores: The class has not started yet.");
             default:

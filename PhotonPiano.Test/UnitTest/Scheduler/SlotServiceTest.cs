@@ -844,7 +844,7 @@ public class SlotServiceTest
         // Setup notification service
         _notificationServiceMock
             .Setup(s => s.SendNotificationToManyAsync(
-                It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>()))
+                It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns(Task.CompletedTask);
             
         // Setup Redis cache
@@ -867,7 +867,7 @@ public class SlotServiceTest
         _slotRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Slot>()), Times.Once);
         _slotStudentRepositoryMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<SlotStudent>>()), Times.Once);
         _notificationServiceMock.Verify(s => s.SendNotificationToManyAsync(
-            It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            It.IsAny<List<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         _redisCacheServiceMock.Verify(s => s.DeleteByPatternAsync("schedule:*"), Times.Once);
     }
     

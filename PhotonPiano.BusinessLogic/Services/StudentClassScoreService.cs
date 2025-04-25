@@ -104,10 +104,10 @@ public class StudentClassScoreService : IStudentClassScoreService
 
         switch (classInfo.Status)
         {
-            case ClassStatus.Ongoing:
-                break;
             case ClassStatus.Finished:
-                throw new BadRequestException("Cannot publish scores: The class has already been finished.");
+                break;
+            case ClassStatus.Ongoing:
+                throw new BadRequestException("Cannot publish scores: The class has not finished.");
             case ClassStatus.NotStarted:
                 throw new BadRequestException("Cannot publish scores: The class has not started yet.");
             default:

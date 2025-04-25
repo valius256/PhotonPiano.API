@@ -346,7 +346,7 @@ public class CertificateService : ICertificateService
             await browserFetcher.DownloadAsync();
 
             // Launch browser
-            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true,
                 Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }

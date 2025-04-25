@@ -4,6 +4,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
+using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.News;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
@@ -72,6 +73,7 @@ public static class ServiceCollectionExtensions
         TypeAdapterConfig<UpdatePianoSurveyModel, PianoSurvey>.NewConfig().IgnoreNullValues(true);
         TypeAdapterConfig<CreateSurveyQuestionModel, SurveyQuestion>.NewConfig().Ignore(dest => dest.Id);
         TypeAdapterConfig<UpdateArticleModel, Article>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<UpdateLevelModel, Level>.NewConfig().IgnoreNullValues(true);
         return services;
     }
 }

@@ -342,4 +342,14 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
         _context.ChangeTracker.Clear();
     }
+
+    public void Attach(T entity)
+    {
+        _context.Set<T>().Attach(entity);
+    }
+
+    public void MarkAsModified(T entity)
+    {
+        _context.Entry(entity).State = EntityState.Modified;
+    }
 }

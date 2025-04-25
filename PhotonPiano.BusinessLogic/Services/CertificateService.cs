@@ -497,7 +497,7 @@ public class CertificateService : ICertificateService
             sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl));
         
          foreach (var studentClass in studentClasses)
-         {
+            {
              var (url, _) = await GenerateCertificateAsync(studentClass.Id);
              
              Console.WriteLine($"Generated certificate for student class in code [AutoGenerateCertificatesAsync] {studentClass.Id}, url: {url}");

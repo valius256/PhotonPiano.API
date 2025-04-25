@@ -1,9 +1,12 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -25,7 +28,8 @@ public class SystemConfigService : ISystemConfigService
 
     private readonly List<string> _entranceTestConfigNames =
     [
-        ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest, ConfigNames.AllowEntranceTestRegistering
+        ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest, ConfigNames.AllowEntranceTestRegistering,
+        ConfigNames.TestFee, ConfigNames.TheoryPercentage, ConfigNames.PracticePercentage,
     ];
 
     public SystemConfigService(IUnitOfWork unitOfWork)
@@ -33,10 +37,11 @@ public class SystemConfigService : ISystemConfigService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<List<SystemConfigModel>> GetAllConfigs()
+    public async Task<List<SystemConfigModel>> GetConfigs(params List<string> names)
     {
-        var configs = await _unitOfWork.SystemConfigRepository.GetAllAsync(hasTrackings: false);
-        return configs.Adapt<List<SystemConfigModel>>();
+        return await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
+            expression: s => names.Count == 0 || names.Contains(s.ConfigName),
+            hasTrackings: false);
     }
 
     public async Task<SystemConfigModel> GetConfig(string name)
@@ -178,10 +183,81 @@ public class SystemConfigService : ISystemConfigService
             if (updateModel.AllowEntranceTestRegistering.HasValue)
             {
                 await UpsertSystemConfig(ConfigNames.AllowEntranceTestRegistering, SystemConfigType.Text,
-                    updateModel.AllowEntranceTestRegistering.Value == true ? "true" : "false"); 
+                    updateModel.AllowEntranceTestRegistering.Value == true ? "true" : "false");
+            }
+
+            if (updateModel.TestFee.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TestFee, SystemConfigType.UnsignedInt,
+                    updateModel.TestFee.Value.ToString());
+            }
+
+            if (updateModel.TheoryPercentage.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TheoryPercentage, SystemConfigType.UnsignedInt,
+                    updateModel.TheoryPercentage.Value.ToString());
+            }
+
+            if (updateModel.PracticePercentage.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.PracticePercentage, SystemConfigType.UnsignedInt,
+                    updateModel.PracticePercentage.Value.ToString());
             }
         });
     }
+
+    public async Task UpdateTuitionSystemConfig(UpdateTuitionSystemConfigModel updateModel)
+    {
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.DeadlineForPayTuition.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TuitionPaymentDeadline, SystemConfigType.UnsignedInt,
+                    updateModel.DeadlineForPayTuition.Value.ToString());
+            }
+
+            if (updateModel.SlotTrial.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.NumTrialSlot, SystemConfigType.UnsignedInt,
+                    updateModel.SlotTrial.Value.ToString());
+            }
+
+            if (updateModel.TaxRates.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.TaxRates, SystemConfigType.Text,
+                    updateModel.TaxRates.Value.ToString());
+            }
+
+          
+        });
+    }
+
+    public async Task UpdateSchedulerSystemConfig(UpdateSchedulerSystemConfigModel updateModel)
+    {
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.DeadlineAttendance.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.AttendanceDeadline, SystemConfigType.UnsignedInt,
+                    updateModel.DeadlineAttendance.Value.ToString());
+            }
+
+            if (updateModel.ReasonCancelSlot != null)
+            {
+                var jsonReasons = JsonConvert.SerializeObject(updateModel.ReasonCancelSlot);
+            
+                await UpsertSystemConfig(ConfigNames.ReasonForCancelSlot, SystemConfigType.Text, jsonReasons);
+            }
+            
+            if (updateModel.MaxAbsenceRate.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MaxAbsenceRate, SystemConfigType.UnsignedInt,
+                    updateModel.MaxAbsenceRate.Value.ToString());
+            }
+        });
+    }
+    
+    
 
     public async Task<List<SystemConfigModel>> GetAllSurveyConfigs()
     {
@@ -193,11 +269,13 @@ public class SystemConfigService : ISystemConfigService
         return surveyConfigs;
     }
 
-    public async Task<List<SystemConfigModel>> GetAllEntranceTestConfigs()
+    public async Task<List<SystemConfigModel>> GetEntranceTestConfigs(params List<string> configNames)
     {
         return await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
             expression: c =>
-                _entranceTestConfigNames.Contains(c.ConfigName),
+                configNames.Count == 0
+                    ? _entranceTestConfigNames.Contains(c.ConfigName)
+                    : configNames.Contains(c.ConfigName),
             hasTrackings: false);
     }
 
@@ -226,5 +304,34 @@ public class SystemConfigService : ISystemConfigService
         await _unitOfWork.SystemConfigRepository.AddAsync(dbConfig);
 
         return dbConfig.Adapt<SystemConfigModel>();
+    }
+
+    public async Task UpdateClassSystemConfig(UpdateClassSystemConfigModel updateModel)
+    {
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            if (updateModel.MaximumClassSize.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MaximumStudents, SystemConfigType.UnsignedInt,
+                    updateModel.MaximumClassSize.Value.ToString());
+            }
+
+            if (updateModel.MinimumClassSize.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.MinimumStudents, SystemConfigType.UnsignedInt,
+                    updateModel.MinimumClassSize.Value.ToString());
+            }
+
+            if (updateModel.DeadlineChangingClass.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.ChangingClassDeadline, SystemConfigType.Boolean,
+                    updateModel.DeadlineChangingClass.Value.ToString());
+            }
+            if (updateModel.AllowSkippingLevel.HasValue)
+            {
+                await UpsertSystemConfig(ConfigNames.AllowSkippingLevel, SystemConfigType.UnsignedInt,
+                    updateModel.AllowSkippingLevel.Value == true ? "true" : "false");
+            }
+        });
     }
 }

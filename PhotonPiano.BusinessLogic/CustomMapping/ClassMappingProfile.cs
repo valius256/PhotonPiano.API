@@ -1,6 +1,7 @@
 ﻿
 using Mapster;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -22,6 +23,12 @@ namespace PhotonPiano.BusinessLogic.CustomMapping
 
             config.NewConfig<SystemConfigsModel, SystemConfig>()
                 .Map(dest => dest.ConfigValue, String.Empty);
+
+            // config.NewConfig<Slot, SlotModel>()
+            //     .Map(dest => dest.Teacher, src => src.Teacher.FullName ?? src.Teacher.UserName)
+            //     ;
+            //
+            
         }
     }
 }

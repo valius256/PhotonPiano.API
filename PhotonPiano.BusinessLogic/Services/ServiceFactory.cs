@@ -13,6 +13,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.PubSub.Notification;
 using PhotonPiano.PubSub.Progress;
+using PhotonPiano.PubSub.StudentClassScore;
 using Razor.Templating.Core;
 using StackExchange.Redis;
 
@@ -92,13 +93,17 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ICertificateService> _certificateService;
     
     private readonly Lazy<ITokenService> _tokenService;
+    
+    private readonly Lazy<IViewRenderService> _viewRenderService;
+    
+    private readonly Lazy<IStudentClassScoreServiceHub> _studentClassScoreServiceHub;
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
-        IHubContext<ProgressHub> progressHubContext,
+        IHubContext<ProgressHub> progressHubContext, IHubContext<StudentClassScoreHub> studentClassScoreHub,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine,
         IRazorViewEngine razorViewEngine,  IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider, IHttpContextAccessor httpContextAccessor,
-        IConverter converter)
+        IConverter converter, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork, this));
@@ -134,7 +139,7 @@ public class ServiceFactory : IServiceFactory
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
         _articleService = new Lazy<IArticleService>(() => new ArticleService(unitOfWork));
-        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this));
+        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this, serviceProvider, logger));
         _certificateService = new Lazy<ICertificateService>(() => new CertificateService(
             this, 
             unitOfWork, 
@@ -142,10 +147,17 @@ public class ServiceFactory : IServiceFactory
             webHostEnvironment, 
             tempDataProvider, 
             httpContextAccessor, 
-            converter));
+            converter,
+            logger
+            ));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
 
         _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));
+        
+        _viewRenderService = new Lazy<IViewRenderService>(() => new ViewRenderService(razorViewEngine, tempDataProvider, serviceProvider));
+
+        _studentClassScoreServiceHub =
+            new Lazy<IStudentClassScoreServiceHub>(() => new StudentClassScoreServiceHub(studentClassScoreHub));
     }
 
     public IAccountService AccountService => _accountService.Value;
@@ -214,4 +226,7 @@ public class ServiceFactory : IServiceFactory
     public ICertificateService CertificateService => _certificateService.Value;
 
     public ITokenService TokenService => _tokenService.Value;
+    public IViewRenderService ViewRenderService => _viewRenderService.Value;
+    
+    public IStudentClassScoreServiceHub StudentClassScoreServiceHub => _studentClassScoreServiceHub.Value;
 }

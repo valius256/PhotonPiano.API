@@ -1,17 +1,17 @@
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.Api.Requests.EntranceTest;
 
 public record UpdateEntranceTestRequest
 {
     public Guid? RoomId { get; init; }
-    public string? RoomName { get; init; }
-    public int? RoomCapacity { get; init; }
+    
     public Shift? Shift { get; init; }
-    public DateOnly? StartTime { get; init; }
-    public bool? IsAnnouncedTime { get; init; }
-    public DateTime? AnnouncedTime { get; init; }
-    public bool? IsAnnouncedScore { get; init; }
+    
+    public DateOnly? Date { get; init; }
+    
+    public bool? IsAnnouncedScore { get; init; } 
+    
     public string? InstructorId { get; init; }
-    public string? InstructorName { get; init; }
 }

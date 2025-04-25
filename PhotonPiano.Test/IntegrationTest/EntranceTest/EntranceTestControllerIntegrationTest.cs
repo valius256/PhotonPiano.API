@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Responses.Payment;
 using PhotonPiano.DataAccess.Models.Enum;
+using PhotonPiano.Shared.Enums;
 using PhotonPiano.Test.Extensions;
 
 namespace PhotonPiano.Test.IntegrationTest.EntranceTest;
@@ -37,7 +38,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task GetEntranceTests_GetSuccessAndAuthorized_ReturnsOkStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var queryRequest = new QueryEntranceTestRequest
@@ -84,7 +85,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task GetEntranceTestDetails_EntranceTestNotFound_ReturnsNotFoundStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var entranceTestId = Guid.NewGuid();
 
@@ -99,7 +100,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task GetEntranceTestDetails_GetSuccessAndAuthorized_ReturnsOkStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         Guid entranceTestId = Guid.Parse("3c707d90-f81f-4f35-a089-829c8d36bbe2");
@@ -131,7 +132,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task GetEntranceTestStudentDetails_EntranceTestStudentNotFound_ReturnsNotFoundStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var entranceTestId = Guid.NewGuid();
         var studentId = Guid.NewGuid().ToString();
@@ -147,7 +148,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task GetEntranceTestStudentDetails_GetSuccessAndAuthorized_ReturnsOkStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var entranceTestId = "682e3e48-50ca-464e-aea5-1964e3a03811";
         var studentId = "GVX3Q2a70aU3OansV69wbTtvddY2";
@@ -183,7 +184,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task CreateEntranceTest_CreateSuccess_ReturnsCreatedStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var createRequest = new CreateEntranceTestRequest
@@ -262,7 +263,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task DeleteEntranceTest_AuthorizedAndEntranceTestNotFound_ReturnsNotFoundStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         var entranceTestId = Guid.NewGuid();
@@ -278,7 +279,7 @@ public class EntranceTestControllerIntegrationTest : BaseIntegrationTest
     public async Task DeleteEntranceTest_AuthorizedAndDeleteSuccess_ReturnsNoContentStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         var entranceTestId = "682e3e48-50ca-464e-aea5-1964e3a03811";

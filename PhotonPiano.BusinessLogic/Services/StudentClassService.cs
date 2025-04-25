@@ -34,11 +34,14 @@ namespace PhotonPiano.BusinessLogic.Services
                 changeClassModel.StudentFirebaseId = account.AccountFirebaseId;
             }
 
-            var oldStudentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.StudentFirebaseId == changeClassModel.StudentFirebaseId && sc.ClassId == changeClassModel.OldClassId);
+            var oldStudentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc =>
+                sc.StudentFirebaseId == changeClassModel.StudentFirebaseId &&
+                sc.ClassId == changeClassModel.OldClassId);
             if (oldStudentClass is null)
             {
                 throw new NotFoundException("Student class not found");
             }
+
             var oldClassInfo = (await _unitOfWork.ClassRepository.Entities
                 .Include(c => c.Slots)
                 .Include(oc => oc.StudentClasses)
@@ -46,19 +49,25 @@ namespace PhotonPiano.BusinessLogic.Services
 
             if (account.Role == Role.Student)
             {
-                var deadlineDays = int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.ChangingClassDeadline)).ConfigValue ?? "0");
+                var deadlineDays =
+                    int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.ChangingClassDeadline))
+                        .ConfigValue ?? "0");
                 var firstSlot = oldClassInfo.Slots.OrderBy(s => s.Date).OrderBy(s => s.Shift).FirstOrDefault();
-                if (firstSlot != null && DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7).AddDays(deadlineDays)) > firstSlot.Date)
+                if (firstSlot != null && DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7).AddDays(deadlineDays)) >
+                    firstSlot.Date)
                 {
                     throw new BadRequestException("The deadline for changing class has been overdued");
                 }
             }
 
-            var student = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == changeClassModel.StudentFirebaseId);
+            var student =
+                await _unitOfWork.AccountRepository.FindSingleAsync(a =>
+                    a.AccountFirebaseId == changeClassModel.StudentFirebaseId);
             if (student is null)
             {
                 throw new NotFoundException("Student not found");
             }
+
             if (student.StudentStatus != StudentStatus.InClass)
             {
                 throw new BadRequestException("Student is currently not belong to any class");
@@ -72,6 +81,7 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new NotFoundException("Class not found");
             }
+
             if (!oldClassInfo.IsPublic || !classInfo.IsPublic)
             {
                 throw new BadRequestException("Both class need to be published to use this feature");
@@ -84,23 +94,30 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Class is full!");
             }
+
             if (classInfo.Status == ClassStatus.Finished)
             {
                 throw new BadRequestException("Class is finished");
             }
+
             if (classInfo.LevelId != student.LevelId)
             {
                 throw new BadRequestException("Student is not in the same level as the class");
             }
-            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AllowSkippingLevel)).ConfigValue ?? "0");
+
+            var allowSkipLevel =
+                bool.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AllowSkippingLevel))
+                    .ConfigValue ?? "0");
             if (!allowSkipLevel && student.LevelId != classInfo.LevelId)
             {
-                throw new BadRequestException("Skipping level is not allowed. Student need to be in the same level as the class!");
+                throw new BadRequestException(
+                    "Skipping level is not allowed. Student need to be in the same level as the class!");
             }
 
             //Create student slots
             var classSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
-            var existedStudentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => ss.StudentFirebaseId == changeClassModel.StudentFirebaseId
+            var existedStudentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss =>
+                ss.StudentFirebaseId == changeClassModel.StudentFirebaseId
                 && classSlotIds.Contains(ss.SlotId), false, true);
             var studentSlots = classInfo.Slots.Select(s => new SlotStudent
             {
@@ -109,7 +126,10 @@ namespace PhotonPiano.BusinessLogic.Services
                 StudentFirebaseId = changeClassModel.StudentFirebaseId
             });
 
-            studentSlots = studentSlots.Where(ss => !existedStudentSlots.Any(es => es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId)).ToList();
+            studentSlots = studentSlots.Where(ss =>
+                    !existedStudentSlots.Any(es =>
+                        es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId))
+                .ToList();
 
 
             foreach (var slot in existedStudentSlots)
@@ -126,7 +146,8 @@ namespace PhotonPiano.BusinessLogic.Services
 
             //Delete old studentSlots
             var oldSlotIds = oldClassInfo.Slots.Select(s => s.Id).ToList();
-            var oldStudentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => oldSlotIds.Contains(ss.SlotId));
+            var oldStudentSlots =
+                await _unitOfWork.SlotStudentRepository.FindAsync(ss => oldSlotIds.Contains(ss.SlotId));
             foreach (var oldStudentSlot in oldStudentSlots)
             {
                 oldStudentSlot.RecordStatus = RecordStatus.IsDeleted;
@@ -147,7 +168,8 @@ namespace PhotonPiano.BusinessLogic.Services
             });
             //Notification
 
-            await _serviceFactory.NotificationService.SendNotificationAsync(changeClassModel.StudentFirebaseId, "Thông tin lớp mới",
+            await _serviceFactory.NotificationService.SendNotificationAsync(changeClassModel.StudentFirebaseId,
+                "Thông tin lớp mới",
                 $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
 
             var newClassReceiverIds = classInfo.StudentClasses.Select(c => c.StudentFirebaseId).ToList();
@@ -155,21 +177,26 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 newClassReceiverIds.Add(classInfo.InstructorId);
             }
+
             var oldClassReceiverIds = oldClassInfo.StudentClasses.Select(c => c.StudentFirebaseId).ToList();
             if (oldClassInfo.InstructorId != null)
             {
                 oldClassReceiverIds.Add(oldClassInfo.InstructorId);
             }
-            await _serviceFactory.NotificationService.SendNotificationToManyAsync(oldClassReceiverIds,
-                $"Học sinh {student.FullName ?? student.UserName} đã chuyển ra khỏi lớp {oldClassInfo.Name}. Nếu có thắc mắc hoặc báo cáo nhầm lẫn, vui lòng nộp đơn khiếu nại hoặc liên hệ bộ phận hỗ trợ!", student.AvatarUrl ?? "");
-            await _serviceFactory.NotificationService.SendNotificationToManyAsync(newClassReceiverIds,
-                $"Học sinh mới {student.FullName ?? student.UserName} được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ bạn ấy hết mình!", student.AvatarUrl ?? "");
 
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(oldClassReceiverIds,
+                $"Học sinh {student.FullName ?? student.UserName} đã chuyển ra khỏi lớp {oldClassInfo.Name}. Nếu có thắc mắc hoặc báo cáo nhầm lẫn, vui lòng nộp đơn khiếu nại hoặc liên hệ bộ phận hỗ trợ!",
+                student.AvatarUrl ?? "");
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(newClassReceiverIds,
+                $"Học sinh mới {student.FullName ?? student.UserName} được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ bạn ấy hết mình!",
+                student.AvatarUrl ?? "");
         }
 
-        public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel, string accountFirebaseId)
+        public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel,
+            string accountFirebaseId)
         {
-            var students = await _unitOfWork.AccountRepository.FindAsync(a => createStudentClassesModel.StudentFirebaseIds.Contains(a.AccountFirebaseId));
+            var students = await _unitOfWork.AccountRepository.FindAsync(a =>
+                createStudentClassesModel.StudentFirebaseIds.Contains(a.AccountFirebaseId));
             if (!students.Any() && !createStudentClassesModel.IsAutoFill)
             {
                 throw new NotFoundException("No valid students found");
@@ -179,7 +206,8 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 if (student.StudentStatus != StudentStatus.WaitingForClass)
                 {
-                    throw new BadRequestException($"Student {student.FullName ?? student.UserName} is already in a class");
+                    throw new BadRequestException(
+                        $"Student {student.FullName ?? student.UserName} is already in a class");
                 }
             }
 
@@ -193,32 +221,42 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new NotFoundException("Class not found");
             }
 
-            var maxStudents = int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ?? "0");
+            var maxStudents =
+                int.Parse(
+                    (await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents)).ConfigValue ??
+                    "0");
 
             if (classInfo.StudentClasses.Count + students.Count > maxStudents)
             {
                 throw new BadRequestException("Class is full!");
             }
+
             if (students.Any(s => s.LevelId != classInfo.LevelId))
             {
                 throw new BadRequestException("Some of students is not in the same level as the class");
             }
+
             if (classInfo.Status == ClassStatus.Finished)
             {
                 throw new BadRequestException("Class is finished");
             }
 
-            var allowSkipLevel = bool.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AllowSkippingLevel)).ConfigValue ?? "0");
+            var allowSkipLevel =
+                bool.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AllowSkippingLevel))
+                    .ConfigValue ?? "0");
             if (!allowSkipLevel && students.Any(s => s.LevelId != classInfo.LevelId))
             {
-                throw new BadRequestException("Skipping level is not allowed. All student need to be in the same level as the class!");
+                throw new BadRequestException(
+                    "Skipping level is not allowed. All student need to be in the same level as the class!");
             }
 
-            if (createStudentClassesModel.IsAutoFill && maxStudents - classInfo.StudentClasses.Count - students.Count > 0)
+            if (createStudentClassesModel.IsAutoFill &&
+                maxStudents - classInfo.StudentClasses.Count - students.Count > 0)
             {
-                var otherStudents = await _unitOfWork.AccountRepository.FindAsQueryable(s => s.StudentStatus == StudentStatus.WaitingForClass
-                    && !createStudentClassesModel.StudentFirebaseIds.Contains(s.AccountFirebaseId)
-                    && s.LevelId == classInfo.LevelId)
+                var otherStudents = await _unitOfWork.AccountRepository.FindAsQueryable(s =>
+                        s.StudentStatus == StudentStatus.WaitingForClass
+                        && !createStudentClassesModel.StudentFirebaseIds.Contains(s.AccountFirebaseId)
+                        && s.LevelId == classInfo.LevelId)
                     .Take(maxStudents - classInfo.StudentClasses.Count - students.Count)
                     .ToListAsync();
 
@@ -249,7 +287,8 @@ namespace PhotonPiano.BusinessLogic.Services
                     addedStudentClasses.Add(studentClass);
 
                     var classSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
-                    var existedSlots = await _unitOfWork.SlotStudentRepository.FindAsync(s => s.StudentFirebaseId == student.AccountFirebaseId
+                    var existedSlots = await _unitOfWork.SlotStudentRepository.FindAsync(s =>
+                        s.StudentFirebaseId == student.AccountFirebaseId
                         && classSlotIds.Contains(s.SlotId) && s.RecordStatus == RecordStatus.IsDeleted, false, true);
 
                     studentSlots.AddRange(classInfo.Slots.Select(s => new SlotStudent
@@ -259,7 +298,10 @@ namespace PhotonPiano.BusinessLogic.Services
                         StudentFirebaseId = student.AccountFirebaseId
                     }));
 
-                    studentSlots = studentSlots.Where(ss => !existedSlots.Any(es => es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId)).ToList();
+                    studentSlots = studentSlots.Where(ss =>
+                            !existedSlots.Any(es =>
+                                es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId))
+                        .ToList();
 
                     foreach (var slot in existedSlotStudents)
                     {
@@ -276,6 +318,7 @@ namespace PhotonPiano.BusinessLogic.Services
                             CriteriaId = c.Id
                         }));
                     }
+
                     existedSlotStudents.AddRange(existedSlots);
                     receiverIds.Add(student.AccountFirebaseId);
                 }
@@ -297,12 +340,15 @@ namespace PhotonPiano.BusinessLogic.Services
                 {
                     classReceiverIds.Add(classInfo.InstructorId);
                 }
+
                 classReceiverIds = classInfo.StudentClasses.Select(sc => sc.StudentFirebaseId).ToList();
 
-                await _serviceFactory.NotificationService.SendNotificationToManyAsync(students.Select(s => s.AccountFirebaseId).ToList(), "Thông tin lớp mới",
-                        $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
+                await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+                    students.Select(s => s.AccountFirebaseId).ToList(), "Thông tin lớp mới",
+                    $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(classReceiverIds,
-                    $"{students.Count} học sinh mới đã được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ các bạn ấy hết mình!", "");
+                    $"{students.Count} học sinh mới đã được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ các bạn ấy hết mình!",
+                    "");
             }
 
             return result.Adapt<List<StudentClassModel>>();
@@ -325,7 +371,9 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new NotFoundException("Class not found");
             }
 
-            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleAsync(sc => sc.StudentFirebaseId == studentId && sc.ClassId == classId);
+            var studentClass =
+                await _unitOfWork.StudentClassRepository.FindSingleAsync(sc =>
+                    sc.StudentFirebaseId == studentId && sc.ClassId == classId);
             if (studentClass is null)
             {
                 throw new NotFoundException("Student class not found");
@@ -335,6 +383,7 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Class is finished");
             }
+
             student.StudentStatus = isExpelled ? StudentStatus.DropOut : StudentStatus.WaitingForClass;
             student.CurrentClassId = null;
             //Delete studentClass
@@ -343,12 +392,14 @@ namespace PhotonPiano.BusinessLogic.Services
             studentClass.DeletedAt = DateTime.UtcNow.AddHours(7);
 
             //Delete studentClassScore
-            var studentClassScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == studentClass.Id);
+            var studentClassScores =
+                await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == studentClass.Id);
             foreach (var studentScore in studentClassScores)
             {
                 studentScore.RecordStatus = RecordStatus.IsDeleted;
                 studentScore.DeletedAt = DateTime.UtcNow.AddHours(7);
             }
+
             //Delete studentSlots
             var slotIds = classInfo.Slots.Select(s => s.Id).ToList();
             var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => slotIds.Contains(ss.SlotId));
@@ -380,8 +431,10 @@ namespace PhotonPiano.BusinessLogic.Services
                 {
                     receiverIds.Add(classInfo.InstructorId);
                 }
+
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
-                    $"Học viên {student.FullName ?? student.UserName} đã bị xóa khỏi lớp {classInfo.Name}. Nếu có thắc mắc hoặc cho rằng đây là sự nhầm lẫn, vui lòng gửi đơn khiếu nại hoặc liên hệ trực tiếp bộ phận hỗ trợ!", student.AvatarUrl ?? "");
+                    $"Học viên {student.FullName ?? student.UserName} đã bị xóa khỏi lớp {classInfo.Name}. Nếu có thắc mắc hoặc cho rằng đây là sự nhầm lẫn, vui lòng gửi đơn khiếu nại hoặc liên hệ trực tiếp bộ phận hỗ trợ!",
+                    student.AvatarUrl ?? "");
             }
         }
 
@@ -552,13 +605,30 @@ namespace PhotonPiano.BusinessLogic.Services
                     // Update individual criteria scores
                     await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
                         account.AccountFirebaseId);
+                }
 
-                    // Calculate and update GPA based on weighted scores
-                    await UpdateStudentClassGPA(studentClass.Id,
+                await _unitOfWork.SaveChangesAsync();
+
+                // Then update GPAs after scores are saved
+                for (int row = studentStartRow; row <= rows; row++)
+                {
+                    string studentName = worksheet.Cells[row, 1].Text;
+                    if (string.IsNullOrEmpty(studentName))
+                        continue;
+
+                    var studentClass = classDetails.StudentClasses.FirstOrDefault(sc =>
+                        string.Equals(sc.Student.FullName, studentName, StringComparison.OrdinalIgnoreCase));
+
+                    if (studentClass == null)
+                        continue;
+
+                    // Now calculate and update GPA based on the saved scores
+                    await UpdateStudentClassGpa(studentClass.Id,
                         account.AccountFirebaseId,
                         classDetails.Name);
                 }
 
+                await _unitOfWork.SaveChangesAsync();
                 return true;
             });
         }
@@ -605,11 +675,7 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             Console.WriteLine("Mapping columns to criteria:");
-    
-            // Fix: Change the loop condition to ensure all columns are considered
-            // Original problematic line: for (int col = startCol; col < worksheet.Dimension.Columns - 2; col++)
-    
-            // New implementation that checks all columns from start column to the end
+            
             for (int col = startCol; col <= worksheet.Dimension.Columns; col++)
             {
                 string criteriaName = worksheet.Cells[7, col].Text;
@@ -617,7 +683,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 {
                     // Extract the base criteria name (remove any numbering like " (1)")
                     string baseCriteriaName = Regex.Replace(criteriaName, @"\s*\(\d+\)$", "");
-            
+
                     // Find matching criteria ID
                     var matchingCriteria = classCriteria.FirstOrDefault(c =>
                         string.Equals(c.Name, baseCriteriaName, StringComparison.OrdinalIgnoreCase));
@@ -698,7 +764,7 @@ namespace PhotonPiano.BusinessLogic.Services
             }
         }
 
-        private async Task UpdateStudentClassGPA(Guid studentClassId, string accountFirebaseId, string className)
+        private async Task UpdateStudentClassGpa(Guid studentClassId, string accountFirebaseId, string className)
         {
             var studentClassScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
                 scs => scs.StudentClassId == studentClassId
@@ -737,7 +803,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _serviceFactory.NotificationService.SendNotificationAsync(
                     studentClass.StudentFirebaseId,
                     "Grade Update",
-                    $"Your grades for class {className} have been updated. Your total grade: {gpa}%"
+                    $"Your grades for class {className} have been updated. Your total grade: {gpa}"
                 );
             }
         }
@@ -845,20 +911,20 @@ namespace PhotonPiano.BusinessLogic.Services
         }
 
         // Handle specific requirements for different status transitions
-        private async Task ValidateClassForTransition(Guid? classId)
-        {
-            // Validate class exists and is in appropriate status
-            if (!classId.HasValue)
-            {
-                throw new ArgumentException("Class ID is required when changing status to InClass");
-            }
-
-            var targetClass = await _unitOfWork.ClassRepository.GetByIdAsync(classId.Value);
-            if (targetClass == null || targetClass.Status == ClassStatus.Finished)
-            {
-                throw new InvalidOperationException("Class does not exist or is already finished");
-            }
-        }
+        // private async Task ValidateClassForTransition(Guid? classId)
+        // {
+        //     // Validate class exists and is in appropriate status
+        //     if (!classId.HasValue)
+        //     {
+        //         throw new ArgumentException("Class ID is required when changing status to InClass");
+        //     }
+        //
+        //     var targetClass = await _unitOfWork.ClassRepository.GetByIdAsync(classId.Value);
+        //     if (targetClass == null || targetClass.Status == ClassStatus.Finished)
+        //     {
+        //         throw new InvalidOperationException("Class does not exist or is already finished");
+        //     }
+        // }
 
         //Update a specific score for a specific criteria
         public async Task<bool> UpdateStudentScore(UpdateStudentScoreModel model, AccountModel account)
@@ -913,7 +979,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _unitOfWork.StudentClassScoreRepository.UpdateAsync(score);
             }
 
-            await UpdateStudentClassGPA(model.StudentClassId, account.AccountFirebaseId, classInfo.Name);
+            await UpdateStudentClassGpa(model.StudentClassId, account.AccountFirebaseId, classInfo.Name);
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
@@ -976,9 +1042,10 @@ namespace PhotonPiano.BusinessLogic.Services
                     var now = DateTime.UtcNow.AddHours(7);
                     var newScores = new List<StudentClassScore>();
                     var updatedScores = new List<StudentClassScore>();
-                    foreach (var scoreUpdate in model.Scores) 
+                    foreach (var scoreUpdate in model.Scores)
                     {
-                        if (scoreMap.TryGetValue((scoreUpdate.StudentClassId, scoreUpdate.CriteriaId), out var existingScore))
+                        if (scoreMap.TryGetValue((scoreUpdate.StudentClassId, scoreUpdate.CriteriaId),
+                                out var existingScore))
                         {
                             // Update existing score
                             existingScore.Score = scoreUpdate.Score;
@@ -1002,19 +1069,49 @@ namespace PhotonPiano.BusinessLogic.Services
                     {
                         await _unitOfWork.StudentClassScoreRepository.AddRangeAsync(newScores);
                     }
+
                     if (updatedScores.Any())
                     {
                         await _unitOfWork.StudentClassScoreRepository.UpdateRangeAsync(updatedScores);
                     }
 
-                    // Update GPAs for all affected students
+                    await _unitOfWork.SaveChangesAsync();
+
+                    // Then update GPAs for all affected students
                     foreach (var studentClassId in studentClassIds)
                     {
-                        await UpdateStudentClassGPA(studentClassId, account.AccountFirebaseId, classInfo.Name);
+                        await UpdateStudentClassGpa(studentClassId, account.AccountFirebaseId, classInfo.Name);
                     }
+
+                    // Finally save the GPA updates
+                    await _unitOfWork.SaveChangesAsync();
                     return true;
                 }
             );
+        }
+
+        public async Task<bool> UpdateAttendancePercentageStudentClassStatus(Guid classId,
+            string staffAccountFirebaseId)
+        {
+            var studentClasses = await _unitOfWork.StudentClassRepository
+                .FindAsync(sc => sc.ClassId == classId);
+
+            foreach (var studentClass in studentClasses)
+            {
+                var slotStudents = await _unitOfWork.SlotStudentRepository
+                    .FindAsync(ss => ss.StudentFirebaseId == studentClass.StudentFirebaseId);
+
+                var totalSlots = slotStudents.Count;
+                var attendedSlots = slotStudents.Count(ss => ss.AttendanceStatus == AttendanceStatus.Attended);
+
+                studentClass.AttendancePercentage = (decimal)attendedSlots / totalSlots * 100;
+                studentClass.UpdateById = staffAccountFirebaseId;
+                studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
         }
     }
 }

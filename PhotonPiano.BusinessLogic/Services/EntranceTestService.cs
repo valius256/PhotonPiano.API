@@ -6,11 +6,13 @@ using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.Query;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
+using PhotonPiano.Shared.Enums;
 using PhotonPiano.Shared.Exceptions;
 using PhotonPiano.Shared.Utils;
 
@@ -128,37 +130,135 @@ public class EntranceTestService : IEntranceTestService
         return entranceTest;
     }
 
-    public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel entranceTestStudent,
+    public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel createModel,
         AccountModel currentAccount)
     {
-        var entranceTestModel = entranceTestStudent.Adapt<EntranceTest>();
-        entranceTestModel.CreatedById = currentAccount.AccountFirebaseId;
+        var configs = await _serviceFactory.SystemConfigService.GetConfigs([
+            ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest
+        ]);
+
+        var minConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MinStudentsInTest);
+
+        var maxConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MaxStudentsInTest);
+
+        if (minConfig is not null && !string.IsNullOrEmpty(minConfig.ConfigValue))
+        {
+            int minStudents = Convert.ToInt32(minConfig.ConfigValue);
+
+            if (createModel.StudentIds.Count < minStudents)
+            {
+                throw new BadRequestException($"Test must have at least {minStudents} learners");
+            }
+        }
+
+        if (maxConfig is not null && !string.IsNullOrEmpty(maxConfig.ConfigValue))
+        {
+            int maxStudents = Convert.ToInt32(maxConfig.ConfigValue);
+
+            if (createModel.StudentIds.Count > maxStudents)
+            {
+                throw new BadRequestException($"Test can only have maximum of {maxStudents} learners");
+            }
+        }
+
+        var entranceTestId = Guid.NewGuid();
+        var entranceTestStudents = new List<EntranceTestStudent>();
+
+
+        if (createModel.StudentIds.Count > 0)
+        {
+            var students =
+                await _unitOfWork.AccountRepository.FindAsync(a =>
+                    createModel.StudentIds.Contains(a.AccountFirebaseId)
+                    && a.Role == Role.Student
+                    && a.StudentStatus == StudentStatus.WaitingForEntranceTestArrangement, hasTrackings: false);
+
+            if (students.Count != createModel.StudentIds.Count)
+            {
+                throw new BadRequestException("Some students are invalid.");
+            }
+
+            entranceTestStudents = createModel.StudentIds.Select(studentId =>
+                new EntranceTestStudent
+                {
+                    Id = Guid.NewGuid(),
+                    StudentFirebaseId = studentId,
+                    EntranceTestId = entranceTestId,
+                    CreatedAt = DateTime.UtcNow.AddHours(7),
+                    CreatedById = currentAccount.AccountFirebaseId,
+                }).ToList();
+        }
+
+        var entranceTest = createModel.Adapt<EntranceTest>();
+        entranceTest.Id = entranceTestId;
+        entranceTest.CreatedById = currentAccount.AccountFirebaseId;
 
         // check room is exist 
-        var roomDetailModel = await _serviceFactory.RoomService.GetRoomDetailById(entranceTestModel.RoomId);
-        // check Instructor is Exist in db
-        var instructorDetailModel =
-            await _serviceFactory.AccountService.GetAccountById(entranceTestModel.InstructorId!);
-        if (instructorDetailModel.Role != Role.Instructor)
-            throw new BadRequestException("This is not Instructor, please try again");
+        var roomDetailModel = await _serviceFactory.RoomService.GetRoomDetailById(entranceTest.RoomId);
 
-        EntranceTest? createdEntranceTest = null;
-        entranceTestModel.RoomName = roomDetailModel.Name;
-        entranceTestModel.InstructorName = instructorDetailModel.UserName;
-        entranceTestModel.RoomCapacity = roomDetailModel.Capacity;
+        // check Instructor is Exist in db
+        var instructor =
+            await _serviceFactory.AccountService.GetAccountById(entranceTest.InstructorId!);
+
+        if (instructor.Role != Role.Instructor)
+        {
+            throw new BadRequestException("This is not Instructor, please try again");
+        }
+
+        if (await _unitOfWork.EntranceTestRepository.AnyAsync(t => t.Date == createModel.Date
+                                                                   && t.RoomId == entranceTest.RoomId
+                                                                   && t.Shift == entranceTest.Shift))
+        {
+            throw new ConflictException("There is already an entrance test with the same date, shift and room.");
+        }
+
+        var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
+
+        foreach (var dayOff in dayOffs)
+        {
+            if (createModel.Date >= DateOnly.FromDateTime(dayOff.StartTime) &&
+                createModel.Date <= DateOnly.FromDateTime(dayOff.EndTime))
+            {
+                throw new BadRequestException(
+                    $"Entrance test date is in the day off range: {dayOff.StartTime:yyyy-MM-dd} and {dayOff.EndTime:yyyy-MM-dd}");
+            }
+        }
+
+        var slots =
+            await _unitOfWork.SlotRepository.FindProjectedAsync<SlotWithClassModel>(
+                s => s.Status != SlotStatus.NotStarted && s.TeacherId == instructor.AccountFirebaseId,
+                hasTrackings: false);
+
+        if (slots.Any(s => s.Date == createModel.Date && s.Shift == createModel.Shift))
+        {
+            throw new BadRequestException($"Instructor {instructor.FullName ?? instructor.Email} is already busy " +
+                                          $"at this time.");
+        }
+
+        entranceTest.RoomName = roomDetailModel.Name;
+        entranceTest.InstructorName = instructor.UserName;
+        entranceTest.RoomCapacity = roomDetailModel.Capacity;
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var createdEntranceTestEntity = await _unitOfWork.EntranceTestRepository.AddAsync(entranceTestModel);
-            createdEntranceTest = createdEntranceTestEntity;
+            await _unitOfWork.EntranceTestRepository.AddAsync(entranceTest);
+
+            if (createModel.StudentIds.Count > 0 && entranceTestStudents.Count > 0)
+            {
+                await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(entranceTestStudents);
+
+                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
+                    a => createModel.StudentIds.Contains(a.AccountFirebaseId),
+                    setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
+            }
         });
 
         await InvalidateEntranceTestCache();
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{createdEntranceTest!.Id}",
-            createdEntranceTest.Adapt<EntranceTestDetailModel>(),
+        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{entranceTest!.Id}",
+            entranceTest.Adapt<EntranceTestDetailModel>(),
             TimeSpan.FromHours(5));
 
-        return await GetEntranceTestDetailById(createdEntranceTest.Id, currentAccount);
+        return await GetEntranceTestDetailById(entranceTest.Id, currentAccount);
     }
 
     public async Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default)
@@ -176,22 +276,67 @@ public class EntranceTestService : IEntranceTestService
             TimeSpan.FromHours(5));
     }
 
-    public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel entranceTestStudentModel,
+    public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel updateModel,
         string? currentUserFirebaseId = default)
     {
-        var entranceTestEntity = await _unitOfWork.EntranceTestRepository.FindSingleAsync(q => q.Id == id);
+        var entranceTest = await _unitOfWork.EntranceTestRepository.FindSingleAsync(q => q.Id == id);
 
-        if (entranceTestEntity is null)
+        if (entranceTest is null)
         {
             throw new NotFoundException("This EntranceTest not found.");
         }
 
-        entranceTestStudentModel.Adapt(entranceTestEntity);
+        updateModel.Adapt(entranceTest);
 
-        if (entranceTestStudentModel.RoomId.HasValue)
+        if (updateModel.Date.HasValue || updateModel.RoomId.HasValue || updateModel.Shift.HasValue)
+        {
+            if (await _unitOfWork.EntranceTestRepository.AnyAsync(t => t.Date == updateModel.Date
+                                                                       && t.RoomId == updateModel.RoomId
+                                                                       && t.Shift == updateModel.Shift))
+            {
+                throw new ConflictException("There is already an entrance test with the same date, shift and room.");
+            }
+
+            var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
+
+            foreach (var dayOff in dayOffs)
+            {
+                if (updateModel.Date >= DateOnly.FromDateTime(dayOff.StartTime) &&
+                    updateModel.Date <= DateOnly.FromDateTime(dayOff.EndTime))
+                {
+                    throw new BadRequestException(
+                        $"Entrance test date is in the day off range: {dayOff.StartTime:yyyy-MM-dd} and {dayOff.EndTime:yyyy-MM-dd}");
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(updateModel.InstructorId))
+        {
+            // check Instructor is Exist in db
+            var instructor =
+                await _serviceFactory.AccountService.GetAccountById(updateModel.InstructorId!);
+
+            if (instructor.Role != Role.Instructor)
+            {
+                throw new BadRequestException("This is not Instructor, please try again");
+            }
+
+            var slots =
+                await _unitOfWork.SlotRepository.FindProjectedAsync<SlotWithClassModel>(
+                    s => s.Status != SlotStatus.NotStarted && s.TeacherId == instructor.AccountFirebaseId,
+                    hasTrackings: false);
+
+            if (slots.Any(s => s.Date == entranceTest.Date && s.Shift == entranceTest.Shift))
+            {
+                throw new BadRequestException($"Instructor {instructor.FullName ?? instructor.Email} is already busy " +
+                                              $"at this time.");
+            }
+        }
+
+        if (updateModel.RoomId.HasValue)
         {
             var room = await _unitOfWork.RoomRepository.FindSingleAsync(
-                r => r.Id == entranceTestStudentModel.RoomId.Value,
+                r => r.Id == updateModel.RoomId.Value,
                 hasTrackings: false);
 
             if (room is null)
@@ -199,10 +344,10 @@ public class EntranceTestService : IEntranceTestService
                 throw new NotFoundException("Room not found.");
             }
 
-            entranceTestEntity.RoomName = room.Name;
+            entranceTest.RoomName = room.Name;
         }
 
-        if (entranceTestStudentModel.IsAnnouncedScore.HasValue)
+        if (updateModel.IsAnnouncedScore.HasValue)
         {
             bool isFullScoreUpdated = true;
             var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository
@@ -224,23 +369,29 @@ public class EntranceTestService : IEntranceTestService
                 throw new BadRequestException("Can't publish the score of this entrance test");
             }
 
-            if (entranceTestStudentModel.IsAnnouncedScore.Value)
+            if (updateModel.IsAnnouncedScore.Value)
             {
                 var studentIds = entranceTestStudents.Select(x => x.StudentFirebaseId);
+
+                await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(ets => ets.EntranceTestId == id,
+                    setter => setter.SetProperty(x => x.IsScoreAnnounced,
+                        updateModel.IsAnnouncedScore.Value));
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
                     setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
 
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
-                    "Điểm thi đầu vào của bạn đã được công bố!", "");
+                    "Your entrance test results have been published!", "");
             }
         }
 
-        entranceTestEntity.UpdateById = currentUserFirebaseId;
-        entranceTestEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
+        entranceTest.Name = GetEntranceTestName(entranceTest);
+
+        entranceTest.UpdateById = currentUserFirebaseId;
+        entranceTest.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.SaveChangesAsync();
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTestEntity,
+        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTest,
             TimeSpan.FromHours(5));
         await InvalidateEntranceTestCache(id);
     }
@@ -270,6 +421,92 @@ public class EntranceTestService : IEntranceTestService
         return pagedResult;
     }
 
+    public async Task AddStudentsToEntranceTest(Guid testId, AddStudentsToEntranceTestModel model,
+        AccountModel currentAccount)
+    {
+        var entranceTest = await _unitOfWork.EntranceTestRepository.FindSingleAsync(e => e.Id == testId);
+
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("Entrance test not found.");
+        }
+
+        var students =
+            await _unitOfWork.AccountRepository.FindAsync(s =>
+                model.StudentIds.Contains(s.AccountFirebaseId) && s.Role == Role.Student
+                                                               && s.StudentStatus == StudentStatus
+                                                                   .WaitingForEntranceTestArrangement);
+        if (students.Count != model.StudentIds.Count)
+        {
+            throw new BadRequestException("Some of the students are not the same.");
+        }
+
+        var newEntranceTestStudents = students.Select(s => new EntranceTestStudent
+        {
+            Id = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow.AddHours(7),
+            CreatedById = currentAccount.AccountFirebaseId,
+            IsScoreAnnounced = entranceTest.IsAnnouncedScore,
+            StudentFirebaseId = s.AccountFirebaseId,
+            EntranceTestId = testId
+        });
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => model.StudentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.AttemptingEntranceTest));
+            await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(newEntranceTestStudents);
+        });
+    }
+
+    public async Task RemoveStudentsFromTest(Guid testId, AccountModel currentAccount, params List<string> studentIds)
+    {
+        var entranceTestStudents =
+            await _unitOfWork.EntranceTestStudentRepository.FindAsync(ets => ets.EntranceTestId == testId);
+
+        if (entranceTestStudents.Count == 0)
+        {
+            throw new BadRequestException("Invalid entrance test");
+        }
+
+        var minStudentsConfig =
+            await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == ConfigNames.MinStudentsInTest);
+
+        if (minStudentsConfig is not null)
+        {
+            var minStudents = !string.IsNullOrEmpty(minStudentsConfig.ConfigValue)
+                ? Convert.ToInt32(minStudentsConfig.ConfigValue)
+                : 1;
+
+            if (entranceTestStudents.Count - studentIds.Count < minStudents)
+            {
+                throw new BadRequestException($"Entrance test must have at least {minStudents} learners");
+            }
+        }
+
+        var studentIdsInTest = entranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+
+        foreach (var studentId in studentIds)
+        {
+            if (!studentIdsInTest.Contains(studentId))
+            {
+                throw new BadRequestException("Invalid student");
+            }
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(ets => ets.EntranceTestId == testId
+                    && studentIds.Contains(ets.StudentFirebaseId),
+                setter => setter.SetProperty(x => x.RecordStatus, RecordStatus.IsDeleted)
+                    .SetProperty(x => x.DeletedAt, DateTime.UtcNow.AddHours(7))
+                    .SetProperty(x => x.DeletedById, currentAccount.AccountFirebaseId));
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+        });
+    }
+
     public async Task<EntranceTestStudentDetail> GetEntranceTestStudentDetail(Guid entranceTestId, string studentId,
         AccountModel currentAccount)
     {
@@ -277,13 +514,53 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.EntranceTestStudentRepository.FindFirstProjectedAsync<EntranceTestStudentDetail>(
                 ets => ets.EntranceTestId == entranceTestId && ets.StudentFirebaseId == studentId);
 
-        if (entranceTestStudent is null) throw new NotFoundException("Entrance test student not found");
+        if (entranceTestStudent is null)
+        {
+            throw new NotFoundException("Entrance test student not found or results has not been published.");
+        }
+
+        if (entranceTestStudent.EntranceTest?.IsAnnouncedScore == false)
+        {
+            entranceTestStudent.EntranceTestResults = [];
+        }
 
         if (currentAccount.Role == Role.Student &&
             entranceTestStudent.StudentFirebaseId != currentAccount.AccountFirebaseId)
             throw new ForbiddenMethodException("You are not allowed to access this resource.");
 
         return entranceTestStudent;
+    }
+
+    public async Task RemoveStudentFromTest(Guid testId, string studentId, AccountModel currentAccount)
+    {
+        var entranceTestStudent =
+            await _unitOfWork.EntranceTestStudentRepository.FindFirstAsync(
+                ets => ets.EntranceTestId == testId && ets.StudentFirebaseId == studentId);
+
+        if (entranceTestStudent is null)
+        {
+            throw new NotFoundException("Entrance test student not found or results has not been published.");
+        }
+
+        var entranceTest =
+            await _unitOfWork.EntranceTestRepository.FindSingleProjectedAsync<EntranceTestWithStudentsModel>(
+                e => e.Id == testId,
+                hasTrackings: false);
+
+        if (entranceTest?.EntranceTestStudents.Count <= 1)
+        {
+            throw new BadRequestException("Only 1 student is in the entrance test.");
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            entranceTestStudent.RecordStatus = RecordStatus.IsDeleted;
+            entranceTestStudent.DeletedAt = DateTime.UtcNow.AddHours(7);
+            entranceTestStudent.DeletedById = currentAccount.AccountFirebaseId;
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
+                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+        });
     }
 
     private async Task InvalidateEntranceTestCache(Guid? id = null)
@@ -301,7 +578,7 @@ public class EntranceTestService : IEntranceTestService
     public async Task<string> EnrollEntranceTest(AccountModel currentAccount, string returnUrl, string ipAddress,
         string apiBaseUrl)
     {
-        var entranceTestConfigs = await _serviceFactory.SystemConfigService.GetAllEntranceTestConfigs();
+        var entranceTestConfigs = await _serviceFactory.SystemConfigService.GetEntranceTestConfigs();
 
         var allowRegisterConfig =
             entranceTestConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.AllowEntranceTestRegistering);
@@ -323,15 +600,20 @@ public class EntranceTestService : IEntranceTestService
                 "Student is must be in DropOut or Unregistered in order to be accepted to enroll in entrance test.");
         }
 
+        var feeConfig =
+            await _unitOfWork.SystemConfigRepository.FindSingleAsync(s => s.ConfigName == ConfigNames.TestFee);
+
         var transactionId = Guid.NewGuid();
 
         var transaction = new Transaction
         {
             Id = transactionId,
             TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.EntranceTestFee,
-                DateTime.UtcNow, transactionId),
-            Amount = 100_000,
-            CreatedAt = DateTime.UtcNow,
+                DateTime.UtcNow.AddHours(7), transactionId),
+            Amount = feeConfig != null && !string.IsNullOrEmpty(feeConfig.ConfigValue)
+                ? Convert.ToInt32(feeConfig.ConfigValue)
+                : 100_000,
+            CreatedAt = DateTime.UtcNow.AddHours(7),
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.EntranceTestFee,
             PaymentStatus = PaymentStatus.Pending,
@@ -369,7 +651,8 @@ public class EntranceTestService : IEntranceTestService
         transaction.PaymentStatus =
             callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
         transaction.TransactionCode = callbackModel.VnpTransactionNo;
-        transaction.UpdatedAt = DateTime.UtcNow;
+        transaction.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
         switch (transaction.PaymentStatus)
         {
             case PaymentStatus.Succeed:
@@ -392,7 +675,7 @@ public class EntranceTestService : IEntranceTestService
                     account.UpdatedAt = DateTime.UtcNow;
                     await _unitOfWork.SaveChangesAsync();
                     await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
-                        $"Học viên {account.FullName} vừa đăng ký thi đầu vào", "");
+                        $"Learner {account.FullName} has just registered for entrance test", "");
                 });
 
 
@@ -595,9 +878,16 @@ public class EntranceTestService : IEntranceTestService
 
         var arrangedStudentIds = students.Select(s => s.AccountFirebaseId);
 
+        List<Task> notiTasks = [];
+
         foreach (var test in entranceTests)
         {
             test.Name = GetEntranceTestName(test);
+
+            var studentIdsToPushNotification = test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+
+            notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(studentIdsToPushNotification,
+                $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -607,7 +897,25 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
+            
+            await Task.WhenAll(notiTasks);
         });
+    }
+
+    private static TimeOnly GetShiftStartTime(Shift shift)
+    {
+        return shift switch
+        {
+            Shift.Shift1_7h_8h30 => new TimeOnly(7, 0),
+            Shift.Shift2_8h45_10h15 => new TimeOnly(8, 45),
+            Shift.Shift3_10h45_12h => new TimeOnly(10, 45),
+            Shift.Shift4_12h30_14h00 => new TimeOnly(12, 30),
+            Shift.Shift5_14h15_15h45 => new TimeOnly(14, 15),
+            Shift.Shift6_16h00_17h30 => new TimeOnly(16, 0),
+            Shift.Shift7_18h_19h30 => new TimeOnly(18, 0),
+            Shift.Shift8_19h45_21h15 => new TimeOnly(19, 45),
+            _ => throw new ArgumentOutOfRangeException(nameof(shift), shift, null)
+        };
     }
 
     private static TimeOnly GetShiftEndTime(Shift shift)
@@ -644,6 +952,40 @@ public class EntranceTestService : IEntranceTestService
         }
 
         return false;
+    }
+
+    public static EntranceTestStatus GetEntranceTestStatus(DateOnly testDate, Shift shift)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var now = DateTime.UtcNow.AddHours(7);
+
+        if (today < testDate)
+        {
+            return EntranceTestStatus.NotStarted;
+        }
+
+        if (today > testDate)
+        {
+            return EntranceTestStatus.Ended;
+        }
+
+        var startTime = GetShiftStartTime(shift);
+        var endTime = GetShiftEndTime(shift);
+
+        var shiftStartDateTime = testDate.ToDateTime(startTime);
+        var shiftEndDateTime = testDate.ToDateTime(endTime);
+
+        if (now < shiftStartDateTime)
+        {
+            return EntranceTestStatus.NotStarted;
+        }
+
+        if (now >= shiftStartDateTime && now <= shiftEndDateTime)
+        {
+            return EntranceTestStatus.OnGoing;
+        }
+
+        return EntranceTestStatus.Ended;
     }
 
 
@@ -726,7 +1068,7 @@ public class EntranceTestService : IEntranceTestService
                 entranceTestStudent.EntranceTestResults.Add(resultToAdd);
 
                 practicalScore += result.Score * (criteria.Weight / 100);
-                
+
                 entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
                     Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
             }
@@ -738,6 +1080,28 @@ public class EntranceTestService : IEntranceTestService
         {
             await _unitOfWork.EntranceTestResultRepository.AddRangeAsync(entranceTestResultsToAdd);
         });
+    }
+
+    public async Task<(int theoryPercentage, int practicalPercentage)> GetScorePercentagesAsync()
+    {
+        var configs =
+            await _serviceFactory.SystemConfigService.GetEntranceTestConfigs(
+                ConfigNames.TheoryPercentage, ConfigNames.PracticePercentage
+            );
+
+        var theoryConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.TheoryPercentage);
+
+        var practiceConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.PracticePercentage);
+
+        var theoryPercentage = theoryConfig is not null && !string.IsNullOrEmpty(theoryConfig.ConfigValue)
+            ? Convert.ToInt32(theoryConfig.ConfigValue)
+            : 50;
+
+        var practicalPercentage = practiceConfig is not null && !string.IsNullOrEmpty(practiceConfig.ConfigValue)
+            ? Convert.ToInt32(practiceConfig.ConfigValue)
+            : 50;
+
+        return (theoryPercentage, practicalPercentage);
     }
 
     public async Task UpdateStudentEntranceResults(Guid id, string studentId,
@@ -768,6 +1132,14 @@ public class EntranceTestService : IEntranceTestService
             throw new ForbiddenMethodException("You cannot update the practical score results.");
         }
 
+        if (updateModel.LevelId.HasValue)
+        {
+            if (!await _unitOfWork.LevelRepository.AnyAsync(l => l.Id == updateModel.LevelId.Value))
+            {
+                throw new NotFoundException("Level not found.");
+            }
+        }
+
         var entranceTest =
             await _unitOfWork.EntranceTestRepository.FindSingleAsync(et => et.Id == id,
                 hasTrackings: false);
@@ -781,11 +1153,13 @@ public class EntranceTestService : IEntranceTestService
         {
             throw new ForbiddenMethodException("You cannot update the results.");
         }
-        
+
         if (!HasShiftEnded(entranceTest.Date, entranceTest.Shift))
         {
             throw new BadRequestException("Entrance test has not ended.");
         }
+
+        var (theoryPercentage, practicalPercentage) = await GetScorePercentagesAsync();
 
         List<EntranceTestResult> results = [];
         decimal bandScore = 0;
@@ -813,7 +1187,7 @@ public class EntranceTestService : IEntranceTestService
                 var criteria = criterias.FirstOrDefault(c => c.Id == score.CriteriaId);
                 results.Add(new EntranceTestResult
                 {
-                    Id = Guid.CreateVersion7(),
+                    Id = Guid.NewGuid(),
                     EntranceTestStudentId = entranceTestStudent.Id,
                     CriteriaId = score.CriteriaId,
                     CriteriaName = criteria?.Name,
@@ -830,12 +1204,13 @@ public class EntranceTestService : IEntranceTestService
                 ? Convert.ToDecimal(entranceTestStudent.TheoraticalScore.Value)
                 : decimal.Zero;
 
-            bandScore = (theoryScore + practicalScore) / 2;
+            bandScore = (theoryScore * theoryPercentage / 100 + practicalScore * practicalPercentage / 100);
         }
-
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
+            var oldLevelId = entranceTestStudent.LevelId;
+
             updateModel.Adapt(entranceTestStudent);
 
             var dbResults = await _unitOfWork.EntranceTestResultRepository.FindAsync(
@@ -845,8 +1220,9 @@ public class EntranceTestService : IEntranceTestService
             decimal practicalScore = dbResults.Aggregate(decimal.Zero,
                 (current, result) => current + result.Score!.Value * (result.Weight!.Value / 100));
 
-            if (updateModel.UpdateScoreRequests.Count > 0)
+            if (updateModel.UpdateScoreRequests.Count > 0 && currentAccount.Role == Role.Instructor)
             {
+                entranceTestStudent.InstructorComment = updateModel.InstructorComment;
                 entranceTestStudent.BandScore = bandScore;
                 entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
                     Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
@@ -857,17 +1233,28 @@ public class EntranceTestService : IEntranceTestService
                 await _unitOfWork.EntranceTestResultRepository.AddRangeAsync(results);
             }
 
-            if (updateModel.TheoraticalScore.HasValue)
+            if (updateModel.TheoraticalScore.HasValue && currentAccount.Role == Role.Staff)
             {
+                entranceTestStudent.TheoraticalScore = updateModel.TheoraticalScore;
                 decimal theoryScore = updateModel.TheoraticalScore.HasValue
                     ? Convert.ToDecimal(updateModel.TheoraticalScore.Value)
                     : decimal.Zero;
 
-                bandScore = (theoryScore + practicalScore) / 2;
+                bandScore = (theoryScore * theoryPercentage / 100 + practicalScore * practicalPercentage / 100);
+
+                if (entranceTestStudent.LevelId.HasValue && updateModel.LevelId.HasValue &&
+                    updateModel.LevelId != oldLevelId)
+                {
+                    entranceTestStudent.LevelId = updateModel.LevelId;
+                    entranceTestStudent.LevelAdjustedAt = DateTime.UtcNow.AddHours(7);
+                }
+                else
+                {
+                    entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                        theoryScore, practicalScore);
+                }
 
                 entranceTestStudent.BandScore = bandScore;
-                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
-                    theoryScore, practicalScore);
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
             }

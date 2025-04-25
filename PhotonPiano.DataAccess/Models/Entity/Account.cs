@@ -12,7 +12,11 @@ public class Account : BaseEntity
     
     public string RefreshToken { get; set; } = string.Empty;
 
-    public DateTime RefreshTokenExpiryDate { get; set; } 
+    public DateTime RefreshTokenExpiryDate { get; set; }
+
+    public string? ResetPasswordToken { get; set; }
+
+    public DateTime? ResetPasswordTokenExpiry { get; set; }
 
     public string? UserName { get; set; }
     public string? Phone { get; set; } = string.Empty;
@@ -45,7 +49,8 @@ public class Account : BaseEntity
 
     public virtual Class? CurrentClass { get; set; }
 
-
+    public bool HasUsedTrial { get; set; } // true nếu đã học thử
+    public bool WantToContinue { get; set; } = true;
     // reference 
     // EntranceTest
     public virtual ICollection<EntranceTest> InstructorEntranceTests { get; set; } = new List<EntranceTest>();
@@ -152,6 +157,8 @@ public class Account : BaseEntity
     public virtual ICollection<Slot> UpdatedSlots { get; set; } = new List<Slot>();
 
     public virtual ICollection<Slot> CanceledSlots { get; set; } = new List<Slot>();
+    
+    public virtual ICollection<Slot> Teacherslots { get; set; } = new List<Slot>();
 
     //Free slot
     public virtual ICollection<FreeSlot> FreeSlots { get; set; } = new List<FreeSlot>();

@@ -24,7 +24,8 @@ public class PostgresSqlConfiguration
         var hashedPassword = AuthUtils.HashPassword("123456");
 
         return $"UPDATE public.\"Account\" " +
-               $"SET \"Password\" = '{hashedPassword}'";
+               $"SET \"Password\" = '{hashedPassword}'" +
+               $"WHERE \"Password\" = ''";
     }
 
     public void Configure()
@@ -65,6 +66,15 @@ public class PostgresSqlConfiguration
                     context.Database.ExecuteSqlRaw(GetLevelUpdateQuery(Guid.Parse("55974743-7c93-47ab-877e-eda4cb9f96c5"), 8.0m, 8.0m));
                     
                     context.Database.ExecuteSqlRaw(GetAccountUpdateQuery());
+                    
+                    // update teacherId for each slot
+                    context.Database.ExecuteSqlRaw(
+                        "UPDATE \"Slot\" " +
+                        "SET \"TeacherId\" = c.\"InstructorId\" " +
+                        "FROM \"Class\" c " +
+                        "WHERE \"Slot\".\"ClassId\" = c.\"Id\" " +
+                        "AND \"Slot\".\"TeacherId\" IS NULL"
+                    );
 
                     break; // If connection is successful, break loop
                 }

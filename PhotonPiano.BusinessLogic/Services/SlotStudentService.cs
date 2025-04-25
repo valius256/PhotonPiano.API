@@ -30,18 +30,16 @@ public class SlotStudentService : ISlotStudentService
         if (model.SlotStudentInfoRequests.Count == 0 || model.SlotStudentInfoRequests == null)
             throw new IllegalArgumentException("Student list sending cannot be empty.");
 
-        if (slotEntity == null) throw new IllegalArgumentException("The specified slot does not exist.");
+        if (slotEntity == null) throw new NotFoundException("The specified slot does not exist.");
 
         var shiftStartTime = _serviceFactory.SlotService.GetShiftStartTime(slotEntity.Shift);
-
-        var teacherAccount = await _serviceFactory.AccountService.GetAccountById(teacherId);
 
         var slotDateTime = slotEntity.Date.ToDateTime(shiftStartTime);
         var currentDateTime = DateTime.UtcNow.AddHours(7);
 
         // Validate if the slot has passed 24 hours
-        // if ((currentDateTime - slotDateTime).TotalHours > 24)
-        //     throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
+        if ((currentDateTime - slotDateTime).TotalHours > 24)
+            throw new BadRequestException("Cannot update attendance for a slot that has already passed 24 hours.");
 
 
         foreach (var studentModel in model.SlotStudentInfoRequests)
@@ -76,6 +74,9 @@ public class SlotStudentService : ISlotStudentService
         }
 
         await _unitOfWork.SaveChangesAsync();
+        
+        // removed cache 
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule");
 
         return true;
     }

@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using Mapster;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -11,6 +11,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 using System.Text;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -20,9 +21,7 @@ public class AuthService : IAuthService
 
     private readonly IConfiguration _configuration;
     private readonly IHttpClientFactory _httpClientFactory;
-
     private readonly IServiceFactory _serviceFactory;
-
     private readonly IUnitOfWork _unitOfWork;
 
     public AuthService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, IServiceFactory serviceFactory,
@@ -76,6 +75,8 @@ public class AuthService : IAuthService
 
             account.RefreshToken = refreshToken;
             account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(7);
+
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return new AuthModel
@@ -160,29 +161,31 @@ public class AuthService : IAuthService
 
     public async Task SendPasswordResetEmail(string email)
     {
-        using var client = _httpClientFactory.CreateClient();
-
-        var url =
-            $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_configuration["Firebase:Auth:ApiKey"]}";
-
-        var jsonRequest = JsonConvert.SerializeObject(new
+        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.Email == email);
+        if (account is null)
         {
-            requestType = "PASSWORD_RESET",
-            email
-        });
-
-        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-        var response = await client.PostAsync(url, content);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-
-            var responseObject = JsonConvert.DeserializeObject<FirebaseErrorResponseModel>(jsonResponse)!;
-
-            throw new CustomException(responseObject.Message, responseObject.Code);
+            throw new NotFoundException("Account not found");
         }
+        var resetUrl = _configuration["PasswordResetBaseUrl"];
+        if (string.IsNullOrWhiteSpace(resetUrl))
+        {
+            throw new Exception("Reset Url not found!");
+        }
+
+        account.ResetPasswordToken = AuthUtils.GenerateSecureToken();
+        account.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(7).AddHours(1);
+        await _unitOfWork.AccountRepository.UpdateAsync(account);
+        await _unitOfWork.SaveChangesAsync();
+        
+        var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "resetPassswordToken", $"{account.ResetPasswordToken}" },
+            { "email", $"{account.Email}" },
+            { "url", $"{resetUrl}" },
+            { "Subject", $"[PhotonPiano] Yêu cầu đặt lại mật khẩu" },
+        };
+        await _serviceFactory.EmailService.SendAsync("ResetPassword", [email], [], emailParam);
+
     }
 
     public async Task<OAuthCredentialsModel> HandleGoogleAuthCallback(string code, string redirectUrl)
@@ -323,5 +326,24 @@ public class AuthService : IAuthService
         // Extract the localId field from the response
         userId = responseObject is not null ? responseObject.localId : string.Empty;
         return userId;
+    }
+
+    public async Task ChangePassword(ChangePasswordModel changePasswordModel)
+    {
+        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => 
+            a.ResetPasswordToken == changePasswordModel.ResetPasswordToken && a.Email == changePasswordModel.Email);
+        if (account is null)
+        {
+            throw new ForbiddenMethodException("Invalid token or email");
+        }
+        if (account.ResetPasswordToken == null || account.ResetPasswordTokenExpiry < DateTime.UtcNow.AddHours(7))
+        {
+            throw new BadRequestException("Token expired or does not exist");
+        }
+        account.Password = AuthUtils.HashPassword(changePasswordModel.Password);
+        account.ResetPasswordToken = null;
+        account.ResetPasswordTokenExpiry = null;
+        await _unitOfWork.AccountRepository.UpdateAsync(account);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

@@ -57,13 +57,13 @@ public class NotificationService : INotificationService
         });
     }
 
-    public async Task SendNotificationAsync(string userFirebaseId, string title, string message)
+    public async Task SendNotificationAsync(string userFirebaseId, string title, string message, string thumbnail = "")
     {
         var notification = new Notification
         {
             Id = Guid.NewGuid(),
             Content = $"{title}: {message}",
-            Thumbnail = ""
+            Thumbnail = thumbnail
         };
 
         await _unitOfWork.NotificationRepository.AddAsync(notification);
@@ -82,7 +82,9 @@ public class NotificationService : INotificationService
 
         await _serviceFactory.NotificationServiceHub.SendNotificationAsync(userFirebaseId, "", title, message);
     }
-    public async Task SendNotificationToManyAsync(List<string> userFirebaseIds, string message, string thumbnail)
+
+    public async Task SendNotificationToManyAsync(List<string> userFirebaseIds, string message, string thumbnail,
+        bool requiresSavingChanges = true)
     {
         var notification = new Notification
         {
@@ -103,24 +105,29 @@ public class NotificationService : INotificationService
 
 
         await _unitOfWork.AccountNotificationRepository.AddRangeAsync(accountNotifications);
-        await _unitOfWork.SaveChangesAsync();
+        if (requiresSavingChanges)
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
 
         foreach (var accountNotification in accountNotifications)
         {
-            await _serviceFactory.NotificationServiceHub.SendNotificationAsync(accountNotification.AccountFirebaseId, "", "", message);
+            await _serviceFactory.NotificationServiceHub.SendNotificationAsync(accountNotification.AccountFirebaseId,
+                "", "", message);
         }
     }
 
-    public async Task CronJobAutoRemovedOutDateNotifications()
+    public async Task CronAutoRemovedOutDateNotifications()
     {
         // && x.CreatedAt.Date < DateTime.Now.Date.AddDays(15)
 
-        var notificationRemovedList = await _unitOfWork.AccountNotificationRepository.FindAsync(x => x.IsViewed == true);
+        var notificationRemovedList =
+            await _unitOfWork.AccountNotificationRepository.FindAsync(x => x.IsViewed == true);
 
         var notificationIds = notificationRemovedList.Select(x => x.NotificationId).ToList();
 
         await _unitOfWork.AccountNotificationRepository
-           .ExecuteDeleteAsync(x => notificationIds.Contains(x.NotificationId));
+            .ExecuteDeleteAsync(x => notificationIds.Contains(x.NotificationId));
 
         await _unitOfWork.NotificationRepository.ExecuteDeleteAsync(x => notificationIds.Contains(x.Id));
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace PhotonPiano.DataAccess.Abstractions;
 
@@ -56,6 +57,8 @@ public interface IUnitOfWork
     IFreeSlotRepository FreeSlotRepository { get; }
     
     IArticleRepository ArticleRepository { get; }
+    
+    DatabaseFacade Database { get; }
 
     Task<int> SaveChangesAsync();
 

@@ -8,6 +8,8 @@ public class StudentClass : BaseEntityWithId
     public string? UpdateById { get; set; }
     public string? DeletedById { get; set; }
     public string? CertificateUrl { get; set; }
+    public decimal? AttendancePercentage { get; set; }
+    
     public bool IsPassed { get; set; }
     public decimal? GPA { get; set; }
     public string? InstructorComment { get; set; }

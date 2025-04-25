@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace PhotonPiano.PubSub.Pubsub;
 
 public class PubSubMessage

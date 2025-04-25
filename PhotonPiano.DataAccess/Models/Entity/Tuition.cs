@@ -9,7 +9,9 @@ public class Tuition : BaseEntityWithId
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public PaymentStatus PaymentStatus { get; set; }
+    public bool IsOverdueProcessed { get; set; } = false;
 
+    public DateTime Deadline { get; set; }
 
     // reference
     public virtual StudentClass StudentClass { get; set; } = default!;

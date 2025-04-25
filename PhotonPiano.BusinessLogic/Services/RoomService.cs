@@ -8,6 +8,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
+using PhotonPiano.Shared.Enums;
 using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -79,6 +80,7 @@ public class RoomService : IRoomService
         return [.. availableRooms
             .DistinctBy(r => r.Id) // LINQ to remove duplicates
             .Select(r => r.Adapt<RoomModel>())];
+        
     }
 
 
@@ -98,7 +100,20 @@ public class RoomService : IRoomService
     {
         var roomMappedEntity = roomModel.Adapt<Room>();
         roomMappedEntity.CreatedById = currentUserFirebaseId!;
+        
+        if(roomMappedEntity.Capacity <= 0)
+        {
+            throw new BadRequestException("Room capacity must be greater than 0.");
+        }
+        
+        var roomWithSameName = await _unitOfWork.RoomRepository
+            .FindSingleAsync(r => r.Name == roomMappedEntity.Name);
 
+        if (roomWithSameName is not null)
+        {
+            throw new BadRequestException("Room with same name already exists.");
+        }
+        
         var createdRoomId = Guid.Empty;
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -112,12 +127,23 @@ public class RoomService : IRoomService
 
     public async Task DeleteRoom(Guid id, string? currentUserFirebaseId = default)
     {
-        var entranceTestEntity = await _unitOfWork.RoomRepository.FindSingleAsync(q => q.Id == id);
-        if (entranceTestEntity is null) throw new NotFoundException($"This Room with ID {id} not found.");
-
-        entranceTestEntity.DeletedById = currentUserFirebaseId;
-        entranceTestEntity.DeletedAt = DateTime.UtcNow.AddHours(7);
-        entranceTestEntity.RecordStatus = RecordStatus.IsDeleted;
+        var roomEntity = await _unitOfWork.RoomRepository.FindSingleAsync(q => q.Id == id);
+        if (roomEntity is null) throw new NotFoundException($"This Room with ID {id} not found.");
+    
+        // Check if room has any slots using it
+        var hasSlots = await _unitOfWork.SlotRepository.Entities
+            .AnyAsync(s => s.RoomId == id);
+        
+        // Check if room has any entrance tests using it
+        var hasEntranceTests = await _unitOfWork.EntranceTestRepository.Entities
+            .AnyAsync(et => et.RoomId == id);
+    
+        if (hasSlots || hasEntranceTests)
+            throw new InvalidOperationException("Cannot delete room that is being used by learning slots or entrance tests.");
+    
+        roomEntity.DeletedById = currentUserFirebaseId;
+        roomEntity.DeletedAt = DateTime.UtcNow.AddHours(7);
+        roomEntity.RecordStatus = RecordStatus.IsDeleted;
 
         await _unitOfWork.SaveChangesAsync();
     }
@@ -127,6 +153,19 @@ public class RoomService : IRoomService
         var roomEntity = await _unitOfWork.RoomRepository.FindSingleAsync(q => q.Id == id);
 
         if (roomEntity is null) throw new NotFoundException($"This Room with ID {id} not found.");
+        
+        if(roomEntity.Capacity <= 0)
+        {
+            throw new BadRequestException("Room capacity must be greater than 0.");
+        }
+        
+        var roomWithSameName = await _unitOfWork.RoomRepository
+            .FindSingleAsync(r => r.Name == roomEntity.Name);
+
+        if (roomWithSameName is not null)
+        {
+            throw new BadRequestException("Room with same name already exists.");
+        }
 
         roomModel.Adapt(roomEntity);
 

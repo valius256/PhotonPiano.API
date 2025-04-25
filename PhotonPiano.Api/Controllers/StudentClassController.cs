@@ -4,7 +4,6 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
-using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
@@ -93,5 +92,14 @@ public class StudentClassController : BaseController
     {
         var classScores = await _serviceFactory.StudentClassScoreService.GetClassScoresWithCriteria(classId);
         return Ok(classScores);
+    }
+
+    [HttpGet("{studentClassId}/detailed-scores")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor, Role.Student])]
+    [EndpointDescription("Get detailed scores for a specific student in a class")]
+    public async Task<IActionResult> GetStudentDetailedScores([FromRoute] Guid studentClassId)
+    {
+        var detailedScores = await _serviceFactory.StudentClassScoreService.GetStudentDetailedScores(studentClassId);
+        return Ok(detailedScores);
     }
 }

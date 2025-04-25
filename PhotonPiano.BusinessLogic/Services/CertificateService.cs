@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
-using DinkToPdf;
 using DinkToPdf.Contracts;
+using Ghostscript.NET.Rasterizer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,16 +11,22 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
-using PdfiumViewer;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Certificate;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
-using ColorMode = DinkToPdf.ColorMode;
-using PaperKind = DinkToPdf.PaperKind;
+using PhotonPiano.Shared.Utils;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
+using static System.Drawing.Imaging.ImageCodecInfo;
+using Color = System.Drawing.Color;
+using ImageFormat = System.Drawing.Imaging.ImageFormat;
 using RouteData = Microsoft.AspNetCore.Routing.RouteData;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -35,9 +41,12 @@ public class CertificateService : ICertificateService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConverter _converter;
 
+    private readonly ILogger<ServiceFactory> _logger;
+    
+
     public CertificateService(IServiceFactory serviceFactory, IUnitOfWork unitOfWork, IRazorViewEngine razorViewEngine,
         IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider,
-        IHttpContextAccessor httpContextAccessor, IConverter converter)
+        IHttpContextAccessor httpContextAccessor, IConverter converter, ILogger<ServiceFactory> logger)
     {
         _serviceFactory = serviceFactory;
         _unitOfWork = unitOfWork;
@@ -46,91 +55,67 @@ public class CertificateService : ICertificateService
         _tempDataProvider = tempDataProvider;
         _httpContextAccessor = httpContextAccessor;
         _converter = converter;
+        _logger = logger;
     }
 
     /// Validates if a student is eligible for a certificate
     private async Task<bool> IsEligibleForCertificateAsync(Guid? studentClassId)
     {
-        var studentClass = await _unitOfWork.StudentClassRepository.Entities
-            .Include(sc => sc.Student)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Level)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Instructor)
-            .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
-        if (studentClass == null)
+        try
         {
-            throw new NotFoundException($"Student class with ID {studentClassId} not found");
-        }
+            var studentClass = await _unitOfWork.StudentClassRepository.Entities
+                .Include(sc => sc.Student)
+                .Include(sc => sc.Class)
+                .ThenInclude(c => c.Level)
+                .Include(sc => sc.Class)
+                .ThenInclude(c => c.Instructor)
+                .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
 
-        if (studentClass.Class.Status != ClassStatus.Finished)
+            if (studentClass == null)
+            {
+                //throw new NotFoundException($"Student class with ID {studentClassId} not found");
+                return false;
+            }
+
+            if (studentClass.Class.Status != ClassStatus.Finished)
+            {
+                return false;
+            }
+
+            if (!studentClass.IsPassed)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex) when (ex is not NotFoundException)
         {
-            return false;
+            // Log the error but don't throw - this helps with debugging
+            Console.WriteLine(
+                $"Error checking certificate eligibility for student class {studentClassId}: {ex.Message}");
+            throw;
         }
-
-        if (!studentClass.IsPassed)
-        {
-            return false;
-        }
-
-        var minimumGpa = studentClass.Class.Level.MinimumTheoreticalScore;
-        if (studentClass.GPA < minimumGpa)
-        {
-            return false;
-        }
-
-        return true;
     }
-
-    public async Task<List<StudentClass>> GetEligibleStudentsWithoutCertificatesAsync(Guid classId)
-    {
-        // Get the class to check if it's finished
-        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
-        if (classInfo == null)
-        {
-            throw new NotFoundException($"Class with ID {classId} not found");
-        }
-
-        // Class must be finished to generate certificates
-        if (classInfo.Status != ClassStatus.Finished)
-        {
-            return new List<StudentClass>();
-        }
-
-        // Get all student classes for this class
-        var studentClasses = await _unitOfWork.StudentClassRepository.Entities
-            .Include(sc => sc.Student)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Level)
-            .Where(sc =>
-                sc.ClassId == classId &&
-                sc.IsPassed &&
-                sc.GPA >= sc.Class.Level.MinimumTheoreticalScore &&
-                string.IsNullOrEmpty(sc.CertificateUrl))
-            .ToListAsync();
-
-        return studentClasses;
-    }
-
 
     //Generate a Certificate for a student class and returns the certificate URL
-    public async Task<string> GenerateCertificateAsync(Guid studentClassId)
+    public async Task<(string? certificateUrl, Guid studentClassId)> GenerateCertificateAsync(Guid studentClassId)
     {
+        // Get all required services from the new scope
+
         if (!await IsEligibleForCertificateAsync(studentClassId))
         {
-            throw new BadRequestException("Student is not eligible for a certificate");
+            return (null, studentClassId);
         }
 
-        var studentClass = await _unitOfWork.StudentClassRepository.Entities
-            .Include(sc => sc.Student)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Level)
-            .Include(sc => sc.Class)
-            .ThenInclude(c => c.Instructor)
-            .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
-        if (studentClass == null)
+        var studentClass =
+            await _unitOfWork.StudentClassRepository.FindFirstProjectedAsync<StudentClassDetailModel>(
+                sc => sc.Id == studentClassId
+            );
+
+        if (studentClass is null)
         {
-            throw new NotFoundException($"Student class with ID {studentClassId} not found");
+            return (null, studentClassId);
         }
 
         // Create certificate model
@@ -138,195 +123,290 @@ public class CertificateService : ICertificateService
         {
             StudentName = studentClass.Student.FullName ?? studentClass.Student.UserName ?? "Unknown",
             ClassName = studentClass.Class.Name,
-            LevelName = studentClass.Class.Level.Name,
+            LevelName = studentClass.Class.Level!.Name,
             CompletionDate = DateTime.UtcNow.AddHours(7), // Vietnam time
             GPA = studentClass.GPA ?? 0m, // Correctly handle nullable decimal
             IsPassed = studentClass.IsPassed,
             CertificateId = $"CERT-{DateTime.UtcNow.Year}-{studentClassId.ToString().Substring(0, 8).ToUpper()}",
-            SkillsEarned = studentClass.Class.Level.SkillsEarned, // Direct assignment since it's already List<string>
+            SkillsEarned =
+                studentClass.Class.Level.SkillsEarned, // Direct assignment since it's already List<string>
             InstructorName = studentClass.Class.Instructor?.FullName ??
                              studentClass.Class.Instructor?.UserName ?? "Unknown",
             InstructorSignatureUrl = studentClass.Class.Instructor?.AvatarUrl ?? ""
         };
 
-        // Generate HTML and PDF
-        var certificateHtml = await RenderViewToStringAsync("Certificate", certificateModel);
-        var pdfBytes = GeneratePdfFromHtml(certificateHtml);
+        // Generate HTML
+        var certificateHtml =
+            await _serviceFactory.ViewRenderService.RenderToStringAsync("Certificate", certificateModel);
 
-        // Convert PDF to high-quality image
-        var imageBytes = await ConvertPdfToImageWithPdfiumViewer(pdfBytes);
+        // Generate image directly from HTML (skipping PDF generation)
+        var imageBytes = await GenerateImageFromHtml(certificateHtml);
 
-        // Create temporary files
-        string certificateFileName = $"certificate_{studentClassId}.png";
-        string tempFilePath = Path.Combine(Path.GetTempPath(), certificateFileName);
+        // Create temporary file
+        var certificateFileName = $"certificate_{studentClassId}.png";
+        var tempFilePath = Path.Combine(Path.GetTempPath(), certificateFileName);
 
 
-        // // Create directory if it doesn't exist
-        // if (!Directory.Exists(certificatesDirectory))
-        // {
-        //     Directory.CreateDirectory(certificatesDirectory);
-        // }
-        //     
-        // var certificatePath = Path.Combine(certificatesDirectory, certificateFileName);
-        // await File.WriteAllBytesAsync(certificatePath, pdfBytes);
-        //
-        // // Generate URL
-        // var certificateUrl = $"/certificates/{certificateFileName}";
-        //
-        // // Update student class with certificate URL
-        // studentClass.CertificateUrl = certificateUrl;
-        // await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
-        // await _unitOfWork.SaveChangesAsync();
-        //
-        // return certificateUrl;
-        try
+        await File.WriteAllBytesAsync(tempFilePath, imageBytes);
+
+        // Create FormFile from the temp file
+        await using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
+
+        var formFile = new FormFile(
+            fileStream,
+            0,
+            fileStream.Length,
+            "certificate",
+            certificateFileName)
         {
-            await File.WriteAllBytesAsync(tempFilePath, imageBytes);
+            Headers = new HeaderDictionary(),
+            ContentType = "image/png"
+        };
+        
+        var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
 
-            // Create FormFile from the temp file
-            using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
-            var formFile = new FormFile(
-                fileStream,
-                0,
-                fileStream.Length,
-                "certificate",
-                certificateFileName)
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "image/png"
-            };
-
-            // Upload to Pinata
-            var pinataUrl = await _serviceFactory.PinataService.UploadFile(formFile, certificateFileName);
-
-            // Update student class with Piñata URL
-            studentClass.CertificateUrl = pinataUrl;
-            await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
-            await _unitOfWork.SaveChangesAsync();
-
-            return pinataUrl;
-        }
-        finally
-        {
-            // Clean up temp file
-            if (File.Exists(tempFilePath))
-            {
-                File.Delete(tempFilePath);
-            }
-        }
+        // Console.WriteLine($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
+        
+        _logger.LogCritical($"Generated certificate for student class in code [GenerateCertificateAsync] pathUrl: {pinataUrl}");
+        
+        // Update the same instance of studentClass we already have
+        studentClass.CertificateUrl = pinataUrl;
+        await _unitOfWork.SaveChangesAsync();
+        return (certificateUrl: pinataUrl, studentClassId: studentClassId);
+        
     }
+
 
     //Renders a Razor view to string
-    private async Task<string> RenderViewToStringAsync(string viewName, object model)
-    {
-        var actionContext = new ActionContext(
-            new DefaultHttpContext { RequestServices = _httpContextAccessor.HttpContext.RequestServices },
-            new RouteData(),
-            new ActionDescriptor());
-        using (var sw = new StringWriter())
-        {
-            var viewResult = _razorViewEngine.GetView("~/", $"Views/{viewName}.cshtml", false);
-            if (viewResult.View == null)
-            {
-                throw new InvalidOperationException($"Could not find view '{viewName}'");
-            }
-
-            var viewDictionary =
-                new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
-                {
-                    Model = model
-                };
-            var viewContext = new ViewContext(
-                actionContext,
-                viewResult.View,
-                viewDictionary,
-                new TempDataDictionary(actionContext.HttpContext, _tempDataProvider),
-                sw,
-                new HtmlHelperOptions()
-            );
-            await viewResult.View.RenderAsync(viewContext);
-            return sw.ToString();
-        }
-    }
+    // private async Task<string> RenderViewToStringAsync(string viewName, object model)
+    // {
+    //     var httpContext = _httpContextAccessor.HttpContext ?? 
+    //                       new DefaultHttpContext { RequestServices = _serviceProvider };
+    //     
+    //     var actionContext = new ActionContext(
+    //         httpContext,
+    //         new RouteData(),
+    //         new ActionDescriptor());
+    //     using (var sw = new StringWriter())
+    //     {
+    //         var viewResult = _razorViewEngine.GetView("~/", $"Views/{viewName}.cshtml", false);
+    //         if (viewResult.View == null)
+    //         {
+    //             throw new InvalidOperationException($"Could not find view '{viewName}'");
+    //         }
+    //
+    //         var viewDictionary =
+    //             new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+    //             {
+    //                 Model = model
+    //             };
+    //         var viewContext = new ViewContext(
+    //             actionContext,
+    //             viewResult.View,
+    //             viewDictionary,
+    //             new TempDataDictionary(actionContext.HttpContext, _tempDataProvider),
+    //             sw,
+    //             new HtmlHelperOptions()
+    //         );
+    //         await viewResult.View.RenderAsync(viewContext);
+    //         return sw.ToString();
+    //     }
+    // }
 
     // Converts HTML to PDF
-    private byte[] GeneratePdfFromHtml(string html)
-    {
-        // Existing implementation
-        var globalSettings = new GlobalSettings
-        {
-            ColorMode = ColorMode.Color,
-            Orientation = Orientation.Portrait,
-            PaperSize = PaperKind.A4,
-            Margins = new MarginSettings { Top = 10, Bottom = 10, Left = 10, Right = 10 },
-            DocumentTitle = "Certificate of Completion"
-        };
-        var objectSettings = new ObjectSettings
-        {
-            PagesCount = true,
-            HtmlContent = html,
-            WebSettings = { DefaultEncoding = "utf-8" },
-            HeaderSettings = { FontName = "Arial", FontSize = 9, Right = "Page [page] of [toPage]", Line = false },
-            FooterSettings =
-                { FontName = "Arial", FontSize = 9, Line = false, Center = "Certificate generated by Photon Piano" }
-        };
-
-        var pdf = new HtmlToPdfDocument()
-        {
-            GlobalSettings = globalSettings,
-            Objects = { objectSettings }
-        };
-
-        return _converter.Convert(pdf);
-    }
+    // private async Task<byte[]> GeneratePdfFromHtml(string html)
+    // {
+    //     try
+    //     {
+    //         // Download Chrome browser if needed
+    //         var browserFetcher = new BrowserFetcher();
+    //         await browserFetcher.DownloadAsync();
+    //     
+    //         // Launch browser
+    //         using var browser = await Puppeteer.LaunchAsync(new LaunchOptions 
+    //         { 
+    //             Headless = true,
+    //             Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+    //         });
+    //     
+    //         // Open new page
+    //         using var page = await browser.NewPageAsync();
+    //     
+    //         // Set content - using the correct enum value for current versions
+    //         await page.SetContentAsync(html, new NavigationOptions 
+    //         { 
+    //             WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } 
+    //             // Alternative options: Networkidle0, Networkidle2, Load, DOMContentLoaded
+    //         });
+    //     
+    //         // Generate PDF
+    //         var pdfBytes = await page.PdfDataAsync(new PdfOptions 
+    //         { 
+    //             Format = PaperFormat.A4,
+    //             PrintBackground = true,
+    //             MarginOptions = new MarginOptions
+    //             {
+    //                 Top = "20px",
+    //                 Bottom = "20px",
+    //                 Left = "20px",
+    //                 Right = "20px"
+    //             }
+    //         });
+    //     
+    //         return pdfBytes;
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Error generating PDF: {ex.Message}");
+    //         throw;
+    //     }
+    // }
 
     // Converts a PDF to a high-quality image using PdfiumViewer
-    private async Task<byte[]> ConvertPdfToImageWithPdfiumViewer(byte[] pdfBytes)
+    // private async Task<byte[]> ConvertPdfToImage(byte[] pdfBytes)
+    // {
+    //     try
+    //     {
+    //         // Create a temporary PDF file
+    //         string tempPdfPath = Path.Combine(Path.GetTempPath(), $"temp_pdf_{Guid.NewGuid()}.pdf");
+    //         await File.WriteAllBytesAsync(tempPdfPath, pdfBytes);
+    //     
+    //         // Download Chrome browser if needed (can be moved to app startup)
+    //         var browserFetcher = new BrowserFetcher();
+    //         await browserFetcher.DownloadAsync();
+    //     
+    //         // Launch browser
+    //         using var browser = await Puppeteer.LaunchAsync(new LaunchOptions 
+    //         { 
+    //             Headless = true,
+    //             Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+    //         });
+    //     
+    //         // Open new page
+    //         using var page = await browser.NewPageAsync();
+    //     
+    //         // Navigate to the PDF file using file:// protocol
+    //         await page.GoToAsync($"file://{tempPdfPath}");
+    //     
+    //         // Wait for PDF to render
+    //         await Task.Delay(1000); // Give it a moment to render
+    //     
+    //         // Set viewport size to match PDF dimensions (A4 at 300 DPI)
+    //         await page.SetViewportAsync(new ViewPortOptions
+    //         {
+    //             Width = 2480, // A4 width at 300 DPI (8.27 × 11.69 inches)
+    //             Height = 3508, // A4 height at 300 DPI
+    //             DeviceScaleFactor = 1
+    //         });
+    //     
+    //         // Take a screenshot
+    //         var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
+    //         {
+    //             FullPage = true,
+    //             Type = ScreenshotType.Png,
+    //             Quality = 100
+    //         });
+    //     
+    //         // Clean up temp file
+    //         if (File.Exists(tempPdfPath))
+    //         {
+    //             File.Delete(tempPdfPath);
+    //         }
+    //     
+    //         return screenshotBytes;
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Error converting PDF to image: {ex.Message}");
+    //         throw;
+    //     }
+    // }
+    //
+    // // Helper method to get image encoder
+    // private static ImageCodecInfo GetEncoder(ImageFormat format)
+    // {
+    //     var codecs = GetImageEncoders();
+    //     foreach (var codec in codecs)
+    //     {
+    //         if (codec.FormatID == format.Guid)
+    //         {
+    //             return codec;
+    //         }
+    //     }
+    //
+    //     return null;
+    // }
+
+    private async Task<byte[]> GenerateImageFromHtml(string html)
     {
-        return await Task.Run(() =>
+    try
+    {
+        // Specify Chrome download folder explicitly
+        var browserFetcherOptions = new BrowserFetcherOptions 
+        { 
+            Path = "/tmp/.local-chromium", // Use /tmp for better permissions in Docker
+            Browser = SupportedBrowser.Chromium,
+        };
+        var browserFetcher = new BrowserFetcher(browserFetcherOptions);
+        
+
+        var revisionInfo = await browserFetcher.DownloadAsync();
+        
+        
+        // Launch browser with explicit path
+        await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
         {
-            // Use a high DPI for better quality
-            const float dpi = 300f;
-
-            using var stream = new MemoryStream(pdfBytes);
-            using var pdfDocument = PdfDocument.Load(stream);
-
-            // Get the size of the first page
-            var pageSize = pdfDocument.PageSizes[0];
-
-            // Calculate the image dimensions based on DPI
-            int width = (int)(pageSize.Width / 72.0f * dpi);
-            int height = (int)(pageSize.Height / 72.0f * dpi);
-
-            // Render the first page to an image
-            using var image = pdfDocument.Render(0, width, height, dpi, dpi, PdfRenderFlags.Annotations);
-
-            // Enhance the image quality
-            using var enhancedImage = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-            using var graphics = Graphics.FromImage(enhancedImage);
-
-            // Set high quality rendering
-            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-
-            // Fill with white background
-            graphics.FillRectangle(Brushes.White, 0, 0, width, height);
-
-            // Draw the PDF image
-            graphics.DrawImage(image, 0, 0, width, height);
-
-            // Add a subtle border
-            int borderWidth = 2;
-            graphics.DrawRectangle(new Pen(Color.FromArgb(230, 230, 230), borderWidth),
-                borderWidth / 2, borderWidth / 2, width - borderWidth, height - borderWidth);
-
-            // Convert to PNG
-            using var memoryStream = new MemoryStream();
-            enhancedImage.Save(memoryStream, ImageFormat.Png);
-            return memoryStream.ToArray();
+            Headless = true,
+            ExecutablePath = revisionInfo.GetExecutablePath(),
+            Args = new[] { 
+                "--no-sandbox", 
+                "--disable-setuid-sandbox", 
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-extensions",
+                "--single-process" // Try this if still having issues
+            }
         });
+
+        // Open new page
+        await using var page = await browser.NewPageAsync();
+
+        await page.SetViewportAsync(new ViewPortOptions
+        {
+            Width = 794,
+            Height = 1123,
+            DeviceScaleFactor = 1.5
+        });
+
+        // Set content
+        await page.SetContentAsync(html, new NavigationOptions
+        {
+            WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+        });
+
+        // Take screenshot with high quality
+        var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
+        {
+            FullPage = true,
+            Type = ScreenshotType.Png,
+        });
+
+        return screenshotBytes;
+    }
+    catch (Exception ex)
+    {
+        // Log the full exception details for better debugging
+        _logger.LogError($"Error generating image from HTML: {ex.Message}");
+        _logger.LogError($"Stack trace: {ex.StackTrace}");
+        
+        if (ex.InnerException != null)
+        {
+            _logger.LogError($"Inner exception: {ex.InnerException.Message}");
+            _logger.LogError($"Inner stack trace: {ex.InnerException.StackTrace}");
+        }
+        
+        throw;
+    }
     }
 
     public async Task<List<CertificateInfoModel>> GetStudentCertificatesAsync(AccountModel account)
@@ -363,7 +443,7 @@ public class CertificateService : ICertificateService
         {
             try
             {
-                string certificateUrl = await GenerateCertificateAsync(studentClass.Id);
+                var (certificateUrl, _) = await GenerateCertificateAsync(studentClass.Id);
                 results.Add(studentClass.StudentFirebaseId, certificateUrl);
             }
             catch (Exception ex)
@@ -371,7 +451,6 @@ public class CertificateService : ICertificateService
                 // Log error but continue with other students
                 throw new Exception(ex.Message);
             }
-
         }
 
         return results;
@@ -410,6 +489,167 @@ public class CertificateService : ICertificateService
                              studentClass.Class.Instructor?.UserName ?? "Unknown",
             SkillsEarned = studentClass.Class.Level.SkillsEarned
         };
-
     }
+
+    public async Task AutoGenerateCertificatesAsync(Guid classId)
+    {
+        var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(
+            sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl));
+        
+         foreach (var studentClass in studentClasses)
+         {
+             var (url, _) = await GenerateCertificateAsync(studentClass.Id);
+             
+             Console.WriteLine($"Generated certificate for student class in code [AutoGenerateCertificatesAsync] {studentClass.Id}, url: {url}");
+             
+             
+             studentClass.CertificateUrl = url;
+         }
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task<List<StudentClass>> GetEligibleStudentsWithoutCertificatesAsync(Guid classId)
+    {
+        // Get the class to check if it's finished
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+        if (classInfo == null)
+        {
+            throw new NotFoundException($"Class with ID {classId} not found");
+        }
+
+        // Class must be finished to generate certificates
+        if (classInfo.Status != ClassStatus.Finished)
+        {
+            return new List<StudentClass>();
+        }
+
+        // Get all student classes for this class
+        var studentClasses = await _unitOfWork.StudentClassRepository.Entities
+            .Include(sc => sc.Student)
+            .Include(sc => sc.Class)
+            .ThenInclude(c => c.Level)
+            .Where(sc =>
+                sc.ClassId == classId &&
+                sc.IsPassed &&
+                sc.GPA >= sc.Class.Level.MinimumTheoreticalScore &&
+                string.IsNullOrEmpty(sc.CertificateUrl))
+            .ToListAsync();
+
+        return studentClasses;
+    }
+
+    // public async Task<CertificateEligibilityResultModel> CheckCertificateEligibilityAsync(Guid studentClassId)
+    // {
+    //     try
+    //     {
+    //         var unitOfWork = _unitOfWork;
+    //         var studentClass = await unitOfWork.StudentClassRepository.Entities
+    //             .Include(sc => sc.Student)
+    //             .Include(sc => sc.Class)
+    //             .ThenInclude(c => c.Level)
+    //             .FirstOrDefaultAsync(sc => sc.Id == studentClassId);
+    //         
+    //         if (studentClass == null)
+    //         {
+    //             return new CertificateEligibilityResultModel
+    //             {
+    //                 IsEligible = false,
+    //                 Reason = "Student class not found"
+    //             };
+    //         }
+    //         
+    //         var result = new CertificateEligibilityResultModel();
+    //         
+    //         // 2. Check passing grade
+    //         result.GradePassed = studentClass.IsPassed;
+    //         if (!result.GradePassed)
+    //         {
+    //             result.IsEligible = false;
+    //             result.Reason = "Student did not pass the class";
+    //             return result;
+    //         }
+    //
+    //         // 3. Check attendance
+    //         var systemConfig = await unitOfWork.SystemConfigRepository.FindSingleAsync(
+    //             sc => sc.ConfigName == ConfigNames.AttendanceThreshold);
+    //         
+    //         decimal minAttendancePercentage = 80; // Defaul
+    //         if (systemConfig != null && decimal.TryParse(systemConfig.ConfigValue, out var value))
+    //         {
+    //             minAttendancePercentage = value;
+    //         }
+    //     
+    //         result.AttendancePercentage = studentClass.AttendancePercentage;
+    //         result.AttendanceMinimumRequired = minAttendancePercentage;
+    //         result.AttendanceSufficient = studentClass.AttendancePercentage >= minAttendancePercentage;
+    //         
+    //         if (!result.AttendanceSufficient)
+    //         {
+    //             result.IsEligible = false;
+    //             result.Reason = $"Insufficient attendance: {studentClass.AttendancePercentage}% (minimum required: {minAttendancePercentage}%)";
+    //             return result;
+    //         }
+    //         
+    //         result.IsEligible = true;
+    //         return result;
+    //     }
+    //     
+    //     catch (Exception ex)
+    //     {
+    //         return new CertificateEligibilityResultModel
+    //         {
+    //             IsEligible = false,
+    //             Reason = $"Error checking eligibility: {ex.Message}"
+    //         };
+    //     }
+    // }
+
+    // public async Task CronAutoGenerateCertificatesAsync(Guid classId)
+    // {
+    //     var passedStudents = await _unitOfWork.StudentClassRepository
+    //         .Entities
+    //         .Where(sc => sc.ClassId == classId && sc.IsPassed == true && string.IsNullOrEmpty(sc.CertificateUrl))
+    //         .Select(sc => sc.Id)
+    //         .ToListAsync();
+    //     
+    //     if(!passedStudents.Any())  return;
+    //
+    //     var semaphore = new SemaphoreSlim(5);
+    //     var certificateTasks =  passedStudents.Select(async studentClassId =>
+    //     {
+    //         await semaphore.WaitAsync();
+    //         try
+    //         {
+    //             await _unitOfWork.ExecuteInTransactionAsync(async () =>
+    //             {
+    //                 // Double-check that the certificate is still needed (may have been created by another process)
+    //                 var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+    //                 if (studentClass == null || !string.IsNullOrEmpty(studentClass.CertificateUrl))
+    //                     return;
+    //             
+    //                 // Generate the certificate (this method already creates its own scope internally)
+    //                 var certificateUrl = await GenerateCertificateAsync(studentClassId);
+    //             
+    //                 if (string.IsNullOrEmpty(certificateUrl))
+    //                     return;
+    //             
+    //                 // Update the student class with the certificate URL
+    //                 studentClass.CertificateUrl = certificateUrl;
+    //                 studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+    //                 await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
+    //                 
+    //             });
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             Console.WriteLine($"Error processing certificate for student {studentClassId}: {ex.Message}");
+    //         }
+    //         finally
+    //         {
+    //             semaphore.Release();
+    //         }
+    //     });
+    //     await Task.WhenAll(certificateTasks);
+    // }
 }

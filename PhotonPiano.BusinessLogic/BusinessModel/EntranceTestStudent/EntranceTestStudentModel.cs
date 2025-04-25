@@ -1,6 +1,6 @@
 namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 
-public record EntranceTestStudentModel
+public record EntranceTestStudentModel : BaseModel
 {
     public required Guid Id { get; init; }
     public required string StudentFirebaseId { get; init; }
@@ -10,7 +10,8 @@ public record EntranceTestStudentModel
     public string? FullName { get; init; }
 
     public decimal? BandScore { get; init; }
-
+    
+    public DateTime? LevelAdjustedAt { get; init; }
 
     public double? TheoraticalScore { get; init; }
 

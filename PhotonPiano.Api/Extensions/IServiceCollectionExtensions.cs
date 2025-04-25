@@ -28,8 +28,10 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OfficeOpenXml;
+using PhotonPiano.Api.Requests.DayOff;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.BusinessLogic.BusinessModel.DayOff;
 using PhotonPiano.Shared.Utils;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
 using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
@@ -43,7 +45,7 @@ public static class IServiceCollectionExtensions
     public static IServiceCollection AddApiDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-        
+
         services.AddControllerConfigurations()
             .AddJwtAuthConfigurations(configuration)
             .AddExceptionHandlerConfiguration()
@@ -70,8 +72,8 @@ public static class IServiceCollectionExtensions
         services.AddProblemDetails();
         return services;
     }
-    
-    
+
+
     private static IServiceCollection AddJwtAuthConfigurations(this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -96,15 +98,16 @@ public static class IServiceCollectionExtensions
         });
 
         services.AddAuthorization();
-        
+
         return services;
     }
-    
+
     private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
     {
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
-            .Map(dest => dest.Status, src => src.RecordStatus);
+            .Map(dest => dest.Status, src => src.RecordStatus)
+            .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
 
         TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.Status, src => src.RecordStatus);
@@ -123,7 +126,8 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestDetailResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
-            .Map(dest => dest.Status, src => src.RecordStatus);
+            .Map(dest => dest.Status, src => src.RecordStatus)
+            .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
 
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
@@ -143,6 +147,22 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<FreeSlot, FreeSlotModel>.NewConfig()
             .Map(dest => dest.LevelId, src => src.Account.LevelId);
+
+        TypeAdapterConfig<CreateDayOffRequest, CreateDayOffModel>.NewConfig()
+            .Map(dest => dest.StartTime, src => DateTime.SpecifyKind(src.StartTime, DateTimeKind.Utc))
+            .Map(dest => dest.EndTime, src => DateTime.SpecifyKind(src.EndTime, DateTimeKind.Utc));
+
+        TypeAdapterConfig<UpdateDayOffRequest, UpdateDayOffModel>.NewConfig()
+            .Map(dest => dest.StartTime,
+                src => src.StartTime.HasValue
+                    ? DateTime.SpecifyKind(src.StartTime.Value, DateTimeKind.Utc)
+                    : src.StartTime)
+            .Map(dest => dest.EndTime,
+                src => src.EndTime.HasValue ? 
+                    DateTime.SpecifyKind(src.EndTime.Value, DateTimeKind.Utc) : src.EndTime);
+
+        TypeAdapterConfig<UpdateDayOffModel, DayOff>.NewConfig().IgnoreNullValues(true);
+        
         return services;
     }
 
@@ -176,13 +196,14 @@ public static class IServiceCollectionExtensions
     {
         services.AddCors(options =>
             options.AddPolicy("AllowAll", p => p
-                .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
-                .WithOrigins("http://localhost:5173","https://photon-piano.vercel.app", "https://photon-piano.netlify.app")
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                // .AllowAnyOrigin()
-                .AllowCredentials()
-            // .SetIsOriginAllowed(_ => true)
+                    .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
+                    .WithOrigins("http://localhost:5173", "https://photon-piano.vercel.app",
+                        "https://photon-piano.netlify.app")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    // .AllowAnyOrigin()
+                    .AllowCredentials()
+                // .SetIsOriginAllowed(_ => true)   
             )
         );
         return services;
@@ -251,7 +272,6 @@ public static class IServiceCollectionExtensions
 
     private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
-
         var redisConnectionString = configuration.GetSection("ConnectionStrings")["RedisConnectionStrings"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString!, options =>
@@ -278,61 +298,68 @@ public static class IServiceCollectionExtensions
     }
 
 
-    private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services, IConfiguration configuration)
-{
-    services.AddHangfire((_, config) =>
+    private static IServiceCollection AddHangFireConfigurations(this IServiceCollection services,
+        IConfiguration configuration)
     {
-        config.UsePostgreSqlStorage(options =>
+        services.AddHangfire((_, config) =>
         {
-            options.UseNpgsqlConnection(GetConnectionString(configuration));
+            config.UsePostgreSqlStorage(options =>
+            {
+                options.UseNpgsqlConnection(GetConnectionString(configuration));
+            });
         });
-    });
 
-    var cultureInfo = new CultureInfo("vn-VN");
-    CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-    CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+        var cultureInfo = new CultureInfo("vn-VN");
+        CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+        CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-    services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
-    
-    services.AddHangfireServer((serviceProvider, cf) =>
-    {
-        cf.WorkerCount = 15;
-        cf.TimeZoneResolver = new DefaultTimeZoneResolver();
+        services.AddTransient<IDefaultScheduleJob, DefaultScheduleJob>();
 
-        var recurringJobManager = serviceProvider.GetRequiredService<IRecurringJobManager>();
-        
-
-        using (var scope = serviceProvider.CreateScope())
+        services.AddHangfireServer((serviceProvider, cf) =>
         {
-            var configService = scope.ServiceProvider.GetRequiredService<ISystemConfigService>();
+            cf.WorkerCount = 15;
+            cf.TimeZoneResolver = new DefaultTimeZoneResolver();
 
-            var tuitionReminderDay = configService.GetConfig(ConfigNames.TuitionPaymentReminderDate).Result?.ConfigValue ?? "15";
-            var tuitionOverdueDay = configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
-            
-            recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
-                x => x.CronAutoCreateTuition(),
-                Cron.Monthly);
+            var recurringJobManager = serviceProvider.GetRequiredService<IRecurringJobManager>();
 
-            recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
-                x => x.CronForTuitionReminder(),
-                $"0 0 {tuitionReminderDay} * *");
 
-            recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
-                x => x.CronAutoChangeSlotStatus(),
-                Cron.Hourly());
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var configService = scope.ServiceProvider.GetRequiredService<ISystemConfigService>();
 
-            recurringJobManager.AddOrUpdate<TuitionService>("TuitionOverdue",
-                x => x.CronForTuitionOverdue(),
-                $"0 0 {tuitionOverdueDay} * *");
+                var tuitionReminderDay =
+                    configService.GetConfig(ConfigNames.TuitionPaymentReminderDate).Result?.ConfigValue ?? "15";
+                var tuitionOverdueDay =
+                    configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
 
-            recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
-                x => x.CronJobAutoRemovedOutDateNotifications(),
-                Cron.Hourly(15));
-        }
-    });
+                // recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                //     x => x.CronAutoCreateTuition(),
+                //     Cron.Monthly);
 
-    return services;
-}
+                recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
+                    x => x.CronForTuitionReminder(),
+                    Cron.Daily);
+
+                recurringJobManager.AddOrUpdate<SlotService>("AutoChangedSlotStatus",
+                    x => x.CronAutoChangeSlotStatus(),
+                    Cron.Hourly());
+
+                recurringJobManager.AddOrUpdate<TuitionService>(
+                    "TuitionOverdue",
+                    x => x.CronForTuitionOverdue(),
+                    Cron.Daily // chạy mỗi ngày để kiểm tra những học phí đã quá hạn
+                );
+
+                recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
+                    x => x.CronAutoRemovedOutDateNotifications(),
+                    Cron.Hourly(15));
+
+                
+            }
+        });
+
+        return services;
+    }
 
 
     private static IServiceCollection AddRateLimitedForAllEndpoints(this IServiceCollection services)
@@ -373,7 +400,7 @@ public static class IServiceCollectionExtensions
 
         return services;
     }
-    
+
     private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHealthChecks()

@@ -51,7 +51,7 @@ public class SurveyQuestionsControllerIntegrationTest : BaseIntegrationTest
     public async Task CreateSurveyQuestion_CreateSuccess_ReturnsCreatedStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var request = _fixture.Build<CreateSurveyQuestionRequest>()
@@ -122,7 +122,7 @@ public class SurveyQuestionsControllerIntegrationTest : BaseIntegrationTest
     public async Task GetSurveyQuestionDetails_QuestionNotFound_ReturnsNotFoundStatus()
     {
         //Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var id = Guid.NewGuid();
 
@@ -140,7 +140,7 @@ public class SurveyQuestionsControllerIntegrationTest : BaseIntegrationTest
 
         await CreateSurveyQuestion_CreateSuccess_ReturnsCreatedStatus();
 
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         //Act
@@ -169,7 +169,7 @@ public class SurveyQuestionsControllerIntegrationTest : BaseIntegrationTest
         //Arrange
         await CreateSurveyQuestion_CreateSuccess_ReturnsCreatedStatus();
 
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         //Act
@@ -214,7 +214,7 @@ public class SurveyQuestionsControllerIntegrationTest : BaseIntegrationTest
         string json = JsonConvert.SerializeObject(request);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         //Act
@@ -243,7 +243,7 @@ public class SurveyQuestionsControllerIntegrationTest : BaseIntegrationTest
         //Arrange
         await CreateSurveyQuestion_CreateSuccess_ReturnsCreatedStatus();
 
-        var token = await _client.GetAuthToken("staff123@gmail.com", "Password1@");
+        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         //Act

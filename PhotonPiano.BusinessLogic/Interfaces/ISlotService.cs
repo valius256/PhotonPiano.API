@@ -2,6 +2,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.DataAccess.Models.Enum;
 using System.ComponentModel.DataAnnotations;
+using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.BusinessLogic.Interfaces;
 
@@ -14,7 +15,7 @@ public interface ISlotService
     TimeOnly GetShiftStartTime(Shift shift);
 
 
-    Task<List<SlotSimpleModel>> GetWeeklySchedule(GetSlotModel slotModel, [Required] AccountModel accountModel);
+    Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, [Required] AccountModel accountModel);
 
     Task<List<StudentAttendanceModel>> GetAttendanceStatus(Guid slotId);
 
@@ -26,9 +27,15 @@ public interface ISlotService
 
     Task DeleteSlot(Guid slotId, string accountFirebaseId);
 
-    Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate);
+    Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly startDate, DateOnly endDate);
 
     Task<bool> CancelSlot(CancelSlotModel model, string accountFirebaseId);
 
     Task<SlotDetailModel> PublicNewSlot(PublicNewSlotModel model, string accountFirebaseId);
+    
+    Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToSlot(Guid slotId, string accountFirebaseId);
+    
+    Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string reason ,string staffAccountFirebaseId);
+    
+    Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId);
 }

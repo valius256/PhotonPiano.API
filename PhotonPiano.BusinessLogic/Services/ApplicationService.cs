@@ -46,11 +46,13 @@ public class ApplicationService : IApplicationService
 
         application.CreatedById = currentAccount.AccountFirebaseId;
         application.CreatedByEmail = currentAccount.Email;
-        application.CreatedAt = DateTime.UtcNow;
+        application.CreatedAt = DateTime.UtcNow.AddHours(7); 
         application.Status = ApplicationStatus.Pending;
 
         if (sendModel.File is not null)
+        {
             application.FileUrl = await _serviceFactory.PinataService.UploadFile(sendModel.File);
+        }
 
         await _unitOfWork.ApplicationRepository.AddAsync(application);
         await _unitOfWork.SaveChangesAsync();
@@ -76,7 +78,7 @@ public class ApplicationService : IApplicationService
         }
 
         updateModel.Adapt(application);
-        application.UpdatedAt = DateTime.UtcNow;
+        application.UpdatedAt = DateTime.UtcNow.AddHours(7);
         application.UpdatedById = currentAccount.AccountFirebaseId;
         application.UpdatedByEmail = currentAccount.Email;
 
@@ -84,14 +86,14 @@ public class ApplicationService : IApplicationService
         {
             application.ApprovedById = currentAccount.AccountFirebaseId;
             application.ApprovedByEmail = currentAccount.Email;
-            application.ApprovedAt = DateTime.UtcNow;
+            application.ApprovedAt = DateTime.UtcNow.AddHours(7);
         }
 
         await _unitOfWork.SaveChangesAsync();
 
         //Push noti here
         await _serviceFactory.NotificationService.SendNotificationAsync(application.CreatedById,
-            $"Đơn {application.Id} của bạn vừa được duyệt", "");
+            $"Your application just got approved!", "");
     }
 
     public async Task<ApplicationDetailsModel> SendRefundApplication(SendRefundApplicationModel sendModel,
@@ -112,7 +114,7 @@ public class ApplicationService : IApplicationService
 
         application.CreatedById = currentAccount.AccountFirebaseId;
         application.CreatedByEmail = currentAccount.Email;
-        application.CreatedAt = DateTime.UtcNow;
+        application.CreatedAt = DateTime.UtcNow.AddHours(7);
         application.Status = ApplicationStatus.Pending;
         application.AdditionalData = JsonConvert.SerializeObject(bankInformation);
 
@@ -159,8 +161,8 @@ public class ApplicationService : IApplicationService
         List<Task> pushNotiTasks = staffs.Select(staff =>
             _serviceFactory.NotificationService.SendNotificationAsync(
                 staff.AccountFirebaseId,
-                $"Học viên {currentAccount.FullName} vừa gửi đơn {application.Type}",
-                $"Chi tiết: {application.Reason}"
+                $"Learner {currentAccount.FullName} has just sent {application.Type}",
+                $"Details: {application.Reason}"
             )).ToList();
 
         await Task.WhenAll(pushNotiTasks);

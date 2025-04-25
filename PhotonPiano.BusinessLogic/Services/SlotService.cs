@@ -9,6 +9,9 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
 using System.Linq.Expressions;
+using OfficeOpenXml.Packaging.Ionic.Zip;
+using PhotonPiano.Shared.Enums;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -52,9 +55,23 @@ public class SlotService : ISlotService
             s => s.Id == id,
             false
         );
-
-
+    
         if (result == null) throw new NotFoundException("Slot not found");
+
+        // Get the slot to access its ClassId and Date
+        var slot = await _unitOfWork.SlotRepository.FindSingleAsync(x => x.Id == id);
+    
+        // Get total number of slots for this class
+        var totalSlots = await _unitOfWork.SlotRepository.CountAsync(s => s.ClassId == slot.ClassId);
+    
+        // Calculate the slot number by counting slots up to this date
+        var slotNo = await _unitOfWork.SlotRepository.CountAsync(
+            s => s.ClassId == slot.ClassId && s.Date <= slot.Date
+        );
+
+        // Assign the calculated values
+        result.SlotNo = slotNo;
+        result.SlotTotal = totalSlots;
 
         return result;
     }
@@ -79,48 +96,53 @@ public class SlotService : ISlotService
     }
 
 
-    public async Task<List<SlotSimpleModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
+    public async Task<List<SlotDetailModel>> GetWeeklySchedule(GetSlotModel slotModel, AccountModel accountModel)
     {
-
-        // Tạo danh sách các ClassId cần truy vấn
+        if(slotModel.StartTime > slotModel.EndTime)
+            throw new BadRequestException("Start time must be less than end time");
+    
         List<Guid> classIds = await GetClassIdsForUser(accountModel, slotModel);
+        var result = new List<SlotDetailModel>();
 
-        // Tạo danh sách kết quả
-        var result = new List<SlotSimpleModel>();
-
-        // Duyệt qua từng ClassId để lấy slot
         foreach (var classId in classIds)
         {
             string cacheKey = GenerateCacheKey(classId, slotModel.StartTime, accountModel.Role);
 
-            // Kiểm tra cache
-            var cachedSlots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotSimpleModel>>(cacheKey);
-            if (cachedSlots != null)
+            var slots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotDetailModel>>(cacheKey);
+            if (slots == null)
             {
-                result.AddRange(cachedSlots);
-                continue;
+                slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(
+                    s => s.ClassId == classId &&
+                         s.Date >= slotModel.StartTime &&
+                         s.Date <= slotModel.EndTime
+                );
+
+                // Lấy tổng số slot của lớp
+                var totalSlots = await _unitOfWork.SlotRepository.CountAsync(s => s.ClassId == classId);
+
+                // Cập nhật SlotNo và SlotTotal cho mỗi slot
+                foreach (var slot in slots)
+                {
+                    // Lấy số thứ tự của slot trong lớp
+                    var slotNo = await _unitOfWork.SlotRepository.CountAsync(
+                        s => s.ClassId == classId && s.Date <= slot.Date
+                    );
+                
+                    slot.SlotNo = slotNo;
+                    slot.SlotTotal = totalSlots;
+                }
+
+                await _serviceFactory.RedisCacheService.SaveAsync(
+                    cacheKey,
+                    slots,
+                    TimeSpan.FromMinutes(DefaultCacheDurationMinutes)
+                );
             }
-
-            // Nếu không có trong cache, truy vấn database
-            var slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotSimpleModel>(
-                s => s.ClassId == classId &&
-                     s.Date >= slotModel.StartTime &&
-                     s.Date < slotModel.EndTime
-            );
-
-            // Lưu vào cache
-            await _serviceFactory.RedisCacheService.SaveAsync(
-                cacheKey,
-                slots,
-                TimeSpan.FromMinutes(DefaultCacheDurationMinutes)
-            );
 
             result.AddRange(slots);
         }
 
-        // Lọc thêm nếu có các bộ lọc khác
         result = ApplyAdditionalFilters(result, slotModel);
-
         return result;
     }
 
@@ -147,7 +169,7 @@ public class SlotService : ISlotService
         return slots.Select(s => s.ClassId).Distinct().ToList();
     }
 
-    private List<SlotSimpleModel> ApplyAdditionalFilters(List<SlotSimpleModel> slots, GetSlotModel slotModel)
+    private List<SlotDetailModel> ApplyAdditionalFilters(List<SlotDetailModel> slots, GetSlotModel slotModel)
     {
         if (slotModel.Shifts.Any())
             slots = slots.Where(s => slotModel.Shifts.Contains(s.Shift)).ToList();
@@ -278,8 +300,8 @@ public class SlotService : ISlotService
                     cls.Status = ClassStatus.Ongoing;
                     classesToUpdate.Add(cls);
                     
-                    var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
-                    await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
+                    // var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
+                    // await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
                 }
             }
         }
@@ -342,6 +364,7 @@ public class SlotService : ISlotService
         }
 
         var slot = createSlotModel.Adapt<Slot>();
+        slot.TeacherId = classDetail.InstructorId;
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -363,7 +386,7 @@ public class SlotService : ISlotService
         //Notification
         if (classDetail.IsPublic)
         {
-            var notiMessage = $"Một buổi học mới đã được thêm vào lớp ${classDetail.Name} của bạn. Ngày {slot.Date}, Ca {(int)slot.Shift + 1}, Địa điểm : {room.Name}";
+            var notiMessage = $"A new slot has been added to your class ${classDetail.Name}. Day {slot.Date}, Shift {(int)slot.Shift + 1}, Room : {room.Name}";
             var studentSlots = classDetail.StudentClasses.Select(sc => new SlotStudent
             {
                 CreatedById = accountFirebaseId,
@@ -416,7 +439,7 @@ public class SlotService : ISlotService
         }
 
         var notiMessage = "";
-        if (updateSlotModel.RoomId != null)
+        if (updateSlotModel.RoomId != null && updateSlotModel.RoomId != slot.RoomId)
         {
             var oldRoom = slot.RoomId != null ? (await _unitOfWork.RoomRepository.GetByIdAsync(slot.RoomId.Value)) : null;
             var room = await _unitOfWork.RoomRepository.GetByIdAsync(updateSlotModel.RoomId.Value);
@@ -425,18 +448,45 @@ public class SlotService : ISlotService
                 throw new NotFoundException("Room not found");
             }
             slot.RoomId = updateSlotModel.RoomId;
-            notiMessage += $" Cập nhật phòng học từ phòng {oldRoom?.Name} sang {room.Name}.";
+            notiMessage += $" Update from room {oldRoom?.Name} to {room.Name}.";
         }
 
         if ((updateSlotModel.Date != null && updateSlotModel.Date != slot.Date) || (updateSlotModel.Shift != null && updateSlotModel.Shift != slot.Shift))
         {
-            notiMessage += $" Cập nhật thời gian học từ phòng ngày {slot.Date}, ca {(int)slot.Shift + 1} " +
-                $"sang ngày {updateSlotModel.Date ?? slot.Date}, ca {(int)(updateSlotModel.Shift ?? slot.Shift) + 1}.";
+            if (await IsConflict(updateSlotModel.Shift ?? slot.Shift, updateSlotModel.Date ?? slot.Date, updateSlotModel.RoomId ?? slot.RoomId))
+            {
+                throw new ConflictException("Can not update slots because of a schedule conflict");
+            }
+
+            notiMessage += $" Update time from day {slot.Date}, shift {(int)slot.Shift + 1} " +
+                $"to day {updateSlotModel.Date ?? slot.Date}, shift {(int)(updateSlotModel.Shift ?? slot.Shift) + 1}.";
         }
 
-        if (await IsConflict(updateSlotModel.Shift ?? slot.Shift, updateSlotModel.Date ?? slot.Date, updateSlotModel.RoomId ?? slot.RoomId))
+        
+
+        string? oldTeacherId = null;
+        Account? newTeacher = null;
+        if (updateSlotModel.TeacherId != null && slot.TeacherId != updateSlotModel.TeacherId)
         {
-            throw new ConflictException("Can not update slots because of a schedule conflict");
+            var teacher = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == updateSlotModel.TeacherId);
+            if (teacher is null)
+            {
+                throw new NotFoundException("Teacher not found");
+            }
+            var slotOfTeacher = await _unitOfWork.SlotRepository.FindAsync(s => s.TeacherId == teacher.AccountFirebaseId, false);
+            foreach (var teacherSlot in slotOfTeacher)
+            {
+                if (teacherSlot.Shift == slot.Shift && teacherSlot.Date == slot.Date)
+                {
+                    throw new ConflictException("Teacher can not be assigned to this slot due to a schedule conflict");
+                }
+            }
+
+            oldTeacherId = slot.TeacherId;
+            newTeacher = teacher;
+
+            slot.TeacherId = updateSlotModel.TeacherId;
+            notiMessage += $" Update substitute teacher {teacher.FullName ?? teacher.UserName}.";
         }
 
         var dayOffs = await _unitOfWork.DayOffRepository.FindAsync(d => d.EndTime >= DateTime.UtcNow.AddHours(7));
@@ -468,9 +518,9 @@ public class SlotService : ISlotService
         {
             if (updateSlotModel.Reason != null)
             {
-                notiMessage += " Lí do: " + updateSlotModel.Reason;
+                notiMessage += " Reason: " + updateSlotModel.Reason;
             }
-            notiMessage = $"Một buổi học đã được cập nhật tại lớp {classDetail.Name} của bạn." + notiMessage;
+            notiMessage = $"A slot has been updated in your class {classDetail.Name}." + notiMessage;
             var studentSlots = classDetail.StudentClasses.Select(sc => new SlotStudent
             {
                 CreatedById = accountFirebaseId,
@@ -481,7 +531,18 @@ public class SlotService : ISlotService
                 notiMessage, "");
             if (classDetail.InstructorId != null)
             {
-                await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, notiMessage, "");
+                if (oldTeacherId == null)
+                {
+                    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, "", notiMessage);
+                } 
+                else if (newTeacher != null)
+                {
+                    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, "[Notification]", $"Center has assigned you to this class" +
+                        $"day {slot.Date}, shift {(int)slot.Shift + 1} of the class {classDetail.Name}", $"");
+                    await _serviceFactory.NotificationService.SendNotificationAsync(oldTeacherId, "[Notification]", $"Center has assigned you to ${newTeacher.FullName ?? newTeacher.UserName} to be a substitue teacher of slot  " +
+                        $"day {slot.Date}, shift {(int)slot.Shift + 1} of the class {classDetail.Name}", $"{newTeacher.AvatarUrl}");
+
+                }
             }
         }
         return updatedSlot.Adapt<SlotModel>();
@@ -522,7 +583,7 @@ public class SlotService : ISlotService
 
         if (classDetail != null && classDetail.IsPublic)
         {
-            var notiMessage = $"Một buổi học đã bị xóa khỏi lớp ${classDetail.Name} của bạn. Ngày {slot.Date}, Ca {(int)slot.Shift + 1}";
+            var notiMessage = $"A slot has been removed from your ${classDetail.Name}. Date {slot.Date}, Shift {(int)slot.Shift + 1}";
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(slotStudents.Select(ss => ss.StudentFirebaseId).ToList(),
                 notiMessage, "");
             if (classDetail.InstructorId != null)
@@ -533,22 +594,10 @@ public class SlotService : ISlotService
 
     }
 
-    public async Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly? startDate, DateOnly? endDate)
+    public async Task<List<BlankSlotModel>> GetAllBlankSlotInWeeks(DateOnly startDate, DateOnly endDate)
     {
-        var vietnamTime = DateTime.UtcNow.AddHours(7);
-        if (startDate == null || startDate == DateOnly.FromDateTime(vietnamTime))
-        {
-            // Start from yesterday instead of today
-            startDate = DateOnly.FromDateTime(vietnamTime.AddDays(1));
-        }
 
-        if (endDate == null)
-        {
-            var futureDate = vietnamTime.AddDays(7);
-            endDate = DateOnly.FromDateTime(futureDate);
-        }
-
-        // Get all active rooms
+        // Get all activems
         var rooms = await _unitOfWork.RoomRepository.FindAsync(r => r.Status == RoomStatus.Opened);
 
         // Get all existing slots with rooms (without date filtering)
@@ -556,14 +605,14 @@ public class SlotService : ISlotService
 
         // Filter in memory to avoid PostgreSQL date conversion issues
         var filteredSlots = existingSlots.Where(s =>
-            s.Date >= startDate.Value &&
-            s.Date <= endDate.Value).ToList();
+            s.Date >= startDate &&
+            s.Date <= endDate).ToList();
 
         var blankSlots = new List<BlankSlotModel>();
         const int maxResults = 50;
 
         // Check every combination of date, shift, and room
-        for (var date = startDate.Value; date <= endDate.Value; date = date.AddDays(1))
+        for (var date = startDate; date <= endDate; date = date.AddDays(1))
         {
             foreach (Shift shift in Enum.GetValues(typeof(Shift)))
             {
@@ -719,7 +768,7 @@ public class SlotService : ISlotService
         //Notification
         await _serviceFactory.NotificationService.SendNotificationToManyAsync(
             studentIds,
-            $"Lớp {classInDb.Name} sẽ có một buổi học mới vào ngày {newSlot.Date}, tại phòng {roomInDb.Name}.",
+            $"Class {classInDb.Name} will have a new slot in {newSlot.Date}, at room {roomInDb.Name}.",
             ""
         );
 
@@ -728,6 +777,144 @@ public class SlotService : ISlotService
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
         return newSlot.Adapt<SlotDetailModel>();
 
+    }
+
+    public async Task<List<AccountSimpleModel>> GetAllTeacherCanBeAssignedToSlot(Guid slotId, string accountFirebaseId)
+    {
+        var currentSlot = await _unitOfWork.SlotRepository.FindSingleProjectedAsync<Slot>(x => x.Id == slotId, hasTrackings: false);
+        if (currentSlot == null)
+        {
+            throw new NotFoundException("Slot not found");
+        }
+        
+        var allTeachers = await _unitOfWork.AccountRepository.FindAsync(a => 
+            a.Role == Role.Instructor && 
+            a.Status == AccountStatus.Active);
+        
+        var slotsAtSameTime = await _unitOfWork.SlotRepository.FindAsync(s => 
+            s.Id != slotId && 
+            s.Date == currentSlot.Date && 
+            s.Shift == currentSlot.Shift && 
+            s.Status != SlotStatus.Cancelled);
+        
+        var classIdsWithConflictingSlots = slotsAtSameTime.Select(s => s.ClassId).Distinct().ToList();
+        var classesWithTeachers = await _unitOfWork.ClassRepository.FindAsync(c => 
+            classIdsWithConflictingSlots.Contains(c.Id));
+    
+        var busyTeacherIds = classesWithTeachers
+            .Where(c => c.InstructorId != null)
+            .Select(c => c.InstructorId)
+            .Distinct()
+            .ToList();
+        
+        // Also exclude the instructor currently assigned to the slot 
+        if (currentSlot.Class?.InstructorId != null)
+        {
+            busyTeacherIds.Add(currentSlot.Class.InstructorId);
+        }
+        
+        // Filter available teachers
+        var availableTeachers = allTeachers
+            .Where(t => !busyTeacherIds.Contains(t.AccountFirebaseId))
+            .ToList();
+
+        if (!availableTeachers.Any())
+        {
+            throw new BadReadException("No available teachers found for this slot.");
+        }
+        
+        return availableTeachers.Adapt<List<AccountSimpleModel>>();
+    }
+
+    public async Task<SlotDetailModel> AssignTeacherToSlot(Guid slotId, string teacherFirebaseId, string Reason ,string staffAccountFirebaseId)
+    {
+        var teacher = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == teacherFirebaseId && a.Role == Role.Instructor, hasTrackings: false);
+        
+        if (teacher is null)
+        {
+            throw new NotFoundException("Teacher not found");
+        }
+        
+        var slot = await _unitOfWork.SlotRepository.FindSingleAsync(s => s.Id == slotId, hasTrackings: false);
+       
+        if (slot == null)
+        {
+            throw new NotFoundException("Slot not found");
+        }
+        
+        if (slot.Status != SlotStatus.NotStarted)
+        {
+            throw new BadRequestException("Can only assign teacher to slots that are not started yet!");
+        }
+        
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            slot.TeacherId = teacherFirebaseId;
+            slot.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            slot.UpdateById = staffAccountFirebaseId;
+            slot.SlotNote = Reason;
+            
+            await _unitOfWork.SlotRepository.UpdateAsync(slot);
+            await _unitOfWork.SaveChangesAsync();
+        });
+
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
+        
+        return await GetSlotDetailById(slotId);
+    }
+
+    public async Task<List<StudentAttendanceResult>> GetAllAttendanceResultByClassId(Guid classId)
+    {
+        var systemConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaxAbsenceRate);
+        if (systemConfig == null)
+        {
+            throw new NotFoundException("System config not found");
+        }
+
+        decimal.TryParse(systemConfig.ConfigValue, out decimal attendanceThreshold);
+
+        var currentClass = await _serviceFactory.ClassService.GetClassDetailById(classId);
+        
+        if (currentClass == null)
+        {
+            throw new NotFoundException("Class not found");
+        }
+        
+        var studentAttendanceResults = new List<StudentAttendanceResult>();
+        
+        var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == classId);
+
+        foreach (var studentClass in studentClasses)
+        {
+            var studentAttendanceResult = new StudentAttendanceResult
+            {
+                StudentId = studentClass.StudentFirebaseId,
+                AttendancePercentage = 0,
+                TotalSlots = 0,
+                AttendedSlots = 0,
+                IsPassed = false
+            };
+
+            var studentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss => ss.StudentFirebaseId == studentClass.StudentFirebaseId);
+            var totalSlots = studentSlots.Count;
+            var attendedSlots = studentSlots.Count(ss => ss.AttendanceStatus == AttendanceStatus.Attended);
+
+            if (totalSlots > 0)
+            {
+                studentAttendanceResult.AttendancePercentage = (decimal)attendedSlots / totalSlots * 100;
+            }
+
+            studentAttendanceResult.TotalSlots = totalSlots;
+            studentAttendanceResult.AttendedSlots = attendedSlots;
+
+            if (studentAttendanceResult.AttendancePercentage < attendanceThreshold)
+            {
+                studentAttendanceResult.IsPassed = true;
+                studentAttendanceResults.Add(studentAttendanceResult);
+            }
+        }
+        
+        return studentAttendanceResults;
     }
 
 

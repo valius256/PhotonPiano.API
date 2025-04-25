@@ -219,7 +219,7 @@ public class TuitionServiceTest
             .ReturnsAsync(new SystemConfigModel() { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate"});
     
         // Act & Assert
-        await Assert.ThrowsAsync<BadRequestException>(() =>
+        await Assert.ThrowsAsync<IllegalArgumentException>(() =>
             _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
     }
     
@@ -249,7 +249,7 @@ public class TuitionServiceTest
             .ReturnsAsync(new SystemConfigModel() { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate"});
     
         // Act & Assert
-        await Assert.ThrowsAsync<BadRequestException>(() =>
+        await Assert.ThrowsAsync<IllegalArgumentException>(() =>
             _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
     }
     
@@ -886,7 +886,8 @@ public class TuitionServiceTest
         _notificationServiceMock.Verify(s => s.SendNotificationAsync(
                 studentClass.Student.AccountFirebaseId,
                 It.IsAny<string>(),
-                It.IsAny<string>()),
+                It.IsAny<string>(),
+                string.Empty),
             Times.Once);
     }
     

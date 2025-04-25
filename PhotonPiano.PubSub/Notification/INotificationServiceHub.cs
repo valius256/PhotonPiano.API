@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace PhotonPiano.PubSub.Notification;
 
 public interface INotificationServiceHub

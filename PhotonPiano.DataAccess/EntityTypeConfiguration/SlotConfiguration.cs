@@ -37,6 +37,10 @@ public class SlotConfiguration : IEntityTypeConfiguration<Slot>
         builder.HasOne(x => x.CancelBy)
             .WithMany(x => x.CanceledSlots)
             .HasForeignKey(x => x.CancelById);
+        
+        builder.HasOne(x => x.Teacher)
+            .WithMany(x => x.Teacherslots)
+            .HasForeignKey(x => x.TeacherId);
 
     }
 }

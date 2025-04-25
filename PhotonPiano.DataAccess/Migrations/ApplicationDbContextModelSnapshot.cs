@@ -70,6 +70,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int?>("Gender")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("HasUsedTrial")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
@@ -100,6 +103,12 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("RefreshTokenExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ResetPasswordToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
@@ -117,6 +126,9 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<string>("UserName")
                         .HasColumnType("text");
+
+                    b.Property<bool>("WantToContinue")
+                        .HasColumnType("boolean");
 
                     b.HasKey("AccountFirebaseId");
 
@@ -638,6 +650,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<bool>("IsScoreAnnounced")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LevelAdjustedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("LevelId")
                         .HasColumnType("uuid");
 
@@ -805,6 +820,9 @@ namespace PhotonPiano.DataAccess.Migrations
 
                     b.Property<bool>("IsGenreDivided")
                         .HasColumnType("boolean");
+
+                    b.Property<decimal>("MinimumGPA")
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("MinimumPracticalScore")
                         .ValueGeneratedOnAdd()
@@ -1063,6 +1081,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("TeacherId")
+                        .HasColumnType("text");
+
                     b.Property<string>("UpdateById")
                         .HasColumnType("text");
 
@@ -1076,6 +1097,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.HasIndex("ClassId");
 
                     b.HasIndex("RoomId");
+
+                    b.HasIndex("TeacherId");
 
                     b.HasIndex("UpdateById");
 
@@ -1148,6 +1171,9 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<decimal?>("AttendancePercentage")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("CertificateUrl")
                         .HasColumnType("text");
@@ -1417,11 +1443,17 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime>("Deadline")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsOverdueProcessed")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("integer");
@@ -1901,6 +1933,10 @@ namespace PhotonPiano.DataAccess.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "Teacher")
+                        .WithMany("Teacherslots")
+                        .HasForeignKey("TeacherId");
+
                     b.HasOne("PhotonPiano.DataAccess.Models.Entity.Account", "UpdateBy")
                         .WithMany("UpdatedSlots")
                         .HasForeignKey("UpdateById");
@@ -1910,6 +1946,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Room");
+
+                    b.Navigation("Teacher");
 
                     b.Navigation("UpdateBy");
                 });
@@ -2142,6 +2180,8 @@ namespace PhotonPiano.DataAccess.Migrations
                     b.Navigation("SlotStudents");
 
                     b.Navigation("StudentClasses");
+
+                    b.Navigation("Teacherslots");
 
                     b.Navigation("UpdatedApplications");
 

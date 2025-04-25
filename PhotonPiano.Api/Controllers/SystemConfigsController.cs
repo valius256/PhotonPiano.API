@@ -1,11 +1,18 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.EntranceTest;
+using PhotonPiano.Api.Requests.Scheduler;
 using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.Api.Requests.SystemConfig;
+using PhotonPiano.Api.Requests.Tution;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
+using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Utils;
@@ -26,9 +33,9 @@ public class SystemConfigsController : BaseController
     [HttpGet]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Get all system configs")]
-    public async Task<ActionResult<List<SystemConfigModel>>> GetAll()
+    public async Task<ActionResult<List<SystemConfigModel>>> GetConfigs([FromQuery] QuerySystemConfigsRequest request)
     {
-        return await _serviceFactory.SystemConfigService.GetAllConfigs();
+        return await _serviceFactory.SystemConfigService.GetConfigs(request.Names);
     }
 
     [HttpGet("{name}")]
@@ -37,6 +44,14 @@ public class SystemConfigsController : BaseController
     {
         return await _serviceFactory.SystemConfigService.GetConfig(name);
     }
+    
+    [HttpGet("attendance-deadline")]
+    [EndpointDescription("Get system config by name")]
+    public async Task<ActionResult<SystemConfigModel>> GetByAttendance()
+    {
+        return await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.AttendanceDeadline);
+    }
+
 
     [HttpPut]
     [CustomAuthorize(Roles = [Role.Administrator])]
@@ -46,31 +61,7 @@ public class SystemConfigsController : BaseController
         await _serviceFactory.SystemConfigService.SetConfigValue(updateSystemConfigModel);
         return NoContent();
     }
-
-    [HttpGet("attendance-deadline")]
-    [EndpointDescription("Get system configs of attendance deadline")]
-    public async Task<ActionResult> GetSystemConfigs()
-    {
-        var cacheKey = $"Deadline cho điểm danh {DateTime.Today.Year}";
-        var cacheValue = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigSimpleModel>(cacheKey);
-        if (cacheValue != null)
-        {
-            return Ok(cacheValue);
-        }
-
-        var result =
-            await _serviceFactory.SystemConfigService.GetConfig($"Deadline cho điểm danh {DateTime.Today.Year}");
-
-        // check if the config value is empty, set it to the end of the day 
-        if (string.IsNullOrEmpty(result.ConfigValue))
-        {
-            result.ConfigValue = DateTime.UtcNow.Date.AddDays(1).AddTicks(-1).ToString("o"); // ISO 8601 format
-        }
-
-        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
-        return Ok(result);
-    }
-
+    
     [HttpGet("cancel-slot-reason")]
     [EndpointDescription("Get system configs of cancel slot reason")]
     public async Task<ActionResult> GetSystemConfigsOfCancelSlotReason()
@@ -108,6 +99,41 @@ public class SystemConfigsController : BaseController
         await _serviceFactory.SystemConfigService.UpdateEntranceTestSystemConfig(
             request.Adapt<UpdateEntranceTestSystemConfigModel>());
         
+        return NoContent();
+    }
+    
+    [HttpPut("tuition")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Update tuition system config")]
+    public async Task<ActionResult> UpdateTuitionSystemConfig(
+        [FromBody] UpdateTuitionSystemConfigRequest request)
+    {
+        await _serviceFactory.SystemConfigService.UpdateTuitionSystemConfig(
+            request.Adapt<UpdateTuitionSystemConfigModel>());
+        
+        return NoContent();
+    }
+    
+    [HttpPut("schedule")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Update tuition system config")]
+    public async Task<ActionResult> UpdateSchedulerSystemConfig(
+        [FromBody] UpdateSchedulerSystemConfigRequest request)
+    {
+        await _serviceFactory.SystemConfigService.UpdateSchedulerSystemConfig(
+            request.Adapt<UpdateSchedulerSystemConfigModel>());
+        
+        return NoContent();
+    }
+    [HttpPut("classes")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Update tuition system config")]
+    public async Task<ActionResult> UpdateClassConfig(
+        [FromBody] UpdateClassSystemConfigRequest request)
+    {
+        await _serviceFactory.SystemConfigService.UpdateClassSystemConfig(
+            request.Adapt<UpdateClassSystemConfigModel>());
+
         return NoContent();
     }
 }

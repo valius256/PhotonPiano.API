@@ -4,6 +4,7 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Scheduler;
 using PhotonPiano.Api.Responses.Scheduler;
 using PhotonPiano.Api.Responses.Slot;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
 using PhotonPiano.BusinessLogic.BusinessModel.SlotStudent;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -28,8 +29,8 @@ public class SchedulerController : BaseController
 
     [HttpGet("slots")]
     [CustomAuthorize(Roles = [Role.Instructor, Role.Student, Role.Staff])]
-    [EndpointDescription("Get All Slots in this Week")]
-    public async Task<ActionResult> GetSchedulers([FromQuery] SchedulerRequest request)
+    [EndpointDescription("Get Weekly scheduler")]
+    public async Task<ActionResult> GetSchedule([FromQuery] SchedulerRequest request)
     {
 
         if (CurrentAccount != null)
@@ -37,7 +38,7 @@ public class SchedulerController : BaseController
             var result =
                 await _serviceFactory.SlotService.GetWeeklySchedule(request.Adapt<GetSlotModel>(),
                     CurrentAccount);
-            return Ok(result.Adapt<List<SlotSimpleModel>>());
+            return Ok(result.Adapt<List<SlotDetailModel>>());
         }
 
         return Unauthorized("The user is not authorized to access this resource.");
@@ -134,6 +135,29 @@ public class SchedulerController : BaseController
         var result = await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentUserFirebaseId);
         return Ok(result);
     }
-
-
+    
+    [HttpGet("available-teachers-for-slot/{slotId}")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Get All teacher can be assigned to this slot")]
+    public async Task<ActionResult> GetAllTeacherCanBeAssignedToThisSlot([FromRoute] Guid slotId)
+    {
+        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToSlot(slotId, CurrentUserFirebaseId);
+        return Ok(result.Adapt<List<AccountSimpleModel>>());
+    }
+    
+    [HttpPost("assign-teacher-to-slot")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Assign a teacher to a slot")]
+    public async Task<ActionResult> AssignTeacherToSlot([FromBody] AssignTeacherToSlotRequest request)
+    {
+        return Ok(await _serviceFactory.SlotService.AssignTeacherToSlot(request.SlotId, request.TeacherFirebaseId, request.Reason ,CurrentUserFirebaseId));
+    }
+    
+    [HttpGet("class-attendance/{classId}")]
+    [EndpointDescription("Get attendance results for all students in a class")]
+    public async Task<ActionResult> GetAllAttendanceResultByClassId([FromRoute] Guid classId)
+    {
+        var result = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
+        return Ok(result.Adapt<List<StudentAttendanceResultResponse>>());
+    }
 }

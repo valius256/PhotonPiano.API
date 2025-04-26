@@ -172,6 +172,19 @@ jobs:
             PINATA_DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
             EOF
             
+            cat > ~/photonpiano/frontend/.env <<EOF
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_COOKIE_SECRET=${{ secrets.VITE_COOKIE_SECRET }}
+            VITE_IS_DEVELOPMENT=${{ secrets.VITE_IS_DEVELOPMENT }}
+            VITE_PINATA_API_KEY=${{ secrets.VITE_PINATA_API_KEY }}
+            VITE_PINATA_API_SECRET=${{ secrets.VITE_PINATA_API_SECRET }}
+            VITE_PINATA_GATEWAY_KEY=${{ secrets.VITE_PINATA_GATEWAY_KEY }}
+            VITE_PINATA_GATEWAY_BASE_URL=${{ secrets.VITE_PINATA_GATEWAY_BASE_URL }}
+            VITE_API_PUB_SUB_URL=${{ secrets.VITE_API_PUB_SUB_URL }}
+            VITE_API_NOTIFICATION_URL=${{ secrets.VITE_API_NOTIFICATION_URL }}
+            VITE_API_PROGRESS_URL=${{ secrets.VITE_API_PROGRESS_URL }}
+            EOF
+            
             # Viết docker-compose.yml
             cat > docker-compose.yml <<'EOF'
             version: "3.8"

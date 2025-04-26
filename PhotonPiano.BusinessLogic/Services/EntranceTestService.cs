@@ -253,27 +253,31 @@ public class EntranceTestService : IEntranceTestService
             }
         });
 
-        await InvalidateEntranceTestCache();
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{entranceTest!.Id}",
-            entranceTest.Adapt<EntranceTestDetailModel>(),
-            TimeSpan.FromHours(5));
-
         return await GetEntranceTestDetailById(entranceTest.Id, currentAccount);
     }
 
     public async Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default)
     {
-        var entranceTestEntity = await _unitOfWork.EntranceTestRepository.FindSingleAsync(q => q.Id == id);
-        if (entranceTestEntity is null) throw new NotFoundException("This EntranceTest not found.");
+        var entranceTest = await _unitOfWork.EntranceTestRepository.GetEntranceTestWithStudentsAsync(id);
 
-        entranceTestEntity.DeletedById = currentUserFirebaseId;
-        entranceTestEntity.DeletedAt = DateTime.UtcNow.AddHours(7);
-        entranceTestEntity.RecordStatus = RecordStatus.IsDeleted;
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("This EntranceTest not found.");
+        }
 
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            entranceTest.DeletedById = currentUserFirebaseId;
+            entranceTest.DeletedAt = DateTime.UtcNow.AddHours(7);
+            entranceTest.RecordStatus = RecordStatus.IsDeleted;
 
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTestEntity,
-            TimeSpan.FromHours(5));
+            var studentIds = entranceTest.EntranceTestStudents.Select(ets => ets.StudentFirebaseId);
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
+                $"You have been removed from test {entranceTest.Name}", "", requiresSavingChanges: false);
+        });
     }
 
     public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel updateModel,
@@ -504,6 +508,9 @@ public class EntranceTestService : IEntranceTestService
 
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
+                $"You have been removed from entrance test", "", requiresSavingChanges: false);
         });
     }
 
@@ -897,7 +904,7 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
-            
+
             await Task.WhenAll(notiTasks);
         });
     }

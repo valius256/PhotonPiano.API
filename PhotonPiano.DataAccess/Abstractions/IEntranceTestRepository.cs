@@ -4,5 +4,5 @@ namespace PhotonPiano.DataAccess.Abstractions;
 
 public interface IEntranceTestRepository : IGenericRepository<EntranceTest>
 {
-
+    Task<EntranceTest?> GetEntranceTestWithStudentsAsync(Guid id);
 }

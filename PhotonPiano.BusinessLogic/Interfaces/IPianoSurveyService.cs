@@ -6,7 +6,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IPianoSurveyService
 {
-    Task<PagedResult<PianoSurveyModel>> GetSurveys(QueryPagedSurveysModel query, AccountModel currentAccount);
+    Task<PagedResult<PianoSurveyWithLearnersModel>> GetSurveys(QueryPagedSurveysModel query, AccountModel currentAccount);
     Task<PianoSurveyDetailsModel> GetSurveyDetails(Guid id, AccountModel currentAccount);
     Task<PianoSurveyDetailsModel> CreatePianoSurvey(CreatePianoSurveyModel createModel, AccountModel currentAccount);
     Task UpdatePianoSurvey(Guid id, UpdatePianoSurveyModel updateModel, AccountModel currentAccount);

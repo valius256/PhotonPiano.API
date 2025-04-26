@@ -105,16 +105,7 @@ jobs:
           docker build -t ${{ env.IMAGE_NAME_API }}:latest -t ${{ env.IMAGE_NAME_API }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME_API }} --all-tags
           
-          # Build Web
-          docker build -t ${{ env.IMAGE_NAME_WEB }}:latest -t ${{ env.IMAGE_NAME_WEB }}:${{ github.sha }} -f photonpiano-web/Dockerfile .
-          docker push ${{ env.IMAGE_NAME_WEB }} --all-tags
-          
-           if [ -d "photonpiano-web" ]; then
-            docker build -t ${{ env.IMAGE_NAME_WEB }}:latest -t ${{ env.IMAGE_NAME_WEB }}:${{ github.sha }} -f photonpiano-web/Dockerfile .
-            docker push ${{ env.IMAGE_NAME_WEB }} --all-tags
-          else
-            echo "photonpiano-web directory does not exist. Skipping web image build."
-          fi
+  
 
   deploy-to-server:
     needs: docker-build-and-push
@@ -258,7 +249,7 @@ jobs:
             EOF
             
             # Đăng nhập vào GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+             echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin
             
             # Pull images và deploy với project name cụ thể
             docker compose -p photonpiano pull

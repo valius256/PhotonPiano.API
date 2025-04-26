@@ -74,7 +74,7 @@ public class AuthService : IAuthService
             var refreshToken = _serviceFactory.TokenService.GenerateRefreshToken();
 
             account.RefreshToken = refreshToken;
-            account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(7);
+            account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(30);
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -114,7 +114,7 @@ public class AuthService : IAuthService
         var refreshToken = _serviceFactory.TokenService.GenerateRefreshToken();
 
         account.RefreshToken = refreshToken;
-        account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(7);
+        account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(30);
         
         await _unitOfWork.AccountRepository.AddAsync(account);
         await _unitOfWork.SaveChangesAsync();

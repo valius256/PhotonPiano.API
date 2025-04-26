@@ -12,7 +12,8 @@ permissions:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  IMAGE_NAME: ghcr.io/valius256/photonpiano-api
+  IMAGE_NAME_API: ghcr.io/valius256/photonpiano-api
+  IMAGE_NAME_WEB: ghcr.io/minhtrantuan3112/photonpiano-webapp
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   POSTGRES_CONNECTION: ${{ secrets.POSTGRES_CONNECTION }}
@@ -90,11 +91,24 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🔐 Login to GitHub Container Registry (Frontend)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHFE_TOKEN }}
 
-      - name: 🏗️ Build and Push Docker Image
+      - name: 🏗️ Build and Push Docker Images
         run: |
-          docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
-          docker push ${{ env.IMAGE_NAME }} --all-tags
+          # Build API
+          docker build -t ${{ env.IMAGE_NAME_API }}:latest -t ${{ env.IMAGE_NAME_API }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
+          docker push ${{ env.IMAGE_NAME_API }} --all-tags
+          
+          # Build Web
+          docker build -t ${{ env.IMAGE_NAME_WEB }}:latest -t ${{ env.IMAGE_NAME_WEB }}:${{ github.sha }} -f photonpiano-web/Dockerfile .
+          docker push ${{ env.IMAGE_NAME_WEB }} --all-tags
+      
 
   deploy-to-server:
     needs: docker-build-and-push
@@ -123,8 +137,12 @@ jobs:
             # Đảm bảo docker-compose down trước
             cd ~/photonpiano || true && docker compose down || true
             
-            # Xóa container cũ bằng cách tìm tất cả container có tên 'photonpiano'
-            docker ps -a | grep photonpiano | awk '{print $1}' | xargs -r docker rm -f
+            # Xóa images cũ của backend và frontend
+            docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
+            docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
+            
+            # Dọn dẹp rác Docker
+            docker system prune -af --volumes
             
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
@@ -215,6 +233,17 @@ jobs:
                   - /root/.aspnet/https:/https:ro
                 networks:
                   - app-network 
+              photonpiano-web:
+                image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
+                container_name: photonpiano-web
+                restart: unless-stopped
+                depends_on:
+                  - photonpiano-api
+                ports:
+                  - "80:80"
+                networks:
+                  - app-network
+            
             volumes:
               redis-data:
             networks:

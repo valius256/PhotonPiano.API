@@ -108,7 +108,13 @@ jobs:
           # Build Web
           docker build -t ${{ env.IMAGE_NAME_WEB }}:latest -t ${{ env.IMAGE_NAME_WEB }}:${{ github.sha }} -f photonpiano-web/Dockerfile .
           docker push ${{ env.IMAGE_NAME_WEB }} --all-tags
-      
+          
+           if [ -d "photonpiano-web" ]; then
+            docker build -t ${{ env.IMAGE_NAME_WEB }}:latest -t ${{ env.IMAGE_NAME_WEB }}:${{ github.sha }} -f photonpiano-web/Dockerfile .
+            docker push ${{ env.IMAGE_NAME_WEB }} --all-tags
+          else
+            echo "photonpiano-web directory does not exist. Skipping web image build."
+          fi
 
   deploy-to-server:
     needs: docker-build-and-push

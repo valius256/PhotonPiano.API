@@ -198,7 +198,7 @@ public static class IServiceCollectionExtensions
             options.AddPolicy("AllowAll", p => p
                     .WithExposedHeaders("X-Total-Count", "X-Total-Pages", "X-Page", "X-Page-Size")
                     .WithOrigins("http://localhost:5173", "https://photon-piano.vercel.app",
-                        "https://photon-piano.netlify.app")
+                        "https://photon-piano.netlify.app", "https://photonpiano.duckdns.org")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     // .AllowAnyOrigin()

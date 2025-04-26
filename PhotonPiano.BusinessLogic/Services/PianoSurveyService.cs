@@ -31,19 +31,22 @@ public class PianoSurveyService : IPianoSurveyService
         return entranceSurveyConfig.ConfigValue is null ? null : Guid.Parse(entranceSurveyConfig.ConfigValue);
     }
 
-    public async Task<PagedResult<PianoSurveyModel>> GetSurveys(QueryPagedSurveysModel query,
+    public async Task<PagedResult<PianoSurveyWithLearnersModel>> GetSurveys(QueryPagedSurveysModel query,
         AccountModel currentAccount)
     {
         var (page, size, column, desc) = query;
 
         var entranceSurveyId = await GetEntranceSurveyConfigId();
 
-        var pagedResult = await _unitOfWork.PianoSurveyRepository.GetPaginatedWithProjectionAsync<PianoSurveyModel>(
-            page, size,
-            column, desc, expressions:
-            [
-                s => string.IsNullOrEmpty(query.Keyword) || s.Name.ToLower().Contains(query.Keyword.ToLower())
-            ]);
+        var pagedResult = await _unitOfWork.PianoSurveyRepository
+            .GetPaginatedWithProjectionAsync<PianoSurveyWithLearnersModel>(
+                page, size,
+                column, desc, expressions:
+                [
+                    s => string.IsNullOrEmpty(query.Keyword) || s.Name.ToLower().Contains(query.Keyword.ToLower()),
+                    s => currentAccount.Role == Role.Staff ||
+                         s.LearnerSurveys.Any(ls => ls.LearnerId == currentAccount.AccountFirebaseId)
+                ]);
 
         if (entranceSurveyId is not null)
         {
@@ -60,7 +63,8 @@ public class PianoSurveyService : IPianoSurveyService
     public async Task<PianoSurveyDetailsModel> GetSurveyDetails(Guid id, AccountModel currentAccount)
     {
         var survey = await _unitOfWork.PianoSurveyRepository.FindSingleProjectedAsync<PianoSurveyDetailsModel>(
-            s => s.Id == id,
+            s => s.Id == id && (currentAccount.Role == Role.Staff ||
+                                s.LearnerSurveys.Any(ls => ls.LearnerId == currentAccount.AccountFirebaseId)),
             hasTrackings: false);
 
         if (survey is null)
@@ -297,7 +301,7 @@ public class PianoSurveyService : IPianoSurveyService
             int index = 0;
 
             var allOptions = updateModel.Questions.SelectMany(q => q.Options);
-            
+
             if (allOptions.Count(o => o.ToLower().Contains(instrumentName.ToLower())) < frequency)
             {
                 throw new BadRequestException(
@@ -355,12 +359,11 @@ public class PianoSurveyService : IPianoSurveyService
                 {
                     continue;
                 }
-                
+
                 question.QuestionContent = updatedQuestion.QuestionContent;
                 question.Options = updatedQuestion.Options;
                 question.AllowOtherAnswer = updatedQuestion.AllowOtherAnswer;
             }
-            
         }
 
         foreach (var question in survey.PianoSurveyQuestions)

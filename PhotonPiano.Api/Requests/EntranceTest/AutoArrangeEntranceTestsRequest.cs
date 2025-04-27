@@ -1,5 +1,4 @@
-﻿using PhotonPiano.DataAccess.Models.Enum;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using PhotonPiano.Shared.Enums;
 
 namespace PhotonPiano.Api.Requests.EntranceTest;
@@ -18,12 +17,12 @@ public record AutoArrangeEntranceTestsRequest : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (StartDate < DateTime.UtcNow)
+        if (StartDate < DateTime.UtcNow.AddHours(7))
         {
             yield return new ValidationResult("Start date must be in the future.", [nameof(StartDate)]);
         }
 
-        if (EndDate < DateTime.UtcNow)
+        if (EndDate < DateTime.UtcNow.AddHours(7))
         {
             yield return new ValidationResult("End date must be in the future.", [nameof(EndDate)]);
         }

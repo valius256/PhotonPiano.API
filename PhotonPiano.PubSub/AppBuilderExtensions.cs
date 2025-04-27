@@ -25,9 +25,14 @@ public static class AppBuilderExtensions
         if (app is null)
             throw new ArgumentNullException(nameof(app));
 
-        app.MapHub<PubSubHub>("/pubsub");
-        app.MapHub<NotificationHub>("/notification");
-        app.MapHub<ProgressHub>("/progress");
-        app.MapHub<StudentClassScoreHub>("/score");
+        // app.MapHub<PubSubHub>("/pubsub");
+        // app.MapHub<NotificationHub>("/notification");
+        // app.MapHub<ProgressHub>("/progress");
+        // app.MapHub<StudentClassScoreHub>("/score");
+        
+        app.MapHub<PubSubHub>("/api/pubsub");
+        app.MapHub<NotificationHub>("/api/notification");
+        app.MapHub<ProgressHub>("/api/progress");
+        app.MapHub<StudentClassScoreHub>("/api/score");
     }
 }

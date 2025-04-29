@@ -140,8 +140,8 @@ public class ApplicationService : IApplicationService
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                     account => account.AccountFirebaseId == currentAccount.AccountFirebaseId,
                     set => set
-                        .SetProperty(account => account.CurrentClassId, account => (Guid?)null)
-                        .SetProperty(account => account.StudentStatus, account => StudentStatus.Leave)
+                        .SetProperty(account => account.CurrentClassId, (Guid?)null)
+                        .SetProperty(account => account.StudentStatus, StudentStatus.Leave)
                 );
 
                 createdApplication = await _unitOfWork.ApplicationRepository.AddAsync(application);

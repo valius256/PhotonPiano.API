@@ -14,5 +14,4 @@ public record UpdateSchedulerSystemConfigRequest
     [Range(0, 1, ErrorMessage = "Maximum absence rate must be between 0 and 1 (e.g., 0.2 for 20%)")]
     [RegularExpression(@"^\d*\.?\d{1,2}$", ErrorMessage = "Maximum absence rate must have maximum 2 decimal places")]
     public decimal? MaxAbsenceRate { get; init; }
-
-}   
+}

@@ -89,12 +89,10 @@ public class AccountsController : BaseController
     [HttpPut]
     [CustomAuthorize]
     [EndpointDescription("Update account info")]
-    public async Task<ActionResult> UpdateAccountInfo([FromBody] UpdateAccountRequest request,
-        [FromHeader(Name = "Authorization")] string bearerToken)
+    public async Task<ActionResult> UpdateAccountInfo([FromBody] UpdateAccountRequest request)
     {
-        string idToken = bearerToken.Replace("Bearer ", "");
         await _serviceFactory.AccountService.UpdateAccount(request.Adapt<UpdateAccountModel>(),
-            base.CurrentAccount!, idToken);
+            base.CurrentAccount!);
 
         return NoContent();
     }

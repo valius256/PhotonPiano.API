@@ -170,7 +170,7 @@ public class SchedulerService : ISchedulerService
             if (availableLecturer is not null)
             {
                 entranceTest.InstructorId = availableLecturer.AccountFirebaseId;
-                entranceTest.InstructorName = availableLecturer.FullName;
+                entranceTest.InstructorName = !string.IsNullOrEmpty(availableLecturer.FullName) ? availableLecturer.FullName : availableLecturer.Email;
 
                 // Mark this slot as booked
                 bookedSlots.Add(new SlotWithClassModel

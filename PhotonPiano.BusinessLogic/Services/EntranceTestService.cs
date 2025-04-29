@@ -265,6 +265,13 @@ public class EntranceTestService : IEntranceTestService
             throw new NotFoundException("This EntranceTest not found.");
         }
 
+        var status = ShiftUtils.GetEntranceTestStatus(entranceTest.Date, entranceTest.Shift);
+
+        if (status != EntranceTestStatus.NotStarted)
+        {
+            throw new BadRequestException("You cannot delete this entrance test since it is already started.");
+        }
+
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             entranceTest.DeletedById = currentUserFirebaseId;
@@ -465,6 +472,20 @@ public class EntranceTestService : IEntranceTestService
 
     public async Task RemoveStudentsFromTest(Guid testId, AccountModel currentAccount, params List<string> studentIds)
     {
+        var test = await _unitOfWork.EntranceTestRepository.FindSingleAsync(e => e.Id == testId);
+
+        if (test is null)
+        {
+            throw new NotFoundException("Entrance test not found.");
+        }
+        
+        var testStatus = ShiftUtils.GetEntranceTestStatus(test.Date, test.Shift);
+
+        if (testStatus != EntranceTestStatus.NotStarted)
+        {
+            throw new BadRequestException("Entrance test is already started.");
+        }
+        
         var entranceTestStudents =
             await _unitOfWork.EntranceTestStudentRepository.FindAsync(ets => ets.EntranceTestId == testId);
 
@@ -554,9 +575,21 @@ public class EntranceTestService : IEntranceTestService
                 e => e.Id == testId,
                 hasTrackings: false);
 
-        if (entranceTest?.EntranceTestStudents.Count <= 1)
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("Entrance test not found");
+        }
+
+        if (entranceTest.EntranceTestStudents.Count <= 1)
         {
             throw new BadRequestException("Only 1 student is in the entrance test.");
+        }
+
+        var testStatus = ShiftUtils.GetEntranceTestStatus(entranceTest.Date, entranceTest.Shift);
+
+        if (testStatus != EntranceTestStatus.NotStarted)
+        {
+            throw new BadRequestException("Entrance test has already been started.");
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -891,10 +924,10 @@ public class EntranceTestService : IEntranceTestService
         {
             test.Name = GetEntranceTestName(test);
 
-            var studentIdsToPushNotification = test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
-
-            notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(studentIdsToPushNotification,
-                $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
+            // var studentIdsToPushNotification = test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+            //
+            // notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(studentIdsToPushNotification,
+            //     $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -905,7 +938,7 @@ public class EntranceTestService : IEntranceTestService
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
 
-            await Task.WhenAll(notiTasks);
+            // await Task.WhenAll(notiTasks);
         });
     }
 

@@ -75,7 +75,7 @@ public class AccountService : IAccountService
         return true;
     }
 
-    public async Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount, string idToken)
+    public async Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount)
     {
         var account =
             await _unitOfWork.AccountRepository.FindSingleAsync(a =>
@@ -100,8 +100,6 @@ public class AccountService : IAccountService
             {
                 throw new ConflictException("Email already exists.");
             }
-
-            await _serviceFactory.AuthService.UpdateFirebaseEmail(idToken, model.Email);
         }
 
         model.Adapt(account);

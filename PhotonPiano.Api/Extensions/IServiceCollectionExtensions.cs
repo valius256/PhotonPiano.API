@@ -1,40 +1,40 @@
-﻿using Hangfire;
+﻿using System.Globalization;
+using System.Net;
+using System.Text;
+using System.Threading.RateLimiting;
+using Hangfire;
 using Hangfire.PostgreSql;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using OfficeOpenXml;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Middlewares;
 using PhotonPiano.Api.Requests.Application;
+using PhotonPiano.Api.Requests.DayOff;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Survey;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
+using PhotonPiano.BusinessLogic.BusinessModel.DayOff;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
+using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
+using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Entity;
-using StackExchange.Redis;
-using System.Globalization;
-using System.Net;
-using System.Text;
-using System.Threading.RateLimiting;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using OfficeOpenXml;
-using PhotonPiano.Api.Requests.DayOff;
-using PhotonPiano.BusinessLogic.Interfaces;
-using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
-using PhotonPiano.BusinessLogic.BusinessModel.DayOff;
 using PhotonPiano.Shared.Utils;
+using StackExchange.Redis;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
-using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
 
 namespace PhotonPiano.Api.Extensions;
 
@@ -158,11 +158,10 @@ public static class IServiceCollectionExtensions
                     ? DateTime.SpecifyKind(src.StartTime.Value, DateTimeKind.Utc)
                     : src.StartTime)
             .Map(dest => dest.EndTime,
-                src => src.EndTime.HasValue ? 
-                    DateTime.SpecifyKind(src.EndTime.Value, DateTimeKind.Utc) : src.EndTime);
+                src => src.EndTime.HasValue ? DateTime.SpecifyKind(src.EndTime.Value, DateTimeKind.Utc) : src.EndTime);
 
         TypeAdapterConfig<UpdateDayOffModel, DayOff>.NewConfig().IgnoreNullValues(true);
-        
+
         return services;
     }
 
@@ -239,9 +238,9 @@ public static class IServiceCollectionExtensions
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorCodesToAdd: null);
+                    5,
+                    TimeSpan.FromSeconds(30),
+                    null);
             });
             options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
             options.EnableDetailedErrors();
@@ -332,9 +331,9 @@ public static class IServiceCollectionExtensions
                 var tuitionOverdueDay =
                     configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
 
-                // recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
-                //     x => x.CronAutoCreateTuition(),
-                //     Cron.Monthly);
+                recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                    x => x.CronAutoCreateTuition(),
+                    Cron.Monthly);
 
                 recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                     x => x.CronForTuitionReminder(),
@@ -353,8 +352,6 @@ public static class IServiceCollectionExtensions
                 recurringJobManager.AddOrUpdate<NotificationService>("AutoRemovedOutDateNotifications",
                     x => x.CronAutoRemovedOutDateNotifications(),
                     Cron.Hourly(15));
-
-                
             }
         });
 

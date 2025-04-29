@@ -44,7 +44,7 @@ public class SystemConfigsController : BaseController
     {
         return await _serviceFactory.SystemConfigService.GetConfig(name);
     }
-    
+
     [HttpGet("attendance-deadline")]
     [EndpointDescription("Get system config by name")]
     public async Task<ActionResult<SystemConfigModel>> GetByAttendance()
@@ -61,19 +61,30 @@ public class SystemConfigsController : BaseController
         await _serviceFactory.SystemConfigService.SetConfigValue(updateSystemConfigModel);
         return NoContent();
     }
-    
+
     [HttpGet("cancel-slot-reason")]
     [EndpointDescription("Get system configs of cancel slot reason")]
     public async Task<ActionResult> GetSystemConfigsOfCancelSlotReason()
     {
         var cacheKey = "CancelSlotReason";
         var cacheValue = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigModel>(cacheKey);
-        if (cacheValue != null)
-        {
-            return Ok(cacheValue);
-        }
+        if (cacheValue != null) return Ok(cacheValue);
 
         var result = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.ReasonForCancelSlot);
+
+        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
+        return Ok(result);
+    }
+
+    [HttpGet("refund-reason")]
+    [EndpointDescription("Get system configs of refund reason")]
+    public async Task<ActionResult> GetSystemConfigsOfRefundReason()
+    {
+        var cacheKey = "RefundReason";
+        var cacheValue = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigModel>(cacheKey);
+        if (cacheValue != null) return Ok(cacheValue);
+
+        var result = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.ReasonForRefund);
 
         await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(365));
         return Ok(result);
@@ -98,10 +109,10 @@ public class SystemConfigsController : BaseController
     {
         await _serviceFactory.SystemConfigService.UpdateEntranceTestSystemConfig(
             request.Adapt<UpdateEntranceTestSystemConfigModel>());
-        
+
         return NoContent();
     }
-    
+
     [HttpPut("tuition")]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Update tuition system config")]
@@ -110,10 +121,10 @@ public class SystemConfigsController : BaseController
     {
         await _serviceFactory.SystemConfigService.UpdateTuitionSystemConfig(
             request.Adapt<UpdateTuitionSystemConfigModel>());
-        
+
         return NoContent();
     }
-    
+
     [HttpPut("schedule")]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Update tuition system config")]
@@ -122,9 +133,10 @@ public class SystemConfigsController : BaseController
     {
         await _serviceFactory.SystemConfigService.UpdateSchedulerSystemConfig(
             request.Adapt<UpdateSchedulerSystemConfigModel>());
-        
+
         return NoContent();
     }
+
     [HttpPut("classes")]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
     [EndpointDescription("Update tuition system config")]
@@ -133,6 +145,18 @@ public class SystemConfigsController : BaseController
     {
         await _serviceFactory.SystemConfigService.UpdateClassSystemConfig(
             request.Adapt<UpdateClassSystemConfigModel>());
+
+        return NoContent();
+    }
+
+    [HttpPut("refund")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Update refund system config")]
+    public async Task<ActionResult> UpdateRefundConfig(
+        [FromBody] UpdateRefundSystemConfigRequest request)
+    {
+        await _serviceFactory.SystemConfigService.UpdateRefundSystemConfig(
+            request.Adapt<UpdateRefundSystemConfigModel>());
 
         return NoContent();
     }

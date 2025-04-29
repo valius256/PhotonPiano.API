@@ -9,8 +9,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface ITuitionService
 {
-    Task<string> PayTuition(AccountModel currentAccount, Guid tuitionId, string returnUrl, string ipAddress,
-        string apiBaseUrl);
+    Task<string> PayTuition(AccountModel currentAccount, PayTuitionModel model);
 
     Task HandleTuitionPaymentCallback(VnPayCallbackModel callbackModel, string accountId);
 

@@ -26,12 +26,10 @@ public class TuitionService : ITuitionService
         _serviceFactory = serviceFactory;
     }
 
-    public async Task<string> PayTuition(AccountModel currentAccount, Guid tuitionId, string returnUrl,
-        string ipAddress,
-        string apiBaseUrl)
+    public async Task<string> PayTuition(AccountModel currentAccount, PayTuitionModel model)
     {
         var paymentTuition = await _unitOfWork.TuitionRepository.FindSingleProjectedAsync<Tuition>(
-            expression: x => x.Id == tuitionId,
+            x => x.Id == model.TuitionId,
             hasTrackings: false,
             ignoreQueryFilters: false);
 
@@ -52,7 +50,7 @@ public class TuitionService : ITuitionService
             Id = transactionId,
             TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.TutionFee, DateTime.UtcNow,
                 transactionId),
-            TutionId = tuitionId,
+            TutionId = model.TuitionId,
             TaxRate = currentTaxRate,
             TaxAmount = currentTaxAmount,
             Amount = paymentTuition!.Amount + currentTaxAmount,
@@ -69,11 +67,11 @@ public class TuitionService : ITuitionService
         await _unitOfWork.SaveChangesAsync();
 
         var customReturnUrl =
-            $"{apiBaseUrl}/api/tuitions/{currentAccount.AccountFirebaseId}/tuition-payment-callback?url={returnUrl}";
+            $"{model.ApiBaseUrl}/api/tuitions/{currentAccount.AccountFirebaseId}/tuition-payment-callback?url={model.ReturnUrl}";
 
-        return _serviceFactory.PaymentService.CreateVnPayPaymentUrl(transaction, ipAddress, apiBaseUrl,
+        return _serviceFactory.PaymentService.CreateVnPayPaymentUrl(transaction, model.IpAddress, model.ApiBaseUrl,
             currentAccount.AccountFirebaseId,
-            returnUrl, customReturnUrl);
+            model.ReturnUrl, customReturnUrl);
     }
 
     public async Task HandleTuitionPaymentCallback(VnPayCallbackModel callbackModel, string accountId)

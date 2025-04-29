@@ -8,6 +8,7 @@ using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
 using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
@@ -117,9 +118,16 @@ public class TuitionServiceTest
             .Setup(s => s.CreateVnPayPaymentUrl(It.IsAny<Transaction>(), ipAddress, apiBaseUrl,
                 currentAccount.AccountFirebaseId, returnUrl, It.IsAny<string>()))
             .Returns(paymentUrl);
-    
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = apiBaseUrl,
+            IpAddress = ipAddress,
+            ReturnUrl = returnUrl,
+            TuitionId = tuitionId
+        };
         // Act
-        var result = await _tuitionService.PayTuition(currentAccount, tuitionId, returnUrl, ipAddress, apiBaseUrl);
+        var result = await _tuitionService.PayTuition(currentAccount, paymentModel);
     
         // Assert
         Assert.Equal(paymentUrl, result);
@@ -139,9 +147,18 @@ public class TuitionServiceTest
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false, TrackingOption.Default))
             .ReturnsAsync((DataAccess.Models.Entity.Tuition)null);
 
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = "",
+            IpAddress = "",
+            ReturnUrl = "",
+            TuitionId = tuitionId
+        };
+        
         // Act & Assert
         await Assert.ThrowsAsync<NullReferenceException>(() =>
-            _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
+            _tuitionService.PayTuition(currentAccount, paymentModel));
     }
     
     
@@ -184,8 +201,17 @@ public class TuitionServiceTest
             It.IsAny<Transaction>(), ipAddress, apiBaseUrl, accountId, returnUrl, It.IsAny<string>()))
             .Returns(expectedPaymentUrl);
 
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = apiBaseUrl,
+            IpAddress = ipAddress,
+            ReturnUrl = returnUrl,
+            TuitionId = tuitionId
+        };
+        
         // Act
-        var result = await _tuitionService.PayTuition(account, tuitionId, returnUrl, ipAddress, apiBaseUrl);
+        var result = await _tuitionService.PayTuition(account, paymentModel);
 
         // Assert
         Assert.Equal(expectedPaymentUrl, result);
@@ -217,10 +243,20 @@ public class TuitionServiceTest
         _systemConfigServiceMock
             .Setup(s => s.GetTaxesRateConfig(It.IsAny<int>()))
             .ReturnsAsync(new SystemConfigModel() { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate"});
-    
+
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = "",
+            IpAddress = "",
+            ReturnUrl = "",
+            TuitionId = tuitionId
+        };
+        
+        
         // Act & Assert
         await Assert.ThrowsAsync<IllegalArgumentException>(() =>
-            _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
+            _tuitionService.PayTuition(currentAccount, paymentModel));
     }
     
     [Fact]
@@ -247,10 +283,18 @@ public class TuitionServiceTest
         _systemConfigServiceMock
             .Setup(s => s.GetTaxesRateConfig(It.IsAny<int>()))
             .ReturnsAsync(new SystemConfigModel() { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate"});
-    
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = "",
+            IpAddress = "",
+            ReturnUrl = "",
+            TuitionId = tuitionId
+        };
+        
         // Act & Assert
         await Assert.ThrowsAsync<IllegalArgumentException>(() =>
-            _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
+            _tuitionService.PayTuition(currentAccount, paymentModel));
     }
     
     [Fact]

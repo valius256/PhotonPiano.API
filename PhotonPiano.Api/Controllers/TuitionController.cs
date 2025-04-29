@@ -37,9 +37,12 @@ public class TuitionController : BaseController
 
         var apiBaseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.PathBase}";
 
-        var url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, request.TuitionId,
-            request.ReturnUrl,
-            ipAddress, apiBaseUrl);
+        var paymentModel = request.Adapt<PayTuitionModel>();
+
+        paymentModel.ApiBaseUrl = apiBaseUrl;
+        paymentModel.IpAddress = ipAddress;
+
+        var url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, paymentModel);
 
         return Ok(new PaymentUrlResponse
         {

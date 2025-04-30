@@ -571,10 +571,10 @@ public class TuitionService : ITuitionService
             throw new NotFoundException("No tuition found for this, please add tuition first.");
 
         if (tuition.PaymentStatus == PaymentStatus.Succeed)
-            throw new IllegalArgumentException("This tuition has already been processed.");
+            throw new BadRequestException("This tuition has already been processed.");
 
         if (tuition.StudentClass.StudentFirebaseId != userFirebaseId)
-            throw new IllegalArgumentException("You are not allowed to pay this tuition.");
+            throw new BadRequestException("You are not allowed to pay this tuition.");
     }
 
     public async Task CreateTuitionForTestPurpose()

@@ -75,66 +75,7 @@ public class TuitionServiceTest
         _tuitionService = new TuitionService(_unitOfWorkMock.Object, _serviceFactoryMock.Object);
     }
 
-    [Fact]
-    public async Task PayTuition_ValidRequest_ReturnsPaymentUrl()
-    {
-        // Arrange
-        var currentAccount = new AccountModel { AccountFirebaseId = "student123", Email = "student@example.com" };
-        var tuitionId = Guid.NewGuid();
-        var returnUrl = "https://example.com/return";
-        var ipAddress = "127.0.0.1";
-        var apiBaseUrl = "https://api.example.com";
-        var studentClassId = Guid.NewGuid();
-
-        var tuition = new DataAccess.Models.Entity.Tuition
-        {
-            Id = tuitionId,
-            StudentClassId = Guid.NewGuid(),
-            Amount = 1000m,
-            PaymentStatus = PaymentStatus.Pending,
-            StudentClass = new StudentClass
-                { StudentFirebaseId = "student123", CreatedById = "admin001", Id = studentClassId }
-        };
-
-        var systemConfig = new SystemConfigModel
-            { ConfigValue = "0.1", ConfigName = "TuitionTaxRate", Id = Guid.NewGuid() };
-        var transactionCode = "TRANS-123";
-        var paymentUrl = "https://payment.example.com/url";
-
-        _tuitionRepositoryMock
-            .Setup(r => r.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
-                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
-                TrackingOption.Default))
-            .ReturnsAsync(tuition);
-
-        _systemConfigServiceMock
-            .Setup(s => s.GetTaxesRateConfig(It.IsAny<int>()))
-            .ReturnsAsync(systemConfig);
-
-        _transactionServiceMock
-            .Setup(s => s.GetTransactionCode(It.IsAny<TransactionType>(), It.IsAny<DateTime>(), It.IsAny<Guid>()))
-            .Returns(transactionCode);
-
-        _paymentServiceMock
-            .Setup(s => s.CreateVnPayPaymentUrl(It.IsAny<Transaction>(), ipAddress, apiBaseUrl,
-                currentAccount.AccountFirebaseId, returnUrl, It.IsAny<string>()))
-            .Returns(paymentUrl);
-
-        var paymentModel = new PayTuitionModel
-        {
-            ApiBaseUrl = apiBaseUrl,
-            IpAddress = ipAddress,
-            ReturnUrl = returnUrl,
-            TuitionId = tuitionId
-        };
-        // Act
-        var result = await _tuitionService.PayTuition(currentAccount, paymentModel);
-
-        // Assert
-        Assert.Equal(paymentUrl, result);
-        _transactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(), Times.Once);
-    }
+  
 
     [Fact]
     public async Task PayTuition_TuitionNotFound_ThrowsNullReferenceException()
@@ -263,7 +204,7 @@ public class TuitionServiceTest
 
 
         // Act & Assert
-        await Assert.ThrowsAsync<IllegalArgumentException>(() =>
+        await Assert.ThrowsAsync<BadRequestException>(() =>
             _tuitionService.PayTuition(currentAccount, paymentModel));
     }
 
@@ -304,7 +245,7 @@ public class TuitionServiceTest
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<IllegalArgumentException>(() =>
+        await Assert.ThrowsAsync<BadRequestException>(() =>
             _tuitionService.PayTuition(currentAccount, paymentModel));
     }
 

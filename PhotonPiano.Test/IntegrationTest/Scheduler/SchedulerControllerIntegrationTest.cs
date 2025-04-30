@@ -53,6 +53,38 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    // Invalid input Parameters
+    [Fact]
+    public async Task GetWeeklySchedule_InvalidParametersStartDate_ReturnsBadRequest()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response =
+            await _client.GetAsync($"/api/scheduler/slots?start-time={DateTime.UtcNow.Date}&end-time=invalid");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // Invalid input Parameters
+    [Fact]
+    public async Task GetWeeklySchedule_InvalidParametersEndDate_ReturnsBadRequest()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response =
+            await _client.GetAsync($"/api/scheduler/slots?start-time=invalid&end-time={DateTime.UtcNow.Date}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
     
 
     // Boundary Dates

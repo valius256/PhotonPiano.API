@@ -145,6 +145,23 @@ jobs:
             mkdir -p ~/photonpiano
             cd ~/photonpiano
             
+             script: |
+            set -e # Dừng script nếu có lỗi
+            
+            # Đảm bảo docker-compose down trước
+            cd ~/photonpiano || true && docker compose down || true
+            
+            # Xóa images cũ của backend và frontend
+            docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
+            docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
+            
+            # Dọn dẹp rác Docker
+            docker system prune -af --volumes
+            
+            # Tạo directory cho deployment
+            mkdir -p ~/photonpiano
+            cd ~/photonpiano
+            
             # Tạo nội dung cho prometheus.yml
             cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
             global:
@@ -157,8 +174,8 @@ jobs:
                   - targets: [ 'photonpiano-api:8080' ]
             EOF
             
-   
-        # Tạo .env file từ GitHub Secrets
+            
+            # Tạo .env file từ GitHub Secrets
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}

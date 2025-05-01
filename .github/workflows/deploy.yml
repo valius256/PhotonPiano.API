@@ -280,12 +280,11 @@ jobs:
                   - GF_SERVER_HTTP_PORT=3000
                   - GF_DATASOURCE_NAME=Prometheus
                   - GF_DATASOURCE_URL=http://prometheus:9090
-      
                 depends_on:
                   - prometheus
                 networks:
                   - app-network
-                  restart: unless-stopped
+                restart: unless-stopped
 
             networks:
               app-network:

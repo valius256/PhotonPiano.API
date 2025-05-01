@@ -73,12 +73,12 @@ jobs:
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-
-
 #      - name: ✅ Run Tests
 #        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
-
-  docker-build-and-push: 
+  
+  
+  
+  docker-build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:

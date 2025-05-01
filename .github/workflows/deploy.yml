@@ -157,7 +157,7 @@ jobs:
                   - targets: [ 'photonpiano-api:8080' ]
             EOF
             
-  
+   
         # Tạo .env file từ GitHub Secrets
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}

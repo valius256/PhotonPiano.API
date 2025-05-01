@@ -91,7 +91,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: 🔐 Login to GitHub Container Registry (Frontend)
         uses: docker/login-action@v3
         with:
@@ -104,16 +104,16 @@ jobs:
           # Build API
           docker build -t ${{ env.IMAGE_NAME_API }}:latest -t ${{ env.IMAGE_NAME_API }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME_API }} --all-tags
-          
   
-
+  
+  
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up SSH key
         run: |
@@ -203,6 +203,7 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
+            
               photonpiano-api:
                 image: ghcr.io/valius256/photonpiano-api:latest
                 container_name: photonpiano-api
@@ -243,6 +244,7 @@ jobs:
                   - /root/.aspnet/https:/https:ro
                 networks:
                   - app-network 
+            
               photonpiano-web:
                 image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
                 container_name: photonpiano-web

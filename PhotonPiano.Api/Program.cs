@@ -130,6 +130,8 @@ app.UseAuthorization();
 
 app.MapSignalRConfig();
 
+app.MapMetrics();
+
 app.UseResponseCompression();
 
 app.MapControllers();

@@ -95,6 +95,8 @@ app.UseHttpMetrics(); // collect HTTP request metrics
 
 app.UseRouting();
 
+app.MapMetrics();
+
 await app.ConfigureDatabaseAsync();
 
 app.UseScalarConfig();
@@ -130,7 +132,6 @@ app.UseAuthorization();
 
 app.MapSignalRConfig();
 
-app.MapMetrics();
 
 app.UseResponseCompression();
 

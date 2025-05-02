@@ -170,21 +170,21 @@ jobs:
               - job_name: 'photonpiano-api'
                 metrics_path: /metrics
                 static_configs:
-                  - targets: ['${{ secrets.SERVER_IP }}:8080']
+                  - targets: ['photonpiano-api:8080']
           
               # Giám sát hệ thống VPS với node_exporter
               - job_name: 'vps-system'
                 static_configs:
-                  - targets: ['${{ secrets.SERVER_IP }}:9100']
+                  - targets: ['node-exporter:9100']
             
               - job_name: 'photonpiano-api-probe'
                 metrics_path: /probe
                 params:
                   module: [http_health]
                 static_configs:
-                  - targets: ['http://${{ secrets.SERVER_IP }}:8080']
+                  - targets: ['http://photonpiano-api:8080']
                     labels:
-                      group: 'photonpiano-api'  # Optional label for filtering in Grafana
+                      group: 'photonpiano-api' 
                 relabel_configs:
                   - source_labels: [__address__]
                     target_label: __param_target
@@ -196,9 +196,9 @@ jobs:
               - job_name: 'photonpiano-api-icmp'
                 metrics_path: /probe
                 params:
-                  module: [icmp]  # ICMP ping probe
+                  module: [icmp]  
                 static_configs:
-                  - targets: ['${{ secrets.SERVER_IP }}']
+                  - targets: ['photonpiano-api']
                     labels:
                       group: 'photonpiano-api'
                 relabel_configs:

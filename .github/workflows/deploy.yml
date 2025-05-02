@@ -150,7 +150,7 @@ jobs:
             cd ~/photonpiano
             cat > blackbox.yml <<EOF
             modules:
-              http_custom:
+              http_health:
                 prober: http
                 http:
                   method: GET
@@ -180,7 +180,7 @@ jobs:
               - job_name: 'photonpiano-api-probe'
                 metrics_path: /probe
                 params:
-                  module: [http_custom]  
+                  module: [http_health]
                 static_configs:
                   - targets: ['${{ secrets.SERVER_IP }}:8080']
                     labels:

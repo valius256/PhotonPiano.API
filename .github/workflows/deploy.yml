@@ -154,10 +154,9 @@ jobs:
                 prober: http
                 http:
                   method: GET
-                  path: /health  # Probe the /health endpoint
-                  valid_status_codes: [200]  # Expect a 200 status code
-                  preferred_ip_protocol: "ip4"
-                  resolve_first: true  # Enable DNS lookup metrics
+                  path: /health
+                  valid_status_codes: [200]
+                  fail_if_not_ssl: false
             EOF
             
             # Tạo nội dung cho prometheus.yml

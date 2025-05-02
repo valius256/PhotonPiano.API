@@ -12,6 +12,7 @@ using Serilog;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Ghostscript.NET.Rasterizer;
+using OpenTelemetry.Metrics;
 using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,6 +79,21 @@ builder.AddSignalRConfig();
 
 builder.Services.AddSingleton<RedirectUrlValidator>();
 
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(x =>
+    {
+        x.AddPrometheusExporter();
+        x.AddAspNetCoreInstrumentation();
+
+        x.AddView("request-duration",
+            new ExplicitBucketHistogramConfiguration
+            {
+                Boundaries = new double[] { 0.1, 0.5, 1, 2, 5, 10 }
+            });
+    });
+
+
 //Add serilog
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 //builder.AddServiceDefaults();
@@ -88,8 +104,9 @@ TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 
-app.UseMetricServer(); // expose Prometheus metrics at /metrics
-app.UseHttpMetrics(); // collect HTTP request metrics
+
+// app.UseMetricServer(); // expose Prometheus metrics at /metrics
+// app.UseHttpMetrics(); // collect HTTP request metrics
 
 
 app.UseRouting();
@@ -99,6 +116,8 @@ await app.ConfigureDatabaseAsync();
 app.UseScalarConfig();
 
 app.UseCors("AllowAll");
+
+app.MapPrometheusScrapingEndpoint();
 
 app.UseHttpsRedirection();
 
@@ -130,6 +149,8 @@ app.MapSignalRConfig();
 app.UseResponseCompression();
 
 app.MapControllers();
+
+
 
 
 app.MapHealthChecks("/health");

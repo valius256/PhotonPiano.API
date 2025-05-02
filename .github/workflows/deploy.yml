@@ -210,7 +210,34 @@ jobs:
                     replacement: blackbox-exporter:9115
             EOF
             
+            # Tạo cấu hình OpenTelemetry Collector
+            cat > ~/photonpiano/otel-config.yaml <<EOF
+            receivers:
+            otlp:
+              protocols:
+                grpc:
+                http:
+          
+            processors:
+              batch:
             
+            exporters:
+              logging:
+                loglevel: debug
+              prometheus:
+                endpoint: ":9090"
+            
+            service:
+              pipelines:
+                traces:
+                  receivers: [otlp]
+                  processors: [batch]
+                  exporters: [logging, prometheus]
+                metrics:
+                  receivers: [otlp]
+                  processors: [batch]
+                  exporters: [prometheus]
+              EOF
             
             
             # Tạo .env file từ GitHub Secrets
@@ -376,6 +403,20 @@ jobs:
                 # Add NET_RAW capability for ICMP probes
                 cap_add:
                   - NET_RAW
+              
+              opentelemetry-collector:
+                image: ghcr.io/open-telemetry/opentelemetry-collector-contrib:latest
+                container_name: opentelemetry-collector
+                environment:
+                  - OTEL_RESOURCE_ATTRIBUTES=service.name=photonpiano-api
+                ports:
+                  - "4317:4317" # Port gRPC cho OpenTelemetry
+                  - "55681:55681" # Port HTTP
+                volumes:
+                  - ./otel-config.yaml:/otel-local-config.yaml # Cấu hình OpenTelemetry (tham khảo dưới)
+                networks:
+                  - app-network
+                restart: unless-stopped
 
             networks:
               app-network:

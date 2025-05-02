@@ -12,6 +12,7 @@ using Serilog;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Ghostscript.NET.Rasterizer;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -86,6 +87,11 @@ TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 //builder.Configuration.AddUserSecrets<Program>();
 
 var app = builder.Build();
+
+app.UseMetricServer(); // expose Prometheus metrics at /metrics
+app.UseHttpMetrics(); // collect HTTP request metrics
+
+
 app.UseRouting();
 
 await app.ConfigureDatabaseAsync();

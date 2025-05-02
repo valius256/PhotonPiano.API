@@ -58,13 +58,6 @@ public class TuitionController : BaseController
         [FromRoute(Name = "account-id")] string accountId,
         [FromQuery(Name = "url")] string clientRedirectUrl = "https://default-url.com")
     {
-        // Enable this when frontend web have deploy url
-        // if (!_redirectUrlValidator.IsValid(clientRedirectUrl))
-        // {
-        //     _logger.LogWarning("Invalid redirect URL detected: {clientRedirectUrl}", clientRedirectUrl);
-        //     return BadRequest(new { Error = "Invalid redirect URL" });
-        // }
-
         await _serviceFactory.TuitionService.HandleTuitionPaymentCallback(
             request.Adapt<VnPayCallbackModel>(), accountId);
 

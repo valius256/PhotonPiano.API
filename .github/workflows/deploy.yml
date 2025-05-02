@@ -73,11 +73,11 @@ jobs:
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-
-
 #      - name: ✅ Run Tests
 #        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
-
+  
+  
+  
   docker-build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -91,7 +91,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: 🔐 Login to GitHub Container Registry (Frontend)
         uses: docker/login-action@v3
         with:
@@ -104,16 +104,16 @@ jobs:
           # Build API
           docker build -t ${{ env.IMAGE_NAME_API }}:latest -t ${{ env.IMAGE_NAME_API }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME_API }} --all-tags
-          
   
-
+  
+  
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up SSH key
         run: |
@@ -144,6 +144,36 @@ jobs:
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano
+            
+             script: |
+            set -e # Dừng script nếu có lỗi
+            
+            # Đảm bảo docker-compose down trước
+            cd ~/photonpiano || true && docker compose down || true
+            
+            # Xóa images cũ của backend và frontend
+            docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
+            docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
+            
+            # Dọn dẹp rác Docker
+            docker system prune -af --volumes
+            
+            # Tạo directory cho deployment
+            mkdir -p ~/photonpiano
+            cd ~/photonpiano
+            
+            # Tạo nội dung cho prometheus.yml
+            cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
+            global:
+              scrape_interval: 15s
+            
+            scrape_configs:
+              - job_name: 'photonpiano-api'
+                metrics_path: /metrics
+                static_configs:
+                  - targets: [ 'photonpiano-api:8080' ]
+            EOF
+            
             
             # Tạo .env file từ GitHub Secrets
             cat > .env <<EOF
@@ -203,6 +233,7 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
+            
               photonpiano-api:
                 image: ghcr.io/valius256/photonpiano-api:latest
                 container_name: photonpiano-api
@@ -243,6 +274,7 @@ jobs:
                   - /root/.aspnet/https:/https:ro
                 networks:
                   - app-network 
+            
               photonpiano-web:
                 image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
                 container_name: photonpiano-web
@@ -254,11 +286,43 @@ jobs:
                 networks:
                   - app-network
             
-            volumes:
-              redis-data:
+              prometheus:
+                image: prom/prometheus:latest
+                container_name: prometheus
+                volumes:
+                  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+                ports:
+                  - "9090:9090"
+                networks:
+                  - app-network
+                restart: unless-stopped
+              
+              grafana:
+                image: grafana/grafana:latest
+                container_name: grafana
+                ports:
+                  - "3001:3000"
+                volumes:
+                  - grafana-data:/var/lib/grafana
+                environment:
+                  - GF_SECURITY_ADMIN_USER=admin
+                  - GF_SECURITY_ADMIN_PASSWORD=admin
+                  - GF_SERVER_HTTP_PORT=3000
+                  - GF_DATASOURCE_NAME=Prometheus
+                  - GF_DATASOURCE_URL=http://prometheus:9090
+                depends_on:
+                  - prometheus
+                networks:
+                  - app-network
+                restart: unless-stopped
+
             networks:
               app-network:
                 driver: bridge
+            
+            volumes:
+              grafana-data:
+                driver: local
             EOF
             
             # Đăng nhập vào GitHub Container Registry

@@ -165,7 +165,7 @@ jobs:
             # Tạo nội dung cho prometheus.yml
             cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
             global:
-            scrape_interval: 15s
+              scrape_interval: 15s
           
             scrape_configs:
               # Giám sát API của PhotonPiano

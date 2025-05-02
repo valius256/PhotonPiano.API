@@ -140,38 +140,76 @@ jobs:
             
             # Dọn dẹp rác Docker
             docker system prune -af --volumes
+    
             
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano
             
-             script: |
-            set -e # Dừng script nếu có lỗi
-            
-            # Đảm bảo docker-compose down trước
-            cd ~/photonpiano || true && docker compose down || true
-            
-            # Xóa images cũ của backend và frontend
-            docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
-            docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
-            
-            # Dọn dẹp rác Docker
-            docker system prune -af --volumes
-            
-            # Tạo directory cho deployment
-            mkdir -p ~/photonpiano
+          
+            # Tạo thư mục cho Blackbox 
             cd ~/photonpiano
+            cat > blackbox.yml <<EOF
+            modules:
+              http_health:
+                prober: http
+                timeout: 5s
+                http:
+                  method: GET
+                  path: /health
+                  valid_status_codes: [200]
+                  fail_if_not_ssl: false
+            EOF
             
             # Tạo nội dung cho prometheus.yml
             cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
             global:
-              scrape_interval: 15s
+                scrape_interval: 15s
+                evaluation_interval: 15s
             
             scrape_configs:
+              # Giám sát API của PhotonPiano
               - job_name: 'photonpiano-api'
                 metrics_path: /metrics
                 static_configs:
-                  - targets: [ 'photonpiano-api:8080' ]
+                  - targets: ['photonpiano-api:8080']
+          
+              # Giám sát hệ thống VPS với node_exporter
+              - job_name: 'vps-system'
+                static_configs:
+                  - targets: ['node-exporter:9100']
+            
+              - job_name: 'photonpiano-api-probe'
+                metrics_path: /probe
+                params:
+                  module: [http_2xx]
+                static_configs:
+                  - targets: ['http://photonpiano-api:8080']
+                    labels:
+                      group: 'photonpiano-api' 
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
+            
+              - job_name: 'photonpiano-api-icmp'
+                metrics_path: /probe
+                params:
+                  module: [icmp]  
+                static_configs:
+                  - targets: ['photonpiano-api']
+                    labels:
+                      group: 'photonpiano-api'
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
             EOF
             
             
@@ -315,6 +353,29 @@ jobs:
                 networks:
                   - app-network
                 restart: unless-stopped
+              
+              node-exporter:
+                image: quay.io/prometheus/node-exporter:latest
+                container_name: node-exporter
+                ports:
+                  - "9100:9100"
+                networks:
+                  - app-network
+                restart: unless-stopped
+              
+              blackbox-exporter:
+                image: prom/blackbox-exporter:latest
+                container_name: blackbox-exporter
+                ports:
+                  - "9115:9115"
+                volumes:
+                  - ./blackbox.yml:/etc/blackbox.yml
+                networks:
+                  - app-network
+                restart: unless-stopped
+                # Add NET_RAW capability for ICMP probes
+                cap_add:
+                  - NET_RAW
 
             networks:
               app-network:

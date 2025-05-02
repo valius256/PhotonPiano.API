@@ -177,8 +177,7 @@ jobs:
               # Giám sát hệ thống VPS với node_exporter
               - job_name: 'vps-system'
                 static_configs:
-                  - targets: ['${{ secrets.SERVER_IP }}:9100']
-                   
+                  - targets: ['node-exporter:9100']
             EOF
             
             

@@ -158,7 +158,7 @@ jobs:
                   valid_status_codes: [200]  # Expect a 200 status code
                   preferred_ip_protocol: "ip4"
                   resolve_first: true  # Enable DNS lookup metrics
-              EOF
+            EOF
             
             # Tạo nội dung cho prometheus.yml
             cat > ~/photonpiano/prometheus/prometheus.yml <<EOF

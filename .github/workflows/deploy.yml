@@ -140,23 +140,7 @@ jobs:
             
             # Dọn dẹp rác Docker
             docker system prune -af --volumes
-            
-            # Tạo directory cho deployment
-            mkdir -p ~/photonpiano
-            cd ~/photonpiano
-            
-             script: |
-            set -e # Dừng script nếu có lỗi
-            
-            # Đảm bảo docker-compose down trước
-            cd ~/photonpiano || true && docker compose down || true
-            
-            # Xóa images cũ của backend và frontend
-            docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
-            docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
-            
-            # Dọn dẹp rác Docker
-            docker system prune -af --volumes
+      
             
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano

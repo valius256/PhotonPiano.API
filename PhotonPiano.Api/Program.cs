@@ -5,6 +5,7 @@ using Ghostscript.NET.Rasterizer;
 using Hangfire;
 using Mapster;
 using Microsoft.AspNetCore.Mvc.Razor;
+using OpenTelemetry.Metrics;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
@@ -26,6 +27,25 @@ var configuration = builder.Configuration;
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
     .AddDataAccessDependencies();
+
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(builder =>
+    {
+        builder.AddPrometheusExporter();
+
+        builder.AddMeter("Microsoft.AspNetCore.Hosting",
+            "Microsoft.AspNetCore.Server.Kestrel");
+        builder.AddView("http.server.request.duration",
+            new ExplicitBucketHistogramConfiguration
+            {
+                Boundaries = new[]
+                {
+                    0, 0.005, 0.01, 0.025, 0.05,
+                    0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10
+                }
+            });
+    });
 
 // var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.6");
 // var context = new CustomAssemblyLoadContext();
@@ -89,13 +109,12 @@ TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 var app = builder.Build();
 
 
-app.UseMetricServer(); // expose Prometheus metrics at /metrics
-app.UseHttpMetrics(); // collect HTTP request metrics
+// app.UseMetricServer(); // expose Prometheus metrics at /metrics
+// app.UseHttpMetrics(); // collect HTTP request metrics
 
 
 app.UseRouting();
 
-app.MapMetrics();
 
 await app.ConfigureDatabaseAsync();
 
@@ -137,6 +156,7 @@ app.UseResponseCompression();
 
 app.MapControllers();
 
+app.MapPrometheusScrapingEndpoint();
 
 app.MapHealthChecks("/health");
 

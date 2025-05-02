@@ -1,68 +1,72 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<UserSecretsId>58f7b829-d62d-4e9e-9a74-5aad9ca32712</UserSecretsId>
-		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>58f7b829-d62d-4e9e-9a74-5aad9ca32712</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Aspire.Npgsql" Version="8.2.2" />
-		<PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.2.2" />
-		<PackageReference Include="Aspire.StackExchange.Redis" Version="9.0.0" />
-		<PackageReference Include="DinkToPdf" Version="1.0.8" />
-		<PackageReference Include="FirebaseAdmin" Version="3.1.0" />
-		<PackageReference Include="Hangfire" Version="1.8.17" />
-		<PackageReference Include="Hangfire.PostgreSql" Version="1.20.10" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.10" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.8" />
-		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1" />
-		<PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1" />
-		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
+    <ItemGroup>
+        <PackageReference Include="Aspire.Npgsql" Version="8.2.2"/>
+        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.2.2"/>
+        <PackageReference Include="Aspire.StackExchange.Redis" Version="9.0.0"/>
+        <PackageReference Include="DinkToPdf" Version="1.0.8"/>
+        <PackageReference Include="FirebaseAdmin" Version="3.1.0"/>
+        <PackageReference Include="Hangfire" Version="1.8.17"/>
+        <PackageReference Include="Hangfire.PostgreSql" Version="1.20.10"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.10"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1"/>
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.8"/>
+        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2"/>
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.11.2-beta.1"/>
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0"/>
-		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.11.1" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.11.1" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.11.0-beta.2" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.11.1"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.11.1"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="1.11.0-beta.2"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.11.1"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.11.0-beta.2"/>
+        <PackageReference Include="OpenTelemetryCustom.Instrumentation.Http" Version="1.0.0-rc9.9.16"/>
         <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1"/>
-		<PackageReference Include="Scalar.AspNetCore" Version="2.0.12" />
-		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
-		<PackageReference Include="StackExchange.Redis" Version="2.8.24" />
-	</ItemGroup>
+        <PackageReference Include="Scalar.AspNetCore" Version="2.0.12"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
+        <PackageReference Include="StackExchange.Redis" Version="2.8.24"/>
+    </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\PhotonPiano.BackgroundJob\PhotonPiano.BackgroundJob.csproj" />
-		<ProjectReference Include="..\PhotonPiano.PubSub\PhotonPiano.PubSub.csproj" />
-		<ProjectReference Include="..\PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj" />
-		<ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj" />
-	</ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\PhotonPiano.BackgroundJob\PhotonPiano.BackgroundJob.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.PubSub\PhotonPiano.PubSub.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj"/>
+        <ProjectReference Include="..\PhotonPiano.Shared\PhotonPiano.Shared.csproj"/>
+    </ItemGroup>
 
-	<ItemGroup>
-		<None Include="Views\PaymentSuccess.cshtml" />
-		<None Include="Views\TuitionCreated.cshtml" />
-		<None Include="Views\TutionFeeNotification.cshtml" />
-		<None Include="Views\Certificate.cshtml"/>
-	</ItemGroup>
+    <ItemGroup>
+        <None Include="Views\PaymentSuccess.cshtml"/>
+        <None Include="Views\TuitionCreated.cshtml"/>
+        <None Include="Views\TutionFeeNotification.cshtml"/>
+        <None Include="Views\Certificate.cshtml"/>
+    </ItemGroup>
 
-	<ItemGroup>
-		<Content Include="wkhtmltox\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
+    <ItemGroup>
+        <Content Include="wkhtmltox\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 </Project>

@@ -1,5 +1,7 @@
+using System.Reflection;
 using DinkToPdf;
 using DinkToPdf.Contracts;
+using Ghostscript.NET.Rasterizer;
 using Hangfire;
 using Mapster;
 using Microsoft.AspNetCore.Mvc.Razor;
@@ -9,11 +11,6 @@ using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
 using Serilog;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using Ghostscript.NET.Rasterizer;
-using OpenTelemetry.Metrics;
-using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DbMigrationJob>();
@@ -24,11 +21,10 @@ var configuration = builder.Configuration;
 // hello this line write to proved i am the owner of this project and github is not good for beginner
 
 
-
 // Add services to the container.
 builder.Services.AddApiDependencies(configuration)
     .AddBusinessLogicDependencies()
-    .AddDataAccessDependencies(); 
+    .AddDataAccessDependencies();
 
 // var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.6");
 // var context = new CustomAssemblyLoadContext();
@@ -41,7 +37,8 @@ builder.Services.AddApiDependencies(configuration)
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 // Register Ghostscript.NET services
-builder.Services.AddSingleton<GhostscriptRasterizer>(provider => {
+builder.Services.AddSingleton<GhostscriptRasterizer>(provider =>
+{
     // You can optionally set a specific Ghostscript version path here if needed:
     // var gsPath = Path.Combine(Directory.GetCurrentDirectory(), "ghostscript", "gsdll32.dll");
     // GhostscriptVersionInfo gsVersion = new GhostscriptVersionInfo(gsPath);
@@ -80,20 +77,6 @@ builder.AddSignalRConfig();
 builder.Services.AddSingleton<RedirectUrlValidator>();
 
 
-builder.Services.AddOpenTelemetry()
-    .WithMetrics(x =>
-    {
-        x.AddPrometheusExporter();
-        x.AddAspNetCoreInstrumentation();
-
-        x.AddView("request-duration",
-            new ExplicitBucketHistogramConfiguration
-            {
-                Boundaries = new double[] { 0.1, 0.5, 1, 2, 5, 10 }
-            });
-    });
-
-
 //Add serilog
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 //builder.AddServiceDefaults();
@@ -127,7 +110,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     DarkModeEnabled = true,
     IsReadOnlyFunc = _ => false,
     Authorization = new[] { new HangfireAuthorizationFilter() },
-    AppPath = "https://photonpiano.duckdns.org/scalar/v1",
+    AppPath = "https://photonpiano.duckdns.org/scalar/v1"
 });
 
 app.UseStaticFiles();
@@ -149,8 +132,6 @@ app.MapSignalRConfig();
 app.UseResponseCompression();
 
 app.MapControllers();
-
-
 
 
 app.MapHealthChecks("/health");

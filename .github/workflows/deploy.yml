@@ -152,6 +152,7 @@ jobs:
             modules:
               http_health:
                 prober: http
+                timeout: 5s
                 http:
                   method: GET
                   path: /health
@@ -181,7 +182,7 @@ jobs:
                 params:
                   module: [http_health]
                 static_configs:
-                  - targets: ['${{ secrets.SERVER_IP }}:8080/health']
+                  - targets: ['${{ secrets.SERVER_IP }}:8080']
                     labels:
                       group: 'photonpiano-api'  # Optional label for filtering in Grafana
                 relabel_configs:

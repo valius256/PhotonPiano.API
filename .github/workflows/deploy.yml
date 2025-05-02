@@ -178,6 +178,38 @@ jobs:
               - job_name: 'vps-system'
                 static_configs:
                   - targets: ['${{ secrets.SERVER_IP }}:9100']
+            
+              - job_name: 'photonpiano-api-probe'
+                metrics_path: /probe
+                params:
+                  module: [http_2xx]  # Probes for HTTP 2xx status codes
+                static_configs:
+                  - targets: ['${{ secrets.SERVER_IP }}:8080']
+                    labels:
+                      group: 'photonpiano-api'  # Optional label for filtering in Grafana
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
+            
+              - job_name: 'photonpiano-api-icmp'
+                metrics_path: /probe
+                params:
+                  module: [icmp]  # ICMP ping probe
+                static_configs:
+                  - targets: ['${{ secrets.SERVER_IP }}']
+                    labels:
+                      group: 'photonpiano-api'
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
             EOF
             
             
@@ -321,6 +353,18 @@ jobs:
                 networks:
                   - app-network
                 restart: unless-stopped
+            
+              blackbox-exporter:
+                image: prom/blackbox-exporter:latest
+                container_name: blackbox-exporter
+                ports:
+                  - "9115:9115"
+                networks:
+                  - app-network
+                restart: unless-stopped
+                # Add NET_RAW capability for ICMP probes
+                cap_add:
+                  - NET_RAW
 
             networks:
               app-network:

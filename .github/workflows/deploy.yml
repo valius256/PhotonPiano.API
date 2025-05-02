@@ -172,7 +172,7 @@ jobs:
               - job_name: 'photonpiano-api'
                 metrics_path: /metrics
                 static_configs:
-                  - targets: ['photonpiano-api:8080']
+                  - targets: ['${{ secrets.SERVER_IP }}:8080']
           
               # Giám sát hệ thống VPS với node_exporter
               - job_name: 'vps-system'

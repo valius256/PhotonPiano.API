@@ -146,6 +146,20 @@ jobs:
             mkdir -p ~/photonpiano
             cd ~/photonpiano
             
+            # Tạo thư mục cho Blackbox 
+            cd ~/photonpiano
+            cat > blackbox.yml <<EOF
+            modules:
+              http_custom:
+                prober: http
+                http:
+                  method: GET
+                  path: /health  # Probe the /health endpoint
+                  valid_status_codes: [200]  # Expect a 200 status code
+                  preferred_ip_protocol: "ip4"
+                  resolve_first: true  # Enable DNS lookup metrics
+              EOF
+            
             # Tạo nội dung cho prometheus.yml
             cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
             global:
@@ -166,7 +180,7 @@ jobs:
               - job_name: 'photonpiano-api-probe'
                 metrics_path: /probe
                 params:
-                  module: [http_2xx]  # Probes for HTTP 2xx status codes
+                  module: [http_custom]  
                 static_configs:
                   - targets: ['${{ secrets.SERVER_IP }}:8080']
                     labels:
@@ -195,6 +209,8 @@ jobs:
                   - target_label: __address__
                     replacement: blackbox-exporter:9115
             EOF
+            
+            
             
             
             # Tạo .env file từ GitHub Secrets
@@ -352,6 +368,8 @@ jobs:
                 container_name: blackbox-exporter
                 ports:
                   - "9115:9115"
+                volumes:
+                  - ./blackbox.yml:/etc/blackbox.yml
                 networks:
                   - app-network
                 restart: unless-stopped

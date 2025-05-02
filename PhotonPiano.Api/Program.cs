@@ -101,7 +101,7 @@ app.UseScalarConfig();
 
 app.UseCors("AllowAll");
 
-app.MapPrometheusScrapingEndpoint();
+// app.MapPrometheusScrapingEndpoint();
 
 app.UseHttpsRedirection();
 

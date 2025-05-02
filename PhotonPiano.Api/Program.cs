@@ -10,6 +10,7 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
+using Prometheus;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -88,8 +89,8 @@ TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 var app = builder.Build();
 
 
-// app.UseMetricServer(); // expose Prometheus metrics at /metrics
-// app.UseHttpMetrics(); // collect HTTP request metrics
+app.UseMetricServer(); // expose Prometheus metrics at /metrics
+app.UseHttpMetrics(); // collect HTTP request metrics
 
 
 app.UseRouting();

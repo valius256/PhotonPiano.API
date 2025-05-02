@@ -140,7 +140,7 @@ jobs:
             
             # Dọn dẹp rác Docker
             docker system prune -af --volumes
-      
+    
             
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
@@ -209,8 +209,6 @@ jobs:
                   - target_label: __address__
                     replacement: blackbox-exporter:9115
             EOF
-            
-            
             
             
             # Tạo .env file từ GitHub Secrets

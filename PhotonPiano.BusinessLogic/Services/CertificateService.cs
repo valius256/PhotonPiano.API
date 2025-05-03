@@ -112,7 +112,7 @@ public class CertificateService : ICertificateService
         var studentClassEntity = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
         studentClassEntity!.CertificateHtml = certificateHtml;
         studentClassEntity.HasCertificateHtml = true;
-        var certificateUrl = $"/api/certificates/{studentClassId}/html";
+        var certificateUrl = $"/endpoint/certificates/{studentClassId}/html";
         studentClassEntity.CertificateUrl = certificateUrl;
         await _unitOfWork.SaveChangesAsync();
         return (certificateUrl: certificateUrl, studentClassId: studentClassId);

@@ -106,11 +106,11 @@ jobs:
           docker push ${{ env.IMAGE_NAME_API }} --all-tags
   
   
-  
+
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -129,91 +129,93 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e # Dừng script nếu có lỗi
-            
-            # Đảm bảo docker-compose down trước
-            cd ~/photonpiano || true && docker compose down || true
-            
-            # Xóa images cũ của backend và frontend
+            set -e # Stop script on error
+
+            # Check if Prometheus and Grafana are running outside our project
+            PROMETHEUS_RUNNING=$(docker ps -q -f name=prometheus | wc -l)
+            GRAFANA_RUNNING=$(docker ps -q -f name=grafana | wc -l)
+
+            # Ensure docker-compose down for PhotonPiano project only
+            cd ~/photonpiano || true && docker compose -p photonpiano down || true
+
+            # Clean old images
             docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
             docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
-            
-            # Dọn dẹp rác Docker
+
+            # Clean Docker garbage
             docker system prune -af --volumes
-    
-            
-            # Tạo directory cho deployment
+
+            # Create directory for deployment
             mkdir -p ~/photonpiano
+            mkdir -p ~/photonpiano/prometheus
+            mkdir -p ~/photonpiano/frontend
             cd ~/photonpiano
-            
-          
-#            # Tạo thư mục cho Blackbox 
-#            cd ~/photonpiano
-#            cat > blackbox.yml <<EOF
-#            modules:
-#              http_health:
-#                prober: http
-#                timeout: 5s
-#                http:
-#                  method: GET
-#                  path: /health
-#                  valid_status_codes: [200]
-#                  fail_if_not_ssl: false
-#            EOF
-            
-            # Tạo nội dung cho prometheus.yml
-#            cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
-#            global:
-#                scrape_interval: 15s
-#                evaluation_interval: 15s
-#            
-#            scrape_configs:
-#              # Giám sát API của PhotonPiano
-#              - job_name: 'photonpiano-api'
-#                metrics_path: /metrics
-#                static_configs:
-#                  - targets: ['photonpiano-api:8080']
-#          
-#              # Giám sát hệ thống VPS với node_exporter
-#              - job_name: 'vps-system'
-#                static_configs:
-#                  - targets: ['node-exporter:9100']
-#            
-#              - job_name: 'photonpiano-api-probe'
-#                metrics_path: /probe
-#                params:
-#                  module: [http_2xx]
-#                static_configs:
-#                  - targets: ['http://photonpiano-api:8080']
-#                    labels:
-#                      group: 'photonpiano-api' 
-#                relabel_configs:
-#                  - source_labels: [__address__]
-#                    target_label: __param_target
-#                  - source_labels: [__param_target]
-#                    target_label: instance
-#                  - target_label: __address__
-#                    replacement: blackbox-exporter:9115
-#            
-#              - job_name: 'photonpiano-api-icmp'
-#                metrics_path: /probe
-#                params:
-#                  module: [icmp]  
-#                static_configs:
-#                  - targets: ['photonpiano-api']
-#                    labels:
-#                      group: 'photonpiano-api'
-#                relabel_configs:
-#                  - source_labels: [__address__]
-#                    target_label: __param_target
-#                  - source_labels: [__param_target]
-#                    target_label: instance
-#                  - target_label: __address__
-#                    replacement: blackbox-exporter:9115
-#            EOF
-            
-            
-            # Tạo .env file từ GitHub Secrets
+
+            # Create Blackbox configuration
+            cat > blackbox.yml <<EOF
+            modules:
+              http_health:
+                prober: http
+                timeout: 5s
+                http:
+                  method: GET
+                  path: /health
+                  valid_status_codes: [200]
+                  fail_if_not_ssl: false
+            EOF
+
+            # Create Prometheus configuration
+            cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
+            global:
+                scrape_interval: 15s
+                evaluation_interval: 15s
+
+            scrape_configs:
+              # Monitor PhotonPiano API
+              - job_name: 'photonpiano-api'
+                metrics_path: /metrics
+                static_configs:
+                  - targets: ['photonpiano-api:8080']
+
+              # Monitor VPS system with node_exporter
+              - job_name: 'vps-system'
+                static_configs:
+                  - targets: ['node-exporter:9100']
+
+              - job_name: 'photonpiano-api-probe'
+                metrics_path: /probe
+                params:
+                  module: [http_2xx]
+                static_configs:
+                  - targets: ['http://photonpiano-api:8080']
+                    labels:
+                      group: 'photonpiano-api' 
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
+
+              - job_name: 'photonpiano-api-icmp'
+                metrics_path: /probe
+                params:
+                  module: [icmp]  
+                static_configs:
+                  - targets: ['photonpiano-api']
+                    labels:
+                      group: 'photonpiano-api'
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
+            EOF
+
+            # Create environment files
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
@@ -239,7 +241,7 @@ jobs:
             REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
             PINATA_DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
             EOF
-            
+
             cat > ~/photonpiano/frontend/.env <<EOF
             VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
             VITE_COOKIE_SECRET=${{ secrets.VITE_COOKIE_SECRET }}
@@ -252,9 +254,12 @@ jobs:
             VITE_API_NOTIFICATION_URL=${{ secrets.VITE_API_NOTIFICATION_URL }}
             VITE_API_PROGRESS_URL=${{ secrets.VITE_API_PROGRESS_URL }}
             EOF
-            
-            # Viết docker-compose.yml
-            cat > docker-compose.yml <<EOF
+
+            # Generate docker-compose.yml based on whether Prometheus and Grafana are running
+            if [ "$PROMETHEUS_RUNNING" -gt 0 ] && [ "$GRAFANA_RUNNING" -gt 0 ]; then
+              echo "Prometheus and Grafana are already running. Using app-only configuration."
+              # Create docker-compose without monitoring services
+              cat > docker-compose.yml <<EOF
             version: "3.8"
             services:
               photonpiano-database:
@@ -262,7 +267,7 @@ jobs:
                 container_name: photonpiano-database
                 environment:
                   POSTGRES_USER: postgres
-                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+                  POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
                   POSTGRES_DB: photonpiano
                 ports:
                   - "5432:5432"
@@ -271,7 +276,7 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-            
+
               photonpiano-api:
                 image: ghcr.io/valius256/photonpiano-api:latest
                 container_name: photonpiano-api
@@ -279,32 +284,32 @@ jobs:
                 depends_on:
                   - photonpiano-database
                 ports:
-                  - "8080:8080"  # HTTP
+                  - "8080:8080"
                 environment:
                   - ASPNETCORE_URLS=http://0.0.0.0:8080
-                  - POSTGRES_CONNECTION=${POSTGRES_CONNECTION}
-                  - HangfireConnectionString=${POSTGRES_CONNECTION}
-                  - Firebase__Auth__ApiKey=${FIREBASE_API_KEY}
-                  - Firebase__Auth__Authority=${FIREBASE_AUTHORITY}
-                  - Firebase__Auth__Issuer=${FIREBASE_ISSUER}
-                  - Firebase__Auth__Audience=${FIREBASE_AUDIENCE}
-                  - VNPAY__BASEURL=${VNPAY_BASEURL}
-                  - VNPAY__TMNCODE=${VNPAY_TMNCODE}
-                  - VNPAY__HASHSECRET=${VNPAY_HASHSECRET}
-                  - VNPAY__RETURNURL=${VNPAY_RETURNURL}
-                  - VNPAY__CURRCODE=${VNPAY_CURRCODE}
-                  - VNPAY__LOCALE=${VNPAY_LOCALE}
-                  - VNPAY__TIMEZONEID=${VNPAY_TIMEZONEID}
-                  - VNPAY__VERSION=${VNPAY_VERSION}
-                  - VNPAY__COMMAND=${VNPAY_COMMAND}
-                  - PINATA__JWTTOKEN=${PINATA_JWTTOKEN}
-                  - JWTAUTH__KEY=${JWTAUTH_KEY}
-                  - JWTAUTH__ISSUER=${JWTAUTH_ISSUER}
-                  - JWTAUTH__AUDIENCE=${JWTAUTH_AUDIENCE}
-                  - JWTAUTH__DURATIONINDAYS=${JWTAUTH_DURATIONINDAYS}
-                  - PINATA__GATEWAYBASEURL=${PINATA_GATEWAYBASEURL}
-                  - PINATA__DEFAULTGROUPID=${PINATA_DEFAULTGROUPID}
-                  - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${REDIS_CONNECTION_STRING}
+                  - POSTGRES_CONNECTION=\${POSTGRES_CONNECTION}
+                  - HangfireConnectionString=\${POSTGRES_CONNECTION}
+                  - Firebase__Auth__ApiKey=\${FIREBASE_API_KEY}
+                  - Firebase__Auth__Authority=\${FIREBASE_AUTHORITY}
+                  - Firebase__Auth__Issuer=\${FIREBASE_ISSUER}
+                  - Firebase__Auth__Audience=\${FIREBASE_AUDIENCE}
+                  - VNPAY__BASEURL=\${VNPAY_BASEURL}
+                  - VNPAY__TMNCODE=\${VNPAY_TMNCODE}
+                  - VNPAY__HASHSECRET=\${VNPAY_HASHSECRET}
+                  - VNPAY__RETURNURL=\${VNPAY_RETURNURL}
+                  - VNPAY__CURRCODE=\${VNPAY_CURRCODE}
+                  - VNPAY__LOCALE=\${VNPAY_LOCALE}
+                  - VNPAY__TIMEZONEID=\${VNPAY_TIMEZONEID}
+                  - VNPAY__VERSION=\${VNPAY_VERSION}
+                  - VNPAY__COMMAND=\${VNPAY_COMMAND}
+                  - PINATA__JWTTOKEN=\${PINATA_JWTTOKEN}
+                  - JWTAUTH__KEY=\${JWTAUTH_KEY}
+                  - JWTAUTH__ISSUER=\${JWTAUTH_ISSUER}
+                  - JWTAUTH__AUDIENCE=\${JWTAUTH_AUDIENCE}
+                  - JWTAUTH__DURATIONINDAYS=\${JWTAUTH_DURATIONINDAYS}
+                  - PINATA__GATEWAYBASEURL=\${PINATA_GATEWAYBASEURL}
+                  - PINATA__DEFAULTGROUPID=\${PINATA_DEFAULTGROUPID}
+                  - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=\${REDIS_CONNECTION_STRING}
                   - Logging__LogLevel__Hangfire=Debug
                   - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
                 volumes:
@@ -312,7 +317,7 @@ jobs:
                   - /root/.aspnet/https:/https:ro
                 networks:
                   - app-network 
-            
+
               photonpiano-web:
                 image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
                 container_name: photonpiano-web
@@ -323,72 +328,149 @@ jobs:
                   - "3000:3000"
                 networks:
                   - app-network
-            
-#              prometheus:
-#                image: prom/prometheus:latest
-#                container_name: prometheus
-#                volumes:
-#                  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-#                ports:
-#                  - "9090:9090"
-#                networks:
-#                  - app-network
-#                restart: unless-stopped
-#              
-#              grafana:
-#                image: grafana/grafana:latest
-#                container_name: grafana
-#                ports:
-#                  - "3001:3000"
-#                volumes:
-#                  - grafana-data:/var/lib/grafana
-#                environment:
-#                  - GF_SECURITY_ADMIN_USER=admin
-#                  - GF_SECURITY_ADMIN_PASSWORD=admin
-#                  - GF_SERVER_HTTP_PORT=3000
-#                  - GF_DATASOURCE_NAME=Prometheus
-#                  - GF_DATASOURCE_URL=http://prometheus:9090
-#                depends_on:
-#                  - prometheus
-#                networks:
-#                  - app-network
-#                restart: unless-stopped
-#              
-#              node-exporter:
-#                image: quay.io/prometheus/node-exporter:latest
-#                container_name: node-exporter
-#                ports:
-#                  - "9100:9100"
-#                networks:
-#                  - app-network
-#                restart: unless-stopped
-#              
-#              blackbox-exporter:
-#                image: prom/blackbox-exporter:latest
-#                container_name: blackbox-exporter
-#                ports:
-#                  - "9115:9115"
-#                volumes:
-#                  - ./blackbox.yml:/etc/blackbox.yml
-#                networks:
-#                  - app-network
-#                restart: unless-stopped
-#                # Add NET_RAW capability for ICMP probes
-#                cap_add:
-#                  - NET_RAW
 
             networks:
               app-network:
                 driver: bridge
-            
-#            volumes:
-#              grafana-data:
-#                driver: local
             EOF
-            
-            # Đăng nhập vào GitHub Container Registry
-             echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin
-            
-            # Pull images và deploy với project name cụ thể
+            else
+              echo "Prometheus and Grafana are not running. Using full configuration with monitoring."
+              # Create docker-compose with all services
+              cat > docker-compose.yml <<EOF
+            version: "3.8"
+            services:
+              photonpiano-database:
+                image: postgres:15
+                container_name: photonpiano-database
+                environment:
+                  POSTGRES_USER: postgres
+                  POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
+                  POSTGRES_DB: photonpiano
+                ports:
+                  - "5432:5432"
+                volumes:
+                  - /root/photonpiano/postgres-data:/var/lib/postgresql/data
+                restart: unless-stopped
+                networks:
+                  - app-network
+
+              photonpiano-api:
+                image: ghcr.io/valius256/photonpiano-api:latest
+                container_name: photonpiano-api
+                restart: unless-stopped
+                depends_on:
+                  - photonpiano-database
+                ports:
+                  - "8080:8080"
+                environment:
+                  - ASPNETCORE_URLS=http://0.0.0.0:8080
+                  - POSTGRES_CONNECTION=\${POSTGRES_CONNECTION}
+                  - HangfireConnectionString=\${POSTGRES_CONNECTION}
+                  - Firebase__Auth__ApiKey=\${FIREBASE_API_KEY}
+                  - Firebase__Auth__Authority=\${FIREBASE_AUTHORITY}
+                  - Firebase__Auth__Issuer=\${FIREBASE_ISSUER}
+                  - Firebase__Auth__Audience=\${FIREBASE_AUDIENCE}
+                  - VNPAY__BASEURL=\${VNPAY_BASEURL}
+                  - VNPAY__TMNCODE=\${VNPAY_TMNCODE}
+                  - VNPAY__HASHSECRET=\${VNPAY_HASHSECRET}
+                  - VNPAY__RETURNURL=\${VNPAY_RETURNURL}
+                  - VNPAY__CURRCODE=\${VNPAY_CURRCODE}
+                  - VNPAY__LOCALE=\${VNPAY_LOCALE}
+                  - VNPAY__TIMEZONEID=\${VNPAY_TIMEZONEID}
+                  - VNPAY__VERSION=\${VNPAY_VERSION}
+                  - VNPAY__COMMAND=\${VNPAY_COMMAND}
+                  - PINATA__JWTTOKEN=\${PINATA_JWTTOKEN}
+                  - JWTAUTH__KEY=\${JWTAUTH_KEY}
+                  - JWTAUTH__ISSUER=\${JWTAUTH_ISSUER}
+                  - JWTAUTH__AUDIENCE=\${JWTAUTH_AUDIENCE}
+                  - JWTAUTH__DURATIONINDAYS=\${JWTAUTH_DURATIONINDAYS}
+                  - PINATA__GATEWAYBASEURL=\${PINATA_GATEWAYBASEURL}
+                  - PINATA__DEFAULTGROUPID=\${PINATA_DEFAULTGROUPID}
+                  - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=\${REDIS_CONNECTION_STRING}
+                  - Logging__LogLevel__Hangfire=Debug
+                  - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
+                volumes:
+                  - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+                  - /root/.aspnet/https:/https:ro
+                networks:
+                  - app-network 
+
+              photonpiano-web:
+                image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
+                container_name: photonpiano-web
+                restart: unless-stopped
+                depends_on:
+                  - photonpiano-api
+                ports:
+                  - "3000:3000"
+                networks:
+                  - app-network
+
+              prometheus:
+                image: prom/prometheus:latest
+                container_name: prometheus
+                volumes:
+                  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+                ports:
+                  - "9090:9090"
+                networks:
+                  - app-network
+                restart: unless-stopped
+
+              grafana:
+                image: grafana/grafana:latest
+                container_name: grafana
+                ports:
+                  - "3001:3000"
+                volumes:
+                  - grafana-data:/var/lib/grafana
+                environment:
+                  - GF_SECURITY_ADMIN_USER=admin
+                  - GF_SECURITY_ADMIN_PASSWORD=admin
+                  - GF_SERVER_HTTP_PORT=3000
+                  - GF_DATASOURCE_NAME=Prometheus
+                  - GF_DATASOURCE_URL=http://prometheus:9090
+                depends_on:
+                  - prometheus
+                networks:
+                  - app-network
+                restart: unless-stopped
+
+              node-exporter:
+                image: quay.io/prometheus/node-exporter:latest
+                container_name: node-exporter
+                ports:
+                  - "9100:9100"
+                networks:
+                  - app-network
+                restart: unless-stopped
+
+              blackbox-exporter:
+                image: prom/blackbox-exporter:latest
+                container_name: blackbox-exporter
+                ports:
+                  - "9115:9115"
+                volumes:
+                  - ./blackbox.yml:/etc/blackbox.yml
+                networks:
+                  - app-network
+                restart: unless-stopped
+                cap_add:
+                  - NET_RAW
+
+            networks:
+              app-network:
+                driver: bridge
+
+            volumes:
+              grafana-data:
+                driver: local
+            EOF
+            fi
+
+            # Login to GitHub Container Registry
+            echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin
+
+            # Pull images and deploy with specific project name
             docker compose -p photonpiano pull
             docker compose -p photonpiano up -d --force-recreate

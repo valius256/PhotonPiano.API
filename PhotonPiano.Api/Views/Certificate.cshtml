@@ -1,27 +1,36 @@
 @model PhotonPiano.BusinessLogic.BusinessModel.Certificate.CertificateModel
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Certificate of Excellence</title>
+    <title>Certificate of Excellence - Photon Piano Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Roboto', sans-serif;
             color: #333;
             margin: 0;
             padding: 0;
             background-color: #f9f9f9;
-            width: 1123px;
-            height: 794px; /* A4 landscape dimensions */
+            width: 100%;
+            height: 100%;
         }
 
+        /* Certificate Container */
         .certificate-container {
             width: 1123px;
-            height: 794px;
+            height: 794px; /* A4 landscape dimensions */
             margin: 0 auto;
-            padding: 0;
             position: relative;
-            box-sizing: border-box;
             background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
             overflow: hidden;
         }
@@ -34,14 +43,15 @@
             bottom: 40px;
             background-color: white;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
         }
 
+        /* Header Section */
         .certificate-header {
             background: linear-gradient(90deg, #2c3e50 0%, #4a6491 100%);
             color: white;
-            padding: 30px;
+            padding: 35px 30px;
             text-align: center;
             position: relative;
         }
@@ -52,13 +62,13 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 10px;
-            background: linear-gradient(90deg, #e74c3c 0%, #f39c12 50%, #2ecc71 100%);
+            height: 8px;
+            background: linear-gradient(90deg, #e74c3c 0%, #f39c12 33%, #2ecc71 66%, #3498db 100%);
         }
 
         .academy-logo {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 24px;
+            font-size: 26px;
             letter-spacing: 3px;
             margin-bottom: 15px;
             font-weight: 600;
@@ -66,10 +76,11 @@
 
         .certificate-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 48px;
+            font-size: 52px;
             margin: 10px 0;
             font-weight: 700;
             letter-spacing: 2px;
+            text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .certificate-subtitle {
@@ -77,10 +88,12 @@
             font-weight: 300;
             letter-spacing: 2px;
             opacity: 0.9;
+            margin-top: 5px;
         }
 
+        /* Content Section */
         .certificate-content {
-            padding: 40px 60px;
+            padding: 45px 60px;
             text-align: center;
         }
 
@@ -89,16 +102,16 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #7f8c8d;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .student-name {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 42px;
+            font-size: 46px;
             font-weight: bold;
             color: #2c3e50;
             margin: 15px 0;
-            padding-bottom: 5px;
+            padding-bottom: 8px;
             display: inline-block;
             position: relative;
         }
@@ -107,16 +120,16 @@
             content: '';
             position: absolute;
             bottom: 0;
-            left: 10%;
-            right: 10%;
+            left: 5%;
+            right: 5%;
             height: 1px;
             background: linear-gradient(90deg, transparent 0%, #3498db 50%, transparent 100%);
         }
 
         .certificate-text {
-            font-size: 16px;
+            font-size: 17px;
             line-height: 1.6;
-            margin: 20px 0;
+            margin: 25px 0;
             color: #555;
         }
 
@@ -126,16 +139,17 @@
             font-size: 20px;
         }
 
+        /* GPA Section */
         .gpa-container {
-            margin: 25px 0;
+            margin: 30px 0;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
         .gpa-circle {
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
             background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
             display: flex;
@@ -143,46 +157,79 @@
             align-items: center;
             color: white;
             font-weight: 500;
-            font-size: 24px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            font-size: 28px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            position: relative;
         }
 
+        .gpa-circle::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Skills Section */
         .skills-container {
-            margin: 30px auto;
+            margin: 35px auto;
             max-width: 80%;
             background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
         }
 
         .skills-title {
             font-weight: 500;
-            margin-bottom: 15px;
-            font-size: 16px;
+            margin-bottom: 20px;
+            font-size: 18px;
             color: #2c3e50;
             text-transform: uppercase;
             letter-spacing: 1px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .skills-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 25%;
+            right: 25%;
+            height: 2px;
+            background: #3498db;
         }
 
         .skills-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
         }
 
         .skill-item {
             background-color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 10px 15px;
+            border-radius: 6px;
             font-size: 14px;
             color: #555;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             border-left: 3px solid #3498db;
+            transition: transform 0.2s ease;
         }
 
+        .skill-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer Section */
         .certificate-footer {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             margin-top: 30px;
             padding: 0 40px;
         }
@@ -195,22 +242,23 @@
         .signature-line {
             border-top: 1px solid #ddd;
             margin-top: 40px;
-            padding-top: 10px;
+            padding-top: 12px;
         }
 
         .signature-name {
             font-weight: 500;
-            font-size: 16px;
+            font-size: 18px;
             color: #2c3e50;
         }
 
         .signature-title {
             font-style: italic;
             color: #7f8c8d;
-            font-size: 14px;
+            font-size: 15px;
             margin-top: 5px;
         }
 
+        /* Meta Information */
         .certificate-meta {
             position: absolute;
             bottom: 20px;
@@ -219,13 +267,16 @@
             display: flex;
             justify-content: space-between;
             padding: 0 60px;
-            font-size: 12px;
+            font-size: 13px;
             color: #95a5a6;
         }
 
+        /* Decorative Elements */
         .music-notes {
             position: absolute;
             opacity: 0.05;
+            color: #2c3e50;
+            z-index: 0;
         }
 
         .note-1 {
@@ -248,72 +299,106 @@
             font-size: 60px;
             transform: rotate(30deg);
         }
+
+        .certificate-seal {
+            position: absolute;
+            bottom: 80px;
+            right: 60px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0.2;
+            transform: rotate(15deg);
+        }
+
+        .certificate-seal::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border-radius: 50%;
+            border: 1px dashed #999;
+        }
+
+        .certificate-seal::after {
+            content: 'PHOTON PIANO';
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
-<div class="certificate-container">
-    <div class="certificate-inner">
-        <!-- Music note decorations -->
-        <div class="music-notes note-1">♪</div>
-        <div class="music-notes note-2">♫</div>
-        <div class="music-notes note-3">♩</div>
+    <div class="certificate-container">
+        <div class="certificate-inner">
+            <!-- Decorative Elements -->
+            <div class="music-notes note-1">♪</div>
+            <div class="music-notes note-2">♫</div>
+            <div class="music-notes note-3">♩</div>
+            <div class="certificate-seal"></div>
 
-        <div class="certificate-header">
-            <div class="academy-logo">PHOTON PIANO ACADEMY</div>
-            <div class="certificate-title">Certificate of Excellence</div>
-            <div class="certificate-subtitle">MASTERY IN MUSICAL PERFORMANCE</div>
-        </div>
+            <!-- Certificate Header -->
+            <div class="certificate-header">
+                <div class="academy-logo">PHOTON PIANO ACADEMY</div>
+                <div class="certificate-title">Certificate of Excellence</div>
+                <div class="certificate-subtitle">MASTERY IN MUSICAL PERFORMANCE</div>
+            </div>
 
-        <div class="certificate-content">
-            <p class="presented-to">This certificate is awarded to</p>
-            <p class="student-name">@Model.StudentName</p>
-            <p class="certificate-text">
-                for demonstrating exceptional skill and dedication in completing
-                <span class="course-name">@Model.ClassName</span>
-                at level <strong>@Model.LevelName</strong>
-            </p>
+            <!-- Certificate Content -->
+            <div class="certificate-content">
+                <p class="presented-to">THIS CERTIFICATE IS AWARDED TO</p>
+                <p class="student-name">@Model.StudentName</p>
+                <p class="certificate-text">
+                    for demonstrating exceptional skill and dedication in completing
+                    <span class="course-name">@Model.ClassName</span>
+                    at level <strong>@Model.LevelName</strong>
+                </p>
 
-            <div class="gpa-container">
-                <div class="gpa-circle">
-                    @Model.GPA.ToString("F1")
+                <!-- GPA Display -->
+                <div class="gpa-container">
+                    <div class="gpa-circle">
+                        @Model.GPA.ToString("F1")
+                    </div>
+                </div>
+
+                <!-- Skills Section -->
+                <div class="skills-container">
+                    <p class="skills-title">Competencies Achieved</p>
+                    <div class="skills-grid">
+                        @foreach (var skill in Model.SkillsEarned)
+                        {
+                            <div class="skill-item">@skill</div>
+                        }
+                    </div>
                 </div>
             </div>
 
-            <div class="skills-container">
-                <p class="skills-title">Competencies Achieved</p>
-                <div class="skills-grid">
-                    @foreach (var skill in Model.SkillsEarned)
+            <!-- Certificate Footer with Signature -->
+            <div class="certificate-footer">
+                <div class="signature-container">
+                    @if (!string.IsNullOrEmpty(Model.InstructorSignatureUrl))
                     {
-                        <div class="skill-item">@skill</div>
+                        <img src="@Model.InstructorSignatureUrl" alt="Instructor Signature" style="max-width: 150px; max-height: 60px;" />
                     }
+                    <div class="signature-line">
+                        <div class="signature-name">@Model.InstructorName</div>
+                        <div class="signature-title">Course Instructor</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="certificate-footer">
-            @* <div class="signature-container"> *@
-            @*     <div class="signature-line"> *@
-            @*         <div class="signature-name">Dr. Emily Richardson</div> *@
-            @*         <div class="signature-title">Academy Director</div> *@
-            @*     </div> *@
-            @* </div> *@
-
-            <div class="signature-container">
-                @if (!string.IsNullOrEmpty(Model.InstructorSignatureUrl))
-                {
-                    <img src="@Model.InstructorSignatureUrl" alt="Instructor Signature" style="max-width: 150px; max-height: 60px;" />
-                }
-                <div class="signature-line">
-                    <div class="signature-name">@Model.InstructorName</div>
-                    <div class="signature-title">Course Instructor</div>
-                </div>
+            <!-- Certificate Meta Information -->
+            <div class="certificate-meta">
+                <div>Issued on: @Model.CompletionDate.ToString("MMMM d, yyyy")</div>
             </div>
-        </div>
-
-        <div class="certificate-meta">
-            <div>Issued on: @Model.CompletionDate.ToString("MMMM d, yyyy")</div>
         </div>
     </div>
-</div>
 </body>
 </html>

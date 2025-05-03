@@ -1,4 +1,6 @@
 ﻿
+using System;
+using System.Collections.Generic;
 using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.BusinessLogic.BusinessModel.Criteria

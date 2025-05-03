@@ -72,11 +72,11 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IDayOffService> _dayOffService;
 
     private readonly Lazy<ILearnerSurveyService> _learnerSurveyService;
-    
+
     private readonly Lazy<ISurveyQuestionService> _surveyQuestionService;
-    
+
     private readonly Lazy<IPianoSurveyService> _pianoSurveyService;
-    
+
 
     private readonly Lazy<ISurveyQuestionService> _surveryQuestionService;
 
@@ -85,26 +85,28 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<IProgressServiceHub> _progressServiceHub;
 
     private readonly Lazy<IFreeSlotService> _freeSlotService;
-    
+
     private readonly Lazy<IArticleService> _articleService;
 
     private readonly Lazy<IStudentClassScoreService> _studentClassScoreService;
-    
+
     private readonly Lazy<ICertificateService> _certificateService;
-    
+
     private readonly Lazy<ITokenService> _tokenService;
-    
+
     private readonly Lazy<IViewRenderService> _viewRenderService;
     
     private readonly Lazy<IStatisticService> _statisticService;
     
     private readonly Lazy<IStudentClassScoreServiceHub> _studentClassScoreServiceHub;
+
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
         IOptions<SmtpAppSetting> smtpAppSettings, IHubContext<NotificationHub> hubContext,
         IHubContext<ProgressHub> progressHubContext, IHubContext<StudentClassScoreHub> studentClassScoreHub,
         IConnectionMultiplexer redis, IOptions<VnPay> vnPay, ILogger<ServiceFactory> logger,
         IDefaultScheduleJob defaultScheduleJob, IRazorTemplateEngine razorTemplateEngine,
-        IRazorViewEngine razorViewEngine,  IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider, IHttpContextAccessor httpContextAccessor,
+        IRazorViewEngine razorViewEngine, IWebHostEnvironment webHostEnvironment, ITempDataProvider tempDataProvider,
+        IHttpContextAccessor httpContextAccessor,
         IConverter converter, IServiceProvider serviceProvider)
     {
         _logger = logger;
@@ -141,17 +143,9 @@ public class ServiceFactory : IServiceFactory
         _levelService = new Lazy<ILevelService>(() => new LevelService(unitOfWork, this));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
         _articleService = new Lazy<IArticleService>(() => new ArticleService(unitOfWork));
-        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() => new StudentClassScoreService(unitOfWork, this, serviceProvider, logger));
-        _certificateService = new Lazy<ICertificateService>(() => new CertificateService(
-            this, 
-            unitOfWork, 
-            razorViewEngine, 
-            webHostEnvironment, 
-            tempDataProvider, 
-            httpContextAccessor, 
-            converter,
-            logger
-            ));
+        _studentClassScoreService = new Lazy<IStudentClassScoreService>(() =>
+            new StudentClassScoreService(unitOfWork, this, serviceProvider, logger));
+        _certificateService = new Lazy<ICertificateService>(() => new CertificateService(this, unitOfWork, logger));
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
 
         _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));
@@ -211,7 +205,7 @@ public class ServiceFactory : IServiceFactory
     public IDayOffService DayOffService => _dayOffService.Value;
 
     public IProgressServiceHub ProgressServiceHub => _progressServiceHub.Value;
-    
+
     public ISurveyQuestionService SurveyQuestionService => _surveyQuestionService.Value;
 
     public IPianoSurveyService PianoSurveyService => _pianoSurveyService.Value;
@@ -224,14 +218,14 @@ public class ServiceFactory : IServiceFactory
     public ILevelService LevelService => _levelService.Value;
 
     public IFreeSlotService FreeSlotService => _freeSlotService.Value;
-    
+
     public IArticleService ArticleService => _articleService.Value;
     public IStudentClassScoreService StudentClassScoreService => _studentClassScoreService.Value;
     public ICertificateService CertificateService => _certificateService.Value;
 
     public ITokenService TokenService => _tokenService.Value;
     public IViewRenderService ViewRenderService => _viewRenderService.Value;
-    
+
     public IStudentClassScoreServiceHub StudentClassScoreServiceHub => _studentClassScoreServiceHub.Value;
     public IStatisticService StatisticService => _statisticService.Value;
 }

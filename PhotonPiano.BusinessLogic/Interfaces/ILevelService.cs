@@ -12,4 +12,5 @@ public interface ILevelService
     Task UpdateLevelAsync(Guid id, UpdateLevelModel updateModel, AccountModel currentAccount);
     Task DeleteLevelAsync(Guid id);
     Task<LevelDetailsModel> GetLevelDetailsAsync(Guid levelId);
+    Task UpdateLevelMinimumGpaAsync(Guid id, UpdateLevelMinimumGpaModel model);
 }

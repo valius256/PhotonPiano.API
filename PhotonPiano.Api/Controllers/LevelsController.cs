@@ -63,5 +63,16 @@ namespace PhotonPiano.Api.Controllers
             
             return NoContent();
         }
+        
+        [HttpPatch("{id}/minimum-gpa")]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+        [EndpointDescription("Update minimum GPA of a level")]
+        public async Task<ActionResult> UpdateLevelMinimumGpa([FromRoute] Guid id, [FromBody] UpdateLevelMinimumGpaRequest request)
+        {
+            await _serviceFactory.LevelService.UpdateLevelMinimumGpaAsync(id, 
+               request.Adapt<UpdateLevelMinimumGpaModel>());
+            
+            return NoContent();
+        }
     }
 }

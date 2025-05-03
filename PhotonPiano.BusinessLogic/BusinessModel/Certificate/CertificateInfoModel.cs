@@ -7,6 +7,10 @@ public class CertificateInfoModel
     public string LevelName { get; set; } = string.Empty;
     public DateTime CompletionDate { get; set; }
     public string? CertificateUrl { get; set; }
+        
+    public string? CertificateHtml { get; set; }
+    
+    public bool HasCertificateHtml { get; set; }
     public decimal GPA { get; set; }
     
     // Additional properties for detailed view

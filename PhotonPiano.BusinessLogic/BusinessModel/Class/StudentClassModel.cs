@@ -15,6 +15,11 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
         public string? UpdateById { get; set; }
         public string? DeletedById { get; set; }
         public string? CertificateUrl { get; set; }
+            
+        public string? CertificateHtml { get; set; }
+    
+        public bool HasCertificateHtml { get; set; }
+
         public bool IsPassed { get; set; }
         public decimal? GPA { get; set; }
         public string? InstructorComment { get; set; }

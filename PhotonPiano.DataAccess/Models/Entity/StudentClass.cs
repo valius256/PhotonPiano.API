@@ -13,7 +13,10 @@ public class StudentClass : BaseEntityWithId
     public bool IsPassed { get; set; }
     public decimal? GPA { get; set; }
     public string? InstructorComment { get; set; }
-
+    
+    public string? CertificateHtml { get; set; }
+    
+    public bool HasCertificateHtml { get; set; }
 
     // reference
     public virtual Class Class { get; set; } = default!;

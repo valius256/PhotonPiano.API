@@ -12,11 +12,11 @@ namespace PhotonPiano.Api.Controllers
 {
     [ApiController]
     [Route("api/classes")]
-    public class ClassController : BaseController
+    public class ClassesController : BaseController
     {
         private readonly IServiceFactory _serviceFactory;
 
-        public ClassController(IServiceFactory serviceFactory)
+        public ClassesController(IServiceFactory serviceFactory)
         {
             _serviceFactory = serviceFactory;
         }

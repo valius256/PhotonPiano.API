@@ -240,7 +240,7 @@ public class SlotService : ISlotService
             }
         }
 
-        var laSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].FirstSlot).ToList();
+        var laSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].LastSlot).ToList();
 
         foreach (var lastSlot in laSlots)
         {

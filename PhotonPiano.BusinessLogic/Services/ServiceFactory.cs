@@ -110,7 +110,7 @@ public class ServiceFactory : IServiceFactory
         IConverter converter, IServiceProvider serviceProvider)
     {
         _logger = logger;
-        _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork, this));
+        _accountService = new Lazy<IAccountService>(() => new AccountService(unitOfWork, this, configuration));
         _authService =
             new Lazy<IAuthService>(() => new AuthService(httpClientFactory, unitOfWork, this, configuration));
         _redisCacheService = new Lazy<IRedisCacheService>(() => new RedisCacheService(redis));

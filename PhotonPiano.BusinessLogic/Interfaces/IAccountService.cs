@@ -31,6 +31,7 @@ public interface IAccountService
 
     Task ChangeRole(GrantRoleModel grantRoleModel);
 
-    Task<AccountModel> CreateNewStaff(SignUpModel signInModel, string accountFirebaseId);
+    Task<AccountModel> CreateNewStaff(CreateSystemAccountModel createSystemAccountModel);
+    Task<AccountModel> CreateNewTeacher(CreateSystemAccountModel createSystemAccountModel);
     Task<AccountModel> UpdateContinuingLearningStatus(string firebaseId, bool wantToContinue);
 }

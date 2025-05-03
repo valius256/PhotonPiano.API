@@ -10,7 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Xếp lớp Thành Công</title>
+    <title>Successful Class Enrollment Notification</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,11 +49,11 @@
             margin-top: 20px;
         }
 
-        .details-table th, .details-table td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
+            .details-table th, .details-table td {
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #ddd;
+            }
 
         .footer {
             text-align: center;
@@ -62,59 +62,56 @@
             color: #777;
         }
 
-        .footer a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
+            .footer a {
+                color: #4CAF50;
+                text-decoration: none;
+            }
 
-        .footer p {
-            margin: 10px 0;
-        }
+            .footer p {
+                margin: 10px 0;
+            }
     </style>
 </head>
 <body>
-<div class="email-container">
-    <div class="email-header">
-        Thông báo đóng học phí đầu vào
+    <div class="email-container">
+        <div class="email-header">
+            Initial Tuition Payment Notification
+        </div>
+
+        <p><strong>Please make your payment as soon as you receive this email</strong></p>
+
+        <div class="email-content">
+            <p>Hello @customerName,</p>
+
+            <p>We are pleased to inform you that you have been successfully placed into a class. Below is the initial tuition fee for your first month:</p>
+
+            <table class="details-table">
+                <tr>
+                    <th>Current Class:</th>
+                    <td>@className</td>
+                </tr>
+                <tr>
+                    <th>Total Amount:</th>
+                    <td>@amount VND</td>
+                </tr>
+                <tr>
+                    <th>Payment Status:</th>
+                    <td>@paymentStatus</td>
+                </tr>
+                <tr>
+                    <th>Class Dates:</th>
+                    <td>@validFromTo</td>
+                </tr>
+            </table>
+
+            <p>Thank you for choosing PhotonPiano. We look forward to serving you again!</p>
+        </div>
+
+        <div class="footer">
+            <p>
+                If you have any questions or need assistance, please contact our support team at <a href="mailto:support@photonpiano.com">support@photonpiano.com</a>.
+            </p>
+        </div>
     </div>
-
-    <p><strong>Vui lòng đóng học phí ngay khi email này được gửi</strong></p>
-
-    <div class="email-content">
-        <p>Xin Chào @customerName,</p>
-
-        <p>Chúng tôi vui mừng thông báo với bạn rằng bạn đã được xếp lớp và đây là học phí tháng đầu của bạn
-        </p>
-
-        <table class="details-table">
-            <tr>
-                <th>Lớp hiện tại:</th>
-                <td>@className</td>
-            </tr>
-            <tr>
-                <th>Tổng Tiền:</th>
-                <td>@amount Vnd</td>
-            </tr>
-            <tr>
-                <th>Trạng thái học phí:</th>
-                <td>@paymentStatus</td>
-            </tr>
-
-            <tr>
-                <th>Ngày học:</th>
-                <td>@validFromTo</td>
-            </tr>
-
-        </table>
-
-        <p>Cảm ơn bạn đã sử dụng dịch vụ PhotonPiano. Chúng tôi mong muốn được phục vụ bạn lần nữa!</p>
-    </div>
-
-
-    <div class="footer">
-        <p>Nếu bạn có bất kỳ câu hỏi nào hoặc cần hỗ trợ, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi tại <a
-                href="mailto:support@photonpiano.com">support@photonpiano.com</a>.</p>
-    </div>
-</div>
 </body>
 </html>

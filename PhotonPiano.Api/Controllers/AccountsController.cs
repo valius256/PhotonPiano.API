@@ -100,13 +100,19 @@ public class AccountsController : BaseController
     [HttpPost("staff")]
     [CustomAuthorize(Roles = [Role.Administrator])]
     [EndpointDescription("Create new staff")]
-    public async Task<ActionResult> CreateNewStaff([FromBody] SignUpRequest request)
+    public async Task<ActionResult> CreateNewStaff([FromBody] CreateSystemAccountRequest request)
     {
-        var result = await _serviceFactory.AccountService.CreateNewStaff(request.Adapt<SignUpModel>(),
-            CurrentUserFirebaseId);
+        var result = await _serviceFactory.AccountService.CreateNewStaff(request.Adapt<CreateSystemAccountModel>());
         return Created(nameof(CreateNewStaff), result);
     }
-
+    [HttpPost("teacher")]
+    [CustomAuthorize(Roles = [Role.Administrator])]
+    [EndpointDescription("Create new staff")]
+    public async Task<ActionResult> CreateNewTeacher([FromBody] CreateSystemAccountRequest request)
+    {
+        var result = await _serviceFactory.AccountService.CreateNewTeacher(request.Adapt<CreateSystemAccountModel>());
+        return Created(nameof(CreateNewTeacher), result);
+    }
 
     [HttpPut("role")]
     [CustomAuthorize(Roles = [Role.Administrator, Role.Staff /*for testing production*/])]

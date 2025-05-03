@@ -46,7 +46,7 @@ public static class AuthUtils
         var password = string.Empty;
         for (var i = 0; i < length; i++)
         {
-            var r = random.Next(charsLength);
+            var r = random.Next(charsLength - 1);
             password += chars[r];
         }
         return password;

@@ -1,6 +1,7 @@
-using FluentEmail.Core;
+﻿using FluentEmail.Core;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -19,13 +20,14 @@ namespace PhotonPiano.BusinessLogic.Services;
 public class AccountService : IAccountService
 {
     private readonly IUnitOfWork _unitOfWork;
-
+    private readonly IConfiguration _configuration;
     private readonly IServiceFactory _serviceFactory;
 
-    public AccountService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
+    public AccountService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
+        _configuration = configuration;
     }
 
     public async Task<AccountModel> CreateAccount(string firebaseUId, string email)
@@ -261,7 +263,15 @@ public class AccountService : IAccountService
         await _unitOfWork.SaveChangesAsync();
 
         //Send password mail
-            
+        var resetUrl = _configuration["PasswordResetBaseUrl"];
+        var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "fullName", $"{account.ResetPasswordToken}" },
+            { "email", $"{account.Email}" },
+            { "tempPassword", password },
+            { "url", $"{resetUrl}sign-in" },
+        };
+        await _serviceFactory.EmailService.SendAsync("AccountCreated", [account.Email], [], emailParam, true);
         return createAccount.Adapt<AccountModel>();
     }
 

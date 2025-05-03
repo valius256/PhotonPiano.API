@@ -129,29 +129,14 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e # Stop script on error
+            #!/bin/bash
+            set -e
 
-            # Check if Prometheus and Grafana are running outside our project
-            PROMETHEUS_RUNNING=$(docker ps -q -f name=prometheus | wc -l)
-            GRAFANA_RUNNING=$(docker ps -q -f name=grafana | wc -l)
-
-            # Ensure docker-compose down for PhotonPiano project only
-            cd ~/photonpiano || true && docker compose -p photonpiano down || true
-
-            # Clean old images
-            docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
-            docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
-
-            # Clean Docker garbage
-            docker system prune -af --volumes
-
-            # Create directory for deployment
-            mkdir -p ~/photonpiano
-            mkdir -p ~/photonpiano/prometheus
-            mkdir -p ~/photonpiano/frontend
+            # Tạo thư mục cho deployment nếu chưa có
+            mkdir -p ~/photonpiano ~/photonpiano/prometheus ~/photonpiano/frontend
             cd ~/photonpiano
 
-            # Create Blackbox configuration
+            # Tạo cấu hình cho Blackbox exporter
             cat > blackbox.yml <<EOF
             modules:
               http_health:
@@ -467,10 +452,24 @@ jobs:
                 driver: local
             EOF
             fi
-
-            # Login to GitHub Container Registry
+            
+            # Đăng nhập vào GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin
 
-            # Pull images and deploy with specific project name
-            docker compose -p photonpiano pull
-            docker compose -p photonpiano up -d --force-recreate
+            # Dừng và xóa container cũ
+            docker compose -p photonpiano down
+
+            # Xóa image cũ nếu không còn container sử dụng
+            docker images -q ${{ env.IMAGE_NAME_API }} | sort -u | xargs -r docker rmi -f || true
+            docker images -q ${{ env.IMAGE_NAME_WEB }} | sort -u | xargs -r docker rmi -f || true
+
+            # Làm sạch Docker (chỉ xóa tài nguyên không sử dụng)
+            docker system prune -f --volumes
+
+            # Pull các image mới
+            docker pull ${{ env.IMAGE_NAME_API }}:latest
+            docker pull ${{ env.IMAGE_NAME_WEB }}:latest
+
+            # Khởi động lại toàn bộ dịch vụ
+            docker compose -p photonpiano up -d --remove-orphans

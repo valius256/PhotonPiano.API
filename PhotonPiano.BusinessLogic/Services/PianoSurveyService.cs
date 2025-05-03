@@ -44,8 +44,9 @@ public class PianoSurveyService : IPianoSurveyService
                 column, desc, expressions:
                 [
                     s => string.IsNullOrEmpty(query.Keyword) || s.Name.ToLower().Contains(query.Keyword.ToLower()),
-                    s => currentAccount.Role == Role.Staff ||
-                         s.LearnerSurveys.Any(ls => ls.LearnerId == currentAccount.AccountFirebaseId)
+                    s => currentAccount.Role == Role.Staff || currentAccount.Role == Role.Administrator ||
+                         s.LearnerSurveys.Any(ls =>
+                             ls.LearnerId == currentAccount.AccountFirebaseId)
                 ]);
 
         if (entranceSurveyId is not null)

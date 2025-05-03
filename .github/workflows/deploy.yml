@@ -395,17 +395,6 @@ jobs:
                 networks:
                   - app-network 
 
-              photonpiano-web:
-                image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
-                container_name: photonpiano-web
-                restart: unless-stopped
-                depends_on:
-                  - photonpiano-api
-                ports:
-                  - "3000:3000"
-                networks:
-                  - app-network
-
               prometheus:
                 image: prom/prometheus:latest
                 container_name: prometheus

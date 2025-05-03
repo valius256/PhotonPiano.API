@@ -1,5 +1,10 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
@@ -559,9 +564,9 @@ namespace PhotonPiano.BusinessLogic.Services
         {
             
             var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
-            if (classDetails.Status == ClassStatus.Finished)
+            if (classDetails.IsScorePublished)
             {
-                throw new BadRequestException("The class has already been finished.");
+                throw new BadRequestException("The scores have been published");
             }
             
             var classCriteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
@@ -589,28 +594,38 @@ namespace PhotonPiano.BusinessLogic.Services
             // Starting row for student data
             int studentStartRow = 9;
             int rows = worksheet.Dimension.Rows;
+            List<string> allValidationErrors = [];
 
             return await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                // Process each student row
                 for (int row = studentStartRow; row <= rows; row++)
                 {
                     string studentName = worksheet.Cells[row, 1].Text;
                     if (string.IsNullOrEmpty(studentName))
-                        continue; // Skip empty rows
+                        continue; 
 
-                    // Find the student in class details
                     var studentClass = classDetails.StudentClasses.FirstOrDefault(sc =>
                         string.Equals(sc.Student.FullName, studentName, StringComparison.OrdinalIgnoreCase));
 
                     if (studentClass == null)
-                        continue; // Skip if student not found
-
-                    // Update individual criteria scores
-                    await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
-                        account.AccountFirebaseId);
+                        continue;
+                    
+                    try
+                    {
+                        await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
+                            account.AccountFirebaseId);
+                    }
+                    catch (BadRequestException ex)
+                    {
+                        allValidationErrors.Add(ex.Message);
+                    }
                 }
-
+                
+                if (allValidationErrors.Any())
+                {
+                    throw new BadRequestException($"Score import failed due to validation errors:\n{string.Join("\n", allValidationErrors)}");
+                }
+                
                 await _unitOfWork.SaveChangesAsync();
 
                 for (int row = studentStartRow; row <= rows; row++)
@@ -638,6 +653,10 @@ namespace PhotonPiano.BusinessLogic.Services
 
         private void ValidateExcelTemplate(ExcelWorksheet worksheet, int expectedCriteriaCount)
         {
+            if (worksheet == null)
+            {
+                throw new BadRequestException("Invalid Excel template: No worksheet found");
+            }
             if (worksheet.Dimension.Columns < expectedCriteriaCount + 1) 
             {
                 throw new BadRequestException("Invalid Excel template: Missing required columns");
@@ -683,15 +702,15 @@ namespace PhotonPiano.BusinessLogic.Services
         private async Task UpdateStudentClassScores(Guid studentClassId, ExcelWorksheet worksheet, int row,
             Dictionary<string, (int Column, Guid Id)> criteriaMapping, string accountFirebaseId)
         {
-            // Get existing scores for this student class
             var existingScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
-                scs => scs.StudentClassId == studentClassId
-            );
+                scs => scs.StudentClassId == studentClassId);
 
-            List<StudentClassScore> scoresToUpdate = new List<StudentClassScore>();
-            List<StudentClassScore> scoresToAdd = new List<StudentClassScore>();
+            List<StudentClassScore> scoresToUpdate = [];
+            List<StudentClassScore> scoresToAdd = [];
+            List<string> validationErrors = [];
 
-            // Update individual criteria scores
+            string studentName = worksheet.Cells[row, 1].Text;
+            
             foreach (var criteriaEntry in criteriaMapping)
             {
                 string criteriaName = criteriaEntry.Key;
@@ -699,9 +718,20 @@ namespace PhotonPiano.BusinessLogic.Services
                 Guid criteriaId = criteriaEntry.Value.Id;
 
                 decimal? score = null;
+                string cellValue = worksheet.Cells[row, col].Text;
                 if (decimal.TryParse(worksheet.Cells[row, col].Text, out decimal parsedScore))
                 {
+                    if (parsedScore < 0 || parsedScore > 10)
+                    {
+                        validationErrors.Add($"Student '{studentName}', criterion '{criteriaName}': Score {parsedScore} is outside valid range (0-10).");
+                        continue; 
+                    }
                     score = parsedScore;
+                }
+                else
+                {
+                    validationErrors.Add($"Student '{studentName}', criterion '{criteriaName}': Value '{cellValue}' is not a valid number.");
+                    continue; 
                 }
                 var scoreRecord = existingScores.FirstOrDefault(s => s.CriteriaId == criteriaId);
 
@@ -724,8 +754,12 @@ namespace PhotonPiano.BusinessLogic.Services
                     scoresToAdd.Add(newScore);
                 }
             }
-
-            // Update and add scores
+        
+            if (validationErrors.Any())
+            {
+                throw new BadRequestException($"Invalid scores detected:\n{string.Join("\n", validationErrors)}");
+            }
+            
             if (scoresToUpdate.Any())
             {
                 await _unitOfWork.StudentClassScoreRepository.UpdateRangeAsync(scoresToUpdate);

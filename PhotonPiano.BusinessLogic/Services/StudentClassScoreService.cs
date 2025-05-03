@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -52,12 +56,7 @@ public class StudentClassScoreService : IStudentClassScoreService
         {
             throw new ArgumentException("Invalid class ID", nameof(classId));
         }
-
-        if (account == null || string.IsNullOrEmpty(account.AccountFirebaseId))
-        {
-            throw new ArgumentException("Invalid account information", nameof(account));
-        }
-
+        
         try
         {
             var classInfo = await ValidateAndGetClass(classId);
@@ -134,36 +133,36 @@ public class StudentClassScoreService : IStudentClassScoreService
         return classInfo;
     }
 
-    private async Task<Dictionary<string, bool>> ValidStudentsAttendance(Guid classId,
-        List<StudentClass> studentClasses)
-    {
-        try
-        {
-            // Get attendance results using the existing service method
-            var attendanceResults
-                = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
-
-            var result = attendanceResults.ToDictionary(
-                ar => ar.StudentId,
-                ar => ar.IsPassed
-            );
-
-            foreach (var studentClass in studentClasses)
-            {
-                result.TryAdd(studentClass.StudentFirebaseId, false);
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error checking attendance thresholds: {ex.Message}");
-            return studentClasses.ToDictionary(
-                sc => sc.StudentFirebaseId,
-                _ => false
-            );
-        }
-    }
+    // private async Task<Dictionary<string, bool>> ValidStudentsAttendance(Guid classId,
+    //     List<StudentClass> studentClasses)
+    // {
+    //     try
+    //     {
+    //         // Get attendance results using the existing service method
+    //         var attendanceResults
+    //             = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
+    //
+    //         var result = attendanceResults.ToDictionary(
+    //             ar => ar.StudentId,
+    //             ar => ar.IsPassed
+    //         );
+    //
+    //         foreach (var studentClass in studentClasses)
+    //         {
+    //             result.TryAdd(studentClass.StudentFirebaseId, false);
+    //         }
+    //
+    //         return result;
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Error checking attendance thresholds: {ex.Message}");
+    //         return studentClasses.ToDictionary(
+    //             sc => sc.StudentFirebaseId,
+    //             _ => false
+    //         );
+    //     }
+    // }
 
     private async Task<(List<StudentClass> StudentClasses, List<Account> StudentUpdates, List<StudentClass>
             PassedStudents)>
@@ -206,25 +205,26 @@ public class StudentClassScoreService : IStudentClassScoreService
                 $"Cannot publish scores: {missingStudents.Count} student(s) could not be found in the database. Please refresh the page and try again.");
         }
 
-        var attendanceResults = await ValidStudentsAttendance(classId, studentClasses);
+        // var attendanceResults = await ValidStudentsAttendance(classId, studentClasses);
 
         // Prepare collections for updates
         var studentClassUpdates = new List<StudentClass>();
         var studentUpdates = new List<Account>();
         var passedStudents = new List<StudentClass>();
-
+        
+        decimal minimumGpa = classInfo.Level?.MinimumGPA ?? DefaultPassingGrade;
         foreach (var studentClass in studentClasses)
         {
             var student = studentAccountMap[studentClass.StudentFirebaseId];
 
             // Get student's attendance status
-            bool meetsAttendanceThreshold =
-                attendanceResults.TryGetValue(studentClass.StudentFirebaseId, out bool attendanceStatus)
-                    ? attendanceStatus
-                    : false;
+            // bool meetsAttendanceThreshold =
+            //     attendanceResults.TryGetValue(studentClass.StudentFirebaseId, out bool attendanceStatus)
+            //         ? attendanceStatus
+            //         : false;
 
             // Update student class data
-            var isPassed = studentClass.GPA.Value >= DefaultPassingGrade;
+            var isPassed = studentClass!.GPA!.Value >= minimumGpa;
             studentClass.IsPassed = isPassed;
             studentClass.UpdateById = account.AccountFirebaseId;
             studentClass.UpdatedAt = updateTime;
@@ -254,87 +254,6 @@ public class StudentClassScoreService : IStudentClassScoreService
 
         return (studentClassUpdates, studentUpdates, passedStudents);
     }
-
-    private async Task UpdateEntitiesInBatches<T>(List<T> entities, Func<T, Task> updateFunc) where T : class
-    {
-        if (!entities.Any()) return;
-
-        for (int i = 0; i < entities.Count; i += BatchSize)
-        {
-            var batch = entities.Skip(i).Take(BatchSize).ToList();
-            var updateTasks = batch.Select(updateFunc);
-            await Task.WhenAll(updateTasks);
-            await _unitOfWork.SaveChangesAsync();
-        }
-    }
-
-    // private async Task ProcessCertificates(List<StudentClass> passedStudents)
-    // {
-    //     if (!passedStudents.Any()) return;
-    //
-    //     var now = DateTime.UtcNow.AddHours(7);
-    //     foreach (var studentClass in passedStudents)
-    //     {
-    //         try
-    //         {
-    //             if (studentClass.GPA.HasValue && studentClass.IsPassed)
-    //             {
-    //                 using (var scope = _serviceProvider.CreateScope())
-    //                 {
-    //                     var serviceFactory = scope.ServiceProvider.GetRequiredService<IServiceFactory>();
-    //                     // var certificateService = serviceFactory.CertificateService;
-    //                     // var eligibilityResult = await certificateService.CheckCertificateEligibilityAsync(studentClass.Id);
-    //                     //
-    //                     // if (eligibilityResult.IsEligible)
-    //                     // {
-    //                     //     // Only generate certificate if student is eligible
-    //                     //     var certificateUrl = await certificateService.GenerateCertificateAsync(studentClass.Id);
-    //                     //
-    //                     //     if (!string.IsNullOrEmpty(certificateUrl))
-    //                     //     {
-    //                     //         var updateUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-    //                     //         await updateUnitOfWork.ExecuteInTransactionAsync(async () =>
-    //                     //         {
-    //                     //             var sc = await updateUnitOfWork.StudentClassRepository.FindSingleAsync(x =>
-    //                     //                 x.Id == studentClass.Id);
-    //                     //             if (sc != null)
-    //                     //             {
-    //                     //                 sc.CertificateUrl = certificateUrl;
-    //                     //                 sc.UpdatedAt = now;
-    //                     //                 await updateUnitOfWork.StudentClassRepository.UpdateAsync(sc);
-    //                     //                 await updateUnitOfWork.SaveChangesAsync();
-    //                     //             }
-    //                     //         });
-    //                     //     }
-    //                     // }
-    //                     var certificateUrl = await serviceFactory.CertificateService
-    //                         .GenerateCertificateAsync(studentClass.Id);
-    //                     
-    //                     if (string.IsNullOrEmpty(certificateUrl))
-    //                         continue;
-    //                     var updateUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-    //                     await updateUnitOfWork.ExecuteInTransactionAsync(async () =>
-    //                     {
-    //                         var sc = await updateUnitOfWork.StudentClassRepository.FindSingleAsync(x =>
-    //                             x.Id == studentClass.Id);
-    //                         if (sc != null)
-    //                         {
-    //                             sc.CertificateUrl = certificateUrl;
-    //                             sc.UpdatedAt = now;
-    //                             await updateUnitOfWork.StudentClassRepository.UpdateAsync(sc);
-    //                             await updateUnitOfWork.SaveChangesAsync();
-    //                         }
-    //                     });
-    //                 }
-    //             }
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             Console.WriteLine($"Error processing certificate for student {studentClass.Id}: {ex.Message}");
-    //             // Continue with next student
-    //         }
-    //     }
-    // }
 
     private async Task SendClassCompletionNotifications(List<StudentClass> studentClasses, Class classInfo)
     {

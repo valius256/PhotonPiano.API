@@ -1,3 +1,5 @@
+using System;
+
 namespace PhotonPiano.BusinessLogic.BusinessModel.Class;
 
 public class UpdateStudentScoreModel

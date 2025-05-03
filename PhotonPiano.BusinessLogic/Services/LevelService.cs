@@ -107,7 +107,7 @@ public class LevelService : ILevelService
 
         return level.Id;
     }
-
+    
     private async Task UpdateLevels(List<Level> levels, Level newLevel, Guid? nextLevelId)
     {
         if (levels.Count == 0)
@@ -159,6 +159,23 @@ public class LevelService : ILevelService
 
         await _unitOfWork.LevelRepository.ExecuteUpdateAsync(l => l.Id == newLevel.Id,
             setter => setter.SetProperty(l => l.NextLevelId, nextLevelId));
+    }
+
+    public async Task UpdateLevelMinimumGpaAsync(Guid id, UpdateLevelMinimumGpaModel model)
+    {
+        if(model.MinimumGpa < 0 || model.MinimumGpa > 10)
+        {
+            throw new BadRequestException("Minimum GPA must be between 0 and 10");
+        }
+        var level = await _unitOfWork.LevelRepository.GetByIdAsync(id);
+        if (level is null || level.RecordStatus == RecordStatus.IsDeleted)
+        {
+            throw new NotFoundException($"Level with ID {level!.Id} not found");
+        }
+        
+       level.MinimumGPA = model.MinimumGpa;
+       level.UpdatedAt = DateTime.UtcNow.AddHours(7);
+       await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task<LevelModel> CreateLevelAsync(CreateLevelModel createModel, AccountModel currentAccount)

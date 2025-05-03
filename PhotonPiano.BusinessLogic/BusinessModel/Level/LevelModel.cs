@@ -17,7 +17,9 @@ public record LevelModel : BaseModel
     public decimal MinimumTheoreticalScore { get; init; }
 
     public decimal MinimumPracticalScore { get; init; }
-
+    
+    public decimal MinimumGPA { get; set; }
+    
     public bool IsGenreDivided { get; init; }
 
     public Guid? NextLevelId { get; init; }

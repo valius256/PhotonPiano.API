@@ -95,7 +95,9 @@ public class ServiceFactory : IServiceFactory
     private readonly Lazy<ITokenService> _tokenService;
 
     private readonly Lazy<IViewRenderService> _viewRenderService;
-
+    
+    private readonly Lazy<IStatisticService> _statisticService;
+    
     private readonly Lazy<IStudentClassScoreServiceHub> _studentClassScoreServiceHub;
 
     public ServiceFactory(IUnitOfWork unitOfWork, IHttpClientFactory httpClientFactory, IConfiguration configuration,
@@ -147,10 +149,11 @@ public class ServiceFactory : IServiceFactory
         _freeSlotService = new Lazy<IFreeSlotService>(() => new FreeSlotService(unitOfWork));
 
         _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));
+        
+        _viewRenderService = new Lazy<IViewRenderService>(() => new ViewRenderService(razorViewEngine, tempDataProvider, serviceProvider));
 
-        _viewRenderService = new Lazy<IViewRenderService>(() =>
-            new ViewRenderService(razorViewEngine, tempDataProvider, serviceProvider));
-
+        _statisticService = new Lazy<IStatisticService>(() => new StatisticService(unitOfWork));
+        
         _studentClassScoreServiceHub =
             new Lazy<IStudentClassScoreServiceHub>(() => new StudentClassScoreServiceHub(studentClassScoreHub));
     }
@@ -224,4 +227,5 @@ public class ServiceFactory : IServiceFactory
     public IViewRenderService ViewRenderService => _viewRenderService.Value;
 
     public IStudentClassScoreServiceHub StudentClassScoreServiceHub => _studentClassScoreServiceHub.Value;
+    public IStatisticService StatisticService => _statisticService.Value;
 }

@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILevelService, LevelService>();
         services.AddScoped<IArticleService, ArticleService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IStatisticService, StatisticService>();
         services.AddHttpClient();
         services.AddMapsterConfig();
         return services;

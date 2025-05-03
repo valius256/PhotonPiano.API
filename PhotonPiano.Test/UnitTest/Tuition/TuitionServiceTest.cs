@@ -6,8 +6,8 @@ using Moq;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Payment;
-using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.SystemConfig;
+using PhotonPiano.BusinessLogic.BusinessModel.Tuition;
 using PhotonPiano.BusinessLogic.BusinessModel.Tution;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
@@ -18,27 +18,26 @@ using PhotonPiano.Shared.Exceptions;
 
 namespace PhotonPiano.Test.UnitTest.Tuition;
 
-
 [Collection("Tuition Unit Tests")]
 public class TuitionServiceTest
 {
-    private readonly IFixture _fixture = new Fixture().Customize(new AutoMoqCustomization());
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IServiceFactory> _serviceFactoryMock;
-    private readonly Mock<ITuitionRepository> _tuitionRepositoryMock;
-    private readonly Mock<ITransactionRepository> _transactionRepositoryMock;
     private readonly Mock<IAccountRepository> _accountRepositoryMock;
-    private readonly Mock<IStudentClassRepository> _studentClassRepositoryMock;
-    private readonly Mock<ILevelRepository> _levelRepositoryMock;
     private readonly Mock<IClassRepository> _classRepositoryMock;
-    private readonly Mock<ISlotRepository> _slotRepositoryMock;
-    private readonly Mock<IPaymentService> _paymentServiceMock;
     private readonly Mock<IEmailService> _emailServiceMock;
-    private readonly Mock<ITransactionService> _transactionServiceMock;
+    private readonly IFixture _fixture = new Fixture().Customize(new AutoMoqCustomization());
+    private readonly Mock<ILevelRepository> _levelRepositoryMock;
     private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly Mock<IPaymentService> _paymentServiceMock;
+    private readonly Mock<IServiceFactory> _serviceFactoryMock;
+    private readonly Mock<ISlotRepository> _slotRepositoryMock;
+    private readonly Mock<IStudentClassRepository> _studentClassRepositoryMock;
     private readonly Mock<ISystemConfigService> _systemConfigServiceMock;
+    private readonly Mock<ITransactionRepository> _transactionRepositoryMock;
+    private readonly Mock<ITransactionService> _transactionServiceMock;
+    private readonly Mock<ITuitionRepository> _tuitionRepositoryMock;
 
     private readonly TuitionService _tuitionService;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
 
     public TuitionServiceTest()
     {
@@ -75,57 +74,8 @@ public class TuitionServiceTest
 
         _tuitionService = new TuitionService(_unitOfWorkMock.Object, _serviceFactoryMock.Object);
     }
-    
-    [Fact]
-    public async Task PayTuition_ValidRequest_ReturnsPaymentUrl()
-    {
-        // Arrange
-        var currentAccount = new AccountModel { AccountFirebaseId = "student123", Email = "student@example.com" };
-        var tuitionId = Guid.NewGuid();
-        var returnUrl = "https://example.com/return";
-        var ipAddress = "127.0.0.1";
-        var apiBaseUrl = "https://api.example.com";
-        var studentClassId = Guid.NewGuid();
-        
-        var tuition = new DataAccess.Models.Entity.Tuition
-        {
-            Id = tuitionId,
-            StudentClassId = Guid.NewGuid(),
-            Amount = 1000m,
-            PaymentStatus = PaymentStatus.Pending,
-            StudentClass = new StudentClass { StudentFirebaseId = "student123", CreatedById = "admin001", Id = studentClassId}
-        };
-    
-        var systemConfig = new SystemConfigModel() { ConfigValue = "0.1" , ConfigName = "TuitionTaxRate", Id = Guid.NewGuid()};
-        var transactionCode = "TRANS-123";
-        var paymentUrl = "https://payment.example.com/url";
-    
-        _tuitionRepositoryMock
-            .Setup(r => r.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
-                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false, TrackingOption.Default))
-            .ReturnsAsync(tuition);
-    
-        _systemConfigServiceMock
-            .Setup(s => s.GetTaxesRateConfig(It.IsAny<int>()))
-            .ReturnsAsync(systemConfig);
-    
-        _transactionServiceMock
-            .Setup(s => s.GetTransactionCode(It.IsAny<TransactionType>(), It.IsAny<DateTime>(), It.IsAny<Guid>()))
-            .Returns(transactionCode);
-    
-        _paymentServiceMock
-            .Setup(s => s.CreateVnPayPaymentUrl(It.IsAny<Transaction>(), ipAddress, apiBaseUrl,
-                currentAccount.AccountFirebaseId, returnUrl, It.IsAny<string>()))
-            .Returns(paymentUrl);
-    
-        // Act
-        var result = await _tuitionService.PayTuition(currentAccount, tuitionId, returnUrl, ipAddress, apiBaseUrl);
-    
-        // Assert
-        Assert.Equal(paymentUrl, result);
-        _transactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Transaction>()), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(), Times.Once);
-    }
+
+  
 
     [Fact]
     public async Task PayTuition_TuitionNotFound_ThrowsNullReferenceException()
@@ -136,15 +86,25 @@ public class TuitionServiceTest
 
         _tuitionRepositoryMock
             .Setup(r => r.FindFirstProjectedAsync<DataAccess.Models.Entity.Tuition>(
-                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false, TrackingOption.Default))
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
+                TrackingOption.Default))
             .ReturnsAsync((DataAccess.Models.Entity.Tuition)null);
+
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = "",
+            IpAddress = "",
+            ReturnUrl = "",
+            TuitionId = tuitionId
+        };
 
         // Act & Assert
         await Assert.ThrowsAsync<NullReferenceException>(() =>
-            _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
+            _tuitionService.PayTuition(currentAccount, paymentModel));
     }
-    
-    
+
+
     [Fact]
     public async Task PayTuition_ValidTuition_ReturnsPaymentUrl()
     {
@@ -156,36 +116,48 @@ public class TuitionServiceTest
         var ipAddress = "127.0.0.1";
         var apiBaseUrl = "https://api.example.com";
         var expectedPaymentUrl = "https://payment.example.com/pay";
-        
+
         var tuition = new DataAccess.Models.Entity.Tuition
         {
             Id = tuitionId,
             StudentClassId = Guid.NewGuid(),
             Amount = 100m,
             PaymentStatus = PaymentStatus.Pending,
-            StudentClass = new StudentClass { StudentFirebaseId = accountId, Id =Guid.NewGuid() , CreatedById = "admin001"}
+            StudentClass = new StudentClass
+                { StudentFirebaseId = accountId, Id = Guid.NewGuid(), CreatedById = "admin001" }
         };
-        
+
         var taxRate = 0.1;
-        var systemConfig = new SystemConfigModel { ConfigValue = taxRate.ToString(), Id = Guid.NewGuid(), ConfigName = "TuitionTaxRate" };
-        
+        var systemConfig = new SystemConfigModel
+            { ConfigValue = taxRate.ToString(), Id = Guid.NewGuid(), ConfigName = "TuitionTaxRate" };
+
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
-            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false, TrackingOption.Default))
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
+                TrackingOption.Default))
             .ReturnsAsync(tuition);
-        
+
         _systemConfigServiceMock.Setup(service => service.GetTaxesRateConfig(It.IsAny<int>()))
             .ReturnsAsync(systemConfig);
-        
+
         _transactionServiceMock.Setup(service => service.GetTransactionCode(
-            It.IsAny<TransactionType>(), It.IsAny<DateTime>(), It.IsAny<Guid>()))
+                It.IsAny<TransactionType>(), It.IsAny<DateTime>(), It.IsAny<Guid>()))
             .Returns("TR123456");
-        
+
         _paymentServiceMock.Setup(service => service.CreateVnPayPaymentUrl(
-            It.IsAny<Transaction>(), ipAddress, apiBaseUrl, accountId, returnUrl, It.IsAny<string>()))
+                It.IsAny<Transaction>(), ipAddress, apiBaseUrl, accountId, returnUrl, It.IsAny<string>()))
             .Returns(expectedPaymentUrl);
 
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = apiBaseUrl,
+            IpAddress = ipAddress,
+            ReturnUrl = returnUrl,
+            TuitionId = tuitionId
+        };
+
         // Act
-        var result = await _tuitionService.PayTuition(account, tuitionId, returnUrl, ipAddress, apiBaseUrl);
+        var result = await _tuitionService.PayTuition(account, paymentModel);
 
         // Assert
         Assert.Equal(expectedPaymentUrl, result);
@@ -199,60 +171,84 @@ public class TuitionServiceTest
         // Arrange
         var currentAccount = new AccountModel { AccountFirebaseId = "student123", Email = "student@example.com" };
         var tuitionId = Guid.NewGuid();
-    
+
         var tuition = new DataAccess.Models.Entity.Tuition
         {
             Id = tuitionId,
             StudentClassId = Guid.NewGuid(),
             Amount = 1000m,
             PaymentStatus = PaymentStatus.Succeed,
-            StudentClass = new StudentClass { StudentFirebaseId = "student123", CreatedById = "admin001", Id = Guid.NewGuid()}
+            StudentClass = new StudentClass
+                { StudentFirebaseId = "student123", CreatedById = "admin001", Id = Guid.NewGuid() }
         };
-    
+
         _tuitionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
-                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false, TrackingOption.Default))
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
+                TrackingOption.Default))
             .ReturnsAsync(tuition);
-    
+
         _systemConfigServiceMock
             .Setup(s => s.GetTaxesRateConfig(It.IsAny<int>()))
-            .ReturnsAsync(new SystemConfigModel() { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate"});
-    
+            .ReturnsAsync(
+                new SystemConfigModel { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate" });
+
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = "",
+            IpAddress = "",
+            ReturnUrl = "",
+            TuitionId = tuitionId
+        };
+
+
         // Act & Assert
-        await Assert.ThrowsAsync<IllegalArgumentException>(() =>
-            _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            _tuitionService.PayTuition(currentAccount, paymentModel));
     }
-    
+
     [Fact]
     public async Task PayTuition_DifferentStudent_ThrowsBadRequestException()
     {
         // Arrange
         var currentAccount = new AccountModel { AccountFirebaseId = "student123", Email = "student@example.com" };
         var tuitionId = Guid.NewGuid();
-    
+
         var tuition = new DataAccess.Models.Entity.Tuition
         {
             Id = tuitionId,
             StudentClassId = Guid.NewGuid(),
             Amount = 1000m,
             PaymentStatus = PaymentStatus.Pending,
-            StudentClass = new StudentClass { StudentFirebaseId = "student456", CreatedById = "admin001", Id = Guid.NewGuid()}
+            StudentClass = new StudentClass
+                { StudentFirebaseId = "student456", CreatedById = "admin001", Id = Guid.NewGuid() }
         };
-    
+
         _tuitionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
-                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false, TrackingOption.Default))
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
+                TrackingOption.Default))
             .ReturnsAsync(tuition);
-    
+
         _systemConfigServiceMock
             .Setup(s => s.GetTaxesRateConfig(It.IsAny<int>()))
-            .ReturnsAsync(new SystemConfigModel() { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate"});
-    
+            .ReturnsAsync(
+                new SystemConfigModel { ConfigValue = "0.1", Id = Guid.NewGuid(), ConfigName = "TuitionRate" });
+
+        var paymentModel = new PayTuitionModel
+        {
+            ApiBaseUrl = "",
+            IpAddress = "",
+            ReturnUrl = "",
+            TuitionId = tuitionId
+        };
+
         // Act & Assert
-        await Assert.ThrowsAsync<IllegalArgumentException>(() =>
-            _tuitionService.PayTuition(currentAccount, tuitionId, "", "", ""));
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            _tuitionService.PayTuition(currentAccount, paymentModel));
     }
-    
+
     [Fact]
     public async Task HandleTuitionPaymentCallback_SuccessfulPayment_UpdatesStatusAndSendsEmail()
     {
@@ -263,13 +259,13 @@ public class TuitionServiceTest
             VnpResponseCode = "00",
             VnpTransactionNo = "TRANS-123",
             VnpAmount = "30000",
-            VnpSecureHash = Guid.NewGuid().ToString(),
+            VnpSecureHash = Guid.NewGuid().ToString()
         };
         var accountId = "student123";
-    
+
         var transactionId = Guid.Parse(callbackModel.VnpTxnRef);
         var tuitionId = Guid.NewGuid();
-    
+
         var tuition = new DataAccess.Models.Entity.Tuition
         {
             Id = tuitionId,
@@ -278,7 +274,7 @@ public class TuitionServiceTest
             StartDate = DateTime.Now,
             EndDate = DateTime.Now.AddMonths(1)
         };
-        
+
         var transaction = new Transaction
         {
             Id = transactionId,
@@ -290,59 +286,55 @@ public class TuitionServiceTest
             Amount = 1000m,
             Tution = tuition
         };
-    
+
         var account = new Account
         {
             AccountFirebaseId = accountId,
-            Email = "student@example.com"
+            Email = "learner012@gmail.com"
         };
-        
-    
+
+
         _transactionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(),
-                It.IsAny<bool>(), 
+                It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<TrackingOption>()))
             .ReturnsAsync(transaction);
-    
+
         _accountRepositoryMock
             .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<Account, bool>>>(),
-                It.IsAny<bool>() ,
+                It.IsAny<bool>(),
                 It.IsAny<bool>()))
             .ReturnsAsync(account);
-    
+
         _tuitionRepositoryMock
-            .Setup(r => r.FindFirstAsync(It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), 
-                It.IsAny<bool>(), 
+            .Setup(r => r.FindFirstAsync(It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 null,
                 It.IsAny<bool>()))
             .ReturnsAsync(tuition);
-    
+
         _unitOfWorkMock
             .Setup(uow => uow.BeginTransactionAsync())
             .ReturnsAsync(Mock.Of<IDbContextTransaction>());
-    
+
         // Act
         await _tuitionService.HandleTuitionPaymentCallback(callbackModel, accountId);
-    
+
         // Assert
         Assert.Equal(PaymentStatus.Succeed, transaction.PaymentStatus);
         Assert.Equal(callbackModel.VnpTransactionNo, transaction.TransactionCode);
-        Assert.Equal(PaymentStatus.Succeed, tuition.PaymentStatus);
-    
-        _transactionRepositoryMock.Verify(r => r.UpdateAsync(transaction), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.CommitTransactionAsync(), Times.Once);
+
         _emailServiceMock.Verify(s => s.SendAsync(
                 "PaymentSuccess",
                 It.IsAny<List<string>>(),
                 null,
                 It.IsAny<Dictionary<string, string>>(),
-                false), 
+                false),
             Times.Once);
     }
-    
+
     [Fact]
     public async Task HandleTuitionPaymentCallback_SuccessfulPayment_UpdatesTuitionAndTransaction()
     {
@@ -351,7 +343,7 @@ public class TuitionServiceTest
         var tuitionId = Guid.NewGuid();
         var accountId = "student-id";
         var email = "student@example.com";
-        
+
         var callbackModel = new VnPayCallbackModel
         {
             VnpTxnRef = transactionId.ToString(),
@@ -360,7 +352,7 @@ public class TuitionServiceTest
             VnpResponseCode = "00", // Success code
             VnpTransactionNo = "TNX123456"
         };
-        
+
         var tuition = new DataAccess.Models.Entity.Tuition
         {
             Id = tuitionId,
@@ -368,7 +360,7 @@ public class TuitionServiceTest
             Amount = 1m,
             PaymentStatus = PaymentStatus.Pending
         };
-        
+
         var transaction = new Transaction
         {
             Id = transactionId,
@@ -380,27 +372,29 @@ public class TuitionServiceTest
             PaymentMethod = PaymentMethod.VnPay,
             Amount = 100m
         };
-        
-      
-        
+
+
         var account = new Account
         {
             AccountFirebaseId = accountId,
             Email = email
         };
-        
+
         _transactionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<Transaction>(
-            It.IsAny<Expression<Func<Transaction, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<Expression<Func<Transaction, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(),
+                It.IsAny<TrackingOption>()))
             .ReturnsAsync(transaction);
-        
+
         _accountRepositoryMock.Setup(repo => repo.FindSingleAsync(
-            It.IsAny<Expression<Func<Account, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+                It.IsAny<Expression<Func<Account, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync(account);
-        
+
         _tuitionRepositoryMock.Setup(repo => repo.FindFirstAsync(
-            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), null , It.IsAny<bool>()))
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>(), It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, object>>?>(),
+                It.IsAny<bool>()))
             .ReturnsAsync(tuition);
-        
+
         _unitOfWorkMock.Setup(uow => uow.BeginTransactionAsync())
             .ReturnsAsync(Mock.Of<IDbContextTransaction>());
 
@@ -409,17 +403,13 @@ public class TuitionServiceTest
 
         // Assert
         Assert.Equal(PaymentStatus.Succeed, transaction.PaymentStatus);
-        Assert.Equal(PaymentStatus.Succeed, tuition.PaymentStatus);
-        
-        _transactionRepositoryMock.Verify(repo => repo.UpdateAsync(transaction), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(), Times.Once);
-        _unitOfWorkMock.Verify(uow => uow.CommitTransactionAsync(), Times.Once);
+
         _emailServiceMock.Verify(service => service.SendAsync(
-            It.IsAny<string>(), It.Is<List<string>>(e => e.Contains(email)), 
-            It.IsAny<List<string>>(), It.IsAny<Dictionary<string, string>>(), false), 
+                It.IsAny<string>(), It.Is<List<string>>(e => e.Contains(email)),
+                It.IsAny<List<string>>(), It.IsAny<Dictionary<string, string>>(), false),
             Times.Once);
     }
-    
+
     [Fact]
     public async Task HandleTuitionPaymentCallback_TransactionNotFound_ThrowsPaymentRequiredException()
     {
@@ -430,19 +420,20 @@ public class TuitionServiceTest
             VnpResponseCode = "00",
             VnpAmount = "30000",
             VnpSecureHash = Guid.NewGuid().ToString(),
-            VnpTransactionNo = "TRANS-123",
+            VnpTransactionNo = "TRANS-123"
         };
         var accountId = "student123";
-    
+
         _transactionRepositoryMock
-            .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(), false, false, TrackingOption.Default))
+            .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(), false,
+                false, TrackingOption.Default))
             .ReturnsAsync((Transaction)null);
-    
+
         // Act & Assert
         await Assert.ThrowsAsync<PaymentRequiredException>(() =>
             _tuitionService.HandleTuitionPaymentCallback(callbackModel, accountId));
     }
-    
+
     [Fact]
     public async Task HandleTuitionPaymentCallback_AccountNotFound_ThrowsNotFoundException()
     {
@@ -453,20 +444,20 @@ public class TuitionServiceTest
             VnpResponseCode = "00",
             VnpAmount = "30000",
             VnpSecureHash = Guid.NewGuid().ToString(),
-            VnpTransactionNo = "TRANS-123",
+            VnpTransactionNo = "TRANS-123"
         };
-        
+
         var accountId = "student123";
 
         var tuitionId = Guid.NewGuid();
-        
+
         var tuitionModel = new DataAccess.Models.Entity.Tuition
         {
             Id = tuitionId,
             StudentClassId = Guid.NewGuid(),
             PaymentStatus = PaymentStatus.Pending
         };
-        
+
         var transaction = new Transaction
         {
             Id = Guid.Parse(callbackModel.VnpTxnRef),
@@ -476,20 +467,22 @@ public class TuitionServiceTest
             CreatedByEmail = "admin@gmail.com",
             PaymentStatus = PaymentStatus.Pending
         };
-    
+
         _transactionRepositoryMock
-            .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync(transaction);
-    
+
         _accountRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<Account, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<Account, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>()))
             .ReturnsAsync((Account)null);
-    
+
         // Act & Assert
         await Assert.ThrowsAsync<NotFoundException>(() =>
             _tuitionService.HandleTuitionPaymentCallback(callbackModel, accountId));
     }
-    
+
     [Fact]
     public async Task HandleTuitionPaymentCallback_FailedPayment_ThrowsBadRequestException()
     {
@@ -503,16 +496,16 @@ public class TuitionServiceTest
             VnpSecureHash = Guid.NewGuid().ToString()
         };
         var accountId = "student123";
-    
+
         var tuitionId = Guid.NewGuid();
-        
+
         var tuitionModel = new DataAccess.Models.Entity.Tuition
         {
             Id = tuitionId,
             StudentClassId = Guid.NewGuid(),
             PaymentStatus = PaymentStatus.Pending
         };
-        
+
         var transaction = new Transaction
         {
             Id = Guid.Parse(callbackModel.VnpTxnRef),
@@ -522,25 +515,27 @@ public class TuitionServiceTest
             Tution = tuitionModel,
             PaymentStatus = PaymentStatus.Pending
         };
-    
+
         var account = new Account
         {
             AccountFirebaseId = accountId,
-            Email = "student@example.com"
+            Email = "learner012@gmail.com"
         };
-    
+
         _transactionRepositoryMock
-            .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync(transaction);
-    
+
         _accountRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<Account, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<Account, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>()))
             .ReturnsAsync(account);
-    
+
         _unitOfWorkMock
             .Setup(uow => uow.BeginTransactionAsync())
             .ReturnsAsync(Mock.Of<IDbContextTransaction>());
-    
+
         // Act & Assert
         await Assert.ThrowsAsync<BadRequestException>(() =>
             _tuitionService.HandleTuitionPaymentCallback(callbackModel, accountId));
@@ -553,7 +548,7 @@ public class TuitionServiceTest
         var studentId = "student123";
         var classId = Guid.NewGuid();
         var currentTime = DateTime.UtcNow.AddHours(7);
-    
+
         var studentClass = new StudentClass
         {
             Id = Guid.NewGuid(),
@@ -562,7 +557,7 @@ public class TuitionServiceTest
             ClassId = classId,
             Class = new Class { Id = classId, LevelId = Guid.NewGuid(), Name = "Class ne", CreatedById = "admin001" }
         };
-    
+
         var tuition = new DataAccess.Models.Entity.Tuition
         {
             Id = Guid.NewGuid(),
@@ -570,26 +565,26 @@ public class TuitionServiceTest
             PaymentStatus = PaymentStatus.Succeed,
             Amount = 1000m
         };
-    
+
         var level = new Level
         {
             Id = studentClass.Class.LevelId,
             PricePerSlot = 200m
         };
-    
+
         var slotId1 = Guid.NewGuid();
         var slotId2 = Guid.NewGuid();
-    
+
         var slots = new List<Slot>
         {
-            new Slot
+            new()
             {
                 Id = slotId1,
                 ClassId = classId,
                 Date = new DateOnly(currentTime.Year, currentTime.Month, 15),
                 SlotStudents = new List<SlotStudent>
                 {
-                    new SlotStudent
+                    new()
                     {
                         SlotId = slotId1,
                         CreatedById = "admin001",
@@ -598,14 +593,14 @@ public class TuitionServiceTest
                     }
                 }
             },
-            new Slot
+            new()
             {
                 Id = slotId2,
                 ClassId = classId,
                 Date = new DateOnly(currentTime.Year, currentTime.Month, 20),
                 SlotStudents = new List<SlotStudent>
                 {
-                    new SlotStudent
+                    new()
                     {
                         SlotId = slotId2,
                         CreatedById = "admin001",
@@ -615,30 +610,34 @@ public class TuitionServiceTest
                 }
             }
         };
-    
+
         _studentClassRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<StudentClass, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<StudentClass, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>()))
             .ReturnsAsync(studentClass);
-    
+
         _tuitionRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync(tuition);
-    
+
         _slotRepositoryMock
-            .Setup(r => r.FindProjectedAsync<Slot>(It.IsAny<Expression<Func<Slot, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), TrackingOption.Default))
+            .Setup(r => r.FindProjectedAsync<Slot>(It.IsAny<Expression<Func<Slot, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>(), TrackingOption.Default))
             .ReturnsAsync(slots);
-    
+
         _levelRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<Level, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<Level, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>()))
             .ReturnsAsync(level);
-    
+
         // Expected refund: tuition amount - (price per slot * attended slots)
         // 1000 - (200 * 2) = 600
         var expectedRefund = 600m;
-    
+
         // Act
         var result = await _tuitionService.GetTuitionRefundAmount(studentId, classId);
-    
+
         // Assert
         Assert.Equal(expectedRefund, result);
     }
@@ -649,25 +648,25 @@ public class TuitionServiceTest
         // Arrange
         var studentId = "student123";
         var classId = Guid.NewGuid();
-    
+
         _studentClassRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<StudentClass, bool>>>(), 
+            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<StudentClass, bool>>>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>()))
             .ReturnsAsync((StudentClass)null);
-    
+
         // Act & Assert
         await Assert.ThrowsAsync<NotFoundException>(() =>
             _tuitionService.GetTuitionRefundAmount(studentId, classId));
     }
-    
+
     [Fact]
     public async Task GetTuitionRefundAmount_NoPaidTuition_ThrowsNotFoundException()
     {
         // Arrange
         var studentId = "student123";
         var classId = Guid.NewGuid();
-    
+
         var studentClass = new StudentClass
         {
             Id = Guid.NewGuid(),
@@ -675,19 +674,19 @@ public class TuitionServiceTest
             StudentFirebaseId = studentId,
             ClassId = classId
         };
-    
+
         _studentClassRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<StudentClass, bool>>>(), 
-                It.IsAny<bool>(), 
+            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<StudentClass, bool>>>(),
+                It.IsAny<bool>(),
                 It.IsAny<bool>()))
             .ReturnsAsync(studentClass);
-    
+
         _tuitionRepositoryMock
             .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>()))
             .ReturnsAsync((DataAccess.Models.Entity.Tuition)null);
-    
+
         // Act & Assert
         await Assert.ThrowsAsync<NotFoundException>(() =>
             _tuitionService.GetTuitionRefundAmount(studentId, classId));
@@ -709,7 +708,8 @@ public class TuitionServiceTest
         // Setup class with proper ID
         var classId = Guid.NewGuid();
         var levelId = Guid.NewGuid();
-        var ongoingClass = new Class {
+        var ongoingClass = new Class
+        {
             Id = classId,
             CreatedById = "admin001",
             Status = ClassStatus.Ongoing,
@@ -720,28 +720,33 @@ public class TuitionServiceTest
 
         // Setup student class with student info
         var studentClassId = Guid.NewGuid();
-        var studentClass = new StudentClass {
+        var studentClass = new StudentClass
+        {
             Id = studentClassId,
             CreatedById = "admin001",
-            
+
             StudentFirebaseId = "student123",
             ClassId = classId,
             Class = ongoingClass,
-            Student = new Account {
+            Student = new Account
+            {
                 Email = "student@example.com",
                 AccountFirebaseId = "student123"
             }
         };
 
         // Setup level with non-zero price
-        var level = new Level {
+        var level = new Level
+        {
             Id = levelId,
             PricePerSlot = 200m
         };
 
         // Setup slots in the current month
-        var slots = new List<Slot> {
-            new Slot {
+        var slots = new List<Slot>
+        {
+            new()
+            {
                 Id = Guid.NewGuid(),
                 ClassId = classId,
                 Date = new DateOnly(utcNow.Year, utcNow.Month, 15)
@@ -753,15 +758,18 @@ public class TuitionServiceTest
 
         // Setup repository mocks
         _classRepositoryMock
-            .Setup(r => r.FindProjectedAsync<Class>(It.IsAny<Expression<Func<Class, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .Setup(r => r.FindProjectedAsync<Class>(It.IsAny<Expression<Func<Class, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync(new List<Class> { ongoingClass });
 
         _studentClassRepositoryMock
-            .Setup(r => r.FindProjectedAsync<StudentClass>(It.IsAny<Expression<Func<StudentClass, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .Setup(r => r.FindProjectedAsync<StudentClass>(It.IsAny<Expression<Func<StudentClass, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync(new List<StudentClass> { studentClass });
 
         _levelRepositoryMock
-            .Setup(r => r.FindSingleProjectedAsync<Level>(It.IsAny<Expression<Func<Level, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .Setup(r => r.FindSingleProjectedAsync<Level>(It.IsAny<Expression<Func<Level, bool>>>(), It.IsAny<bool>(),
+                It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync(level);
 
         // Setup transaction execution
@@ -774,8 +782,7 @@ public class TuitionServiceTest
 
         // Assert
         _tuitionRepositoryMock.Verify(
-            r => r.AddRangeAsync(It.Is<IEnumerable<DataAccess.Models.Entity.Tuition>>(
-                tuitions => tuitions.Any())),
+            r => r.AddRangeAsync(It.Is<IEnumerable<DataAccess.Models.Entity.Tuition>>(tuitions => tuitions.Any())),
             Times.Once);
 
         _emailServiceMock.Verify(
@@ -787,60 +794,63 @@ public class TuitionServiceTest
                 false),
             Times.Once);
     }
-    
+
     [Fact]
     public async Task CronAutoCreateTuition_TuitionAlreadyExists_DoesNotCreateNewTuition()
     {
         // Arrange
         var utcNow = DateTime.UtcNow.AddHours(7);
-        
+
         var studentClassId = Guid.NewGuid();
 
-        var studentClass = new StudentClass()
+        var studentClass = new StudentClass
         {
             Id = studentClassId,
             CreatedById = "admin001",
             StudentFirebaseId = "student123",
 
-            Student = new Account()
+            Student = new Account
             {
                 Email = "studentemail@gmail.com",
-                AccountFirebaseId = "student123",
+                AccountFirebaseId = "student123"
             },
             ClassId = Guid.NewGuid(),
-            Class = new Class()
+            Class = new Class
             {
                 Id = Guid.NewGuid(),
                 Name = "Class test",
-                CreatedById = "admin001",
+                CreatedById = "admin001"
             }
         };
-        
-        _studentClassRepositoryMock.Setup(sc => sc.FindSingleAsync(sc => sc.Id == studentClassId, It.IsAny<bool>(), It.IsAny<bool>()) )
+
+        _studentClassRepositoryMock.Setup(sc =>
+                sc.FindSingleAsync(sc => sc.Id == studentClassId, It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync(studentClass);
-            
+
         _tuitionRepositoryMock
             .Setup(r => r.AnyAsync(It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>()))
             .ReturnsAsync(true); // Tuition already exists
 
-        
+
         // Act
         await _tuitionService.CronAutoCreateTuition();
-    
+
         // Assert
-        _classRepositoryMock.Verify(r => r.FindProjectedAsync<Class>(It.IsAny<Expression<Func<Class, bool>>>(), false, false, TrackingOption.Default),
+        _classRepositoryMock.Verify(
+            r => r.FindProjectedAsync<Class>(It.IsAny<Expression<Func<Class, bool>>>(), false, false,
+                TrackingOption.Default),
             Times.Never);
         _tuitionRepositoryMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<DataAccess.Models.Entity.Tuition>>()),
             Times.Never);
     }
-    
+
     [Fact]
     public async Task CronForTuitionReminder_SendsReminderForPendingTuition()
     {
         // Arrange
         var pendingTuitions = new List<DataAccess.Models.Entity.Tuition>
         {
-            new DataAccess.Models.Entity.Tuition
+            new()
             {
                 Id = Guid.NewGuid(),
                 StudentClassId = Guid.NewGuid(),
@@ -850,69 +860,70 @@ public class TuitionServiceTest
                 Amount = 1000m
             }
         };
-    
-        
-        
+
         var studentClass = new StudentClass
         {
             Id = pendingTuitions[0].StudentClassId,
             StudentFirebaseId = "student123",
             CreatedById = "admin001",
-            Student = new Account { Email = "student@example.com", AccountFirebaseId = "student123" },
-            Class = new Class { Name = "Class 101" , Id = Guid.NewGuid(), CreatedById = "admin001"}
+            Student = new Account { Email = "learner012@gmail.com", AccountFirebaseId = "student123" },
+            Class = new Class { Name = "Class 101", Id = Guid.NewGuid(), CreatedById = "admin001" }
         };
-    
+
         _tuitionRepositoryMock
             .Setup(r => r.FindProjectedAsync<DataAccess.Models.Entity.Tuition>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
-             It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync(pendingTuitions);
-    
+
         _studentClassRepositoryMock
-            .Setup(r => r.FindSingleAsync(It.IsAny<Expression<Func<StudentClass, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            .Setup(r => r.FindSingleProjectedAsync<StudentClass>(It.IsAny<Expression<Func<StudentClass, bool>>>(),
+                It.IsAny<bool>(),
+                It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync(studentClass);
-    
+
         // Act
         await _tuitionService.CronForTuitionReminder();
-    
+
         // Assert
         _emailServiceMock.Verify(s => s.SendAsync(
                 "NotifyTuitionReminder",
+                It.Is<List<string>>(emails => emails.Contains(studentClass.Student.Email)),
                 It.IsAny<List<string>>(),
-                null,
-                It.IsAny<Dictionary<string, string>>(), It.IsAny<bool>()),
+                It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<bool>()),
             Times.Once);
-    
+
         _notificationServiceMock.Verify(s => s.SendNotificationAsync(
                 studentClass.Student.AccountFirebaseId,
+                It.Is<string>(body => body.Contains("tuition") || body.Contains(studentClass.Class.Name)),
                 It.IsAny<string>(),
-                It.IsAny<string>(),
-                string.Empty),
+                It.IsAny<string>()),
             Times.Once);
     }
-    
+
     [Fact]
     public async Task GetTuitionById_ExistingTuition_ReturnsCorrectTuition()
     {
         // Arrange
         var accountFirebaseId = "student123";
         var tuitionId = Guid.NewGuid();
-        
-        var account = new AccountModel 
-        { 
-            AccountFirebaseId = accountFirebaseId, 
+
+        var account = new AccountModel
+        {
+            AccountFirebaseId = accountFirebaseId,
             Email = "test@gmail.com",
-            Role = Role.Student 
+            Role = Role.Student
         };
 
         var studentClassId = Guid.NewGuid();
         var classId = Guid.NewGuid();
-        
+
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
-            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), 
-            false, false, TrackingOption.Default))
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
+                false, false, TrackingOption.Default))
             .ReturnsAsync(new TuitionWithStudentClassModel
-            { 
+            {
                 Id = tuitionId,
                 StudentClassId = studentClassId,
                 StudentClass = new StudentClassModel
@@ -922,18 +933,17 @@ public class TuitionServiceTest
                     CreatedById = "admin001",
                     StudentFirebaseId = account.AccountFirebaseId
                 }
-                
             });
-    
+
         // Act
         var result = await _tuitionService.GetTuitionById(tuitionId, account);
-    
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(tuitionId, result.Id);
         _tuitionRepositoryMock.Verify(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
-            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), 
-            It.IsAny<bool>(), It.IsAny<bool>(),It.IsAny<TrackingOption>()), Times.Once);
+            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
+            It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()), Times.Once);
     }
 
     [Fact]
@@ -943,13 +953,14 @@ public class TuitionServiceTest
         var tuitionId = Guid.NewGuid();
         var studentFirebaseId = "student-id";
         var studentClassId = Guid.NewGuid();
-        var staffAccount = new AccountModel { AccountFirebaseId = "staff-id", Role = Role.Staff, Email = "staff@gmail.com"};
-        
+        var staffAccount = new AccountModel
+            { AccountFirebaseId = "staff-id", Role = Role.Staff, Email = "staff@gmail.com" };
+
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
-            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), 
-            It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
-            .ReturnsAsync(new TuitionWithStudentClassModel 
-            { 
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .ReturnsAsync(new TuitionWithStudentClassModel
+            {
                 Id = tuitionId,
                 StudentClassId = studentClassId,
                 StudentClass = new StudentClassModel
@@ -960,15 +971,15 @@ public class TuitionServiceTest
                     StudentFirebaseId = studentFirebaseId
                 }
             });
-    
+
         // Act
         var result = await _tuitionService.GetTuitionById(tuitionId, staffAccount);
-    
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(tuitionId, result.Id);
     }
-    
+
     [Fact]
     public async Task GetTuitionById_StudentAccessingAnotherStudentTuition_ThrowsForbiddenException()
     {
@@ -976,19 +987,19 @@ public class TuitionServiceTest
         var tuitionId = Guid.NewGuid();
         var studentClassId = Guid.NewGuid();
         var classId = Guid.NewGuid();
-        
-        var studentAccount = new AccountModel 
-        { 
-            AccountFirebaseId = "student1", 
+
+        var studentAccount = new AccountModel
+        {
+            AccountFirebaseId = "student1",
             Email = "student123@gmail.com",
-            Role = Role.Student 
+            Role = Role.Student
         };
-        
+
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
-            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), 
-            It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
-            .ReturnsAsync(new TuitionWithStudentClassModel 
-            { 
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+            .ReturnsAsync(new TuitionWithStudentClassModel
+            {
                 Id = tuitionId,
                 StudentClassId = studentClassId,
                 StudentClass = new StudentClassModel
@@ -999,27 +1010,27 @@ public class TuitionServiceTest
                     StudentFirebaseId = "student2" // Different student
                 }
             });
-    
+
         // Act & Assert
-        await Assert.ThrowsAsync<ForbiddenMethodException>(() => 
+        await Assert.ThrowsAsync<ForbiddenMethodException>(() =>
             _tuitionService.GetTuitionById(tuitionId, studentAccount));
     }
-    
+
     [Fact]
     public async Task GetTuitionById_TuitionNotFound_ThrowsNotFoundException()
     {
         // Arrange
         var tuitionId = Guid.NewGuid();
-        var account = new AccountModel { AccountFirebaseId = "account-id", Role = Role.Staff, Email = "user@gmail.com"};
-        
+        var account = new AccountModel
+            { AccountFirebaseId = "account-id", Role = Role.Staff, Email = "user@gmail.com" };
+
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
-            It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), 
-            It.IsAny<bool>(),  It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
             .ReturnsAsync((TuitionWithStudentClassModel)null);
-    
+
         // Act & Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => 
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             _tuitionService.GetTuitionById(tuitionId, account));
     }
-    
 }

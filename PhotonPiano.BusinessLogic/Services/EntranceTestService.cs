@@ -253,27 +253,38 @@ public class EntranceTestService : IEntranceTestService
             }
         });
 
-        await InvalidateEntranceTestCache();
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{entranceTest!.Id}",
-            entranceTest.Adapt<EntranceTestDetailModel>(),
-            TimeSpan.FromHours(5));
-
         return await GetEntranceTestDetailById(entranceTest.Id, currentAccount);
     }
 
     public async Task DeleteEntranceTest(Guid id, string? currentUserFirebaseId = default)
     {
-        var entranceTestEntity = await _unitOfWork.EntranceTestRepository.FindSingleAsync(q => q.Id == id);
-        if (entranceTestEntity is null) throw new NotFoundException("This EntranceTest not found.");
+        var entranceTest = await _unitOfWork.EntranceTestRepository.GetEntranceTestWithStudentsAsync(id);
 
-        entranceTestEntity.DeletedById = currentUserFirebaseId;
-        entranceTestEntity.DeletedAt = DateTime.UtcNow.AddHours(7);
-        entranceTestEntity.RecordStatus = RecordStatus.IsDeleted;
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("This EntranceTest not found.");
+        }
 
-        await _unitOfWork.SaveChangesAsync();
+        var status = ShiftUtils.GetEntranceTestStatus(entranceTest.Date, entranceTest.Shift);
 
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTestEntity,
-            TimeSpan.FromHours(5));
+        if (status != EntranceTestStatus.NotStarted)
+        {
+            throw new BadRequestException("You cannot delete this entrance test since it is already started.");
+        }
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            entranceTest.DeletedById = currentUserFirebaseId;
+            entranceTest.DeletedAt = DateTime.UtcNow.AddHours(7);
+            entranceTest.RecordStatus = RecordStatus.IsDeleted;
+
+            var studentIds = entranceTest.EntranceTestStudents.Select(ets => ets.StudentFirebaseId);
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
+                $"You have been removed from test {entranceTest.Name}", "", requiresSavingChanges: false);
+        });
     }
 
     public async Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel updateModel,
@@ -461,6 +472,20 @@ public class EntranceTestService : IEntranceTestService
 
     public async Task RemoveStudentsFromTest(Guid testId, AccountModel currentAccount, params List<string> studentIds)
     {
+        var test = await _unitOfWork.EntranceTestRepository.FindSingleAsync(e => e.Id == testId);
+
+        if (test is null)
+        {
+            throw new NotFoundException("Entrance test not found.");
+        }
+        
+        var testStatus = ShiftUtils.GetEntranceTestStatus(test.Date, test.Shift);
+
+        if (testStatus != EntranceTestStatus.NotStarted)
+        {
+            throw new BadRequestException("Entrance test is already started.");
+        }
+        
         var entranceTestStudents =
             await _unitOfWork.EntranceTestStudentRepository.FindAsync(ets => ets.EntranceTestId == testId);
 
@@ -504,6 +529,9 @@ public class EntranceTestService : IEntranceTestService
 
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
+                $"You have been removed from entrance test", "", requiresSavingChanges: false);
         });
     }
 
@@ -547,9 +575,21 @@ public class EntranceTestService : IEntranceTestService
                 e => e.Id == testId,
                 hasTrackings: false);
 
-        if (entranceTest?.EntranceTestStudents.Count <= 1)
+        if (entranceTest is null)
+        {
+            throw new NotFoundException("Entrance test not found");
+        }
+
+        if (entranceTest.EntranceTestStudents.Count <= 1)
         {
             throw new BadRequestException("Only 1 student is in the entrance test.");
+        }
+
+        var testStatus = ShiftUtils.GetEntranceTestStatus(entranceTest.Date, entranceTest.Shift);
+
+        if (testStatus != EntranceTestStatus.NotStarted)
+        {
+            throw new BadRequestException("Entrance test has already been started.");
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -884,10 +924,10 @@ public class EntranceTestService : IEntranceTestService
         {
             test.Name = GetEntranceTestName(test);
 
-            var studentIdsToPushNotification = test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
-
-            notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(studentIdsToPushNotification,
-                $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
+            // var studentIdsToPushNotification = test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+            //
+            // notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(studentIdsToPushNotification,
+            //     $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -897,8 +937,8 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
-            
-            await Task.WhenAll(notiTasks);
+
+            // await Task.WhenAll(notiTasks);
         });
     }
 

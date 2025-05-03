@@ -21,6 +21,7 @@ public interface ISystemConfigService
     Task UpdateEntranceTestSystemConfig(UpdateEntranceTestSystemConfigModel updateModel);
     
     Task UpdateTuitionSystemConfig(UpdateTuitionSystemConfigModel updateModel);
+    Task UpdateRefundSystemConfig(UpdateRefundSystemConfigModel updateModel);
     
     Task UpdateSchedulerSystemConfig(UpdateSchedulerSystemConfigModel updateModel);
     Task UpdateClassSystemConfig(UpdateClassSystemConfigModel updateModel);

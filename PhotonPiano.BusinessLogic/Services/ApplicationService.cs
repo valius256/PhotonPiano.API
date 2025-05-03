@@ -124,6 +124,8 @@ public class ApplicationService : IApplicationService
             application.FileUrl = fileUrl;
         }
 
+        Application? createdApplication = null;
+        
         // if student have class, remove student from class
         if (currentAccount.CurrentClassId is not null)
         {
@@ -137,10 +139,12 @@ public class ApplicationService : IApplicationService
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                     account => account.AccountFirebaseId == currentAccount.AccountFirebaseId,
-                    set => set.SetProperty(account => account.CurrentClassId, account => (Guid?)null)
+                    set => set
+                        .SetProperty(account => account.CurrentClassId, (Guid?)null)
+                        .SetProperty(account => account.StudentStatus, StudentStatus.Leave)
                 );
 
-                await _unitOfWork.ApplicationRepository.AddAsync(application);
+                createdApplication = await _unitOfWork.ApplicationRepository.AddAsync(application);
             });
 
             await Task.WhenAll(result);
@@ -151,10 +155,10 @@ public class ApplicationService : IApplicationService
         if (currentAccount.CurrentClassId != null)
             await _serviceFactory.RedisCacheService.DeleteByPatternAsync($"*{currentAccount.CurrentClassId}*");
 
-        return await GetApplicationDetailsAsync(application.Id);
+        return createdApplication.Adapt<ApplicationDetailsModel>();
     }
 
-    protected async Task NotifyStaffsAsync(Application application, AccountModel currentAccount)
+    private async Task NotifyStaffsAsync(Application application, AccountModel currentAccount)
     {
         var staffs = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Staff, false);
 

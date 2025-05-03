@@ -37,9 +37,12 @@ public class TuitionController : BaseController
 
         var apiBaseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.PathBase}";
 
-        var url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, request.TuitionId,
-            request.ReturnUrl,
-            ipAddress, apiBaseUrl);
+        var paymentModel = request.Adapt<PayTuitionModel>();
+
+        paymentModel.ApiBaseUrl = apiBaseUrl;
+        paymentModel.IpAddress = ipAddress;
+
+        var url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, paymentModel);
 
         return Ok(new PaymentUrlResponse
         {
@@ -55,13 +58,6 @@ public class TuitionController : BaseController
         [FromRoute(Name = "account-id")] string accountId,
         [FromQuery(Name = "url")] string clientRedirectUrl = "https://default-url.com")
     {
-        // Enable this when frontend web have deploy url
-        // if (!_redirectUrlValidator.IsValid(clientRedirectUrl))
-        // {
-        //     _logger.LogWarning("Invalid redirect URL detected: {clientRedirectUrl}", clientRedirectUrl);
-        //     return BadRequest(new { Error = "Invalid redirect URL" });
-        // }
-
         await _serviceFactory.TuitionService.HandleTuitionPaymentCallback(
             request.Adapt<VnPayCallbackModel>(), accountId);
 

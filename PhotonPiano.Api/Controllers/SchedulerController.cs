@@ -160,4 +160,6 @@ public class SchedulerController : BaseController
         var result = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
         return Ok(result.Adapt<List<StudentAttendanceResultResponse>>());
     }
+    
+    
 }

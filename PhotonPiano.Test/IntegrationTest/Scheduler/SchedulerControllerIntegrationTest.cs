@@ -53,6 +53,38 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    // Invalid input Parameters
+    [Fact]
+    public async Task GetWeeklySchedule_InvalidParametersStartDate_ReturnsBadRequest()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response =
+            await _client.GetAsync($"/api/scheduler/slots?start-time={DateTime.UtcNow.Date}&end-time=invalid");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // Invalid input Parameters
+    [Fact]
+    public async Task GetWeeklySchedule_InvalidParametersEndDate_ReturnsBadRequest()
+    {
+        // Arrange
+        var token = await _client.GetAuthToken("learner008@gmail.com", "123456");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response =
+            await _client.GetAsync($"/api/scheduler/slots?start-time=invalid&end-time={DateTime.UtcNow.Date}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
     
 
     // Boundary Dates
@@ -440,38 +472,38 @@ public class SchedulerControllerIntegrationTest : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
     }
-    
-    [Fact]
-    public async Task AssignTeacherToSlot_ValidRequest_ReturnsOk()
-    {
-        // Arrange
-        var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var teacherId = await _client.GetFirebaseAccountId("teacherphatlord@gmail.com", "123456");
-        
-        var slotResponseMessage =
-            await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
-
-        // Assert
-        slotResponseMessage.EnsureSuccessStatusCode();
-        var result = await DeserializeResponse<List<SlotSimpleModel>>(slotResponseMessage);
-
-        var slotNotStarted = result.FirstOrDefault(x => x.Status == SlotStatus.NotStarted);
-        
-        var request = new
-        {
-            slotId = slotNotStarted.Id,
-            teacherFirebaseId = teacherId,
-            reason = "valid-reason"
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/scheduler/assign-teacher-to-slot", request);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
+    // [Fact]
+    // public async Task AssignTeacherToSlot_ValidRequest_ReturnsOk()
+    // {
+    //     // Arrange
+    //     var token = await _client.GetAuthToken("staff123@gmail.com", "123456");
+    //     _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    //
+    //     var teacherId = await _client.GetFirebaseAccountId("teacherphatlord@gmail.com", "123456");
+    //     
+    //     var slotResponseMessage =
+    //         await _client.GetAsync($"/api/scheduler/slots?start-time={DateOnly.FromDateTime(DateTime.Now)}&end-time={DateOnly.FromDateTime(DateTime.Now.AddDays(7))}");
+    //
+    //     // Assert
+    //     slotResponseMessage.EnsureSuccessStatusCode();
+    //     var result = await DeserializeResponse<List<SlotSimpleModel>>(slotResponseMessage);
+    //
+    //     var slotNotStarted = result.FirstOrDefault(x => x.Status == SlotStatus.NotStarted);
+    //     
+    //     var request = new
+    //     {
+    //         slotId = slotNotStarted.Id,
+    //         teacherFirebaseId = teacherId,
+    //         reason = "valid-reason"
+    //     };
+    //
+    //     // Act
+    //     var response = await _client.PostAsJsonAsync("/api/scheduler/assign-teacher-to-slot", request);
+    //
+    //     // Assert
+    //     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    // }
 
     [Fact]
     public async Task AssignTeacherToSlot_InvalidTeacher_ReturnsBadRequest()

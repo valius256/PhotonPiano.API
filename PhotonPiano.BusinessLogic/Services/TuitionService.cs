@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -26,17 +27,14 @@ public class TuitionService : ITuitionService
         _serviceFactory = serviceFactory;
     }
 
-    public async Task<string> PayTuition(AccountModel currentAccount, Guid tuitionId, string returnUrl,
-        string ipAddress,
-        string apiBaseUrl)
+    public async Task<string> PayTuition(AccountModel currentAccount, PayTuitionModel model)
     {
         var paymentTuition = await _unitOfWork.TuitionRepository.FindSingleProjectedAsync<Tuition>(
-            expression: x => x.Id == tuitionId,
-            hasTrackings: false,
-            ignoreQueryFilters: false);
+            x => x.Id == model.TuitionId,
+            false);
 
         ValidateTuition(paymentTuition, currentAccount.AccountFirebaseId);
-        
+
         var currentYear = DateTime.UtcNow.Year;
 
         var currentTaxRateConfig = await _serviceFactory.SystemConfigService.GetTaxesRateConfig(currentYear);
@@ -44,15 +42,16 @@ public class TuitionService : ITuitionService
         var currentTaxRate = double.TryParse(currentTaxRateConfig?.ConfigValue, out var taxRate) ? taxRate : 0;
 
         var currentTaxAmount = paymentTuition!.Amount * (decimal)currentTaxRate;
-        
+
         var transactionId = Guid.NewGuid();
 
         var transaction = new Transaction
         {
             Id = transactionId,
-            TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.TutionFee, DateTime.UtcNow,
+            TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.TutionFee,
+                DateTime.UtcNow,
                 transactionId),
-            TutionId = tuitionId,
+            TutionId = model.TuitionId,
             TaxRate = currentTaxRate,
             TaxAmount = currentTaxAmount,
             Amount = paymentTuition!.Amount + currentTaxAmount,
@@ -69,11 +68,11 @@ public class TuitionService : ITuitionService
         await _unitOfWork.SaveChangesAsync();
 
         var customReturnUrl =
-            $"{apiBaseUrl}/api/tuitions/{currentAccount.AccountFirebaseId}/tuition-payment-callback?url={returnUrl}";
+            $"{model.ApiBaseUrl}/api/tuitions/{currentAccount.AccountFirebaseId}/tuition-payment-callback?url={model.ReturnUrl}";
 
-        return _serviceFactory.PaymentService.CreateVnPayPaymentUrl(transaction, ipAddress, apiBaseUrl,
+        return _serviceFactory.PaymentService.CreateVnPayPaymentUrl(transaction, model.IpAddress, model.ApiBaseUrl,
             currentAccount.AccountFirebaseId,
-            returnUrl, customReturnUrl);
+            model.ReturnUrl, customReturnUrl);
     }
 
     public async Task HandleTuitionPaymentCallback(VnPayCallbackModel callbackModel, string accountId)
@@ -83,59 +82,73 @@ public class TuitionService : ITuitionService
         var transaction =
             await _unitOfWork.TransactionRepository.FindSingleProjectedAsync<Transaction>(t => t.Id == transactionCode);
 
-        if (transaction is null || transaction.Id == Guid.Empty) throw new PaymentRequiredException("Payment is required");
+        if (transaction is null || transaction.Id == Guid.Empty)
+            throw new PaymentRequiredException("Payment is required");
 
         ValidateTransaction(transaction);
 
         var account = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == accountId);
 
-        if (account is null) throw new NotFoundException("Account not found");
+        if (account is null)
+            throw new NotFoundException("Account not found");
 
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        transaction.PaymentStatus =
+            callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
+        transaction.TransactionCode = callbackModel.VnpTransactionNo;
+        transaction.UpdatedAt = DateTime.UtcNow;
+
+        if (transaction.PaymentStatus == PaymentStatus.Succeed)
         {
-            transaction.PaymentStatus =
-                callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
-            transaction.TransactionCode = callbackModel.VnpTransactionNo;
-            transaction.UpdatedAt = DateTime.UtcNow;
-
-            switch (transaction.PaymentStatus)
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                case PaymentStatus.Succeed:
-                    var tutionEntity =
-                        await _unitOfWork.TuitionRepository.FindFirstAsync(x => x.Id == transaction.TutionId);
+                var tuitionEntity =
+                    await _unitOfWork.TuitionRepository.FindFirstAsync(x => x.Id == transaction.TutionId);
 
-                    tutionEntity!.PaymentStatus = PaymentStatus.Succeed;
+                if (tuitionEntity is null)
+                    throw new NotFoundException($"Tuition with ID {transaction.TutionId} not found");
 
-                    await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
-                    await _unitOfWork.SaveChangesAsync();
-                    await _unitOfWork.CommitTransactionAsync();
+                tuitionEntity.PaymentStatus = PaymentStatus.Succeed;
 
-                    var userEmail = account.Email;
-                    var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        { "customerName", $"{userEmail}" },
-                        { "transactionId", $"{transaction.TransactionCode}" },
-                        { "amount", $"{transaction.Amount}" },
-                        { "orderId", $"{tutionEntity.Id}" },
-                        { "paymentMethod", $"{transaction.PaymentMethod}" },
-                        { "transactionDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") },
-                        { "validFromTo", $"{tutionEntity.StartDate:yyyy-MM-dd} to {tutionEntity.EndDate:yyyy-MM-dd}" }
-                    };
+                await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
+                await _unitOfWork.TuitionRepository.UpdateAsync(tuitionEntity);
+            });
 
-                    await _serviceFactory.EmailService.SendAsync("PaymentSuccess",
-                        new List<string> { account.Email },
-                        null, emailParam);
+            var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "customerName", account.Email },
+                { "transactionId", transaction.TransactionCode },
+                { "amount", transaction.Amount.ToString(CultureInfo.InvariantCulture) },
+                { "orderId", transaction.TutionId.ToString() },
+                { "paymentMethod", transaction.PaymentMethod.ToString() },
+                { "transactionDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") },
+                {
+                    "validFromTo",
+                    $"{transaction.Tution?.StartDate:yyyy-MM-dd} to {transaction.Tution?.EndDate:yyyy-MM-dd}"
+                }
+            };
 
+            await _serviceFactory.EmailService.SendAsync("PaymentSuccess",
+                new List<string> { account.Email },
+                null, emailParam);
+        }
+        else if (transaction.PaymentStatus == PaymentStatus.Failed)
+        {
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
+            });
 
-                    break;
-                case PaymentStatus.Failed:
-                    throw new BadRequestException("Payment has failed.");
-                default:
-                    throw new BadRequestException("Unknown payment status.");
-            }
-        });
+            throw new BadRequestException("Payment has failed.");
+        }
+        else
+        {
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
+            });
 
-
+            throw new BadRequestException("Unknown payment status.");
+        }
     }
 
 
@@ -164,10 +177,7 @@ public class TuitionService : ITuitionService
 
 
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == currentStudentClass.Class.LevelId);
-        if (level is null)
-        {
-            throw new NotFoundException("Level not found");
-        }
+        if (level is null) throw new NotFoundException("Level not found");
 
         var refundAmount = level.PricePerSlot * numOfSlotHaveAttended;
         return currentTuitionHasPaid.Amount - refundAmount;
@@ -192,9 +202,10 @@ public class TuitionService : ITuitionService
                 c.Status == ClassStatus.Ongoing && c.IsPublic == true);
         var ongoingClassIds = ongoingClasses.Select(x => x.Id).ToList();
 
-        var studentClasses = await _unitOfWork.StudentClassRepository.FindProjectedAsync<StudentClass>(
-            sc => ongoingClassIds.Contains(sc.ClassId)
-        );
+        var studentClasses =
+            await _unitOfWork.StudentClassRepository.FindProjectedAsync<StudentClass>(sc =>
+                ongoingClassIds.Contains(sc.ClassId)
+            );
 
         var tutions = new List<Tuition>();
 
@@ -284,11 +295,13 @@ public class TuitionService : ITuitionService
 
         foreach (var tuition in upcomingTuitions)
         {
-            var studentClass = await _unitOfWork.StudentClassRepository.FindSingleProjectedAsync<StudentClass>(sc => sc.Id == tuition.StudentClassId, false);
+            var studentClass =
+                await _unitOfWork.StudentClassRepository.FindSingleProjectedAsync<StudentClass>(
+                    sc => sc.Id == tuition.StudentClassId, false);
 
             var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "studentName", studentClass.Student.FullName ?? studentClass.Student.UserName }, 
+                { "studentName", studentClass.Student.FullName ?? studentClass.Student.UserName },
                 { "className", studentClass.Class.Name },
                 { "startDate", $"{tuition.StartDate:dd-MM-yyyy}" },
                 { "endDate", $"{tuition.EndDate:dd-MM-yyyy}" },
@@ -305,22 +318,21 @@ public class TuitionService : ITuitionService
 
             await _serviceFactory.NotificationService.SendNotificationAsync(
                 studentClass.Student.AccountFirebaseId,
-                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} chưa thanh toán",
-                $"Hạn chót là {tuition.Deadline:dd-MM}. Vui lòng thanh toán để không bị gián đoạn việc học."
+                $"Monthly tuition {tuition.StartDate:MM/yyyy} of class {studentClass.Class.Name} has not been paid",
+                $"Deadline is {tuition.Deadline:dd-MM}. Please pay so your studies will not be interrupted."
             );
         }
     }
 
 
-
     public async Task CronForTuitionOverdue()
     {
         var today = DateTime.UtcNow.AddHours(7);
-        
+
         var overdueTuitions = await _unitOfWork.TuitionRepository.FindProjectedAsync<Tuition>(
             t => t.PaymentStatus == PaymentStatus.Pending &&
                  t.Deadline < today &&
-                 t.IsOverdueProcessed == false, 
+                 t.IsOverdueProcessed == false,
             false
         );
 
@@ -336,12 +348,12 @@ public class TuitionService : ITuitionService
             // Xử lý transaction: xoá dữ liệu & cập nhật trạng thái
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(
-                    ss => ss.StudentFirebaseId == studentClass.StudentFirebaseId
+                await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(ss =>
+                    ss.StudentFirebaseId == studentClass.StudentFirebaseId
                 );
 
-                await _unitOfWork.StudentClassRepository.ExecuteDeleteAsync(
-                    sc => sc.StudentFirebaseId == studentClass.StudentFirebaseId
+                await _unitOfWork.StudentClassRepository.ExecuteDeleteAsync(sc =>
+                    sc.StudentFirebaseId == studentClass.StudentFirebaseId
                 );
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
@@ -379,9 +391,6 @@ public class TuitionService : ITuitionService
     }
 
 
-
-
-
     public async Task<PagedResult<TuitionWithStudentClassModel>> GetTuitionsPaged(QueryTuitionModel queryTuitionModel,
         AccountModel? account = default)
     {
@@ -396,7 +405,7 @@ public class TuitionService : ITuitionService
         var endDateTimeUtc = endDate.HasValue
             ? DateTime.SpecifyKind(endDate.Value.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc)
             : (DateTime?)null;
-        
+
         var result = await _unitOfWork.TuitionRepository.GetPaginatedWithProjectionAsync<TuitionWithStudentClassModel>(
             page, pageSize, sortColumn, orderByDesc,
             expressions:
@@ -409,7 +418,7 @@ public class TuitionService : ITuitionService
                 x => account != null && (account.Role == Role.Staff ||
                                          x.StudentClass.StudentFirebaseId == account.AccountFirebaseId)
             ]);
-        
+
         var currentYear = DateTime.UtcNow.Year;
 
         var currentTaxRateConfig = await _serviceFactory.SystemConfigService.GetTaxesRateConfig(currentYear);
@@ -417,7 +426,7 @@ public class TuitionService : ITuitionService
         var currentTaxRate = double.TryParse(currentTaxRateConfig?.ConfigValue, out var taxRate) ? taxRate : 0;
 
         // var currentTaxAmount = paymentTuition!.Amount * (decimal)currentTaxRate;
-        
+
         foreach (var tuitionWithStudentClassModel in result.Items)
         {
             var currentTaxAmount = tuitionWithStudentClassModel.Amount * (decimal)currentTaxRate;
@@ -433,13 +442,12 @@ public class TuitionService : ITuitionService
     {
         var result = await _unitOfWork.TuitionRepository
             .FindSingleProjectedAsync<TuitionWithStudentClassModel>(e => e.Id == tuitionId, false);
-        
+
         if (result is null || result.Id == null) throw new NotFoundException("Tuition not found.");
-        
-        if (result.StudentClass.StudentFirebaseId != currentAccount!.AccountFirebaseId && currentAccount.Role != Role.Staff)
-        {
+
+        if (result.StudentClass.StudentFirebaseId != currentAccount!.AccountFirebaseId &&
+            currentAccount.Role != Role.Staff)
             throw new ForbiddenMethodException("You are not allowed to see this tuition.");
-        }
 
         return result;
     }
@@ -447,13 +455,14 @@ public class TuitionService : ITuitionService
     public async Task CreateTuitionWhenRegisterClass(ClassDetailModel classDetailModel)
     {
         var utcNow = DateTime.UtcNow.AddHours(7);
-        
+
         var trialSlotConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.NumTrialSlot);
-        int.TryParse(trialSlotConfig.ConfigValue, out int trialSlotCount);
-        
-        var deadlinePayTuition = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.TuitionPaymentDeadline);
-        double.TryParse(deadlinePayTuition.ConfigValue, out double numOfDeadlineDays);
-        
+        int.TryParse(trialSlotConfig.ConfigValue, out var trialSlotCount);
+
+        var deadlinePayTuition =
+            await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.TuitionPaymentDeadline);
+        double.TryParse(deadlinePayTuition.ConfigValue, out var numOfDeadlineDays);
+
         var sortedSlots = classDetailModel.Slots.OrderBy(s => s.Date).ToList();
         var lastSlot = sortedSlots.LastOrDefault();
 
@@ -504,8 +513,8 @@ public class TuitionService : ITuitionService
                 // Đánh dấu đã dùng học thử
                 if (!hasUsedTrial)
                 {
-                    var account = await _unitOfWork.AccountRepository.FindSingleAsync(
-                        sc => sc.AccountFirebaseId == studentClass.StudentFirebaseId);
+                    var account = await _unitOfWork.AccountRepository.FindSingleAsync(sc =>
+                        sc.AccountFirebaseId == studentClass.StudentFirebaseId);
                     account.HasUsedTrial = true;
                     await _unitOfWork.AccountRepository.UpdateAsync(account);
                 }
@@ -513,8 +522,7 @@ public class TuitionService : ITuitionService
 
             await _unitOfWork.TuitionRepository.AddRangeAsync(tuitions);
         });
-        
-      
+
 
         // Gửi email và notification
         foreach (var result in tuitions)
@@ -524,7 +532,7 @@ public class TuitionService : ITuitionService
             {
                 var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "studentName", student.Student.FullName ?? student.Student.UserName},
+                    { "studentName", student.Student.FullName ?? student.Student.UserName },
                     { "className", classDetailModel.Name },
                     { "amount", result.Amount.ToString("N0") },
                     { "endDate", result.EndDate.ToString("dd/MM/yyyy") },
@@ -533,7 +541,7 @@ public class TuitionService : ITuitionService
                 };
 
                 await _serviceFactory.EmailService.SendAsync("NotifyTuitionCreated",
-                    [ student.Student.Email ],
+                    [student.Student.Email],
                     null,
                     emailParam);
 
@@ -542,20 +550,17 @@ public class TuitionService : ITuitionService
                     "Hãy thanh toán học phí để tiếp tục học tập");
             }
         }
-
-    }   
-    
-    
+    }
 
 
     private void ValidateTransaction(Transaction transaction)
     {
         if (transaction.TutionId is null)
             throw new NotFoundException("The TuitionId of this transaction must not be null.");
-        
+
         if (transaction.PaymentStatus != PaymentStatus.Pending)
             throw new IllegalArgumentException("Payment Status of this transaction must be pending.");
-        
+
         if (transaction.Tution!.PaymentStatus != PaymentStatus.Pending)
             throw new IllegalArgumentException("The PaymentStatus of this tuition must be pending.");
     }
@@ -566,24 +571,20 @@ public class TuitionService : ITuitionService
             throw new NotFoundException("No tuition found for this, please add tuition first.");
 
         if (tuition.PaymentStatus == PaymentStatus.Succeed)
-            throw new IllegalArgumentException("This tuition has already been processed.");
+            throw new BadRequestException("This tuition has already been processed.");
 
         if (tuition.StudentClass.StudentFirebaseId != userFirebaseId)
-            throw new IllegalArgumentException("You are not allowed to pay this tuition.");
+            throw new BadRequestException("You are not allowed to pay this tuition.");
     }
-    
+
     public async Task CreateTuitionForTestPurpose()
     {
         // Get a class ID (maybe from configuration or the first active class)
         var activeClass = await _unitOfWork.ClassRepository
-            .FindSingleProjectedAsync<ClassDetailModel>(
-                c => c.Status == ClassStatus.Ongoing && c.IsPublic == true
+            .FindSingleProjectedAsync<ClassDetailModel>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true
                 && c.Id == Guid.Parse("f838e840-e4e5-48ae-aa09-fcb36638a698")
-                );
-            
-        if (activeClass != null)
-        {
-            await CreateTuitionWhenRegisterClass(activeClass);
-        }
+            );
+
+        if (activeClass != null) await CreateTuitionWhenRegisterClass(activeClass);
     }
 }

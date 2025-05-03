@@ -24,7 +24,7 @@ namespace PhotonPiano.Api.Controllers
         [HttpGet]
         [CustomAuthorize(Roles = [Role.Staff, Role.Student, Role.Administrator])]
         [EndpointDescription("Get surveys with paging")]
-        public async Task<ActionResult<List<PianoSurveyModel>>> GetSurveys([FromQuery] QueryPagedSurveysRequest request)
+        public async Task<ActionResult<List<PianoSurveyWithLearnersModel>>> GetSurveys([FromQuery] QueryPagedSurveysRequest request)
         {
             var pagedResult =
                 await _serviceFactory.PianoSurveyService.GetSurveys(request.Adapt<QueryPagedSurveysModel>(),

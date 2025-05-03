@@ -27,7 +27,7 @@ public interface IAccountService
 
     Task<bool> IsAccountExist(string firebaseId);
 
-    Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount, string idToken);
+    Task UpdateAccount(UpdateAccountModel model, AccountModel currentAccount);
 
     Task ChangeRole(GrantRoleModel grantRoleModel);
 

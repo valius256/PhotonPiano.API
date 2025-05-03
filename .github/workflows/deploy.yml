@@ -12,7 +12,8 @@ permissions:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  IMAGE_NAME: ghcr.io/valius256/photonpiano-api
+  IMAGE_NAME_API: ghcr.io/valius256/photonpiano-api
+  IMAGE_NAME_WEB: ghcr.io/minhtrantuan3112/photonpiano-webapp
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   POSTGRES_CONNECTION: ${{ secrets.POSTGRES_CONNECTION }}
@@ -72,11 +73,11 @@ jobs:
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-
-
 #      - name: ✅ Run Tests
 #        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
-
+  
+  
+  
   docker-build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -91,18 +92,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏗️ Build and Push Docker Image
-        run: |
-          docker build -t ${{ env.IMAGE_NAME }}:latest -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
-          docker push ${{ env.IMAGE_NAME }} --all-tags
+      - name: 🔐 Login to GitHub Container Registry (Frontend)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: minhtrantuan3112
+          password: ${{ secrets.GHFE_TOKEN }}
 
+      - name: 🏗️ Build and Push Docker Images
+        run: |
+          # Build API
+          docker build -t ${{ env.IMAGE_NAME_API }}:latest -t ${{ env.IMAGE_NAME_API }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
+          docker push ${{ env.IMAGE_NAME_API }} --all-tags
+  
+  
+  
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up SSH key
         run: |
@@ -123,12 +134,84 @@ jobs:
             # Đảm bảo docker-compose down trước
             cd ~/photonpiano || true && docker compose down || true
             
-            # Xóa container cũ bằng cách tìm tất cả container có tên 'photonpiano'
-            docker ps -a | grep photonpiano | awk '{print $1}' | xargs -r docker rm -f
+            # Xóa images cũ của backend và frontend
+            docker images | grep ghcr.io/valius256/photonpiano-api | awk '{print $3}' | xargs -r docker rmi -f
+            docker images | grep ghcr.io/minhtrantuan3112/photonpiano-webapp | awk '{print $3}' | xargs -r docker rmi -f
+            
+            # Dọn dẹp rác Docker
+            docker system prune -af --volumes
+    
             
             # Tạo directory cho deployment
             mkdir -p ~/photonpiano
             cd ~/photonpiano
+            
+          
+            # Tạo thư mục cho Blackbox 
+            cd ~/photonpiano
+            cat > blackbox.yml <<EOF
+            modules:
+              http_health:
+                prober: http
+                timeout: 5s
+                http:
+                  method: GET
+                  path: /health
+                  valid_status_codes: [200]
+                  fail_if_not_ssl: false
+            EOF
+            
+            # Tạo nội dung cho prometheus.yml
+            cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
+            global:
+                scrape_interval: 15s
+                evaluation_interval: 15s
+            
+            scrape_configs:
+              # Giám sát API của PhotonPiano
+              - job_name: 'photonpiano-api'
+                metrics_path: /metrics
+                static_configs:
+                  - targets: ['photonpiano-api:8080']
+          
+              # Giám sát hệ thống VPS với node_exporter
+              - job_name: 'vps-system'
+                static_configs:
+                  - targets: ['node-exporter:9100']
+            
+              - job_name: 'photonpiano-api-probe'
+                metrics_path: /probe
+                params:
+                  module: [http_2xx]
+                static_configs:
+                  - targets: ['http://photonpiano-api:8080']
+                    labels:
+                      group: 'photonpiano-api' 
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
+            
+              - job_name: 'photonpiano-api-icmp'
+                metrics_path: /probe
+                params:
+                  module: [icmp]  
+                static_configs:
+                  - targets: ['photonpiano-api']
+                    labels:
+                      group: 'photonpiano-api'
+                relabel_configs:
+                  - source_labels: [__address__]
+                    target_label: __param_target
+                  - source_labels: [__param_target]
+                    target_label: instance
+                  - target_label: __address__
+                    replacement: blackbox-exporter:9115
+            EOF
+            
             
             # Tạo .env file từ GitHub Secrets
             cat > .env <<EOF
@@ -157,6 +240,19 @@ jobs:
             PINATA_DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
             EOF
             
+            cat > ~/photonpiano/frontend/.env <<EOF
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_COOKIE_SECRET=${{ secrets.VITE_COOKIE_SECRET }}
+            VITE_IS_DEVELOPMENT=${{ secrets.VITE_IS_DEVELOPMENT }}
+            VITE_PINATA_API_KEY=${{ secrets.VITE_PINATA_API_KEY }}
+            VITE_PINATA_API_SECRET=${{ secrets.VITE_PINATA_API_SECRET }}
+            VITE_PINATA_GATEWAY_KEY=${{ secrets.VITE_PINATA_GATEWAY_KEY }}
+            VITE_PINATA_GATEWAY_BASE_URL=${{ secrets.VITE_PINATA_GATEWAY_BASE_URL }}
+            VITE_API_PUB_SUB_URL=${{ secrets.VITE_API_PUB_SUB_URL }}
+            VITE_API_NOTIFICATION_URL=${{ secrets.VITE_API_NOTIFICATION_URL }}
+            VITE_API_PROGRESS_URL=${{ secrets.VITE_API_PROGRESS_URL }}
+            EOF
+            
             # Viết docker-compose.yml
             cat > docker-compose.yml <<'EOF'
             version: "3.8"
@@ -175,6 +271,7 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
+            
               photonpiano-api:
                 image: ghcr.io/valius256/photonpiano-api:latest
                 container_name: photonpiano-api
@@ -215,15 +312,82 @@ jobs:
                   - /root/.aspnet/https:/https:ro
                 networks:
                   - app-network 
-            volumes:
-              redis-data:
+            
+              photonpiano-web:
+                image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
+                container_name: photonpiano-web
+                restart: unless-stopped
+                depends_on:
+                  - photonpiano-api
+                ports:
+                  - "3000:3000"
+                networks:
+                  - app-network
+            
+              prometheus:
+                image: prom/prometheus:latest
+                container_name: prometheus
+                volumes:
+                  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+                ports:
+                  - "9090:9090"
+                networks:
+                  - app-network
+                restart: unless-stopped
+              
+              grafana:
+                image: grafana/grafana:latest
+                container_name: grafana
+                ports:
+                  - "3001:3000"
+                volumes:
+                  - grafana-data:/var/lib/grafana
+                environment:
+                  - GF_SECURITY_ADMIN_USER=admin
+                  - GF_SECURITY_ADMIN_PASSWORD=admin
+                  - GF_SERVER_HTTP_PORT=3000
+                  - GF_DATASOURCE_NAME=Prometheus
+                  - GF_DATASOURCE_URL=http://prometheus:9090
+                depends_on:
+                  - prometheus
+                networks:
+                  - app-network
+                restart: unless-stopped
+              
+              node-exporter:
+                image: quay.io/prometheus/node-exporter:latest
+                container_name: node-exporter
+                ports:
+                  - "9100:9100"
+                networks:
+                  - app-network
+                restart: unless-stopped
+              
+              blackbox-exporter:
+                image: prom/blackbox-exporter:latest
+                container_name: blackbox-exporter
+                ports:
+                  - "9115:9115"
+                volumes:
+                  - ./blackbox.yml:/etc/blackbox.yml
+                networks:
+                  - app-network
+                restart: unless-stopped
+                # Add NET_RAW capability for ICMP probes
+                cap_add:
+                  - NET_RAW
+
             networks:
               app-network:
                 driver: bridge
+            
+            volumes:
+              grafana-data:
+                driver: local
             EOF
             
             # Đăng nhập vào GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+             echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin
             
             # Pull images và deploy với project name cụ thể
             docker compose -p photonpiano pull

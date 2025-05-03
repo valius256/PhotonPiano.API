@@ -90,6 +90,15 @@ public class StudentClassScoreService : IStudentClassScoreService
                 backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId)); 
             }
 
+
+            await _unitOfWork.SlotStudentRepository.ExecuteUpdateAsync(
+                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet || x.AttendanceStatus == null,
+                calls => calls.SetProperty(x => x.AttendanceStatus, AttendanceStatus.Attended)
+            );
+
+               
+            
+            
             await SendClassCompletionNotifications(studentClasses, classInfo);
         }
         catch (Exception ex)

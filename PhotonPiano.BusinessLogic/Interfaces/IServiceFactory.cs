@@ -77,4 +77,6 @@ public interface IServiceFactory
     IViewRenderService ViewRenderService { get; }
     
     IStudentClassScoreServiceHub StudentClassScoreServiceHub { get; }
+    
+    IStatisticService StatisticService { get; }
 }

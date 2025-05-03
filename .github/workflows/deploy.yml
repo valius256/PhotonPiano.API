@@ -160,8 +160,8 @@ jobs:
 #                  valid_status_codes: [200]
 #                  fail_if_not_ssl: false
 #            EOF
-#            
-#            # Tạo nội dung cho prometheus.yml
+            
+            # Tạo nội dung cho prometheus.yml
 #            cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
 #            global:
 #                scrape_interval: 15s
@@ -254,7 +254,7 @@ jobs:
             EOF
             
             # Viết docker-compose.yml
-            cat > docker-compose.yml <<'EOF'
+            cat > docker-compose.yml <<EOF
             version: "3.8"
             services:
               photonpiano-database:
@@ -324,11 +324,6 @@ jobs:
                 networks:
                   - app-network
             
-            networks:
-              app-network:
-                driver: bridge
-                
-            EOF      
 #              prometheus:
 #                image: prom/prometheus:latest
 #                container_name: prometheus
@@ -382,12 +377,14 @@ jobs:
 #                cap_add:
 #                  - NET_RAW
 
-           
+            networks:
+              app-network:
+                driver: bridge
             
 #            volumes:
 #              grafana-data:
 #                driver: local
-          
+            EOF
             
             # Đăng nhập vào GitHub Container Registry
              echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin

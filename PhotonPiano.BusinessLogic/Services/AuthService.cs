@@ -68,17 +68,14 @@ public class AuthService : IAuthService
         }
 
         var idToken = _serviceFactory.TokenService.GenerateIdToken(account.Adapt<AccountModel>());
+        
+        var refreshToken = _serviceFactory.TokenService.GenerateRefreshToken();
 
-        if (string.IsNullOrEmpty(account.RefreshToken))
-        {
-            var refreshToken = _serviceFactory.TokenService.GenerateRefreshToken();
+        account.RefreshToken = refreshToken;
+        account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(30);
 
-            account.RefreshToken = refreshToken;
-            account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(30);
-
-            await _unitOfWork.SaveChangesAsync();
-        }
-
+        await _unitOfWork.SaveChangesAsync();
+        
         return new AuthModel
         {
             Kind = account.Email,
@@ -115,7 +112,7 @@ public class AuthService : IAuthService
 
         account.RefreshToken = refreshToken;
         account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(30);
-        
+
         await _unitOfWork.AccountRepository.AddAsync(account);
         await _unitOfWork.SaveChangesAsync();
 
@@ -166,6 +163,7 @@ public class AuthService : IAuthService
         {
             throw new NotFoundException("Account not found");
         }
+
         var resetUrl = _configuration["PasswordResetBaseUrl"];
         if (string.IsNullOrWhiteSpace(resetUrl))
         {
@@ -176,7 +174,7 @@ public class AuthService : IAuthService
         account.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(7).AddHours(1);
         await _unitOfWork.AccountRepository.UpdateAsync(account);
         await _unitOfWork.SaveChangesAsync();
-        
+
         var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "resetPassswordToken", $"{account.ResetPasswordToken}" },
@@ -185,7 +183,6 @@ public class AuthService : IAuthService
             { "Subject", $"[PhotonPiano] Yêu cầu đặt lại mật khẩu" },
         };
         await _serviceFactory.EmailService.SendAsync("ResetPassword", [email], [], emailParam);
-
     }
 
     public async Task<OAuthCredentialsModel> HandleGoogleAuthCallback(string code, string redirectUrl)
@@ -330,16 +327,18 @@ public class AuthService : IAuthService
 
     public async Task ChangePassword(ChangePasswordModel changePasswordModel)
     {
-        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => 
+        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a =>
             a.ResetPasswordToken == changePasswordModel.ResetPasswordToken && a.Email == changePasswordModel.Email);
         if (account is null)
         {
             throw new ForbiddenMethodException("Invalid token or email");
         }
+
         if (account.ResetPasswordToken == null || account.ResetPasswordTokenExpiry < DateTime.UtcNow.AddHours(7))
         {
             throw new BadRequestException("Token expired or does not exist");
         }
+
         account.Password = AuthUtils.HashPassword(changePasswordModel.Password);
         account.ResetPasswordToken = null;
         account.ResetPasswordTokenExpiry = null;

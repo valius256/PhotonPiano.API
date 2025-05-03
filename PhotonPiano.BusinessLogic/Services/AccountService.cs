@@ -11,6 +11,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 using System.Linq.Expressions;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -234,19 +235,37 @@ public class AccountService : IAccountService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task<AccountModel> CreateNewStaff(SignUpModel signInModel, string accountFirebaseId)
+    public async Task<AccountModel> CreateNewStaff(CreateSystemAccountModel createSystemAccountModel)
     {
-        var firebaseId = await _serviceFactory.AuthService.SignUpOnFirebase(signInModel.Email, signInModel.Password);
+        return await CreateSystemAccount(createSystemAccountModel, Role.Staff);
 
-        var staffAccount = signInModel.Adapt<Account>();
-        staffAccount.Level = null; //detach
-        staffAccount.Role = Role.Staff;
-        staffAccount.StudentStatus = null;
-        staffAccount.AccountFirebaseId = firebaseId;
-        var createAccount = await _unitOfWork.AccountRepository.AddAsync(staffAccount);
+    }
+
+    public async Task<AccountModel> CreateNewTeacher(CreateSystemAccountModel createSystemAccountModel)
+    {
+        return await CreateSystemAccount(createSystemAccountModel, Role.Instructor);
+    }
+
+    private async Task<AccountModel> CreateSystemAccount(CreateSystemAccountModel signUpModel, Role role)
+    {
+        var password = AuthUtils.GeneratePassword(16);
+        //var firebaseId = await _serviceFactory.AuthService.SignUpOnFirebase(signUpModel.Email, password);
+
+        var account = signUpModel.Adapt<Account>();
+        account.Level = null; //detach
+        account.Role = role;
+        account.StudentStatus = null;
+        account.AccountFirebaseId = Guid.NewGuid().ToString();
+        account.Password = AuthUtils.HashPassword(password);
+        var createAccount = await _unitOfWork.AccountRepository.AddAsync(account);
         await _unitOfWork.SaveChangesAsync();
+
+        //Send password mail
+            
         return createAccount.Adapt<AccountModel>();
     }
+
+    
 
     public async Task<AccountModel> UpdateContinuingLearningStatus(string firebaseId, bool wantToContinue)
     {

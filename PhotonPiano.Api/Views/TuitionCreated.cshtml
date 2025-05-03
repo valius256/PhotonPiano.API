@@ -7,11 +7,11 @@
 }
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Tạo Học Phí Mới</title>
+    <title>New Tuition Fee Notification</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,11 +49,11 @@
             margin-top: 20px;
         }
 
-        .details-table th, .details-table td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
+            .details-table th, .details-table td {
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #ddd;
+            }
 
         .footer {
             text-align: center;
@@ -62,34 +62,34 @@
             color: #777;
         }
 
-        .footer a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
+            .footer a {
+                color: #4CAF50;
+                text-decoration: none;
+            }
 
-        .footer p {
-            margin: 10px 0;
-        }
+            .footer p {
+                margin: 10px 0;
+            }
     </style>
 </head>
 <body>
-<div class="email-container">
-    <div class="email-header">
-        Thông Báo Tạo Học Phí Mới
-    </div>
+    <div class="email-container">
+        <div class="email-header">
+            New Tuition Fee Notification
+        </div>
 
-    <div class="email-content">
-        <p>Xin chào @studentName,</p>
+        <div class="email-content">
+            <p>Hello @studentName,</p>
 
-        <p>Chúng tôi vui mừng thông báo rằng học phí mới đã được tạo cho lớp học của bạn <strong>@className</strong>.</p>
-        <p><strong>Ngày bắt đầu:</strong> @startDate</p>
-        <p><strong>Ngày kết thúc:</strong> @endDate</p>
-        <p><strong>Số tiền cần thanh toán:</strong> @amount</p>
-        <p>Trạng thái thanh toán hiện tại của bạn là <strong>Chưa thanh toán</strong>.</p>
-        <p>Cảm ơn bạn đã đồng hành cùng PhotonPiano. Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
-        <p>Trân trọng,</p>
-        <p><strong>Đội ngũ PhotonPiano</strong></p>
+            <p>We are pleased to inform you that a new tuition fee has been created for your class <strong>@className</strong>.</p>
+            <p><strong>Start Date:</strong> @startDate</p>
+            <p><strong>End Date:</strong> @endDate</p>
+            <p><strong>Amount Due:</strong> @amount</p>
+            <p>Your current payment status is <strong>Unpaid</strong>.</p>
+            <p>Thank you for being with PhotonPiano. If you have any questions, please contact our support team.</p>
+            <p>Best regards,</p>
+            <p><strong>The PhotonPiano Team</strong></p>
+        </div>
     </div>
-</div>
 </body>
 </html>

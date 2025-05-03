@@ -324,6 +324,11 @@ jobs:
                 networks:
                   - app-network
             
+            networks:
+              app-network:
+                driver: bridge
+                
+            EOF      
 #              prometheus:
 #                image: prom/prometheus:latest
 #                container_name: prometheus
@@ -377,14 +382,12 @@ jobs:
 #                cap_add:
 #                  - NET_RAW
 
-            networks:
-              app-network:
-                driver: bridge
+           
             
 #            volumes:
 #              grafana-data:
 #                driver: local
-            EOF
+          
             
             # Đăng nhập vào GitHub Container Registry
              echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin

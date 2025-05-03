@@ -11,7 +11,6 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
-using Prometheus;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -143,7 +142,7 @@ var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
 sqlConfig.Configure();
 
 // uncomment to active Rate limiter
-// app.UseRateLimiter();
+app.UseRateLimiter();
 
 app.UseExceptionHandler();
 

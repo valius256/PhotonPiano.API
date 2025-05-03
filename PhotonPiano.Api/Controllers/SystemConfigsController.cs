@@ -160,4 +160,11 @@ public class SystemConfigsController : BaseController
 
         return NoContent();
     }
+
+    [HttpGet("current-server-time")]
+    [EndpointDescription("Get current server time")]
+    public ActionResult<DateTime> GetCurrentServerTime()
+    {
+        return Ok(DateTime.UtcNow.AddHours(7));
+    }
 }

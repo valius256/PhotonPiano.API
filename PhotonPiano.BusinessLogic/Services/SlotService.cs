@@ -213,41 +213,88 @@ public class SlotService : ISlotService
         {
             var shiftStart = GetShiftStartTime(slot.Shift);
             var shiftEnd = GetShiftEndTime(slot.Shift);
-            var classId = slot.ClassId;
-            var slotId = slot.Id;
-            var startOfWeek = GetStartOfWeek(slot.Date);
 
             if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
             {
                 slot.Status = SlotStatus.Finished;
-                affectedClassesAndWeeks.Add((classId, startOfWeek));
+            }
+            else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
+            {
+                slot.Status = SlotStatus.Ongoing;
+            }
+        }
 
-                if (firstLastSlotMap[classId].LastSlot.Id == slotId &&
-                    classStatusMap.TryGetValue(classId, out var cls) &&
+        var firstSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].FirstSlot).ToList();
+
+        foreach (var firstSlot in firstSlots)
+        {
+            var shiftStart = GetShiftStartTime(firstSlot.Shift);
+            if (currentTime >= shiftStart && firstSlot.Status != SlotStatus.Ongoing)
+            {
+                if (classStatusMap.TryGetValue(firstSlot.ClassId, out var cls) &&
+                    cls.Status != ClassStatus.Ongoing)
+                {
+                    cls.Status = ClassStatus.Ongoing;
+                    classesToUpdate.Add(cls);
+                }
+            }
+        }
+
+        var laSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].FirstSlot).ToList();
+
+        foreach (var lastSlot in laSlots)
+        {
+            var shiftEnd = GetShiftEndTime(lastSlot.Shift);
+            if (currentTime <= shiftEnd && lastSlot.Status != SlotStatus.Finished)
+            {
+                if (classStatusMap.TryGetValue(lastSlot.ClassId, out var cls) &&
                     cls.Status != ClassStatus.Finished)
                 {
                     cls.Status = ClassStatus.Finished;
                     classesToUpdate.Add(cls);
                 }
-            }
-            else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
-            {
-                slot.Status = SlotStatus.Ongoing;
-                affectedClassesAndWeeks.Add((classId, startOfWeek));
-
-                if (firstLastSlotMap[classId].FirstSlot.Id == slotId &&
-                    classStatusMap.TryGetValue(classId, out var cls) &&
-                    cls.Status != ClassStatus.Ongoing)
-                {
-                    cls.Status = ClassStatus.Ongoing;
-                    classesToUpdate.Add(cls);
-
-                    // var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
-                    // await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
-                }
-            }
+            }    
         }
 
+        // if (pastSlots.Count > 0)
+        // {
+        //     foreach (var slot in pastSlots)
+        //     {
+        //         var shiftStart = GetShiftStartTime(slot.Shift);
+        //         var shiftEnd = GetShiftEndTime(slot.Shift);
+        //         var classId = slot.ClassId;
+        //         var slotId = slot.Id;
+        //         var startOfWeek = GetStartOfWeek(slot.Date);
+        //
+        //         if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
+        //         {
+        //             affectedClassesAndWeeks.Add((classId, startOfWeek));
+        //
+        //             if (firstLastSlotMap[classId].LastSlot.Id == slotId &&
+        //                 classStatusMap.TryGetValue(classId, out var cls) &&
+        //                 cls.Status != ClassStatus.Finished)
+        //             {
+        //                 cls.Status = ClassStatus.Finished;
+        //                 classesToUpdate.Add(cls);
+        //             }
+        //         }
+        //         else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
+        //         {
+        //             affectedClassesAndWeeks.Add((classId, startOfWeek));
+        //
+        //             if (firstLastSlotMap[classId].FirstSlot.Id == slotId &&
+        //                 classStatusMap.TryGetValue(classId, out var cls) &&
+        //                 cls.Status != ClassStatus.Ongoing)
+        //             {
+        //                 cls.Status = ClassStatus.Ongoing;
+        //                 classesToUpdate.Add(cls);
+        //
+        //                 // var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
+        //                 // await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
+        //             }
+        //         }    
+        //     }
+        // }
         await _unitOfWork.ClassRepository.UpdateRangeAsync(classesToUpdate);
         await _unitOfWork.SlotRepository.UpdateRangeAsync(pastSlots.Concat(todaySlots).ToList());
         await _unitOfWork.SaveChangesAsync();

@@ -11,7 +11,6 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
-using Prometheus;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,8 +18,6 @@ builder.Services.AddHostedService<DbMigrationJob>();
 var configuration = builder.Configuration;
 
 // if (configuration.GetValue<bool  >("IsAspireHost")) builder.AddRedisClient("redis-cache");
-
-// hello this line write to proved i am the owner of this project and github is not good for beginner
 
 
 // Add services to the container.
@@ -47,13 +44,6 @@ builder.Services.AddOpenTelemetry()
             });
     });
 
-// var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.6");
-// var context = new CustomAssemblyLoadContext();
-// context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
-//      RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
-//      RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
-//      "libwkhtmltox.dylib"));
-
 // Add DinkToPdf services
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
@@ -78,19 +68,6 @@ builder.Services.Configure<RazorViewEngineOptions>(options =>
     options.ViewLocationFormats.Add("/{0}.cshtml");
     options.ViewLocationFormats.Add("/{0}");
 });
-//Not Done Yet
-// builder.Services
-//     .AddOpenTelemetry()
-//     .ConfigureResource(resource => resource.AddService("PhotonPiano.Api"))
-//     .WithTracing(tracerProviderBuilder =>
-//     {
-//         tracerProviderBuilder
-//             .AddAspNetCoreInstrumentation() // Tracking API request
-//             .AddHttpClientInstrumentation() // Tracking HTTP request
-//             .AddSqlClientInstrumentation();  // Tracking database queries
-
-//tracerProviderBuilder.AddOtlpExporter();
-//     });
 
 
 builder.AddSignalRConfig();

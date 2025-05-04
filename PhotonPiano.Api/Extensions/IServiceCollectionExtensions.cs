@@ -104,6 +104,9 @@ public static class IServiceCollectionExtensions
 
     private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
     {
+        TypeAdapterConfig<EntranceTestModel, EntranceTestResponse>.NewConfig()
+            .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
+
         TypeAdapterConfig<EntranceTestDetailModel, EntranceTestResponse>.NewConfig()
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus)

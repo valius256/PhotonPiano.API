@@ -6,6 +6,9 @@ using Hangfire;
 using Mapster;
 using Microsoft.AspNetCore.Mvc.Razor;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Instrumentation.Http;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
@@ -27,22 +30,17 @@ builder.Services.AddApiDependencies(configuration)
 
 
 builder.Services.AddOpenTelemetry()
-    .WithMetrics(builder =>
-    {
-        builder.AddPrometheusExporter();
-
-        builder.AddMeter("Microsoft.AspNetCore.Hosting",
-            "Microsoft.AspNetCore.Server.Kestrel");
-        builder.AddView("http.server.request.duration",
-            new ExplicitBucketHistogramConfiguration
-            {
-                Boundaries = new[]
-                {
-                    0, 0.005, 0.01, 0.025, 0.05,
-                    0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10
-                }
-            });
-    });
+    .ConfigureResource(resource => resource
+        .AddService(builder.Environment.ApplicationName))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter())
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddConsoleExporter()); 
 
 // Add DinkToPdf services
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));

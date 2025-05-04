@@ -378,7 +378,7 @@ jobs:
                   - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
                   - /root/.aspnet/https:/https:ro
                 networks:
-                  - app-network 
+                  - app-network
 
               photonpiano-web:
                 image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
@@ -429,7 +429,10 @@ jobs:
                 networks:
                   - app-network
                 restart: unless-stopped
-
+                volumes:
+                  - /run/udev/data:/run/udev/data:ro
+            
+            
               blackbox-exporter:
                 image: prom/blackbox-exporter:latest
                 container_name: blackbox-exporter

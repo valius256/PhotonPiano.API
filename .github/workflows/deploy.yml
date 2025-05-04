@@ -3,6 +3,8 @@ name: Build, Test & Deploy .NET 9 API Photon Piano
 on:
   pull_request:
     branches: [ main ]
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -122,28 +124,28 @@ jobs:
           script: |
             #!/bin/bash
             set -e
-            
+
             # Tạo thư mục cho deployment nếu chưa có
             mkdir -p ~/photonpiano ~/photonpiano/prometheus ~/photonpiano/frontend
             cd ~/photonpiano
-            
+
             # Tạo cấu hình cho Blackbox exporter
             cat > blackbox.yml <<EOF
             modules:
-            http_2xx:
-              prober: http
-              timeout: 5s
-              http:
-                method: GET
-                valid_status_codes: [200]
-                no_follow_redirects: false
-            icmp:
-              prober: icmp
-              timeout: 5s
+              http_2xx:
+                prober: http
+                timeout: 5s
+                http:
+                  method: GET
+                  valid_status_codes: [200]
+                  no_follow_redirects: false
               icmp:
-                preferred_ip_protocol: ip4
+                prober: icmp
+                timeout: 5s
+                icmp:
+                  preferred_ip_protocol: ip4
             EOF
-            
+
             # Tạo cấu hình cho Prometheus
             cat > prometheus/prometheus.yml <<EOF
             global:
@@ -162,7 +164,7 @@ jobs:
                 params:
                   module: [http_2xx]
                 static_configs:
-                  - targets: ['http://photonpiano-api:8080/health']
+                  - targets: ['http://photonpiano-api:8080/']
                     labels:
                       group: 'photonpiano-api'
                 relabel_configs:
@@ -188,7 +190,7 @@ jobs:
                   - target_label: __address__
                     replacement: blackbox-exporter:9115
             EOF
-            
+
             # Tạo file .env cho backend
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
@@ -218,7 +220,7 @@ jobs:
             ASPNETCORE_ENVIRONMENT=Development
             DOTNET_ENVIRONMENT=Development
             EOF
-            
+
             # Tạo file .env cho frontend
             cat > frontend/.env <<EOF
             VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
@@ -232,7 +234,7 @@ jobs:
             VITE_API_NOTIFICATION_URL=${{ secrets.VITE_API_NOTIFICATION_URL }}
             VITE_API_PROGRESS_URL=${{ secrets.VITE_API_PROGRESS_URL }}
             EOF
-            
+
             # Tạo docker-compose.yml
             cat > docker-compose.yml <<EOF
             version: "3.8"
@@ -340,24 +342,24 @@ jobs:
               app-network:
                 driver: bridge
             EOF
-            
+
             # Đăng nhập vào GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin
-            
+
             # Dừng container cũ
             docker compose -p photonpiano down
-            
+
             # Xóa image cũ nếu không còn container sử dụng
             docker images -q ${{ env.IMAGE_NAME_API }} | sort -u | xargs -r docker rmi -f || true
             docker images -q ${{ env.IMAGE_NAME_WEB }} | sort -u | xargs -r docker rmi -f || true
-            
+
             # Làm sạch Docker
             docker system prune -f --volumes
-            
+
             # Pull các image mới
             docker pull ${{ env.IMAGE_NAME_API }}:latest
             docker pull ${{ env.IMAGE_NAME_WEB }}:latest
-            
+
             # Khởi động lại toàn bộ dịch vụ
             docker compose -p photonpiano up -d --remove-orphans

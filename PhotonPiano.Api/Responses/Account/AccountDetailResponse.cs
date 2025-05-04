@@ -19,5 +19,5 @@ public record AccountDetailResponse : AccountResponse
 
     public List<FreeSlotModel> FreeSlots { get; init; } = [];
 
-    public List<EntranceTestStudentDetail> EntranceTestStudents { get; init; } = [];
+    public List<EntranceTestStudentDetailResponse> EntranceTestStudents { get; init; } = [];
 }

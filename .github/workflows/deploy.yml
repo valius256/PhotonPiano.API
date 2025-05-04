@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
   packages: write
-  checks: write # Quyền để báo cáo trạng thái kiểm tra
+  checks: write
 
 env:
   DOTNET_VERSION: '9.0.x'
@@ -23,7 +23,7 @@ env:
   Firebase__Auth__Authority: ${{ secrets.FIREBASE_AUTHORITY }}
   Firebase__Auth__Issuer: ${{ secrets.FIREBASE_ISSUER }}
   Firebase__Auth__Audience: ${{ secrets.FIREBASE_AUDIENCE }}
-  VNPAY__BASEURL: ${{ secrets.FIREBASE_AUDIENCE }}
+  VNPAY__BASEURL: ${{ secrets.VNPAY_BASEURL }}
   VNPAY__TMNCODE: ${{ secrets.VNPAY_TMNCODE }}
   VNPAY__HASHSECRET: ${{ secrets.VNPAY_HASHSECRET }}
   VNPAY__RETURNURL: ${{ secrets.VNPAY_RETURNURL }}
@@ -36,7 +36,7 @@ env:
   JWTAUTH__KEY: ${{ secrets.JWTAUTH_KEY }}
   JWTAUTH__ISSUER: ${{ secrets.JWTAUTH_ISSUER }}
   JWTAUTH__AUDIENCE: ${{ secrets.JWTAUTH_AUDIENCE }}
-  JWTAUTH__DURATIONINDAYS: ${{ secrets.JWT_AUTH_DURATIONINDAYS }}
+  JWTAUTH__DURATIONINDAYS: ${{ secrets.JWTAUTH_DURATIONINDAYS }}
   CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
   PINATA__DEFAULTGROUPID: ${{ secrets.PINATA_DEFAULTGROUPID }}
@@ -46,7 +46,7 @@ env:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-22.04 #cause the wkhtmltopdf is worked as expected on this version
+    runs-on: ubuntu-22.04
     services:
       postgres:
         image: postgres:latest
@@ -73,11 +73,6 @@ jobs:
       - name: 🏗️ Build Project
         run: dotnet build PhotonPiano.API.sln --configuration Release --no-restore
 
-#      - name: ✅ Run Tests
-#        run: dotnet test PhotonPiano.API.sln --configuration Release --no-build --verbosity normal
-  
-  
-  
   docker-build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -101,16 +96,12 @@ jobs:
 
       - name: 🏗️ Build and Push Docker Images
         run: |
-          # Build API
           docker build -t ${{ env.IMAGE_NAME_API }}:latest -t ${{ env.IMAGE_NAME_API }}:${{ github.sha }} -f PhotonPiano.Api/Dockerfile .
           docker push ${{ env.IMAGE_NAME_API }} --all-tags
-  
-  
 
   deploy-to-server:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -136,6 +127,10 @@ jobs:
             mkdir -p ~/photonpiano ~/photonpiano/prometheus ~/photonpiano/frontend
             cd ~/photonpiano
 
+            # Kiểm tra trạng thái Prometheus và Grafana
+            PROMETHEUS_RUNNING=$(docker ps -q -f name=prometheus | wc -l)
+            GRAFANA_RUNNING=$(docker ps -q -f name=grafana | wc -l)
+
             # Tạo cấu hình cho Blackbox exporter
             cat > blackbox.yml <<EOF
             modules:
@@ -149,24 +144,19 @@ jobs:
                   fail_if_not_ssl: false
             EOF
 
-            # Create Prometheus configuration
-            cat > ~/photonpiano/prometheus/prometheus.yml <<EOF
+            # Tạo cấu hình cho Prometheus
+            cat > prometheus/prometheus.yml <<EOF
             global:
-                scrape_interval: 15s
-                evaluation_interval: 15s
-
+              scrape_interval: 15s
+              evaluation_interval: 15s
             scrape_configs:
-              # Monitor PhotonPiano API
               - job_name: 'photonpiano-api'
                 metrics_path: /metrics
                 static_configs:
                   - targets: ['photonpiano-api:8080']
-
-              # Monitor VPS system with node_exporter
               - job_name: 'vps-system'
                 static_configs:
                   - targets: ['node-exporter:9100']
-
               - job_name: 'photonpiano-api-probe'
                 metrics_path: /probe
                 params:
@@ -174,7 +164,7 @@ jobs:
                 static_configs:
                   - targets: ['http://photonpiano-api:8080']
                     labels:
-                      group: 'photonpiano-api' 
+                      group: 'photonpiano-api'
                 relabel_configs:
                   - source_labels: [__address__]
                     target_label: __param_target
@@ -182,11 +172,10 @@ jobs:
                     target_label: instance
                   - target_label: __address__
                     replacement: blackbox-exporter:9115
-
               - job_name: 'photonpiano-api-icmp'
                 metrics_path: /probe
                 params:
-                  module: [icmp]  
+                  module: [icmp]
                 static_configs:
                   - targets: ['photonpiano-api']
                     labels:
@@ -200,34 +189,38 @@ jobs:
                     replacement: blackbox-exporter:9115
             EOF
 
-            # Create environment files
+            # Tạo file .env cho backend
             cat > .env <<EOF
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
             FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}
-            FIREBASE_AUTHORITY=${{ secrets.FIREBASE_AUTHORITY }}
-            FIREBASE_ISSUER=${{ secrets.FIREBASE_ISSUER }}
-            FIREBASE_AUDIENCE=${{ secrets.FIREBASE_AUDIENCE }}
-            VNPAY_BASEURL=${{ secrets.VNPAY_BASEURL }}
-            VNPAY_TMNCODE=${{ secrets.VNPAY_TMNCODE }}
-            VNPAY_HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
-            VNPAY_RETURNURL=${{ secrets.VNPAY_RETURNURL }}
-            VNPAY_CURRCODE=${{ secrets.VNPAY_CURRCODE }}
-            VNPAY_LOCALE=${{ secrets.VNPAY_LOCALE }}
-            JWTAUTH_KEY=${{ secrets.JWTAUTH_KEY }}
-            JWTAUTH_ISSUER=${{ secrets.JWTAUTH_ISSUER }}
-            JWTAUTH_AUDIENCE=${{ secrets.JWTAUTH_AUDIENCE }}
-            JWTAUTH_DURATIONINDAYS=${{ secrets.JWTAUTH_DURATIONINDAYS }}
-            VNPAY_TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
-            VNPAY_VERSION=${{ secrets.VNPAY_VERSION }}
-            VNPAY_COMMAND=${{ secrets.VNPAY_COMMAND }}
-            PINATA_JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
-            PINATA_GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
-            REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
-            PINATA_DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
+            Firebase__Auth__ApiKey=${{ secrets.FIREBASE_API_KEY }}
+            Firebase__Auth__Authority=${{ secrets.FIREBASE_AUTHORITY }}
+            Firebase__Auth__Issuer=${{ secrets.FIREBASE_ISSUER }}
+            Firebase__Auth__Audience=${{ secrets.FIREBASE_AUDIENCE }}
+            VNPAY__BASEURL=${{ secrets.VNPAY_BASEURL }}
+            VNPAY__TMNCODE=${{ secrets.VNPAY_TMNCODE }}
+            VNPAY__HASHSECRET=${{ secrets.VNPAY_HASHSECRET }}
+            VNPAY__RETURNURL=${{ secrets.VNPAY_RETURNURL }}
+            VNPAY__CURRCODE=${{ secrets.VNPAY_CURRCODE }}
+            VNPAY__LOCALE=${{ secrets.VNPAY_LOCALE }}
+            VNPAY__TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
+            VNPAY__VERSION=${{ secrets.VNPAY_VERSION }}
+            VNPAY__COMMAND=${{ secrets.VNPAY_COMMAND }}
+            PINATA__JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
+            JWTAUTH__KEY=${{ secrets.JWTAUTH_KEY }}
+            JWTAUTH__ISSUER=${{ secrets.JWTAUTH_ISSUER }}
+            JWTAUTH__AUDIENCE=${{ secrets.JWTAUTH_AUDIENCE }}
+            JWTAUTH__DURATIONINDAYS=${{ secrets.JWTAUTH_DURATIONINDAYS }}
+            CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${{ secrets.REDIS_CONNECTION_STRING }}
+            PINATA__GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
+            PINATA__DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
+            ASPNETCORE_ENVIRONMENT=Development
+            DOTNET_ENVIRONMENT=Development
             EOF
 
-            cat > ~/photonpiano/frontend/.env <<EOF
+            # Tạo file .env cho frontend
+            cat > frontend/.env <<EOF
             VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
             VITE_COOKIE_SECRET=${{ secrets.VITE_COOKIE_SECRET }}
             VITE_IS_DEVELOPMENT=${{ secrets.VITE_IS_DEVELOPMENT }}
@@ -240,11 +233,8 @@ jobs:
             VITE_API_PROGRESS_URL=${{ secrets.VITE_API_PROGRESS_URL }}
             EOF
 
-            # Generate docker-compose.yml based on whether Prometheus and Grafana are running
-            if [ "$PROMETHEUS_RUNNING" -gt 0 ] && [ "$GRAFANA_RUNNING" -gt 0 ]; then
-              echo "Prometheus and Grafana are already running. Using app-only configuration."
-              # Create docker-compose without monitoring services
-              cat > docker-compose.yml <<EOF
+            # Tạo docker-compose.yml
+            cat > docker-compose.yml <<EOF
             version: "3.8"
             services:
               photonpiano-database:
@@ -257,214 +247,103 @@ jobs:
                 ports:
                   - "5432:5432"
                 volumes:
-                  - /root/photonpiano/postgres-data:/var/lib/postgresql/data
+                  - postgres_data:/var/lib/postgresql/data
                 restart: unless-stopped
                 networks:
                   - app-network
-
               photonpiano-api:
-                image: ghcr.io/valius256/photonpiano-api:latest
+                image: ${{ env.IMAGE_NAME_API }}:latest
                 container_name: photonpiano-api
-                restart: unless-stopped
-                depends_on:
-                  - photonpiano-database
+                env_file:
+                  - .env
                 ports:
                   - "8080:8080"
-                environment:
-                  - ASPNETCORE_URLS=http://0.0.0.0:8080
-                  - POSTGRES_CONNECTION=\${POSTGRES_CONNECTION}
-                  - HangfireConnectionString=\${POSTGRES_CONNECTION}
-                  - Firebase__Auth__ApiKey=\${FIREBASE_API_KEY}
-                  - Firebase__Auth__Authority=\${FIREBASE_AUTHORITY}
-                  - Firebase__Auth__Issuer=\${FIREBASE_ISSUER}
-                  - Firebase__Auth__Audience=\${FIREBASE_AUDIENCE}
-                  - VNPAY__BASEURL=\${VNPAY_BASEURL}
-                  - VNPAY__TMNCODE=\${VNPAY_TMNCODE}
-                  - VNPAY__HASHSECRET=\${VNPAY_HASHSECRET}
-                  - VNPAY__RETURNURL=\${VNPAY_RETURNURL}
-                  - VNPAY__CURRCODE=\${VNPAY_CURRCODE}
-                  - VNPAY__LOCALE=\${VNPAY_LOCALE}
-                  - VNPAY__TIMEZONEID=\${VNPAY_TIMEZONEID}
-                  - VNPAY__VERSION=\${VNPAY_VERSION}
-                  - VNPAY__COMMAND=\${VNPAY_COMMAND}
-                  - PINATA__JWTTOKEN=\${PINATA_JWTTOKEN}
-                  - JWTAUTH__KEY=\${JWTAUTH_KEY}
-                  - JWTAUTH__ISSUER=\${JWTAUTH_ISSUER}
-                  - JWTAUTH__AUDIENCE=\${JWTAUTH_AUDIENCE}
-                  - JWTAUTH__DURATIONINDAYS=\${JWTAUTH_DURATIONINDAYS}
-                  - PINATA__GATEWAYBASEURL=\${PINATA_GATEWAYBASEURL}
-                  - PINATA__DEFAULTGROUPID=\${PINATA_DEFAULTGROUPID}
-                  - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=\${REDIS_CONNECTION_STRING}
-                  - Logging__LogLevel__Hangfire=Debug
-                  - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
-                volumes:
-                  - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
-                  - /root/.aspnet/https:/https:ro
-                networks:
-                  - app-network 
-
-              photonpiano-web:
-                image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
-                container_name: photonpiano-web
-                restart: unless-stopped
-                depends_on:
-                  - photonpiano-api
-                ports:
-                  - "3000:3000"
-                networks:
-                  - app-network
-
-            networks:
-              app-network:
-                driver: bridge
-            EOF
-            else
-              echo "Prometheus and Grafana are not running. Using full configuration with monitoring."
-              # Create docker-compose with all services
-              cat > docker-compose.yml <<EOF
-            version: "3.8"
-            services:
-              photonpiano-database:
-                image: postgres:15
-                container_name: photonpiano-database
-                environment:
-                  POSTGRES_USER: postgres
-                  POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
-                  POSTGRES_DB: photonpiano
-                ports:
-                  - "5432:5432"
-                volumes:
-                  - /root/photonpiano/postgres-data:/var/lib/postgresql/data
-                restart: unless-stopped
-                networks:
-                  - app-network
-
-              photonpiano-api:
-                image: ghcr.io/valius256/photonpiano-api:latest
-                container_name: photonpiano-api
-                restart: unless-stopped
                 depends_on:
                   - photonpiano-database
-                ports:
-                  - "8080:8080"
-                environment:
-                  - ASPNETCORE_URLS=http://0.0.0.0:8080
-                  - POSTGRES_CONNECTION=\${POSTGRES_CONNECTION}
-                  - HangfireConnectionString=\${POSTGRES_CONNECTION}
-                  - Firebase__Auth__ApiKey=\${FIREBASE_API_KEY}
-                  - Firebase__Auth__Authority=\${FIREBASE_AUTHORITY}
-                  - Firebase__Auth__Issuer=\${FIREBASE_ISSUER}
-                  - Firebase__Auth__Audience=\${FIREBASE_AUDIENCE}
-                  - VNPAY__BASEURL=\${VNPAY_BASEURL}
-                  - VNPAY__TMNCODE=\${VNPAY_TMNCODE}
-                  - VNPAY__HASHSECRET=\${VNPAY_HASHSECRET}
-                  - VNPAY__RETURNURL=\${VNPAY_RETURNURL}
-                  - VNPAY__CURRCODE=\${VNPAY_CURRCODE}
-                  - VNPAY__LOCALE=\${VNPAY_LOCALE}
-                  - VNPAY__TIMEZONEID=\${VNPAY_TIMEZONEID}
-                  - VNPAY__VERSION=\${VNPAY_VERSION}
-                  - VNPAY__COMMAND=\${VNPAY_COMMAND}
-                  - PINATA__JWTTOKEN=\${PINATA_JWTTOKEN}
-                  - JWTAUTH__KEY=\${JWTAUTH_KEY}
-                  - JWTAUTH__ISSUER=\${JWTAUTH_ISSUER}
-                  - JWTAUTH__AUDIENCE=\${JWTAUTH_AUDIENCE}
-                  - JWTAUTH__DURATIONINDAYS=\${JWTAUTH_DURATIONINDAYS}
-                  - PINATA__GATEWAYBASEURL=\${PINATA_GATEWAYBASEURL}
-                  - PINATA__DEFAULTGROUPID=\${PINATA_DEFAULTGROUPID}
-                  - CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=\${REDIS_CONNECTION_STRING}
-                  - Logging__LogLevel__Hangfire=Debug
-                  - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
-                volumes:
-                  - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
-                  - /root/.aspnet/https:/https:ro
-                networks:
-                  - app-network 
-
-              photonpiano-web:
-                image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
-                container_name: photonpiano-web
                 restart: unless-stopped
-                depends_on:
-                  - photonpiano-api
-                ports:
-                  - "3000:3000"
                 networks:
                   - app-network
-
+              photonpiano-web:
+                image: ${{ env.IMAGE_NAME_WEB }}:latest
+                container_name: photonpiano-web
+                env_file:
+                  - frontend/.env
+                ports:
+                  - "3000:3000"
+                depends_on:
+                  - photonpiano-api
+                restart: unless-stopped
+                networks:
+                  - app-network
               prometheus:
                 image: prom/prometheus:latest
                 container_name: prometheus
                 volumes:
                   - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+                  - prometheus_data:/prometheus
                 ports:
                   - "9090:9090"
+                restart: unless-stopped
                 networks:
                   - app-network
+              node-exporter:
+                image: prom/node-exporter:latest
+                container_name: node-exporter
+                ports:
+                  - "9100:9100"
                 restart: unless-stopped
-
+                networks:
+                  - app-network
+                volumes:
+                  - /run/udev/data:/run/udev/data:ro
+              blackbox-exporter:
+                image: prom/blackbox-exporter:latest
+                container_name: blackbox-exporter
+                volumes:
+                  - ./blackbox.yml:/etc/blackbox.yml
+                command:
+                  - '--config.file=/etc/blackbox.yml'
+                ports:
+                  - "9115:9115"
+                restart: unless-stopped
+                networks:
+                  - app-network
+                cap_add:
+                  - NET_RAW
               grafana:
                 image: grafana/grafana:latest
                 container_name: grafana
                 ports:
                   - "3001:3000"
                 volumes:
-                  - grafana-data:/var/lib/grafana
+                  - grafana_data:/var/lib/grafana
                 environment:
                   - GF_SECURITY_ADMIN_USER=admin
                   - GF_SECURITY_ADMIN_PASSWORD=admin
-                  - GF_SERVER_HTTP_PORT=3000
-                  - GF_DATASOURCE_NAME=Prometheus
-                  - GF_DATASOURCE_URL=http://prometheus:9090
-                depends_on:
-                  - prometheus
+                restart: unless-stopped
                 networks:
                   - app-network
-                restart: unless-stopped
-
-              node-exporter:
-                image: quay.io/prometheus/node-exporter:latest
-                container_name: node-exporter
-                ports:
-                  - "9100:9100"
-                networks:
-                  - app-network
-                restart: unless-stopped
-
-              blackbox-exporter:
-                image: prom/blackbox-exporter:latest
-                container_name: blackbox-exporter
-                ports:
-                  - "9115:9115"
-                volumes:
-                  - ./blackbox.yml:/etc/blackbox.yml
-                networks:
-                  - app-network
-                restart: unless-stopped
-                cap_add:
-                  - NET_RAW
-
+            volumes:
+              postgres_data:
+              prometheus_data:
+              grafana_data:
             networks:
               app-network:
                 driver: bridge
-
-            volumes:
-              grafana-data:
-                driver: local
             EOF
-            fi
-            
+
             # Đăng nhập vào GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "${{ secrets.GHFE_TOKEN }}" | docker login ghcr.io -u minhtrantuan3112 --password-stdin
 
-            # Dừng và xóa container cũ
+            # Dừng container cũ
             docker compose -p photonpiano down
 
             # Xóa image cũ nếu không còn container sử dụng
             docker images -q ${{ env.IMAGE_NAME_API }} | sort -u | xargs -r docker rmi -f || true
             docker images -q ${{ env.IMAGE_NAME_WEB }} | sort -u | xargs -r docker rmi -f || true
 
-            # Làm sạch Docker (chỉ xóa tài nguyên không sử dụng)
+            # Làm sạch Docker
             docker system prune -f --volumes
 
             # Pull các image mới

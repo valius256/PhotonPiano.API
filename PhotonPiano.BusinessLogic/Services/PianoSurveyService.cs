@@ -441,7 +441,7 @@ public class PianoSurveyService : IPianoSurveyService
 
     public async Task<AuthModel> SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model)
     {
-        var (email, password, fullName, phone, answers) = model;
+        var (email, password, fullName, phone, gender, answers) = model;
 
         var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey);
 
@@ -485,7 +485,8 @@ public class PianoSurveyService : IPianoSurveyService
             Email = email,
             Password = password,
             FullName = fullName,
-            Phone = phone
+            Phone = phone,
+            Gender = gender
         });
 
         var learnerSurvey = new LearnerSurvey

@@ -3,6 +3,8 @@ name: Build, Test & Deploy .NET 9 API Photon Piano
 on:
   pull_request:
     branches: [ main ]
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -127,21 +129,21 @@ jobs:
             mkdir -p ~/photonpiano ~/photonpiano/prometheus ~/photonpiano/frontend
             cd ~/photonpiano
 
-            # Kiểm tra trạng thái Prometheus và Grafana
-            PROMETHEUS_RUNNING=$(docker ps -q -f name=prometheus | wc -l)
-            GRAFANA_RUNNING=$(docker ps -q -f name=grafana | wc -l)
-
             # Tạo cấu hình cho Blackbox exporter
             cat > blackbox.yml <<EOF
             modules:
-              http_health:
+              http_2xx:
                 prober: http
                 timeout: 5s
                 http:
                   method: GET
-                  path: /health
                   valid_status_codes: [200]
-                  fail_if_not_ssl: false
+                  no_follow_redirects: false
+              icmp:
+                prober: icmp
+                timeout: 5s
+                icmp:
+                  preferred_ip_protocol: ip4
             EOF
 
             # Tạo cấu hình cho Prometheus
@@ -162,7 +164,7 @@ jobs:
                 params:
                   module: [http_2xx]
                 static_configs:
-                  - targets: ['http://photonpiano-api:8080']
+                  - targets: ['http://photonpiano-api:8080/']
                     labels:
                       group: 'photonpiano-api'
                 relabel_configs:
@@ -278,6 +280,9 @@ jobs:
               prometheus:
                 image: prom/prometheus:latest
                 container_name: prometheus
+                dns:
+                  - 8.8.8.8
+                  - 8.8.4.4
                 volumes:
                   - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
                   - prometheus_data:/prometheus
@@ -295,7 +300,13 @@ jobs:
                 networks:
                   - app-network
                 volumes:
-                  - /run/udev/data:/run/udev/data:ro
+                  - /proc:/host/proc:ro
+                  - /sys:/host/sys:ro
+                  - /:/rootfs:ro
+                command:
+                  - '--path.procfs=/host/proc'
+                  - '--path.sysfs=/host/sys'
+                  - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
               blackbox-exporter:
                 image: prom/blackbox-exporter:latest
                 container_name: blackbox-exporter

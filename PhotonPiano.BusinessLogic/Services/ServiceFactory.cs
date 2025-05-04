@@ -122,7 +122,7 @@ public class ServiceFactory : IServiceFactory
         _slotService = new Lazy<ISlotService>(() => new SlotService(this, unitOfWork));
         _paymentService = new Lazy<IPaymentService>(() => new PaymentService(configuration, vnPay, this));
         _classService = new Lazy<IClassService>(() => new ClassService(unitOfWork, this));
-        _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork));
+        _systemConfigService = new Lazy<ISystemConfigService>(() => new SystemConfigService(unitOfWork, this));
         _slotStudentService = new Lazy<ISlotStudentService>(() => new SlotStudentService(this, unitOfWork));
         _tutionService = new Lazy<ITuitionService>(() => new TuitionService(unitOfWork, this));
         _transactionService = new Lazy<ITransactionService>(() => new TransactionService(unitOfWork));

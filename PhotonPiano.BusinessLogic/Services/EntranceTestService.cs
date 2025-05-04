@@ -443,24 +443,38 @@ public class EntranceTestService : IEntranceTestService
         }
 
         var students =
-            await _unitOfWork.AccountRepository.FindAsync(s =>
-                model.StudentIds.Contains(s.AccountFirebaseId) && s.Role == Role.Student
-                                                               && s.StudentStatus == StudentStatus
-                                                                   .WaitingForEntranceTestArrangement);
+            await _unitOfWork.AccountRepository.GetStudentsWithEntranceTestStudents(
+                StudentStatus.WaitingForEntranceTestArrangement,
+                model.StudentIds);
+        
         if (students.Count != model.StudentIds.Count)
         {
             throw new BadRequestException("Some of the students are not the same.");
         }
 
-        var newEntranceTestStudents = students.Select(s => new EntranceTestStudent
+        var newEntranceTestStudents = new List<EntranceTestStudent>();
+
+        foreach (var student in students)
         {
-            Id = Guid.NewGuid(),
-            CreatedAt = DateTime.UtcNow.AddHours(7),
-            CreatedById = currentAccount.AccountFirebaseId,
-            IsScoreAnnounced = entranceTest.IsAnnouncedScore,
-            StudentFirebaseId = s.AccountFirebaseId,
-            EntranceTestId = testId
-        });
+            var entranceTestStudent = student.EntranceTestStudents.FirstOrDefault(ets => ets.EntranceTestId == testId);
+
+            if (entranceTestStudent is null)
+            {
+                newEntranceTestStudents.AddRange(students.Select(s => new EntranceTestStudent
+                {
+                    Id = Guid.NewGuid(),
+                    CreatedAt = DateTime.UtcNow.AddHours(7),
+                    CreatedById = currentAccount.AccountFirebaseId,
+                    IsScoreAnnounced = entranceTest.IsAnnouncedScore,
+                    StudentFirebaseId = s.AccountFirebaseId,
+                    EntranceTestId = testId
+                }));
+            }
+            else if (entranceTestStudent.EntranceTestId is null)
+            {
+                entranceTestStudent.EntranceTestId = testId;
+            }
+        }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -478,14 +492,14 @@ public class EntranceTestService : IEntranceTestService
         {
             throw new NotFoundException("Entrance test not found.");
         }
-        
+
         var testStatus = ShiftUtils.GetEntranceTestStatus(test.Date, test.Shift);
 
         if (testStatus != EntranceTestStatus.NotStarted)
         {
             throw new BadRequestException("Entrance test is already started.");
         }
-        
+
         var entranceTestStudents =
             await _unitOfWork.EntranceTestStudentRepository.FindAsync(ets => ets.EntranceTestId == testId);
 
@@ -727,10 +741,12 @@ public class EntranceTestService : IEntranceTestService
         }
     }
 
-    private async Task<List<EntranceTest>> CreateAndAssignStudentsToEntranceTests(
-        List<AccountDetailModel> students,
-        DateTime startDate, DateTime endDate,
-        string staffAccountId, params List<Shift> shiftOptions)
+    private async Task<(List<EntranceTest> newEntranceTests, List<EntranceTestWithStudentsModel> existingEntranceTests)>
+        CreateAndAssignStudentsToEntranceTests(
+            List<AccountDetailModel> students,
+            DateTime startDate, DateTime endDate,
+            string staffAccountId, List<EntranceTestStudent> entranceTestStudents, params List<Shift> shiftOptions
+        )
     {
         var maxStudentsPerSlotConfig =
             await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaxStudentsInTest);
@@ -738,7 +754,7 @@ public class EntranceTestService : IEntranceTestService
 
         var entranceTests = new List<EntranceTest>();
         var remainingStudents = new List<AccountDetailModel>(students);
-        var addingEntranceTestStudents = new List<EntranceTestStudent>();
+        // var addingEntranceTestStudents = new List<EntranceTestStudent>();
 
         var existingTests = await _unitOfWork.EntranceTestRepository.FindProjectedAsync<EntranceTestWithStudentsModel>(
             e => e.Date >= DateOnly.FromDateTime(startDate) && e.Date <= DateOnly.FromDateTime(endDate),
@@ -766,19 +782,28 @@ public class EntranceTestService : IEntranceTestService
                             if (assignedStudents.Contains(student.AccountFirebaseId))
                                 continue; // Prevent multiple assignments
 
-                            var newEntranceTestStudent = new EntranceTestStudent
-                            {
-                                Id = Guid.NewGuid(),
-                                StudentFirebaseId = student.AccountFirebaseId,
-                                EntranceTestId = entranceTest.Id,
-                                CreatedById = staffAccountId,
-                                FullName = student.FullName,
-                                CreatedAt = DateTime.UtcNow,
-                            };
+                            var entranceTestStudent = entranceTestStudents.FirstOrDefault(ets =>
+                                ets.StudentFirebaseId == student.AccountFirebaseId)!;
 
-                            entranceTest.EntranceTestStudents.Add(
-                                newEntranceTestStudent.Adapt<EntranceTestStudentModel>());
-                            addingEntranceTestStudents.Add(newEntranceTestStudent);
+                            entranceTestStudent.EntranceTestId = entranceTest.Id;
+                            entranceTestStudent.FullName = student.FullName ?? student.Email;
+
+
+                            // var newEntranceTestStudent = new EntranceTestStudent
+                            // {
+                            //     Id = Guid.NewGuid(),
+                            //     StudentFirebaseId = student.AccountFirebaseId,
+                            //     EntranceTestId = entranceTest.Id,
+                            //     CreatedById = staffAccountId,
+                            //     FullName = student.FullName,
+                            //     CreatedAt = DateTime.UtcNow,
+                            // };
+                            //
+                            // entranceTest.EntranceTestStudents.Add(
+                            //     newEntranceTestStudent.Adapt<EntranceTestStudentModel>());
+                            // addingEntranceTestStudents.Add(newEntranceTestStudent);
+                            entranceTest.EntranceTestStudents.Add(entranceTestStudent
+                                .Adapt<EntranceTestStudentModel>());
                             assignedStudents.Add(student.AccountFirebaseId);
                         }
                     }
@@ -788,12 +813,17 @@ public class EntranceTestService : IEntranceTestService
                 remainingStudents.RemoveAll(s => assignedStudents.Contains(s.AccountFirebaseId));
 
                 //Step 2: If there are still unassigned students, create a new entrance test
-                if (remainingStudents.Count == 0) break;
+                if (remainingStudents.Count == 0)
+                {
+                    break;
+                }
 
                 var entranceTestId = Guid.NewGuid();
                 var studentsToAssign = remainingStudents
                     .Take(Math.Min(room.Capacity ?? 10, maxStudentsPerSlot))
                     .ToList();
+
+                var studentIdsToAssign = studentsToAssign.Select(s => s.AccountFirebaseId);
 
                 foreach (var student in studentsToAssign)
                     assignedStudents.Add(student.AccountFirebaseId); // Prevent future assignments
@@ -809,28 +839,31 @@ public class EntranceTestService : IEntranceTestService
                     Date = DateOnly.FromDateTime(startDate),
                     CreatedById = staffAccountId,
                     CreatedAt = DateTime.UtcNow,
-                    EntranceTestStudents = studentsToAssign.Select(student => new EntranceTestStudent
-                    {
-                        Id = Guid.NewGuid(),
-                        StudentFirebaseId = student.AccountFirebaseId,
-                        CreatedById = staffAccountId,
-                        FullName = student.FullName,
-                        CreatedAt = DateTime.UtcNow,
-                    }).ToList()
+                    // EntranceTestStudents = studentsToAssign.Select(student => new EntranceTestStudent
+                    // {
+                    //     Id = Guid.NewGuid(),
+                    //     StudentFirebaseId = student.AccountFirebaseId,
+                    //     CreatedById = staffAccountId,
+                    //     FullName = student.FullName,
+                    //     CreatedAt = DateTime.UtcNow,
+                    // }).ToList()
                 };
+
+                foreach (var ets in entranceTestStudents.Where(
+                             ets => studentIdsToAssign.Contains(ets.StudentFirebaseId)))
+                {
+                    ets.EntranceTestId = newEntranceTest.Id;
+                }
 
                 entranceTests.Add(newEntranceTest);
                 remainingStudents.RemoveAll(s => assignedStudents.Contains(s.AccountFirebaseId));
             }
         }
 
-        if (addingEntranceTestStudents.Count > 0)
-        {
-            await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(addingEntranceTestStudents);
-            await _unitOfWork.SaveChangesAsync();
-        }
+        // await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(addingEntranceTestStudents);
+        // await _unitOfWork.SaveChangesAsync();
 
-        return entranceTests;
+        return (entranceTests, existingTests);
     }
 
     private string GetEntranceTestName(EntranceTest entranceTest)
@@ -883,52 +916,72 @@ public class EntranceTestService : IEntranceTestService
             .FindAsync(e => e.Date >= DateOnly.FromDateTime(startDate) && e.Date <= DateOnly.FromDateTime(endDate),
                 hasTrackings: false);
 
-        var entranceTests = await CreateAndAssignStudentsToEntranceTests(students,
+        var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository.FindAsync(ets =>
+            ets.EntranceTestId == null
+            && model.StudentIds.Contains(ets.StudentFirebaseId));
+
+        var (entranceTests, tests) = await CreateAndAssignStudentsToEntranceTests(students,
             startDate, endDate,
-            currentAccount.AccountFirebaseId, shiftOptions);
+            currentAccount.AccountFirebaseId, entranceTestStudents, shiftOptions);
 
-        if (entranceTests.Count == 0)
+        if (entranceTests.Count > 0)
         {
-            return;
+            var conflictGraph = _serviceFactory.SchedulerService.BuildEntranceTestsConflictGraph(entranceTests);
+
+            var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
+
+            List<DateTime> holidays = [];
+
+            foreach (var dayOff in dayOffs)
+            {
+                holidays.AddRange(Enumerable.Range(0, (dayOff.EndTime - dayOff.StartTime).Days + 1)
+                    .Select(d => dayOff.StartTime.AddDays(d)));
+            }
+
+            var validSlots =
+                await _serviceFactory.SchedulerService.GenerateValidTimeSlots(existingEntranceTests, startDate, endDate,
+                    holidays, shiftOptions);
+
+            entranceTests = await _serviceFactory.SchedulerService.AssignTimeSlotsToEntranceTests(entranceTests,
+                conflictGraph,
+                startDate, endDate,
+                validSlots, existingEntranceTests);
+
+            entranceTests =
+                await _serviceFactory.SchedulerService.AssignInstructorsToEntranceTests(entranceTests, validSlots);
         }
-
-        var conflictGraph = _serviceFactory.SchedulerService.BuildEntranceTestsConflictGraph(entranceTests);
-
-        var dayOffs = await _unitOfWork.DayOffRepository.GetAllAsync(hasTrackings: false);
-
-        List<DateTime> holidays = [];
-
-        foreach (var dayOff in dayOffs)
-        {
-            holidays.AddRange(Enumerable.Range(0, (dayOff.EndTime - dayOff.StartTime).Days + 1)
-                .Select(d => dayOff.StartTime.AddDays(d)));
-        }
-
-        var validSlots =
-            await _serviceFactory.SchedulerService.GenerateValidTimeSlots(existingEntranceTests, startDate, endDate,
-                holidays, shiftOptions);
-
-        entranceTests = await _serviceFactory.SchedulerService.AssignTimeSlotsToEntranceTests(entranceTests,
-            conflictGraph,
-            startDate, endDate,
-            validSlots, existingEntranceTests);
-
-        entranceTests =
-            await _serviceFactory.SchedulerService.AssignInstructorsToEntranceTests(entranceTests, validSlots);
 
         var arrangedStudentIds = students.Select(s => s.AccountFirebaseId);
 
         List<Task> notiTasks = [];
 
-        foreach (var test in entranceTests)
+        if (entranceTests.Count > 0)
         {
-            test.Name = GetEntranceTestName(test);
-
-            // var studentIdsToPushNotification = test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
-            //
-            // notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(studentIdsToPushNotification,
-            //     $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
+            foreach (var test in entranceTests)
+            {
+                test.Name = GetEntranceTestName(test);
+                //
+                // var studentIdsToPushNotification =
+                //     test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+                //
+                // notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(
+                //     studentIdsToPushNotification,
+                //     $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
+            }
         }
+
+        // if (tests.Count > 0)
+        // {
+        //     foreach (var test in tests)
+        //     {
+        //         var studentIdsToPushNotification =
+        //             test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+        //
+        //         notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(
+        //             studentIdsToPushNotification,
+        //             $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
+        //     }
+        // }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -937,7 +990,6 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
-
             // await Task.WhenAll(notiTasks);
         });
     }

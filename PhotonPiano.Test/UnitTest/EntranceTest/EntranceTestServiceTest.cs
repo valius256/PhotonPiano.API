@@ -320,7 +320,7 @@ public class EntranceTestServiceTest
                 StudentStatus = StudentStatus.WaitingForEntranceTestArrangement,
                 EntranceTestStudents =
                 [
-                    new EntranceTestStudentModel
+                    new EntranceTestStudentDetail
                     {
                         EntranceTestId = Guid.NewGuid(),
                         Id = Guid.NewGuid(),
@@ -336,7 +336,7 @@ public class EntranceTestServiceTest
                 StudentStatus = StudentStatus.WaitingForEntranceTestArrangement,
                 EntranceTestStudents =
                 [
-                    new EntranceTestStudentModel
+                    new EntranceTestStudentDetail
                     {
                         EntranceTestId = Guid.NewGuid(),
                         Id = Guid.NewGuid(),

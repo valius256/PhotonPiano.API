@@ -271,7 +271,7 @@ public class AccountService : IAccountService
             { "tempPassword", password },
             { "url", $"{resetUrl}sign-in" },
         };
-        await _serviceFactory.EmailService.SendAsync("AccountCreated", [account.Email], [], emailParam, true);
+        await _serviceFactory.EmailService.SendAsync("AccountCreated", [account.Email], [], emailParam);
         return createAccount.Adapt<AccountModel>();
     }
 

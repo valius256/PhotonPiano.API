@@ -67,6 +67,7 @@ public class AccountsController : BaseController
     }
 
     [HttpGet("{firebase-id}")]
+    [CustomAuthorize]
     [EndpointDescription("Get Account details by id")]
     public async Task<ActionResult<AccountDetailResponse>> GetAccountById(
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)
@@ -76,7 +77,7 @@ public class AccountsController : BaseController
     }
 
     [HttpGet("{firebase-id}/teacher")]
-    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor, Role.Student])]
     [EndpointDescription("Get teacher detail by id")]
     public async Task<ActionResult<TeacherDetailModel>> GetTeacherDetailById(
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)

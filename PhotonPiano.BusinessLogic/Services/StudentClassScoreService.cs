@@ -24,7 +24,7 @@ public class StudentClassScoreService : IStudentClassScoreService
     private readonly IServiceFactory _serviceFactory;
 
     private readonly IServiceProvider _serviceProvider;
-    
+
     private readonly ILogger<ServiceFactory> _logger;
 
     // Constants for notification templates
@@ -56,7 +56,7 @@ public class StudentClassScoreService : IStudentClassScoreService
         {
             throw new ArgumentException("Invalid class ID", nameof(classId));
         }
-        
+
         try
         {
             var classInfo = await ValidateAndGetClass(classId);
@@ -87,18 +87,17 @@ public class StudentClassScoreService : IStudentClassScoreService
             if (passedStudents.Any())
             {
                 var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
-                backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId)); 
+                backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId));
             }
 
 
             await _unitOfWork.SlotStudentRepository.ExecuteUpdateAsync(
-                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet || x.AttendanceStatus == null,
+                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet ||
+                     x.AttendanceStatus == null,
                 calls => calls.SetProperty(x => x.AttendanceStatus, AttendanceStatus.Attended)
             );
 
-               
-            
-            
+
             await SendClassCompletionNotifications(studentClasses, classInfo);
         }
         catch (Exception ex)
@@ -220,7 +219,7 @@ public class StudentClassScoreService : IStudentClassScoreService
         var studentClassUpdates = new List<StudentClass>();
         var studentUpdates = new List<Account>();
         var passedStudents = new List<StudentClass>();
-        
+
         decimal minimumGpa = classInfo.Level?.MinimumGPA ?? DefaultPassingGrade;
         foreach (var studentClass in studentClasses)
         {
@@ -344,8 +343,9 @@ public class StudentClassScoreService : IStudentClassScoreService
 
             // Get all scores in one query
             var studentClassIds = studentClasses.Select(sc => sc.Id).ToList();
-            var allScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
-                scs => studentClassIds.Contains(scs.StudentClassId));
+            var allScores =
+                await _unitOfWork.StudentClassScoreRepository.FindAsync(scs =>
+                    studentClassIds.Contains(scs.StudentClassId));
 
             // Get all criteria in one query
             var criteriaIds = allScores.Select(scs => scs.CriteriaId).Distinct().ToList();
@@ -400,7 +400,7 @@ public class StudentClassScoreService : IStudentClassScoreService
                     }
 
                     // Sort criteria by weight as requested
-                    criteriaScores = criteriaScores.OrderBy(cs => cs.Weight).ToList();
+                    criteriaScores = criteriaScores.OrderBy(cs => DetermineCriteriaOrder(cs.CriteriaName)).ToList();
                 }
 
                 studentViewModels.Add(new StudentScoreViewModel
@@ -463,8 +463,8 @@ public class StudentClassScoreService : IStudentClassScoreService
         }
 
         // Get all scores for this student in the class
-        var scores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
-            scs => scs.StudentClassId == studentClassId);
+        var scores =
+            await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == studentClassId);
 
         // Get all criteria IDs from the scores
         var criteriaIds = scores.Select(s => s.CriteriaId).Distinct().ToList();
@@ -501,7 +501,7 @@ public class StudentClassScoreService : IStudentClassScoreService
         }
 
         // Sort criteria scores by weight for consistency
-        var sortedScores = detailedScores.OrderBy(cs => cs.Weight).ToList();
+        var sortedScores = detailedScores.OrderBy(cs => DetermineCriteriaOrder(cs.CriteriaName)).ToList();
 
         // Create and return the view model
         return new StudentDetailedScoreViewModel
@@ -517,5 +517,236 @@ public class StudentClassScoreService : IStudentClassScoreService
             InstructorComment = studentClass.InstructorComment,
             CertificateUrl = studentClass.CertificateUrl
         };
+    }
+
+    private int DetermineCriteriaOrder(string criteriaName)
+    {
+        if (string.IsNullOrEmpty(criteriaName))
+            return 1000; // Default for empty names
+
+        // Define category priorities
+        var categoryPriorities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Test categories
+            { "Test", 100 },
+            { "Stability Test", 110 },
+            { "Coordination Test", 120 },
+
+            // Assignment categories
+            { "Assignment", 200 },
+            { "Practice Assignment", 210 },
+
+            // Workshop categories
+            { "Workshop", 300 },
+            { "Techniques Workshop", 310 },
+
+            // Training categories
+            { "Training", 400 },
+            { "Stretch Training", 410 },
+
+            // Performance categories
+            { "Performance", 500 },
+            { "Expression Performance", 510 },
+
+            // Project categories
+            { "Project", 600 },
+            { "Duet Project", 610 },
+
+            // Specific skills
+            { "Memorization", 700 },
+
+            // Keep the existing Vietnamese categories for backward compatibility
+            { "Kiểm tra nhỏ", 800 },
+            { "Bài thi", 810 },
+            { "Thi cuối kỳ", 820 },
+            { "Điểm chuyên cần", 900 },
+
+            // Catch-all (lowest priority)
+            { "Others", 1000 }
+        };
+
+        // Subcategories for more precise sorting
+        var subcategoryPriorities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Technique types
+            { "Tone", 10 },
+            { "Rhythmic", 20 },
+            { "Articulation", 30 },
+            { "Expression", 40 },
+            { "Arpeggios", 50 },
+            { "Hand", 60 },
+            { "Pedal", 70 },
+            { "Duet", 80 },
+
+            // Vietnamese subcategories for backward compatibility
+            { "Âm sắc", 15 },
+            { "Độ chính xác", 25 },
+            { "Phong thái", 35 },
+            { "Nhịp điệu", 45 }
+        };
+
+        // Find main category
+        int baseOrder = 1000; // Default order
+        foreach (var category in categoryPriorities)
+        {
+            if (criteriaName.IndexOf(category.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                baseOrder = category.Value;
+                break;
+            }
+        }
+
+        // Find subcategory modifier
+        int subOrder = 0;
+        foreach (var subcategory in subcategoryPriorities)
+        {
+            if (criteriaName.IndexOf(subcategory.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                subOrder = subcategory.Value;
+                break;
+            }
+        }
+
+        // Check for numeric identifiers (like "Test 1", "Assignment 2", etc.)
+        var numberMatch = System.Text.RegularExpressions.Regex.Match(criteriaName, @"\d+");
+        if (numberMatch.Success)
+        {
+            int number = int.Parse(numberMatch.Value);
+            // Add a small value for numeric ordering within the same category
+            subOrder += number;
+        }
+
+        // Combine for final sort order
+        return baseOrder + subOrder;
+    }
+    
+    public async Task RollbackPublishScores(Guid classId, AccountModel account)
+    {
+        if (classId == Guid.Empty)
+        {
+            throw new ArgumentException("Invalid class ID", nameof(classId));
+        }
+        try
+        {
+            var classInfo = await _unitOfWork.ClassRepository.FindSingleAsync(c => c.Id == classId);
+            if (classInfo == null)
+            {
+                throw new NotFoundException("Class not found");
+            }
+            
+            if (!classInfo.IsScorePublished)
+            {
+                throw new BadRequestException("Cannot rollback: The class scores have not been published yet.");
+            }
+
+            if (classInfo.Level == null && classInfo.LevelId != Guid.Empty)
+            {
+                classInfo.Level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classInfo.LevelId);
+                if (classInfo.Level == null)
+                {
+                    throw new NotFoundException("Level not found");
+                }
+            }
+            var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == classId);
+            if (!studentClasses.Any())
+            {
+                throw new NotFoundException("No students enrolled in this class.");
+            }
+            
+            // Get all student accounts
+            var studentFirebaseIds = studentClasses.Select(sc => sc.StudentFirebaseId).Distinct().ToList();
+            var studentAccounts = await _unitOfWork.AccountRepository
+                .FindAsync(a => studentFirebaseIds.Contains(a.AccountFirebaseId));
+        
+            classInfo.IsScorePublished = false;
+            classInfo.UpdateById = account.AccountFirebaseId;
+            classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            
+            var studentClassUpdates = new List<StudentClass>();
+            var studentAccountUpdates = new List<Account>();
+
+            foreach (var studentClass in studentClasses)
+            {
+                studentClass.IsPassed = false;
+                studentClass.CertificateUrl = null;       
+                studentClass.CertificateHtml = null;      
+                studentClass.HasCertificateHtml = false;  
+                studentClass.UpdateById = account.AccountFirebaseId;
+                studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
+                studentClassUpdates.Add(studentClass);
+                
+                // Find corresponding student account
+                var student = studentAccounts.FirstOrDefault(a => a.AccountFirebaseId == studentClass.StudentFirebaseId);
+                if (student != null)
+                {
+                    // Only reset level for students who passed and were advanced to next level
+                    if (studentClass.IsPassed == true && classInfo.Level?.NextLevelId.HasValue == true)
+                    {
+                        // If the student is at the next level, reset them back to the class level
+                        if (student.LevelId == classInfo.Level.NextLevelId.Value)
+                        {
+                            student.LevelId = classInfo.LevelId;
+                        }
+                    }
+                
+                    // Reset status back to InClass for all students
+                    student.StudentStatus = StudentStatus.InClass;
+                    student.UpdatedAt = DateTime.UtcNow.AddHours(7);
+                    studentAccountUpdates.Add(student);
+                }
+            }
+            
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Update class first
+                await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
+
+                // Update student classes and accounts
+                await _unitOfWork.StudentClassRepository.UpdateRangeAsync(studentClassUpdates);
+                await _unitOfWork.AccountRepository.UpdateRangeAsync(studentAccountUpdates);
+            });
+
+            await SendScoreRollbackNotifications(studentClasses, classInfo);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error rolling back scores for class {classId}: {ex.Message}");
+            throw;
+        }
+    }
+    
+    private async Task SendScoreRollbackNotifications(List<StudentClass> studentClasses, Class classInfo)
+    {
+        const string RollbackNotificationTemplate = 
+            "The music center has identified some issues with the scoring process for class {0}. As a result, the published scores have been temporarily rolled back while we resolve these concerns. We apologize for any inconvenience and will notify you once the corrected scores are available.";
+
+        var notifications = new List<(string recipientId, string title, string content)>();
+
+        foreach (var studentClass in studentClasses)
+        {
+            var title = "Important Notice: Class Score Update";
+            var content = string.Format(RollbackNotificationTemplate, classInfo.Name);
+            notifications.Add((studentClass.StudentFirebaseId, title, content));
+        }
+
+        // Add instructor notification if an instructor exists
+        if (!string.IsNullOrEmpty(classInfo.InstructorId))
+        {
+            notifications.Add((
+                classInfo.InstructorId,
+                "Score Publishing Rollback Notice",
+                $"The published scores for class {classInfo.Name} have been rolled back due to scoring concerns."
+            ));
+        }
+
+        int batchSize = 5;
+        for (int i = 0; i < notifications.Count; i += batchSize)
+        {
+            var batch = notifications.Skip(i).Take(batchSize).ToList();
+            foreach (var (recipientId, title, content) in batch)
+            {
+                await _serviceFactory.NotificationService.SendNotificationAsync(recipientId, title, content);
+            }
+        }
     }
 }

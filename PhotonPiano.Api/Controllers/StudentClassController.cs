@@ -102,4 +102,13 @@ public class StudentClassController : BaseController
         var detailedScores = await _serviceFactory.StudentClassScoreService.GetStudentDetailedScores(studentClassId);
         return Ok(detailedScores);
     }
+    
+    [HttpPost("{classId}/rollback-score-publish")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Rollback Published Scores")]
+    public async Task<IActionResult> RollbackPublishScore([FromRoute] Guid classId)
+    {
+        await _serviceFactory.StudentClassScoreService.RollbackPublishScores(classId, CurrentAccount!);
+        return NoContent();
+    }
 }

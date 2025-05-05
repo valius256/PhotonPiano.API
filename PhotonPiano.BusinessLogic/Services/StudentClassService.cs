@@ -485,7 +485,7 @@ namespace PhotonPiano.BusinessLogic.Services
 
             worksheet.Cells[3, 1].Value = "Instructor:";
             worksheet.Cells[3, 1].Style.Font.Bold = true;
-            var instructorInfo = classDetails.Instructor?.UserName ?? classDetails.Instructor?.FullName;
+            var instructorInfo = classDetails.Instructor?.FullName ?? classDetails.Instructor?.UserName;
             worksheet.Cells[3, 2].Value = instructorInfo;
 
             worksheet.Cells[4, 1].Value = "Assignments";
@@ -803,8 +803,6 @@ namespace PhotonPiano.BusinessLogic.Services
                 studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
                 await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
-
-                // Send notification to student
                 await _serviceFactory.NotificationService.SendNotificationAsync(
                     studentClass.StudentFirebaseId,
                     "Grade Update",
@@ -815,46 +813,57 @@ namespace PhotonPiano.BusinessLogic.Services
 
         private int DetermineCriteriaOrder(string criteriaName)
         {
-            // Define sorting groups with priority
-            var criteriaGroups = new List<(string GroupName, int BaseOrder, Func<string, bool> Matcher)>
+            var categoryPriorities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
             {
-                // Small Test Group
-                ("Kiểm tra nhỏ", 100, name => name.Contains("Kiểm tra nhỏ")),
-
-                // Exam Group
-                ("Bài thi", 200, name => name.Contains("Bài thi")),
-
-                // Final Exam Specific Categories (with sub-sorting)
-                ("Thi cuối kỳ (Âm sắc)", 300, name => name.Contains("Thi cuối kỳ (Âm sắc)")),
-                ("Thi cuối kỳ (Độ chính xác)", 310, name => name.Contains("Thi cuối kỳ (Độ chính xác)")),
-                ("Thi cuối kỳ (Phong thái)", 320, name => name.Contains("Thi cuối kỳ (Phong thái)")),
-                ("Thi cuối kỳ (Nhịp điệu)", 330, name => name.Contains("Thi cuối kỳ (Nhịp điệu)")),
-
-                // Attendance
-                ("Điểm chuyên cần", 1000, name => name.Contains("Điểm chuyên cần")),
-
-                // Catch-all for new criteria
-                ("Other", 2000, _ => true)
+                { "Test", 100 },
+                { "Assignment", 200 },
+                { "Workshop", 300 },
+                { "Training", 400 },
+                { "Performance", 500 },
+                { "Project", 600 },
+                { "Coordination", 700 },
+                { "Memorization", 800 }
             };
 
-            // Find the first matching group
-            var matchedGroup = criteriaGroups.First(g => g.Matcher(criteriaName));
-
-            // If it's an exact match or falls into the default group, return the base order
-            if (matchedGroup.GroupName == criteriaName || matchedGroup.GroupName == "Other")
+            // Subcategories for more detailed sorting within main categories
+            var subcategoryPriorities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
             {
-                return matchedGroup.BaseOrder;
+                // Technique types
+                { "Tone", 10 },
+                { "Rhythmic", 20 },
+                { "Articulation", 30 },
+                { "Expression", 40 },
+                { "Arpeggios", 50 },
+                { "Hand", 60 },
+                { "Pedal", 70 },
+                { "Duet", 80 }
+            };
+
+            // Find main category
+            int baseOrder = 1000; // Default
+            foreach (var category in categoryPriorities)
+            {
+                if (criteriaName.IndexOf(category.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    baseOrder = category.Value;
+                    break;
+                }
             }
 
-            // For grouped matches like "Kiểm tra nhỏ 1", extract the number
-            var numberMatch = Regex.Match(criteriaName, @"\d+");
-            if (numberMatch.Success)
+            // Find subcategory modifier
+            int subOrder = 0;
+            foreach (var subcategory in subcategoryPriorities)
             {
-                int number = int.Parse(numberMatch.Value);
-                return matchedGroup.BaseOrder + number;
+                if (criteriaName.IndexOf(subcategory.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    subOrder = subcategory.Value;
+                    break;
+                }
             }
 
-            return matchedGroup.BaseOrder;
+            // Combine for final sort order
+            return baseOrder + subOrder;
+
         }
 
         public async Task<bool> UpdateStudentStatusAsync(string studentFirbaseId, StudentStatus newStatus,

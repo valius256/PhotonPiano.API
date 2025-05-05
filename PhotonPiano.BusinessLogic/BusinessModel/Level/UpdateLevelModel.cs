@@ -20,7 +20,7 @@ public record UpdateLevelModel
 
     public bool? IsGenreDivided { get; init; }
 
-    public Guid? NextLevelId { get; init; }
+    // public Guid? NextLevelId { get; init; }
 
     public string? ThemeColor { get; init; }
 }

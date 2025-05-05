@@ -18,9 +18,11 @@ public record UpdateLevelRequest
 
     public decimal? MinimumPracticalScore { get; init; }
 
+    // public decimal? MinimumGPA { get; init; }
+
     public bool? IsGenreDivided { get; init; }
 
-    public Guid? NextLevelId { get; init; }
+    // public Guid? NextLevelId { get; init; }
 
     public string? ThemeColor { get; init; }
 }

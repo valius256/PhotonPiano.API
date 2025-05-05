@@ -34,7 +34,7 @@ env:
   VNPAY__TIMEZONEID: ${{ secrets.VNPAY_TIMEZONEID }}
   VNPAY__VERSION: ${{ secrets.VNPAY_VERSION }}
   VNPAY__COMMAND: ${{ secrets.VNPAY_COMMAND }}
-  PINATA__JWTTOKEN: ${{ secrets.PINATA_JWTTOKEN }}
+  PINATA__JWT: ${{ secrets.PINATA_JWTTOKEN }}
   JWTAUTH__KEY: ${{ secrets.JWTAUTH_KEY }}
   JWTAUTH__ISSUER: ${{ secrets.JWTAUTH_ISSUER }}
   JWTAUTH__AUDIENCE: ${{ secrets.JWTAUTH_AUDIENCE }}
@@ -42,6 +42,7 @@ env:
   CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
   PINATA__DEFAULTGROUPID: ${{ secrets.PINATA_DEFAULTGROUPID }}
+  
   Logging__LogLevel__Hangfire: Debug
   Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"
@@ -209,12 +210,12 @@ jobs:
             VNPAY__TIMEZONEID=${{ secrets.VNPAY_TIMEZONEID }}
             VNPAY__VERSION=${{ secrets.VNPAY_VERSION }}
             VNPAY__COMMAND=${{ secrets.VNPAY_COMMAND }}
-            PINATA__JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
             JWTAUTH__KEY=${{ secrets.JWTAUTH_KEY }}
             JWTAUTH__ISSUER=${{ secrets.JWTAUTH_ISSUER }}
             JWTAUTH__AUDIENCE=${{ secrets.JWTAUTH_AUDIENCE }}
             JWTAUTH__DURATIONINDAYS=${{ secrets.JWTAUTH_DURATIONINDAYS }}
             CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS=${{ secrets.REDIS_CONNECTION_STRING }}
+            PINATA__JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
             PINATA__GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
             PINATA__DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
             ASPNETCORE_ENVIRONMENT=Development
@@ -227,6 +228,7 @@ jobs:
             VITE_COOKIE_SECRET=${{ secrets.VITE_COOKIE_SECRET }}
             VITE_IS_DEVELOPMENT=${{ secrets.VITE_IS_DEVELOPMENT }}
             VITE_PINATA_API_KEY=${{ secrets.VITE_PINATA_API_KEY }}
+            VITE_PINATA_JWT=${{ secrets.VITE_PINATA_JWT }}
             VITE_PINATA_API_SECRET=${{ secrets.VITE_PINATA_API_SECRET }}
             VITE_PINATA_GATEWAY_KEY=${{ secrets.VITE_PINATA_GATEWAY_KEY }}
             VITE_PINATA_GATEWAY_BASE_URL=${{ secrets.VITE_PINATA_GATEWAY_BASE_URL }}

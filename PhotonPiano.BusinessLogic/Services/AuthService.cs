@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using System.Text;
 using Mapster;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -10,7 +11,6 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
-using System.Text;
 using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -34,48 +34,25 @@ public class AuthService : IAuthService
         _apiKey = _configuration["Firebase:Auth:ApiKey"]!;
     }
 
-    private string HashPassword(string password)
-    {
-        using var sha256 = SHA256.Create();
-        // Convert the password string to bytes
-        byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-
-        // Compute the hash
-        byte[] hashBytes = sha256.ComputeHash(passwordBytes);
-
-        // Convert the hash to a hexadecimal string
-        string hashedPassword = string.Concat(hashBytes.Select(b => $"{b:x2}"));
-
-        return hashedPassword;
-    }
-
-    private bool VerifyPassword(string inputPassword, string dbHashedPassword)
-    {
-        string hashedPassword = HashPassword(inputPassword);
-
-        return (hashedPassword == dbHashedPassword);
-    }
-
     public async Task<AuthModel> SignIn(string email, string password)
     {
         var account =
             await _unitOfWork.AccountRepository.FindSingleAsync(a =>
                 a.Email == email && HashPassword(password) == a.Password);
 
-        if (account is null)
-        {
-            throw new UnauthorizedException("Wrong email or password");
-        }
+        if (account is null) throw new UnauthorizedException("Wrong email or password");
+
+        if (account.Status == AccountStatus.Inactive) throw new ForbiddenMethodException("Account is inactive");
 
         var idToken = _serviceFactory.TokenService.GenerateIdToken(account.Adapt<AccountModel>());
-        
+
         var refreshToken = _serviceFactory.TokenService.GenerateRefreshToken();
 
         account.RefreshToken = refreshToken;
         account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(30);
 
         await _unitOfWork.SaveChangesAsync();
-        
+
         return new AuthModel
         {
             Kind = account.Email,
@@ -95,9 +72,7 @@ public class AuthService : IAuthService
         var (email, password) = model;
 
         if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == email))
-        {
             throw new ConflictException("Email already exists");
-        }
 
         var account = model.Adapt<Account>();
 
@@ -134,15 +109,10 @@ public class AuthService : IAuthService
     {
         var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.RefreshToken == refreshToken);
 
-        if (account is null)
-        {
-            throw new UnauthorizedException("Wrong refresh token");
-        }
+        if (account is null) throw new UnauthorizedException("Wrong refresh token");
 
         if (account.RefreshToken == string.Empty || account.RefreshTokenExpiryDate < DateTime.UtcNow.AddHours(7))
-        {
             throw new BadRequestException("Invalid refresh token or refresh token is expired");
-        }
 
         return new NewIdTokenModel
         {
@@ -159,16 +129,10 @@ public class AuthService : IAuthService
     public async Task SendPasswordResetEmail(string email)
     {
         var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.Email == email);
-        if (account is null)
-        {
-            throw new NotFoundException("Account not found");
-        }
+        if (account is null) throw new NotFoundException("Account not found");
 
         var resetUrl = _configuration["PasswordResetBaseUrl"];
-        if (string.IsNullOrWhiteSpace(resetUrl))
-        {
-            throw new Exception("Reset Url not found!");
-        }
+        if (string.IsNullOrWhiteSpace(resetUrl)) throw new Exception("Reset Url not found!");
 
         account.ResetPasswordToken = AuthUtils.GenerateSecureToken();
         account.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(7).AddHours(1);
@@ -180,7 +144,7 @@ public class AuthService : IAuthService
             { "resetPassswordToken", $"{account.ResetPasswordToken}" },
             { "email", $"{account.Email}" },
             { "url", $"{resetUrl}" },
-            { "Subject", $"[PhotonPiano] Yêu cầu đặt lại mật khẩu" },
+            { "Subject", "[PhotonPiano] Yêu cầu đặt lại mật khẩu" }
         };
         await _serviceFactory.EmailService.SendAsync("ResetPassword", [email], [], emailParam);
     }
@@ -237,7 +201,7 @@ public class AuthService : IAuthService
     {
         using var client = _httpClientFactory.CreateClient();
 
-        string url =
+        var url =
             $"https://identitytoolkit.googleapis.com/v1/accounts:update?key={_configuration["Firebase:Auth:ApiKey"]}";
 
         var jsonRequest = JsonConvert.SerializeObject(new
@@ -254,39 +218,10 @@ public class AuthService : IAuthService
         if (!response.IsSuccessStatusCode)
         {
             var errorResponse = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(errorResponse.ToString());
+            Console.WriteLine(errorResponse);
             var errorResponseObject = JsonConvert.DeserializeObject<FirebaseErrorResponseModel>(errorResponse)!;
             throw new BadRequestException(errorResponseObject.Message);
         }
-    }
-
-    private async Task<OAuthCredentialsModel> LinkWithFirebaseOAuthCredentials(string googleCode, string idToken)
-    {
-        using var client = _httpClientFactory.CreateClient();
-
-        var requestUri =
-            $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={_configuration["Firebase:Auth:ApiKey"]}";
-
-        var requestData =
-            new StringContent(
-                $"{{\"postBody\":\"id_token={idToken}&providerId=google.com\",\"returnSecureToken\":true,\"requestUri\":\"http://localhost:7168/scalar/v1\"}}",
-                Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(requestUri, requestData);
-
-        if (!response.IsSuccessStatusCode) throw new UnauthorizedException("Unauthorized");
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-
-        var responseObject = JsonConvert.DeserializeObject<OAuthCredentialsModel>(jsonResponse)!;
-
-        var (firebaseId, emailVerified, email, firebaseIdToken, refreshToken, expiresIn, _) = responseObject;
-
-        var account = await _serviceFactory.AccountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email,
-            requireCheckingFirebaseId: false);
-
-        responseObject.Role = account.Role.ToString();
-
-        return responseObject;
     }
 
     public async Task<string> SignUpOnFirebase(string email, string password)
@@ -329,20 +264,86 @@ public class AuthService : IAuthService
     {
         var account = await _unitOfWork.AccountRepository.FindFirstAsync(a =>
             a.ResetPasswordToken == changePasswordModel.ResetPasswordToken && a.Email == changePasswordModel.Email);
-        if (account is null)
-        {
-            throw new ForbiddenMethodException("Invalid token or email");
-        }
+        if (account is null) throw new ForbiddenMethodException("Invalid token or email");
 
         if (account.ResetPasswordToken == null || account.ResetPasswordTokenExpiry < DateTime.UtcNow.AddHours(7))
-        {
             throw new BadRequestException("Token expired or does not exist");
-        }
 
         account.Password = AuthUtils.HashPassword(changePasswordModel.Password);
         account.ResetPasswordToken = null;
         account.ResetPasswordTokenExpiry = null;
         await _unitOfWork.AccountRepository.UpdateAsync(account);
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task ToggleAccountStatus(string firebaseUid)
+    {
+        var currentUser = await _unitOfWork.AccountRepository.FindFirstAsync(x => x.AccountFirebaseId == firebaseUid);
+
+        if (currentUser is null) throw new NotFoundException("Account not found");
+
+        if (currentUser.Status == AccountStatus.Active)
+        {
+            currentUser.Status = AccountStatus.Inactive;
+            currentUser.RefreshToken = string.Empty;
+            currentUser.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7);
+            await _unitOfWork.AccountRepository.UpdateAsync(currentUser);
+            await _unitOfWork.SaveChangesAsync();
+        }
+        else
+        {
+            currentUser.Status = AccountStatus.Active;
+        }
+    }
+
+    private string HashPassword(string password)
+    {
+        using var sha256 = SHA256.Create();
+        // Convert the password string to bytes
+        var passwordBytes = Encoding.UTF8.GetBytes(password);
+
+        // Compute the hash
+        var hashBytes = sha256.ComputeHash(passwordBytes);
+
+        // Convert the hash to a hexadecimal string
+        var hashedPassword = string.Concat(hashBytes.Select(b => $"{b:x2}"));
+
+        return hashedPassword;
+    }
+
+    private bool VerifyPassword(string inputPassword, string dbHashedPassword)
+    {
+        var hashedPassword = HashPassword(inputPassword);
+
+        return hashedPassword == dbHashedPassword;
+    }
+
+    private async Task<OAuthCredentialsModel> LinkWithFirebaseOAuthCredentials(string googleCode, string idToken)
+    {
+        using var client = _httpClientFactory.CreateClient();
+
+        var requestUri =
+            $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={_configuration["Firebase:Auth:ApiKey"]}";
+
+        var requestData =
+            new StringContent(
+                $"{{\"postBody\":\"id_token={idToken}&providerId=google.com\",\"returnSecureToken\":true,\"requestUri\":\"http://localhost:7168/scalar/v1\"}}",
+                Encoding.UTF8, "application/json");
+        var response = await client.PostAsync(requestUri, requestData);
+
+        if (!response.IsSuccessStatusCode) throw new UnauthorizedException("Unauthorized");
+
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+
+        var responseObject = JsonConvert.DeserializeObject<OAuthCredentialsModel>(jsonResponse)!;
+
+        var (firebaseId, emailVerified, email, firebaseIdToken, refreshToken, expiresIn, _) = responseObject;
+
+        var account = await _serviceFactory.AccountService.GetAndCreateAccountIfNotExistsCredentials(firebaseId, email,
+            requireCheckingFirebaseId: false);
+
+        responseObject.Role = account.Role.ToString();
+
+        return responseObject;
     }
 }

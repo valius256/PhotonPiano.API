@@ -186,8 +186,6 @@ public class SlotService : ISlotService
                 await _unitOfWork.SlotRepository.UpdateRangeAsync(pastSlots);
                 await _unitOfWork.SaveChangesAsync();
             }
-
-            return;
         }
 
         var classIds = todaySlots.Select(s => s.ClassId).Distinct().ToList();

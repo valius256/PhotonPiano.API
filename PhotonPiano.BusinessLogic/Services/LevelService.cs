@@ -212,7 +212,7 @@ public class LevelService : ILevelService
 
             var levels = await GetSortedAllLevels();
 
-            await UpdateLevels(levels, level, level.NextLevelId);
+            // await UpdateLevels(levels, level, level.NextLevelId);
 
             level.UpdatedAt = DateTime.UtcNow.AddHours(7);
         });

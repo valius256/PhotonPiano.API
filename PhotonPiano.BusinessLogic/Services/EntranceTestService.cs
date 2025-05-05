@@ -1043,7 +1043,8 @@ public class EntranceTestService : IEntranceTestService
 
     private static bool HasShiftEnded(DateOnly dateToCompare, Shift shift)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var now = DateTime.UtcNow.AddHours(7);
+        var today = DateOnly.FromDateTime(now);
 
         if (today > dateToCompare)
         {
@@ -1054,12 +1055,13 @@ public class EntranceTestService : IEntranceTestService
         {
             var shiftEndTime = GetShiftEndTime(shift);
             var shiftEndDateTime = dateToCompare.ToDateTime(shiftEndTime);
-
-            return DateTime.Now > shiftEndDateTime;
+            
+            return now > shiftEndDateTime;
         }
 
         return false;
     }
+
 
     public static EntranceTestStatus GetEntranceTestStatus(DateOnly testDate, Shift shift)
     {

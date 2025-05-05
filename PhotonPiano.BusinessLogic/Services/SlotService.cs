@@ -245,7 +245,7 @@ public class SlotService : ISlotService
         foreach (var lastSlot in laSlots)
         {
             var shiftEnd = GetShiftEndTime(lastSlot.Shift);
-            if (currentTime <= shiftEnd && lastSlot.Status != SlotStatus.Finished)
+            if (currentTime >= shiftEnd && lastSlot.Status != SlotStatus.Finished)
             {
                 if (classStatusMap.TryGetValue(lastSlot.ClassId, out var cls) &&
                     cls.Status != ClassStatus.Finished)

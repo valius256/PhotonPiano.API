@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Thanh Toán Thành Công</title>
+    <title>Payment Success Notification</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,11 +50,11 @@
             margin-top: 20px;
         }
 
-        .details-table th, .details-table td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
+            .details-table th, .details-table td {
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #ddd;
+            }
 
         .footer {
             text-align: center;
@@ -63,59 +63,58 @@
             color: #777;
         }
 
-        .footer a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
+            .footer a {
+                color: #4CAF50;
+                text-decoration: none;
+            }
 
-        .footer p {
-            margin: 10px 0;
-        }
+            .footer p {
+                margin: 10px 0;
+            }
     </style>
 </head>
 <body>
-<div class="email-container">
-    <div class="email-header">
-        Payment Success Notification
+    <div class="email-container">
+        <div class="email-header">
+            Payment Success Notification
+        </div>
+
+        <div class="email-content">
+            <p>Hello @customerName,</p>
+
+            <p>We are pleased to inform you that your payment has been successfully processed. Below are the details of your transaction:</p>
+
+            <table class="details-table">
+                <tr>
+                    <th>Transaction ID</th>
+                    <td>@transactionId</td>
+                </tr>
+                <tr>
+                    <th>Total Amount</th>
+                    <td>@amount VND</td>
+                </tr>
+                <tr>
+                    <th>Payment Method</th>
+                    <td>@paymentMethod</td>
+                </tr>
+                <tr>
+                    <th>Transaction Date</th>
+                    <td>@transactionDate</td>
+                </tr>
+                <tr>
+                    <th>Valid From → To</th>
+                    <td>@validFromTo</td>
+                </tr>
+            </table>
+
+            <p>Thank you for using PhotonPiano services. We look forward to serving you again!</p>
+        </div>
+
+        <div class="footer">
+            <p>
+                If you have any questions or need assistance, please contact our support team at <a href="mailto:support@photonpiano.com">support@photonpiano.com</a>.
+            </p>
+        </div>
     </div>
-
-    <div class="email-content">
-        <p>Xin Chào @customerName,</p>
-
-        <p>Chúng tôi vui mừng thông báo với bạn rằng khoản thanh toán của bạn đã được xử lý thành công. Dưới đây là
-            thông tin chi tiết về
-            thanh toán của bạn:</p>
-
-        <table class="details-table">
-            <tr>
-                <th>Mã Giao Dịch</th>
-                <td>@transactionId</td>
-            </tr>
-            <tr>
-                <th>Tổng Tiền</th>
-                <td>@amount Vnd</td>
-            </tr>
-            <tr>
-                <th>Phương Thức Thanh Toán</th>
-                <td>@paymentMethod</td>
-            </tr>
-            <tr>
-                <th>Ngày Tạo Giao Dịch</th>
-                <td>@transactionDate</td>
-            </tr>
-            <tr>
-                <th>Có hiệu lực từ -> đến</th>
-                <td>@validFromTo</td>
-            </tr>
-        </table>
-
-        <p>Cảm ơn bạn đã sử dụng dịch vụ PhotonPiano. Chúng tôi mong muốn được phục vụ bạn lần nữa!</p>
-    </div>
-
-    <div class="footer">
-        <p>Nếu bạn có bất kỳ câu hỏi nào hoặc cần hỗ trợ, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi tại <a
-                href="mailto:support@photonpiano.com">support@photonpiano.com</a>.</p>
-    </div>
-</div>
 </body>
 </html>

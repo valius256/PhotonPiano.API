@@ -17,6 +17,7 @@ public record CreateLevelModel
     public decimal MinimumTheoreticalScore { get; init; }
 
     public decimal MinimumPracticalScore { get; init; }
+    public decimal MinimumGPA { get; init; }
 
     public bool IsGenreDivided { get; init; }
 

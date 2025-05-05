@@ -6,11 +6,11 @@
 }
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông Báo Quá Hạn Học Phí</title>
+    <title>Overdue Tuition Notification</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -48,11 +48,11 @@
             margin-top: 20px;
         }
 
-        .details-table th, .details-table td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
+            .details-table th, .details-table td {
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #ddd;
+            }
 
         .footer {
             text-align: center;
@@ -61,49 +61,49 @@
             color: #777;
         }
 
-        .footer a {
-            color: #d9534f;
-            text-decoration: none;
-        }
+            .footer a {
+                color: #d9534f;
+                text-decoration: none;
+            }
 
-        .footer p {
-            margin: 10px 0;
-        }
+            .footer p {
+                margin: 10px 0;
+            }
     </style>
 </head>
 <body>
-<div class="email-container">
-    <div class="email-header">
-        Thông Báo Quá Hạn Học Phí
+    <div class="email-container">
+        <div class="email-header">
+            Overdue Tuition Notification
+        </div>
+
+        <div class="email-content">
+            <p>Hello @studentName,</p>
+
+            <p>We noticed that your tuition payment for the class <strong>@className</strong> is overdue. Since the payment was not made on time, you have been removed from the class.</p>
+
+            <table class="details-table">
+                <tr>
+                    <th>Class Name:</th>
+                    <td>@className</td>
+                </tr>
+                <tr>
+                    <th>Payment Due Date:</th>
+                    <td>@dueDate</td>
+                </tr>
+                <tr>
+                    <th>Amount:</th>
+                    <td>@amount VND</td>
+                </tr>
+            </table>
+
+            <p>If you wish to continue the course, please complete the payment and contact us to be re-enrolled.</p>
+            <p>If you have already paid or have any questions, please don't hesitate to contact us.</p>
+        </div>
+
+        <div class="footer">
+            <p>Support Contact: <a href="mailto:support@photonpiano.com">support@photonpiano.com</a></p>
+        </div>
     </div>
-
-    <div class="email-content">
-        <p>Xin chào @studentName,</p>
-
-        <p>Chúng tôi nhận thấy rằng học phí của bạn cho lớp <strong>@className</strong> đã quá hạn thanh toán. Vì chưa thanh toán đúng hạn, bạn đã bị xóa khỏi lớp học.</p>
-
-        <table class="details-table">
-            <tr>
-                <th>Tên lớp:</th>
-                <td>@className</td>
-            </tr>
-            <tr>
-                <th>Hạn thanh toán:</th>
-                <td>@dueDate</td>
-            </tr>
-            <tr>
-                <th>Số tiền:</th>
-                <td>@amount VND</td>
-            </tr>
-        </table>
-
-        <p>Nếu bạn muốn tiếp tục khóa học, vui lòng hoàn tất thanh toán và liên hệ với chúng tôi để được hỗ trợ đăng ký lại.</p>
-        <p>Nếu bạn đã thanh toán hoặc có thắc mắc, xin vui lòng liên hệ với chúng tôi.</p>
-    </div>
-
-    <div class="footer">
-        <p>Liên hệ hỗ trợ: <a href="mailto:support@photonpiano.com">support@photonpiano.com</a></p>
-    </div>
-</div>
 </body>
 </html>

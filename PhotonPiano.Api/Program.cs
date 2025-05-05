@@ -6,12 +6,14 @@ using Hangfire;
 using Mapster;
 using Microsoft.AspNetCore.Mvc.Razor;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Instrumentation.Http;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using PhotonPiano.Api.Configurations;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.DataAccess.Extensions;
 using PhotonPiano.PubSub;
-using Prometheus;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,8 +21,6 @@ builder.Services.AddHostedService<DbMigrationJob>();
 var configuration = builder.Configuration;
 
 // if (configuration.GetValue<bool  >("IsAspireHost")) builder.AddRedisClient("redis-cache");
-
-// hello this line write to proved i am the owner of this project and github is not good for beginner
 
 
 // Add services to the container.
@@ -30,29 +30,17 @@ builder.Services.AddApiDependencies(configuration)
 
 
 builder.Services.AddOpenTelemetry()
-    .WithMetrics(builder =>
-    {
-        builder.AddPrometheusExporter();
-
-        builder.AddMeter("Microsoft.AspNetCore.Hosting",
-            "Microsoft.AspNetCore.Server.Kestrel");
-        builder.AddView("http.server.request.duration",
-            new ExplicitBucketHistogramConfiguration
-            {
-                Boundaries = new[]
-                {
-                    0, 0.005, 0.01, 0.025, 0.05,
-                    0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10
-                }
-            });
-    });
-
-// var wkhtmltoxPath = Path.Combine(Directory.GetCurrentDirectory(), "wkhtmltox", "v0.12.6");
-// var context = new CustomAssemblyLoadContext();
-// context.LoadUnmanagedLibrary(Path.Combine(wkhtmltoxPath,
-//      RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "libwkhtmltox.dll" :
-//      RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libwkhtmltox.so" :
-//      "libwkhtmltox.dylib"));
+    .ConfigureResource(resource => resource
+        .AddService(builder.Environment.ApplicationName))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter())
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddConsoleExporter()); 
 
 // Add DinkToPdf services
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
@@ -78,19 +66,6 @@ builder.Services.Configure<RazorViewEngineOptions>(options =>
     options.ViewLocationFormats.Add("/{0}.cshtml");
     options.ViewLocationFormats.Add("/{0}");
 });
-//Not Done Yet
-// builder.Services
-//     .AddOpenTelemetry()
-//     .ConfigureResource(resource => resource.AddService("PhotonPiano.Api"))
-//     .WithTracing(tracerProviderBuilder =>
-//     {
-//         tracerProviderBuilder
-//             .AddAspNetCoreInstrumentation() // Tracking API request
-//             .AddHttpClientInstrumentation() // Tracking HTTP request
-//             .AddSqlClientInstrumentation();  // Tracking database queries
-
-//tracerProviderBuilder.AddOtlpExporter();
-//     });
 
 
 builder.AddSignalRConfig();

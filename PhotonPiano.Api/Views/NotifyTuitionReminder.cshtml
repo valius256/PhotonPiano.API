@@ -7,11 +7,11 @@
 }
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nhắc Nhở Đóng Học Phí</title>
+    <title>Tuition Payment Reminder</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,11 +49,11 @@
             margin-top: 20px;
         }
 
-        .details-table th, .details-table td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
+            .details-table th, .details-table td {
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #ddd;
+            }
 
         .footer {
             text-align: center;
@@ -62,55 +62,56 @@
             color: #777;
         }
 
-        .footer a {
-            color: #FF9800;
-            text-decoration: none;
-        }
+            .footer a {
+                color: #FF9800;
+                text-decoration: none;
+            }
 
-        .footer p {
-            margin: 10px 0;
-        }
+            .footer p {
+                margin: 10px 0;
+            }
     </style>
 </head>
 <body>
-<div class="email-container">
-    <div class="email-header">
-        Nhắc Nhở Đóng Học Phí
+    <div class="email-container">
+        <div class="email-header">
+            Tuition Payment Reminder
+        </div>
+
+        <div class="email-content">
+            <p>Hello @studentName,</p>
+
+            <p>This is a reminder regarding the tuition payment deadline for the class <strong>@className</strong>. Please ensure that your tuition payment is completed on time to maintain your enrollment in the course.</p>
+
+            <table class="details-table">
+                <tr>
+                    <th>Class Name:</th>
+                    <td>@className</td>
+                </tr>
+                <tr>
+                    <th>Class Duration:</th>
+                    <td>@startDate to @endDate</td>
+                </tr>
+                <tr>
+                    <th>Tuition Amount:</th>
+                    <td>@amount VND</td>
+                </tr>
+                <tr>
+                    <th>Payment Deadline:</th>
+                    <td><strong>@endDate</strong></td>
+                </tr>
+            </table>
+
+            <p>If you have already made the payment, please disregard this email. Otherwise, please complete it as soon as possible.</p>
+
+            <p>Thank you for continuing your journey with PhotonPiano!</p>
+        </div>
+
+        <div class="footer">
+            <p>
+                If you have any questions or need assistance, feel free to contact us at <a href="mailto:support@photonpiano.com">support@photonpiano.com</a>.
+            </p>
+        </div>
     </div>
-
-    <div class="email-content">
-        <p>Xin chào @studentName,</p>
-
-        <p>Đây là thông báo nhắc nhở về hạn chót đóng học phí cho lớp học <strong>@className</strong>. Vui lòng hoàn tất việc đóng học phí đúng hạn để đảm bảo quyền lợi học tập của bạn.</p>
-
-        <table class="details-table">
-            <tr>
-                <th>Tên lớp:</th>
-                <td>@className</td>
-            </tr>
-            <tr>
-                <th>Thời gian học:</th>
-                <td>@startDate đến @endDate</td>
-            </tr>
-            <tr>
-                <th>Số tiền học phí:</th>
-                <td>@amount VND</td>
-            </tr>
-            <tr>
-                <th>Hạn chót đóng:</th>
-                <td><strong>@endDate</strong></td>
-            </tr>
-        </table>
-
-        <p>Nếu bạn đã hoàn thành việc đóng học phí, vui lòng bỏ qua email này. Nếu chưa, vui lòng thực hiện càng sớm càng tốt.</p>
-
-        <p>Chân thành cảm ơn bạn đã đồng hành cùng PhotonPiano!</p>
-    </div>
-
-    <div class="footer">
-        <p>Mọi thắc mắc hoặc cần hỗ trợ, bạn có thể liên hệ chúng tôi tại <a
-                href="mailto:support@photonpiano.com">support@photonpiano.com</a>.</p>
-    </div>
-</div>
 </body>
 </html>

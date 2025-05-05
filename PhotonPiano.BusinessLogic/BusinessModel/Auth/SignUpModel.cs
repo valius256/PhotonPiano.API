@@ -1,4 +1,6 @@
-﻿namespace PhotonPiano.BusinessLogic.BusinessModel.Auth;
+﻿using PhotonPiano.DataAccess.Models.Enum;
+
+namespace PhotonPiano.BusinessLogic.BusinessModel.Auth;
 
 public record SignUpModel
 {
@@ -8,6 +10,8 @@ public record SignUpModel
     public required string FullName { get; init; }
 
     public required string Phone { get; init; }
+
+    public required Gender Gender { get; init; }
 
     public void Deconstruct(out string email, out string password)
     {

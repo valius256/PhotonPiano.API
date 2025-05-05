@@ -1,6 +1,7 @@
-using FluentEmail.Core;
+﻿using FluentEmail.Core;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -11,6 +12,7 @@ using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 using System.Linq.Expressions;
 
 namespace PhotonPiano.BusinessLogic.Services;
@@ -18,13 +20,14 @@ namespace PhotonPiano.BusinessLogic.Services;
 public class AccountService : IAccountService
 {
     private readonly IUnitOfWork _unitOfWork;
-
+    private readonly IConfiguration _configuration;
     private readonly IServiceFactory _serviceFactory;
 
-    public AccountService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
+    public AccountService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
+        _configuration = configuration;
     }
 
     public async Task<AccountModel> CreateAccount(string firebaseUId, string email)
@@ -234,19 +237,45 @@ public class AccountService : IAccountService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task<AccountModel> CreateNewStaff(SignUpModel signInModel, string accountFirebaseId)
+    public async Task<AccountModel> CreateNewStaff(CreateSystemAccountModel createSystemAccountModel)
     {
-        var firebaseId = await _serviceFactory.AuthService.SignUpOnFirebase(signInModel.Email, signInModel.Password);
+        return await CreateSystemAccount(createSystemAccountModel, Role.Staff);
 
-        var staffAccount = signInModel.Adapt<Account>();
-        staffAccount.Level = null; //detach
-        staffAccount.Role = Role.Staff;
-        staffAccount.StudentStatus = null;
-        staffAccount.AccountFirebaseId = firebaseId;
-        var createAccount = await _unitOfWork.AccountRepository.AddAsync(staffAccount);
+    }
+
+    public async Task<AccountModel> CreateNewTeacher(CreateSystemAccountModel createSystemAccountModel)
+    {
+        return await CreateSystemAccount(createSystemAccountModel, Role.Instructor);
+    }
+
+    private async Task<AccountModel> CreateSystemAccount(CreateSystemAccountModel signUpModel, Role role)
+    {
+        var password = AuthUtils.GeneratePassword(16);
+        //var firebaseId = await _serviceFactory.AuthService.SignUpOnFirebase(signUpModel.Email, password);
+
+        var account = signUpModel.Adapt<Account>();
+        account.Level = null; //detach
+        account.Role = role;
+        account.StudentStatus = null;
+        account.AccountFirebaseId = Guid.NewGuid().ToString();
+        account.Password = AuthUtils.HashPassword(password);
+        var createAccount = await _unitOfWork.AccountRepository.AddAsync(account);
         await _unitOfWork.SaveChangesAsync();
+
+        //Send password mail
+        var resetUrl = _configuration["PasswordResetBaseUrl"];
+        var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "fullName", $"{account.ResetPasswordToken}" },
+            { "email", $"{account.Email}" },
+            { "tempPassword", password },
+            { "url", $"{resetUrl}sign-in" },
+        };
+        await _serviceFactory.EmailService.SendAsync("AccountCreated", [account.Email], [], emailParam);
         return createAccount.Adapt<AccountModel>();
     }
+
+    
 
     public async Task<AccountModel> UpdateContinuingLearningStatus(string firebaseId, bool wantToContinue)
     {

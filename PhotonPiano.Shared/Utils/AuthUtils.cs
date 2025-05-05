@@ -33,4 +33,22 @@ public static class AuthUtils
                       .Replace("/", "_")
                       .Replace("=", ""); // URL-safe
     }
+
+    public static string GeneratePassword(int length)
+    {
+        if (length <= 0)
+        {
+            return string.Empty;
+        }
+        var chars = "abcdefgijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321";
+        var charsLength = chars.Length;
+        var random = new Random();
+        var password = string.Empty;
+        for (var i = 0; i < length; i++)
+        {
+            var r = random.Next(charsLength - 1);
+            password += chars[r];
+        }
+        return password;
+    }
 }

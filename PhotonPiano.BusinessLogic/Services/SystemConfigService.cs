@@ -31,14 +31,17 @@ public class SystemConfigService : ISystemConfigService
     ];
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IServiceFactory _serviceFactory;
 
-    public SystemConfigService(IUnitOfWork unitOfWork)
+    public SystemConfigService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
+        _serviceFactory = serviceFactory;
     }
 
     public async Task<List<SystemConfigModel>> GetConfigs(params List<string> names)
     {
+        
         return await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
             s => names.Count == 0 || names.Contains(s.ConfigName),
             false);
@@ -46,9 +49,19 @@ public class SystemConfigService : ISystemConfigService
 
     public async Task<SystemConfigModel> GetConfig(string name)
     {
+        var cacheKey = $"SystemConfig-{name}";
+
+        var cachedConfig = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigModel>(cacheKey);
+
+        if (cachedConfig is not null)
+            return cachedConfig;
+        
         var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == name);
         if (config is null) throw new NotFoundException("Config not found");
-        return config.Adapt<SystemConfigModel>();
+        var result = config.Adapt<SystemConfigModel>();
+        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(1));
+
+        return result;
     }
 
     public async Task SetConfigValue(UpdateSystemConfigModel updateSystemConfigModel)

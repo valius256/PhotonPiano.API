@@ -253,6 +253,8 @@ public class PianoSurveyService : IPianoSurveyService
                     ? id.ToString()
                     : entranceSurveyConfig.ConfigValue;
             }
+            
+            await _unitOfWork.SaveChangesAsync();
         }
 
         var surveyConfigs = await _serviceFactory.SystemConfigService.GetAllSurveyConfigs();
@@ -268,10 +270,11 @@ public class PianoSurveyService : IPianoSurveyService
             }
         }
 
+
         var maxQuestionsConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.MaxQuestionsPerSurvey);
         var minQuestionsConfig = surveyConfigs.FirstOrDefault(c => c.ConfigName == ConfigNames.MinQuestionsPerSurvey);
 
-        if (minQuestionsConfig is not null && maxQuestionsConfig is not null)
+        if (minQuestionsConfig is not null && maxQuestionsConfig is not null && updateModel.Questions.Count > 0)
         {
             int minQuestions = Convert.ToInt32(minQuestionsConfig.ConfigValue);
 
@@ -397,6 +400,8 @@ public class PianoSurveyService : IPianoSurveyService
                 }
             }
         });
+
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig");
     }
 
     public async Task DeletePianoSurvey(Guid id, AccountModel currentAccount)

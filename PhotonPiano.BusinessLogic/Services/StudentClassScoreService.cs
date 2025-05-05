@@ -631,7 +631,6 @@ public class StudentClassScoreService : IStudentClassScoreService
         {
             throw new ArgumentException("Invalid class ID", nameof(classId));
         }
-
         try
         {
             var classInfo = await _unitOfWork.ClassRepository.FindSingleAsync(c => c.Id == classId);
@@ -724,13 +723,13 @@ public class StudentClassScoreService : IStudentClassScoreService
     private async Task SendScoreRollbackNotifications(List<StudentClass> studentClasses, Class classInfo)
     {
         const string RollbackNotificationTemplate = 
-            "The published scores for class {0} have been rolled back. Your score status has been reset";
+            "The music center has identified some issues with the scoring process for class {0}. As a result, the published scores have been temporarily rolled back while we resolve these concerns. We apologize for any inconvenience and will notify you once the corrected scores are available.";
 
         var notifications = new List<(string recipientId, string title, string content)>();
 
         foreach (var studentClass in studentClasses)
         {
-            var title = "Class Status Update";
+            var title = "Important Notice: Class Score Update";
             var content = string.Format(RollbackNotificationTemplate, classInfo.Name);
             notifications.Add((studentClass.StudentFirebaseId, title, content));
         }
@@ -740,8 +739,8 @@ public class StudentClassScoreService : IStudentClassScoreService
         {
             notifications.Add((
                 classInfo.InstructorId,
-                "Score Publishing Rollback",
-                $"The published scores for class {classInfo.Name} have been rolled back."
+                "Score Publishing Rollback Notice",
+                $"The published scores for class {classInfo.Name} have been rolled back due to scoring concerns."
             ));
         }
 

@@ -12,4 +12,5 @@ public interface IStudentClassScoreService
     Task<ClassScoreViewModel> GetClassScoresWithCriteria(Guid classId);
 
     Task<StudentDetailedScoreViewModel> GetStudentDetailedScores(Guid studentClassId);
+    Task RollbackPublishScores(Guid classId, AccountModel account);
 }

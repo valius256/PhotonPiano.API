@@ -169,134 +169,98 @@ public class SlotService : ISlotService
             await _unitOfWork.SlotRepository.FindAsync(s => s.Date < currentDate && s.Status != SlotStatus.Finished
             );
 
-        foreach (var slot in pastSlots)
-        {
-            slot.Status = SlotStatus.Finished;
-            affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
-        }
+       
 
         var todaySlots = await _unitOfWork.SlotRepository.FindAsync(s =>
             s.Date == currentDate && s.Status != SlotStatus.Finished && s.Status != SlotStatus.Cancelled
         );
 
-        if (!todaySlots.Any())
+        if (todaySlots.Count > 0)
         {
-            if (pastSlots.Any())
+            foreach (var slot in todaySlots)
             {
-                await _unitOfWork.SlotRepository.UpdateRangeAsync(pastSlots);
-                await _unitOfWork.SaveChangesAsync();
+                var shiftStart = GetShiftStartTime(slot.Shift);
+                var shiftEnd = GetShiftEndTime(slot.Shift);
+
+                if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
+                {
+                    slot.Status = SlotStatus.Finished;
+                }
+                else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
+                {
+                    slot.Status = SlotStatus.Ongoing;
+                }
             }
         }
 
-        var classIds = todaySlots.Select(s => s.ClassId).Distinct().ToList();
-
-        var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(c => classIds.Contains(c.Id));
-
-        var allRelatedSlots = await _unitOfWork.SlotRepository.FindAsync(s => classIds.Contains(s.ClassId));
-
-        var firstLastSlotMap = allRelatedSlots
-            .GroupBy(s => s.ClassId)
-            .ToDictionary(
-                g => g.Key,
-                g => new
-                {
-                    FirstSlot = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).First(),
-                    LastSlot = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).First()
-                });
-
-        var classStatusMap = affectedClasses.ToDictionary(c => c.Id, c => c);
+        var classIds = pastSlots.Concat(todaySlots).Select(s => s.ClassId).Distinct().ToList();
         var classesToUpdate = new List<Class>();
-
-        foreach (var slot in todaySlots)
+        if (classIds.Count > 0)
         {
-            var shiftStart = GetShiftStartTime(slot.Shift);
-            var shiftEnd = GetShiftEndTime(slot.Shift);
+            var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(c => classIds.Contains(c.Id));
 
-            if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
+            var allRelatedSlots = await _unitOfWork.SlotRepository.FindAsync(s => classIds.Contains(s.ClassId));
+
+            var firstLastSlotMap = allRelatedSlots
+                .GroupBy(s => s.ClassId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        FirstSlot = g.OrderBy(s => s.Date).ThenBy(s => s.Shift).First(),
+                        LastSlot = g.OrderByDescending(s => s.Date).ThenByDescending(s => s.Shift).First()
+                    });
+
+            var classStatusMap = affectedClasses.ToDictionary(c => c.Id, c => c);
+            var firstSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].FirstSlot).ToList();
+
+            foreach (var firstSlot in firstSlots)
+            {
+                var shiftStart = GetShiftStartTime(firstSlot.Shift);
+                if (currentTime >= shiftStart && firstSlot.Status != SlotStatus.Ongoing)
+                {
+                    if (classStatusMap.TryGetValue(firstSlot.ClassId, out var cls) &&
+                        cls.Status != ClassStatus.Ongoing)
+                    {
+                        cls.Status = ClassStatus.Ongoing;
+                        classesToUpdate.Add(cls);
+                    }
+                }
+            }
+
+            var laSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].LastSlot).ToList();
+
+            foreach (var lastSlot in laSlots)
+            {
+                var shiftEnd = GetShiftEndTime(lastSlot.Shift);
+                if (currentTime >= shiftEnd && lastSlot.Status != SlotStatus.Finished)
+                {
+                    if (classStatusMap.TryGetValue(lastSlot.ClassId, out var cls) &&
+                        cls.Status != ClassStatus.Finished)
+                    {
+                        cls.Status = ClassStatus.Finished;
+                        classesToUpdate.Add(cls);
+                    }
+                }
+            }
+
+        }
+
+        if (pastSlots.Count > 0)
+        {
+            foreach (var slot in pastSlots)
             {
                 slot.Status = SlotStatus.Finished;
-            }
-            else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
-            {
-                slot.Status = SlotStatus.Ongoing;
+                affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
             }
         }
-
-        var firstSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].FirstSlot).ToList();
-
-        foreach (var firstSlot in firstSlots)
+        
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var shiftStart = GetShiftStartTime(firstSlot.Shift);
-            if (currentTime >= shiftStart && firstSlot.Status != SlotStatus.Ongoing)
-            {
-                if (classStatusMap.TryGetValue(firstSlot.ClassId, out var cls) &&
-                    cls.Status != ClassStatus.Ongoing)
-                {
-                    cls.Status = ClassStatus.Ongoing;
-                    classesToUpdate.Add(cls);
-                }
-            }
-        }
-
-        var laSlots = firstLastSlotMap.Keys.Select(c => firstLastSlotMap[c].LastSlot).ToList();
-
-        foreach (var lastSlot in laSlots)
-        {
-            var shiftEnd = GetShiftEndTime(lastSlot.Shift);
-            if (currentTime >= shiftEnd && lastSlot.Status != SlotStatus.Finished)
-            {
-                if (classStatusMap.TryGetValue(lastSlot.ClassId, out var cls) &&
-                    cls.Status != ClassStatus.Finished)
-                {
-                    cls.Status = ClassStatus.Finished;
-                    classesToUpdate.Add(cls);
-                }
-            }    
-        }
-
-        // if (pastSlots.Count > 0)
-        // {
-        //     foreach (var slot in pastSlots)
-        //     {
-        //         var shiftStart = GetShiftStartTime(slot.Shift);
-        //         var shiftEnd = GetShiftEndTime(slot.Shift);
-        //         var classId = slot.ClassId;
-        //         var slotId = slot.Id;
-        //         var startOfWeek = GetStartOfWeek(slot.Date);
-        //
-        //         if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
-        //         {
-        //             affectedClassesAndWeeks.Add((classId, startOfWeek));
-        //
-        //             if (firstLastSlotMap[classId].LastSlot.Id == slotId &&
-        //                 classStatusMap.TryGetValue(classId, out var cls) &&
-        //                 cls.Status != ClassStatus.Finished)
-        //             {
-        //                 cls.Status = ClassStatus.Finished;
-        //                 classesToUpdate.Add(cls);
-        //             }
-        //         }
-        //         else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
-        //         {
-        //             affectedClassesAndWeeks.Add((classId, startOfWeek));
-        //
-        //             if (firstLastSlotMap[classId].FirstSlot.Id == slotId &&
-        //                 classStatusMap.TryGetValue(classId, out var cls) &&
-        //                 cls.Status != ClassStatus.Ongoing)
-        //             {
-        //                 cls.Status = ClassStatus.Ongoing;
-        //                 classesToUpdate.Add(cls);
-        //
-        //                 // var classDetail = await _serviceFactory.ClassService.GetClassDetailById(classId);
-        //                 // await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classDetail);
-        //             }
-        //         }    
-        //     }
-        // }
-        await _unitOfWork.ClassRepository.UpdateRangeAsync(classesToUpdate);
-        await _unitOfWork.SlotRepository.UpdateRangeAsync(pastSlots.Concat(todaySlots).ToList());
-        await _unitOfWork.SaveChangesAsync();
-
+            await _unitOfWork.ClassRepository.UpdateRangeAsync(classesToUpdate);
+            await _unitOfWork.SlotRepository.UpdateRangeAsync([.. pastSlots, .. todaySlots]);
+        });
+        
         foreach (var (classId, startOfWeek) in affectedClassesAndWeeks)
             await InvalidateCacheForClassAsync(classId, startOfWeek);
     }

@@ -111,5 +111,4 @@ public class StudentClassController : BaseController
         await _serviceFactory.StudentClassScoreService.RollbackPublishScores(classId, CurrentAccount!);
         return NoContent();
     }
-
 }

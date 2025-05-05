@@ -162,31 +162,41 @@ public class EntranceTestService : IEntranceTestService
         }
 
         var entranceTestId = Guid.NewGuid();
-        var entranceTestStudents = new List<EntranceTestStudent>();
-
+        // var entranceTestStudents = new List<EntranceTestStudent>();
 
         if (createModel.StudentIds.Count > 0)
         {
             var students =
-                await _unitOfWork.AccountRepository.FindAsync(a =>
-                    createModel.StudentIds.Contains(a.AccountFirebaseId)
-                    && a.Role == Role.Student
-                    && a.StudentStatus == StudentStatus.WaitingForEntranceTestArrangement, hasTrackings: false);
+                await _unitOfWork.AccountRepository.GetStudentsWithEntranceTestStudents(
+                    StudentStatus.WaitingForEntranceTestArrangement,
+                    createModel.StudentIds);
 
             if (students.Count != createModel.StudentIds.Count)
             {
                 throw new BadRequestException("Some students are invalid.");
             }
 
-            entranceTestStudents = createModel.StudentIds.Select(studentId =>
-                new EntranceTestStudent
+            foreach (var student in students)
+            {
+                var entranceTestStudent = student.EntranceTestStudents.FirstOrDefault(ets =>
+                    ets.StudentFirebaseId == currentAccount.AccountFirebaseId
+                    && ets.EntranceTestId == null);
+
+                if (entranceTestStudent is not null)
                 {
-                    Id = Guid.NewGuid(),
-                    StudentFirebaseId = studentId,
-                    EntranceTestId = entranceTestId,
-                    CreatedAt = DateTime.UtcNow.AddHours(7),
-                    CreatedById = currentAccount.AccountFirebaseId,
-                }).ToList();
+                    entranceTestStudent.EntranceTestId = entranceTestId;
+                }
+            }
+
+            // entranceTestStudents = createModel.StudentIds.Select(studentId =>
+            //     new EntranceTestStudent
+            //     {
+            //         Id = Guid.NewGuid(),
+            //         StudentFirebaseId = studentId,
+            //         EntranceTestId = entranceTestId,
+            //         CreatedAt = DateTime.UtcNow.AddHours(7),
+            //         CreatedById = currentAccount.AccountFirebaseId,
+            //     }).ToList();
         }
 
         var entranceTest = createModel.Adapt<EntranceTest>();
@@ -243,9 +253,9 @@ public class EntranceTestService : IEntranceTestService
         {
             await _unitOfWork.EntranceTestRepository.AddAsync(entranceTest);
 
-            if (createModel.StudentIds.Count > 0 && entranceTestStudents.Count > 0)
+            if (createModel.StudentIds.Count > 0)
             {
-                await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(entranceTestStudents);
+                // await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(entranceTestStudents);
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                     a => createModel.StudentIds.Contains(a.AccountFirebaseId),
@@ -282,6 +292,11 @@ public class EntranceTestService : IEntranceTestService
 
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.WaitingForEntranceTestArrangement));
+
+            await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(
+                ets => ets.EntranceTestId == id && studentIds.Contains(ets.StudentFirebaseId),
+                setter => setter.SetProperty(x => x.EntranceTestId, (Guid?)null));
+
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
                 $"You have been removed from test {entranceTest.Name}", "", requiresSavingChanges: false);
         });
@@ -446,7 +461,7 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.AccountRepository.GetStudentsWithEntranceTestStudents(
                 StudentStatus.WaitingForEntranceTestArrangement,
                 model.StudentIds);
-        
+
         if (students.Count != model.StudentIds.Count)
         {
             throw new BadRequestException("Some of the students are not the same.");
@@ -537,7 +552,7 @@ public class EntranceTestService : IEntranceTestService
         {
             await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(ets => ets.EntranceTestId == testId
                     && studentIds.Contains(ets.StudentFirebaseId),
-                setter => setter.SetProperty(x => x.RecordStatus, RecordStatus.IsDeleted)
+                setter => setter.SetProperty(x => x.EntranceTestId, (Guid?)null)
                     .SetProperty(x => x.DeletedAt, DateTime.UtcNow.AddHours(7))
                     .SetProperty(x => x.DeletedById, currentAccount.AccountFirebaseId));
 
@@ -960,28 +975,28 @@ public class EntranceTestService : IEntranceTestService
             foreach (var test in entranceTests)
             {
                 test.Name = GetEntranceTestName(test);
-                //
-                // var studentIdsToPushNotification =
-                //     test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
-                //
-                // notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(
-                //     studentIdsToPushNotification,
-                //     $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
+
+                var studentIdsToPushNotification =
+                    test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+
+                notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(
+                    studentIdsToPushNotification,
+                    $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
             }
         }
 
-        // if (tests.Count > 0)
-        // {
-        //     foreach (var test in tests)
-        //     {
-        //         var studentIdsToPushNotification =
-        //             test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
-        //
-        //         notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(
-        //             studentIdsToPushNotification,
-        //             $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
-        //     }
-        // }
+        if (tests.Count > 0)
+        {
+            foreach (var test in tests)
+            {
+                var studentIdsToPushNotification =
+                    test.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList();
+
+                notiTasks.Add(_serviceFactory.NotificationService.SendNotificationToManyAsync(
+                    studentIdsToPushNotification,
+                    $"You have been arranged into test {test.Name}", "", requiresSavingChanges: false));
+            }
+        }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -990,7 +1005,7 @@ public class EntranceTestService : IEntranceTestService
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                 expression: a => arrangedStudentIds.Contains(a.AccountFirebaseId),
                 setter => setter.SetProperty(a => a.StudentStatus, StudentStatus.AttemptingEntranceTest));
-            // await Task.WhenAll(notiTasks);
+            await Task.WhenAll(notiTasks);
         });
     }
 

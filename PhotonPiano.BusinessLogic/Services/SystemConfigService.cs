@@ -41,7 +41,6 @@ public class SystemConfigService : ISystemConfigService
 
     public async Task<List<SystemConfigModel>> GetConfigs(params List<string> names)
     {
-        
         return await _unitOfWork.SystemConfigRepository.FindProjectedAsync<SystemConfigModel>(
             s => names.Count == 0 || names.Contains(s.ConfigName),
             false);
@@ -55,7 +54,7 @@ public class SystemConfigService : ISystemConfigService
 
         if (cachedConfig is not null)
             return cachedConfig;
-        
+
         var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == name);
         if (config is null) throw new NotFoundException("Config not found");
         var result = config.Adapt<SystemConfigModel>();
@@ -163,6 +162,7 @@ public class SystemConfigService : ISystemConfigService
                 await UpsertSystemConfig(ConfigNames.MinQuestionsPerSurvey, SystemConfigType.UnsignedInt,
                     minQuestionsPerSurvey.Value.ToString());
         });
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig");
     }
 
     public async Task UpdateEntranceTestSystemConfig(UpdateEntranceTestSystemConfigModel updateModel)
@@ -193,6 +193,7 @@ public class SystemConfigService : ISystemConfigService
                 await UpsertSystemConfig(ConfigNames.PracticePercentage, SystemConfigType.UnsignedInt,
                     updateModel.PracticePercentage.Value.ToString());
         });
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig");
     }
 
     public async Task UpdateTuitionSystemConfig(UpdateTuitionSystemConfigModel updateModel)
@@ -211,6 +212,7 @@ public class SystemConfigService : ISystemConfigService
                 await UpsertSystemConfig(ConfigNames.TaxRates, SystemConfigType.Text,
                     updateModel.TaxRates.Value.ToString());
         });
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig");
     }
 
     public async Task UpdateRefundSystemConfig(UpdateRefundSystemConfigModel updateModel)
@@ -224,6 +226,8 @@ public class SystemConfigService : ISystemConfigService
                 await UpsertSystemConfig(ConfigNames.ReasonForRefund, SystemConfigType.Text, jsonReasons);
             }
         });
+
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig");
     }
 
     public async Task UpdateSchedulerSystemConfig(UpdateSchedulerSystemConfigModel updateModel)
@@ -245,6 +249,7 @@ public class SystemConfigService : ISystemConfigService
                 await UpsertSystemConfig(ConfigNames.MaxAbsenceRate, SystemConfigType.UnsignedInt,
                     updateModel.MaxAbsenceRate.Value.ToString());
         });
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig");
     }
 
 

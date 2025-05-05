@@ -1,10 +1,12 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
+using PhotonPiano.Api.Requests.Account;
 using PhotonPiano.Api.Requests.Auth;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Auth;
 using PhotonPiano.BusinessLogic.Interfaces;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.Api.Controllers;
 
@@ -39,7 +41,9 @@ public class AuthController : BaseController
     [EndpointDescription("Get current account info")]
     public ActionResult<AccountModel?> GetCurrentAccountInfo()
     {
-        return CurrentAccount is null ? Unauthorized("Unauthorized") : CurrentAccount;
+        return CurrentAccount is null || CurrentAccount.Status == AccountStatus.Inactive
+            ? Unauthorized("Unauthorized")
+            : CurrentAccount;
     }
 
     [HttpPost("token-refresh")]
@@ -71,6 +75,15 @@ public class AuthController : BaseController
     public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         await _serviceFactory.AuthService.ChangePassword(request.Adapt<ChangePasswordModel>());
+        return NoContent();
+    }
+
+    [HttpPost("toggle-account-status")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [EndpointDescription("Toggle account status")]
+    public async Task<ActionResult> ToggleAccountStatus([FromBody] ToggleAccountStatusRequest request)
+    {
+        await _serviceFactory.AuthService.ToggleAccountStatus(request.FirebaseUid);
         return NoContent();
     }
 }

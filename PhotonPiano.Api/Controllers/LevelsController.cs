@@ -23,7 +23,7 @@ namespace PhotonPiano.Api.Controllers
         [EndpointDescription("Get all levels")]
         public async Task<ActionResult<List<LevelModel>>> GetAllLevels()
         {
-            return await _serviceFactory.LevelService.GetAllLevelsAsync();
+            return await _serviceFactory.LevelService.GetCachedAllLevelsAsync();
         }
 
         [HttpGet("{id}")]

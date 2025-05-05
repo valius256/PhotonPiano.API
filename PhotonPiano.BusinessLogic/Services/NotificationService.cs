@@ -97,9 +97,6 @@ public class NotificationService : INotificationService
             Thumbnail = thumbnail
         };
 
-        await _unitOfWork.NotificationRepository.AddAsync(notification);
-        await _unitOfWork.SaveChangesAsync();
-
         var accountNotifications = userFirebaseIds.Select(id => new AccountNotification
         {
             AccountFirebaseId = id,
@@ -107,8 +104,9 @@ public class NotificationService : INotificationService
             IsViewed = false
         }).ToList();
 
-
+        await _unitOfWork.NotificationRepository.AddAsync(notification);
         await _unitOfWork.AccountNotificationRepository.AddRangeAsync(accountNotifications);
+        
         if (requiresSavingChanges)
         {
             await _unitOfWork.SaveChangesAsync();

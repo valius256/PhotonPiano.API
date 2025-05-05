@@ -6,9 +6,9 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 public interface IAuthService
 {
     Task<AuthModel> SignIn(string email, string password);
-    
+
     Task<AuthModel> SignUp(SignUpModel model);
-    
+
     Task<NewIdTokenModel> RefreshToken(string refreshToken);
 
     Task SendPasswordResetEmail(string email);
@@ -16,4 +16,6 @@ public interface IAuthService
     Task<string> SignUpOnFirebase(string email, string password);
     Task UpdateFirebaseEmail(string idToken, string newEmail);
     Task ChangePassword(ChangePasswordModel changePasswordModel);
+
+    Task ToggleAccountStatus(string firebaseUid);
 }

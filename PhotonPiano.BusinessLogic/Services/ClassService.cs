@@ -345,7 +345,7 @@ public class ClassService : IClassService
             {
                 foreach (var timeSlot in slots.FinalFrame)
                 {
-                    scheduleDescription += $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.Item1]} Ca {(int)timeSlot.Item2 + 1} ({Constants.Shifts[(int)timeSlot.Item2]}); ";
+                    scheduleDescription += $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.Item1]} Shift {(int)timeSlot.Item2 + 1} ({Constants.Shifts[(int)timeSlot.Item2]}); ";
                 }
             }               
 
@@ -403,7 +403,7 @@ public class ClassService : IClassService
                 classInfo.StartTime = classInfo.Slots.Count > 0 ? classInfo.Slots.First().Date : DateOnly.MaxValue;
 
                 var classesThatMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == classInfo.StartTime.Month
-                    && c.StartTime.Year == classInfo.StartTime.Year, false, true);
+                    && c.StartTime.Year == classInfo.StartTime.Year && c.LevelId == level.Id, false, true);
 
                 if (monthDict.ContainsKey(classInfo.StartTime.Month))
                 {
@@ -414,7 +414,7 @@ public class ClassService : IClassService
                     monthDict[classInfo.StartTime.Month] = 1;  // Initialize if key doesn't exist
                 }
 
-                classInfo.Name = $"{level.Name.Split('(')[0]} {classesThatMonth + monthDict[classInfo.StartTime.Month] + 1} {classInfo.StartTime.Month}/{classInfo.StartTime.Year}";
+                classInfo.Name = $"{level.Name.Split('(')[0]}_{classesThatMonth + monthDict[classInfo.StartTime.Month] + 1}_{classInfo.StartTime.Month}/{classInfo.StartTime.Year}";
             }
 
             await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>
@@ -526,7 +526,7 @@ public class ClassService : IClassService
         var classesThisMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.CreatedAt.Month == now.Month
                 && c.CreatedAt.Year == now.Year && c.LevelId == model.LevelId, false, true);
 
-        mappedClass.Name = $"{level.Name.Split('(')[0]} {classesThisMonth + 1} {now.Month}/{now.Year}";
+        mappedClass.Name = $"{level.Name.Split('(')[0]}_{classesThisMonth + 1}_{now.Month}/{now.Year}";
 
         var addedClass = await _unitOfWork.ClassRepository.AddAsync(mappedClass);
         await _unitOfWork.SaveChangesAsync();
@@ -868,7 +868,7 @@ public class ClassService : IClassService
         string scheduleDescription = "";
         foreach (var timeSlot in finalFrames)
         {
-            scheduleDescription += $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.Item1]} Ca {(int)timeSlot.Item2 + 1} ({Constants.Shifts[(int)timeSlot.Item2]}); ";
+            scheduleDescription += $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.Item1]} Shift {(int)timeSlot.Item2 + 1} ({Constants.Shifts[(int)timeSlot.Item2]}); ";
         }
         var classStartDate = classDetail.Slots.Count > 0 ? classDetail.Slots.First().Date : DateOnly.MaxValue;
         //Save change

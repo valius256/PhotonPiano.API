@@ -562,11 +562,12 @@ namespace PhotonPiano.BusinessLogic.Services
 
         public async Task<bool> ImportScores(Guid classId, Stream excelFileStream, AccountModel account)
         {
-            
             var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
 
-            if (classDetails.IsPublic) throw new BadRequestException("The class is not open for scores");
-
+            if (classDetails.IsPublic == false)
+            {
+                throw new BadRequestException("The class is not open for scores");
+            }
             if (classDetails.IsScorePublished)
             {
                 throw new BadRequestException("The scores have been published");
@@ -574,7 +575,7 @@ namespace PhotonPiano.BusinessLogic.Services
             
             var classCriteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
 
-            if (!classCriteria.Any())
+            if (classCriteria.Count == 0)
             {
                 throw new BadRequestException("Assessment criteria not found for this class");
             }

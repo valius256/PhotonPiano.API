@@ -224,7 +224,7 @@ public class SlotService : ISlotService
                         cls.Status = ClassStatus.Finished;
                         classesToUpdate.Add(cls);
                     }
-            }
+            } 
         }
 
 

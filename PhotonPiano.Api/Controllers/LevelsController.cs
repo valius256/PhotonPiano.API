@@ -57,9 +57,9 @@ namespace PhotonPiano.Api.Controllers
         [HttpDelete("{id}")]
         [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
         [EndpointDescription("Delete level")]
-        public async Task<ActionResult> DeleteLevel([FromRoute] Guid id)
+        public async Task<ActionResult> DeleteLevel([FromRoute] Guid id, [FromQuery] Guid fallBackLevelId)
         {
-            await _serviceFactory.LevelService.DeleteLevelAsync(id);
+            await _serviceFactory.LevelService.DeleteLevelAsync(id, fallBackLevelId);
             
             return NoContent();
         }
@@ -72,6 +72,15 @@ namespace PhotonPiano.Api.Controllers
             await _serviceFactory.LevelService.UpdateLevelMinimumGpaAsync(id, 
                request.Adapt<UpdateLevelMinimumGpaModel>());
             
+            return NoContent();
+        }
+
+        [HttpPut("orders")]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+        [EndpointDescription("Update level order")]
+        public async Task<ActionResult> UpdateLevelOrder([FromBody] UpdateLevelOrderRequest request)
+        {
+            await _serviceFactory.LevelService.ChangeLevelOrder(request.Adapt<UpdateLevelOrderModel>());
             return NoContent();
         }
     }

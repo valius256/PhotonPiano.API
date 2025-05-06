@@ -218,6 +218,9 @@ public class StudentClassScoreService : IStudentClassScoreService
         var studentClassUpdates = new List<StudentClass>();
         var studentUpdates = new List<Account>();
         var passedStudents = new List<StudentClass>();
+        var studentAttendanceResults = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
+        
+        
 
         var studentAttendanceResults = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
         

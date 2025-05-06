@@ -246,7 +246,7 @@ public class EntranceTestService : IEntranceTestService
         }
 
         entranceTest.RoomName = roomDetailModel.Name;
-        entranceTest.InstructorName = instructor.UserName;
+        entranceTest.InstructorName = instructor.FullName ?? instructor.Email;
         entranceTest.RoomCapacity = roomDetailModel.Capacity;
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>

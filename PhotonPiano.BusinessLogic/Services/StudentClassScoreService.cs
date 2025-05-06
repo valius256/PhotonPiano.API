@@ -92,8 +92,7 @@ public class StudentClassScoreService : IStudentClassScoreService
 
 
             await _unitOfWork.SlotStudentRepository.ExecuteUpdateAsync(
-                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet ||
-                     x.AttendanceStatus == null,
+                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet,
                 calls => calls.SetProperty(x => x.AttendanceStatus, AttendanceStatus.Attended)
             );
 
@@ -219,7 +218,9 @@ public class StudentClassScoreService : IStudentClassScoreService
         var studentClassUpdates = new List<StudentClass>();
         var studentUpdates = new List<Account>();
         var passedStudents = new List<StudentClass>();
-
+        var studentAttendanceResults = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
+        
+        
         decimal minimumGpa = classInfo.Level?.MinimumGPA ?? DefaultPassingGrade;
         foreach (var studentClass in studentClasses)
         {
@@ -231,17 +232,20 @@ public class StudentClassScoreService : IStudentClassScoreService
             //         ? attendanceStatus
             //         : false;
 
-            // Update student class data
-            var isPassed = studentClass!.GPA!.Value >= minimumGpa;
-            studentClass.IsPassed = isPassed;
-            studentClass.UpdateById = account.AccountFirebaseId;
-            studentClass.UpdatedAt = updateTime;
-            studentClassUpdates.Add(studentClass);
+            var studentAttendanceResult =
+                studentAttendanceResults.FirstOrDefault(x => x.StudentId == student.AccountFirebaseId);
 
-            if (isPassed)
+            var isPassed = false;
+
+            if (studentAttendanceResult!.IsPassed && studentClass!.GPA!.Value >= minimumGpa)
             {
-                passedStudents.Add(studentClass);
+                studentClass.IsPassed = true;
+                studentClass.UpdateById = account.AccountFirebaseId;
+                studentClass.UpdatedAt = updateTime;
+                studentClassUpdates.Add(studentClass);
             }
+
+            passedStudents.Add(studentClass);
 
             // Update student level if passed
             if (isPassed && classInfo.Level?.NextLevelId.HasValue == true)
@@ -256,9 +260,10 @@ public class StudentClassScoreService : IStudentClassScoreService
                 student.StudentStatus = StudentStatus.WaitingForClass;
                 student.UpdatedAt = updateTime;
             }
-
             studentUpdates.Add(student);
         }
+        
+      
 
         return (studentClassUpdates, studentUpdates, passedStudents);
     }
@@ -343,9 +348,8 @@ public class StudentClassScoreService : IStudentClassScoreService
 
             // Get all scores in one query
             var studentClassIds = studentClasses.Select(sc => sc.Id).ToList();
-            var allScores =
-                await _unitOfWork.StudentClassScoreRepository.FindAsync(scs =>
-                    studentClassIds.Contains(scs.StudentClassId));
+            var allScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
+                scs => studentClassIds.Contains(scs.StudentClassId));
 
             // Get all criteria in one query
             var criteriaIds = allScores.Select(scs => scs.CriteriaId).Distinct().ToList();

@@ -10,7 +10,9 @@ public interface ILevelService
     Task<Guid> GetLevelIdFromScores(decimal theoreticalScore, decimal practicalScore);
     Task<LevelModel> CreateLevelAsync(CreateLevelModel createModel, AccountModel currentAccount);
     Task UpdateLevelAsync(Guid id, UpdateLevelModel updateModel, AccountModel currentAccount);
-    Task DeleteLevelAsync(Guid id);
+    Task DeleteLevelAsync(Guid id, Guid fallBackLevelId);
     Task<LevelDetailsModel> GetLevelDetailsAsync(Guid levelId);
     Task UpdateLevelMinimumGpaAsync(Guid id, UpdateLevelMinimumGpaModel model);
+
+    Task ChangeLevelOrder(UpdateLevelOrderModel updateLevelOrderModel);
 }

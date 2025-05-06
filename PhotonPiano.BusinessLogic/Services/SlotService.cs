@@ -181,9 +181,10 @@ public class SlotService : ISlotService
 
         var classIds = pastSlots.Concat(todaySlots).Select(s => s.ClassId).Distinct().ToList();
         var classesToUpdate = new List<Class>();
+        var affectedClasses = new List<Class>();
         if (classIds.Count > 0)
         {
-            var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(c => classIds.Contains(c.Id));
+            affectedClasses = await _unitOfWork.ClassRepository.FindAsync(c => classIds.Contains(c.Id));
 
             var allRelatedSlots = await _unitOfWork.SlotRepository.FindAsync(s => classIds.Contains(s.ClassId));
 
@@ -247,22 +248,15 @@ public class SlotService : ISlotService
                     slot.Status = SlotStatus.Ongoing;
             }
 
-        var listUpdatedslotStudent = new List<SlotStudent>();
+        var slotIds = classesToUpdate
+            .Where(x => x.Status == ClassStatus.Finished)
+            .SelectMany(c => affectedClasses.FirstOrDefault(ac => ac.Id == c.Id)?.Slots ?? [])
+            .Select(s => s.Id)
+            .ToList();
 
-        foreach (var classes in classesToUpdate.Where(x => x.Status == ClassStatus.Finished))
-        {
-            var slotOfClass = await _unitOfWork.SlotRepository.FindAsync(s => s.ClassId == classes.Id);
-            foreach (var slot in slotOfClass)
-                listUpdatedslotStudent.AddRange(slot.SlotStudents
-                    .Where(ss => ss.AttendanceStatus == AttendanceStatus.NotYet)
-                    .Select(ss => new SlotStudent
-                    {
-                        CreatedById = "admin001",
-                        SlotId = slot.Id,
-                        StudentFirebaseId = ss.StudentFirebaseId,
-                        AttendanceStatus = AttendanceStatus.Attended
-                    }));
-        }
+        var listUpdatedslotStudent = await _unitOfWork.SlotStudentRepository.FindAsync(ss =>
+            ss.AttendanceStatus == AttendanceStatus.NotYet && slotIds.Contains(ss.SlotId));
+
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

@@ -221,10 +221,6 @@ public class StudentClassScoreService : IStudentClassScoreService
         var studentAttendanceResults = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
         
         
-
-        var studentAttendanceResults = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
-        
-        
         decimal minimumGpa = classInfo.Level?.MinimumGPA ?? DefaultPassingGrade;
         foreach (var studentClass in studentClasses)
         {

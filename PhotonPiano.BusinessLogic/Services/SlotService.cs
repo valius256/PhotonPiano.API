@@ -159,8 +159,13 @@ public class SlotService : ISlotService
     public async Task CronAutoChangeSlotStatus()
     {
         var vietnamNow = GetVietnamNow();
-        var currentDate = DateOnly.FromDateTime(vietnamNow);
-        var currentTime = TimeOnly.FromDateTime(vietnamNow);
+        // var currentDate = DateOnly.FromDateTime(vietnamNow);
+        var currentDate = DateOnly.Parse("2025-05-22");
+
+        // var currentTime = TimeOnly.FromDateTime(vietnamNow);
+
+        var currentTime = TimeOnly.Parse("18:15:00");
+
 
         // Tập hợp để lưu các ClassId và tuần bị ảnh hưởng
         var affectedClassesAndWeeks = new HashSet<(Guid ClassId, DateOnly StartOfWeek)>();
@@ -173,18 +178,6 @@ public class SlotService : ISlotService
         var todaySlots = await _unitOfWork.SlotRepository.FindAsync(s =>
             s.Date == currentDate && s.Status != SlotStatus.Finished && s.Status != SlotStatus.Cancelled
         );
-
-        if (todaySlots.Count > 0)
-            foreach (var slot in todaySlots)
-            {
-                var shiftStart = GetShiftStartTime(slot.Shift);
-                var shiftEnd = GetShiftEndTime(slot.Shift);
-
-                if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
-                    slot.Status = SlotStatus.Finished;
-                else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
-                    slot.Status = SlotStatus.Ongoing;
-            }
 
         var classIds = pastSlots.Concat(todaySlots).Select(s => s.ClassId).Distinct().ToList();
         var classesToUpdate = new List<Class>();
@@ -231,7 +224,7 @@ public class SlotService : ISlotService
                         cls.Status = ClassStatus.Finished;
                         classesToUpdate.Add(cls);
                     }
-            }
+            } 
         }
 
 
@@ -240,6 +233,18 @@ public class SlotService : ISlotService
             {
                 slot.Status = SlotStatus.Finished;
                 affectedClassesAndWeeks.Add((slot.ClassId, GetStartOfWeek(slot.Date)));
+            }
+
+        if (todaySlots.Count > 0)
+            foreach (var slot in todaySlots)
+            {
+                var shiftStart = GetShiftStartTime(slot.Shift);
+                var shiftEnd = GetShiftEndTime(slot.Shift);
+
+                if (currentTime > shiftEnd && slot.Status != SlotStatus.Finished)
+                    slot.Status = SlotStatus.Finished;
+                else if (currentTime >= shiftStart && slot.Status != SlotStatus.Ongoing)
+                    slot.Status = SlotStatus.Ongoing;
             }
 
         var listUpdatedslotStudent = new List<SlotStudent>();

@@ -234,10 +234,18 @@ public class StudentClassScoreService : IStudentClassScoreService
 
             var studentAttendanceResult =
                 studentAttendanceResults.FirstOrDefault(x => x.StudentId == student.AccountFirebaseId);
+            if (studentAttendanceResult == null)
+            {
+                _logger.LogWarning("No attendance data found for student {StudentId} in class {ClassId}", 
+                    student.AccountFirebaseId, classId);
+            }
 
             var isPassed = false;
 
-            if (studentAttendanceResult!.IsPassed && studentClass!.GPA!.Value >= minimumGpa)
+            if (studentAttendanceResult != null && 
+                studentAttendanceResult.IsPassed && 
+                studentClass.GPA.HasValue && 
+                studentClass.GPA.Value >= minimumGpa)
             {
                 studentClass.IsPassed = true;
                 studentClass.UpdateById = account.AccountFirebaseId;

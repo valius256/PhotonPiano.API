@@ -680,8 +680,8 @@ public class EntranceTestService : IEntranceTestService
             TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.EntranceTestFee,
                 DateTime.UtcNow.AddHours(7), transactionId),
             Amount = feeConfig != null && !string.IsNullOrEmpty(feeConfig.ConfigValue)
-                ? Convert.ToInt32(feeConfig.ConfigValue)
-                : 100_000,
+                ? -Convert.ToInt32(feeConfig.ConfigValue)
+                : -100_000,
             CreatedAt = DateTime.UtcNow.AddHours(7),
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.EntranceTestFee,
@@ -730,7 +730,7 @@ public class EntranceTestService : IEntranceTestService
                 {
                     Id = Guid.CreateVersion7(),
                     StudentFirebaseId = accountId,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow.AddHours(7),
                     CreatedById = accountId,
                 };
 
@@ -746,8 +746,7 @@ public class EntranceTestService : IEntranceTestService
                     await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
                         $"Learner {account.FullName} has just registered for entrance test", "");
                 });
-
-
+                
                 break;
             case PaymentStatus.Failed:
                 throw new BadRequestException("Payment has failed.");

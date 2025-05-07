@@ -62,6 +62,12 @@ public class StudentClassScoreService : IStudentClassScoreService
             var classInfo = await ValidateAndGetClass(classId);
             var now = DateTime.UtcNow.AddHours(7);
 
+
+            await _unitOfWork.SlotStudentRepository.ExecuteUpdateAsync(
+                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet,
+                calls => calls.SetProperty(x => x.AttendanceStatus, AttendanceStatus.Attended)
+            );
+
             var (studentClasses, studentUpdates, passedStudents) =
                 await PrepareStudentDataForScorePublishing(classId, classInfo, account, now);
 
@@ -89,13 +95,7 @@ public class StudentClassScoreService : IStudentClassScoreService
                 var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
                 backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId));
             }
-
-
-            await _unitOfWork.SlotStudentRepository.ExecuteUpdateAsync(
-                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet,
-                calls => calls.SetProperty(x => x.AttendanceStatus, AttendanceStatus.Attended)
-            );
-
+            
 
             await SendClassCompletionNotifications(studentClasses, classInfo);
         }
@@ -113,7 +113,21 @@ public class StudentClassScoreService : IStudentClassScoreService
         {
             throw new NotFoundException("Class not found");
         }
-
+        
+        if (classInfo.LevelId == Guid.Empty)
+        {
+            throw new BadRequestException("Cannot publish scores: The class has no associated level.");
+        }
+        
+        if (classInfo.Level == null)
+        {
+            classInfo.Level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classInfo.LevelId);
+            if (classInfo.Level == null)
+            {
+                throw new NotFoundException($"Level with ID {classInfo.LevelId} not found. Cannot proceed with score publishing.");
+            }
+        }
+        
         switch (classInfo.Status)
         {
             case ClassStatus.Finished:
@@ -234,10 +248,18 @@ public class StudentClassScoreService : IStudentClassScoreService
 
             var studentAttendanceResult =
                 studentAttendanceResults.FirstOrDefault(x => x.StudentId == student.AccountFirebaseId);
+            if (studentAttendanceResult == null)
+            {
+                _logger.LogWarning("No attendance data found for student {StudentId} in class {ClassId}", 
+                    student.AccountFirebaseId, classId);
+            }
 
             var isPassed = false;
 
-            if (studentAttendanceResult!.IsPassed && studentClass!.GPA!.Value >= minimumGpa)
+            if (studentAttendanceResult != null && 
+                studentAttendanceResult.IsPassed && 
+                studentClass.GPA.HasValue && 
+                studentClass.GPA.Value >= minimumGpa)
             {
                 studentClass.IsPassed = true;
                 studentClass.UpdateById = account.AccountFirebaseId;
@@ -248,7 +270,7 @@ public class StudentClassScoreService : IStudentClassScoreService
             passedStudents.Add(studentClass);
 
             // Update student level if passed
-            if (isPassed && classInfo.Level?.NextLevelId.HasValue == true)
+            if (studentClass.IsPassed && classInfo.Level?.NextLevelId.HasValue == true)
             {
                 student.LevelId = classInfo.Level.NextLevelId.Value;
                 student.StudentStatus = StudentStatus.WaitingForClass;

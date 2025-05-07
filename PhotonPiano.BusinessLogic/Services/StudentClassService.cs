@@ -534,7 +534,7 @@ namespace PhotonPiano.BusinessLogic.Services
 
             worksheet.Cells[6, 1].Value = "1. Do not modify student names";
             worksheet.Cells[7, 1].Value = "2. Enter scores between 0 and 10 only";
-            worksheet.Cells[8, 1].Value = "3. Empty cells will be ignored during import";
+            worksheet.Cells[8, 1].Value = "3. Please don't leave empty cells when import";
             var instructionsRange = worksheet.Cells[6, 1, 8, 1];
             instructionsRange.Style.Font.Bold = true;
             instructionsRange.Style.Font.Italic = true;

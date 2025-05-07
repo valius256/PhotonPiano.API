@@ -825,6 +825,8 @@ public class SlotService : ISlotService
             var cacheKey = GenerateCacheKey(classId, startOfWeek, role);
             await _serviceFactory.RedisCacheService.DeleteAsync(cacheKey);
         }
+
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
     }
 
     private async Task<bool> IsConflict(Shift shift, DateOnly date, Guid? roomId)

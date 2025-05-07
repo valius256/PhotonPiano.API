@@ -341,6 +341,7 @@ public class TuitionService : ITuitionService
             var studentClass = await _unitOfWork.StudentClassRepository.Entities
                 .Include(sc => sc.Student)
                 .Include(sc => sc.Class)
+                .ThenInclude(sc => sc.Slots)
                 .SingleOrDefaultAsync(sc => sc.Id == tuition.StudentClassId);
 
             if (studentClass is null) continue;
@@ -349,11 +350,14 @@ public class TuitionService : ITuitionService
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(ss =>
-                    ss.StudentFirebaseId == studentClass.StudentFirebaseId
+                    ss.StudentFirebaseId == studentClass.StudentFirebaseId &&
+                    ss.AttendanceStatus == AttendanceStatus.NotYet &&
+                    studentClass.Class.Slots.Select(x => x.Id).Contains(ss.SlotId)
                 );
 
                 await _unitOfWork.StudentClassRepository.ExecuteDeleteAsync(sc =>
-                    sc.StudentFirebaseId == studentClass.StudentFirebaseId
+                    sc.StudentFirebaseId == studentClass.StudentFirebaseId &&
+                    sc.ClassId == studentClass.ClassId
                 );
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
@@ -384,8 +388,8 @@ public class TuitionService : ITuitionService
 
             await _serviceFactory.NotificationService.SendNotificationAsync(
                 studentClass.Student.AccountFirebaseId,
-                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} đã quá hạn",
-                "Bạn đã bị xoá khỏi lớp do chưa thanh toán học phí. Vui lòng liên hệ để được hỗ trợ."
+                $"The tuition fee for {tuition.StartDate:MM/yyyy} of class {studentClass.Class.Name} is overdue",
+                "You have been removed from the class due to unpaid tuition. Please contact us for assistance."
             );
         }
     }

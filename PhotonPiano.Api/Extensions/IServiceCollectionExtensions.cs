@@ -334,9 +334,9 @@ public static class IServiceCollectionExtensions
                 var tuitionOverdueDay =
                     configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
 
-                recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
-                    x => x.CronAutoCreateTuition(),
-                    Cron.Monthly);
+                //recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                //    x => x.CronAutoCreateTuition(),
+                //    Cron.Monthly);
 
                 recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                     x => x.CronForTuitionReminder(),

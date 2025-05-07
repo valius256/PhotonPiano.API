@@ -319,5 +319,6 @@ public class SystemConfigService : ISystemConfigService
                 await UpsertSystemConfig(ConfigNames.AllowSkippingLevel, SystemConfigType.UnsignedInt,
                     updateModel.AllowSkippingLevel.Value ? "true" : "false");
         });
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig");
     }
 }

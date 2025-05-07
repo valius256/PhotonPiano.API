@@ -270,7 +270,7 @@ public class StudentClassScoreService : IStudentClassScoreService
             passedStudents.Add(studentClass);
 
             // Update student level if passed
-            if (isPassed && classInfo.Level?.NextLevelId.HasValue == true)
+            if (studentClass.IsPassed && classInfo.Level?.NextLevelId.HasValue == true)
             {
                 student.LevelId = classInfo.Level.NextLevelId.Value;
                 student.StudentStatus = StudentStatus.WaitingForClass;

@@ -47,7 +47,7 @@ public class PaymentService : IPaymentService
             { "vnp_Command", _vnPay.Command },
             { "vnp_TmnCode", _vnPay.TmnCode },
             {
-                "vnp_Amount", ((long)(transaction.Amount) * 100).ToString()
+                "vnp_Amount", ((long)(Math.Abs(transaction.Amount)) * 100).ToString()
             }, // Amount in VND, multiplied by 100 to eliminate decimals
             { "vnp_CurrCode", _vnPay.CurrCode },
             { "vnp_TxnRef", transaction.Id.ToString() },

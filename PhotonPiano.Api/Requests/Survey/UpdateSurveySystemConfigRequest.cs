@@ -6,7 +6,7 @@ public record UpdateSurveySystemConfigRequest : IValidatableObject
 {
     public string? InstrumentName { get; init; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Frequency must > 0")]
+    [Range(0, int.MaxValue, ErrorMessage = "Frequency must >= 0")]
     public int? InstrumentFrequencyInResponse { get; init; }
 
     public string? EntranceSurveyId { get; init; }
@@ -14,7 +14,7 @@ public record UpdateSurveySystemConfigRequest : IValidatableObject
     [Range(1, int.MaxValue, ErrorMessage = "Max questions must > 0")]
     public int? MaxQuestionsPerSurvey { get; init; }
     
-    [Range(1, int.MaxValue, ErrorMessage = "Min questions must > 0")]
+    [Range(0, int.MaxValue, ErrorMessage = "Min questions must >= 0")]
     public int? MinQuestionsPerSurvey { get; init; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

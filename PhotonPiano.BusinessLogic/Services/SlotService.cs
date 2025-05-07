@@ -106,6 +106,8 @@ public class SlotService : ISlotService
             var cacheKey = GenerateCacheKey(classId, slotModel.StartTime, accountModel.Role);
 
             var slots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotDetailModel>>(cacheKey);
+
+            slots = null;
             if (slots == null)
             {
                 slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(s =>
@@ -825,6 +827,8 @@ public class SlotService : ISlotService
             var cacheKey = GenerateCacheKey(classId, startOfWeek, role);
             await _serviceFactory.RedisCacheService.DeleteAsync(cacheKey);
         }
+
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
     }
 
     private async Task<bool> IsConflict(Shift shift, DateOnly date, Guid? roomId)

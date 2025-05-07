@@ -341,6 +341,7 @@ public class TuitionService : ITuitionService
             var studentClass = await _unitOfWork.StudentClassRepository.Entities
                 .Include(sc => sc.Student)
                 .Include(sc => sc.Class)
+                .ThenInclude(sc => sc.Slots)
                 .SingleOrDefaultAsync(sc => sc.Id == tuition.StudentClassId);
 
             if (studentClass is null) continue;
@@ -349,11 +350,14 @@ public class TuitionService : ITuitionService
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 await _unitOfWork.SlotStudentRepository.ExecuteDeleteAsync(ss =>
-                    ss.StudentFirebaseId == studentClass.StudentFirebaseId
+                    ss.StudentFirebaseId == studentClass.StudentFirebaseId &&
+                    ss.AttendanceStatus == AttendanceStatus.NotYet &&
+                    studentClass.Class.Slots.Select(x => x.Id).Contains(ss.SlotId)
                 );
 
                 await _unitOfWork.StudentClassRepository.ExecuteDeleteAsync(sc =>
-                    sc.StudentFirebaseId == studentClass.StudentFirebaseId
+                    sc.StudentFirebaseId == studentClass.StudentFirebaseId &&
+                    sc.ClassId == studentClass.ClassId
                 );
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
@@ -384,8 +388,8 @@ public class TuitionService : ITuitionService
 
             await _serviceFactory.NotificationService.SendNotificationAsync(
                 studentClass.Student.AccountFirebaseId,
-                $"Học phí tháng {tuition.StartDate:MM/yyyy} của lớp {studentClass.Class.Name} đã quá hạn",
-                "Bạn đã bị xoá khỏi lớp do chưa thanh toán học phí. Vui lòng liên hệ để được hỗ trợ."
+                $"The tuition fee for {tuition.StartDate:MM/yyyy} of class {studentClass.Class.Name} is overdue",
+                "You have been removed from the class due to unpaid tuition. Please contact us for assistance."
             );
         }
     }
@@ -482,11 +486,11 @@ public class TuitionService : ITuitionService
 
                 if (classDetailModel.Level != null && paidSlotCount > 0)
                 {
-                    // Tính deadline dựa trên buổi học thử cuối cùng nếu chưa dùng
+                    // Tính deadline dựa trên slot thử cuối cùng nếu chưa dùng
                     DateTime deadline;
                     if (!hasUsedTrial && trialSlotCount > 0 && trialSlotCount <= sortedSlots.Count)
                     {
-                        var lastTrialSlot = sortedSlots[trialSlotCount - 1];
+                        var lastTrialSlot = sortedSlots[trialSlotCount - 1]; // Lấy slot thử cuối cùng
                         var trialEndDate = lastTrialSlot.Date.ToDateTime(new TimeOnly(0, 0), DateTimeKind.Utc);
                         deadline = trialEndDate.AddDays(numOfDeadlineDays).AddHours(7);
                     }
@@ -546,8 +550,8 @@ public class TuitionService : ITuitionService
                     emailParam);
 
                 await _serviceFactory.NotificationService.SendNotificationAsync(student.StudentFirebaseId,
-                    $"Học phí của lớp {classDetailModel.Name} đã được tạo. Hạn chót là {result.Deadline:dd/MM/yyyy}",
-                    "Hãy thanh toán học phí để tiếp tục học tập");
+                    $"The tuition fee for class {classDetailModel.Name} has been created. The deadline is {result.Deadline:dd/MM/yyyy}",
+                    "Please pay the tuition fee to continue studying");
             }
         }
     }
@@ -577,14 +581,14 @@ public class TuitionService : ITuitionService
             throw new BadRequestException("You are not allowed to pay this tuition.");
     }
 
-    public async Task CreateTuitionForTestPurpose()
-    {
-        // Get a class ID (maybe from configuration or the first active class)
-        var activeClass = await _unitOfWork.ClassRepository
-            .FindSingleProjectedAsync<ClassDetailModel>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true
-                && c.Id == Guid.Parse("f838e840-e4e5-48ae-aa09-fcb36638a698")
-            );
-
-        if (activeClass != null) await CreateTuitionWhenRegisterClass(activeClass);
-    }
+    // public async Task CreateTuitionForTestPurpose()
+    // {
+    //     // Get a class ID (maybe from configuration or the first active class)
+    //     var activeClass = await _unitOfWork.ClassRepository
+    //         .FindSingleProjectedAsync<ClassDetailModel>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true
+    //             && c.Id == Guid.Parse("f838e840-e4e5-48ae-aa09-fcb36638a698")
+    //         );
+    //
+    //     if (activeClass != null) await CreateTuitionWhenRegisterClass(activeClass);
+    // }
 }

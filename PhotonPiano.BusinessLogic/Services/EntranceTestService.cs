@@ -467,10 +467,46 @@ public class EntranceTestService : IEntranceTestService
             throw new BadRequestException("Some of the students are not the same.");
         }
 
+        var configs = await _serviceFactory.SystemConfigService.GetConfigs([
+            ConfigNames.MinStudentsInTest, ConfigNames.MaxStudentsInTest
+        ]);
+
+        var minConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MinStudentsInTest);
+
+        var maxConfig = configs.FirstOrDefault(c => c.ConfigName == ConfigNames.MaxStudentsInTest);
+
+        if (minConfig is not null && !string.IsNullOrEmpty(minConfig.ConfigValue))
+        {
+            int minStudents = Convert.ToInt32(minConfig.ConfigValue);
+
+            if (model.StudentIds.Count +
+                entranceTest.EntranceTestStudents.Count(ets => ets.EntranceTestId != null) <
+                minStudents)
+            {
+                throw new BadRequestException($"Test must have at least {minStudents} learners");
+            }
+        }
+
+        if (maxConfig is not null && !string.IsNullOrEmpty(maxConfig.ConfigValue))
+        {
+            int maxStudents = Convert.ToInt32(maxConfig.ConfigValue);
+
+            if (model.StudentIds.Count +
+                entranceTest.EntranceTestStudents.Count(ets => ets.EntranceTestId != null) > maxStudents)
+            {
+                throw new BadRequestException($"Test can only have maximum of {maxStudents} learners");
+            }
+        }
+
         var newEntranceTestStudents = new List<EntranceTestStudent>();
 
         foreach (var student in students)
         {
+            if (entranceTest.EntranceTestStudents.Any(ets => ets.StudentFirebaseId == student.AccountFirebaseId))
+            {
+                throw new BadRequestException("Learner is already in test.");
+            }
+            
             var entranceTestStudent = student.EntranceTestStudents.FirstOrDefault(ets => ets.EntranceTestId == testId);
 
             if (entranceTestStudent is null)
@@ -680,8 +716,8 @@ public class EntranceTestService : IEntranceTestService
             TransactionCode = _serviceFactory.TransactionService.GetTransactionCode(TransactionType.EntranceTestFee,
                 DateTime.UtcNow.AddHours(7), transactionId),
             Amount = feeConfig != null && !string.IsNullOrEmpty(feeConfig.ConfigValue)
-                ? Convert.ToInt32(feeConfig.ConfigValue)
-                : 100_000,
+                ? -Convert.ToInt32(feeConfig.ConfigValue)
+                : -100_000,
             CreatedAt = DateTime.UtcNow.AddHours(7),
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.EntranceTestFee,
@@ -730,7 +766,7 @@ public class EntranceTestService : IEntranceTestService
                 {
                     Id = Guid.CreateVersion7(),
                     StudentFirebaseId = accountId,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow.AddHours(7),
                     CreatedById = accountId,
                 };
 
@@ -746,7 +782,6 @@ public class EntranceTestService : IEntranceTestService
                     await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
                         $"Learner {account.FullName} has just registered for entrance test", "");
                 });
-
 
                 break;
             case PaymentStatus.Failed:
@@ -1055,7 +1090,7 @@ public class EntranceTestService : IEntranceTestService
         {
             var shiftEndTime = GetShiftEndTime(shift);
             var shiftEndDateTime = dateToCompare.ToDateTime(shiftEndTime);
-            
+
             return now > shiftEndDateTime;
         }
 

@@ -31,7 +31,7 @@ public class SystemConfigsController : BaseController
     }
 
     [HttpGet]
-    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Administrator, Role.Instructor])]
     [EndpointDescription("Get all system configs")]
     public async Task<ActionResult<List<SystemConfigModel>>> GetConfigs([FromQuery] QuerySystemConfigsRequest request)
     {

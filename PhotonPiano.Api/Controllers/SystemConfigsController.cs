@@ -165,6 +165,6 @@ public class SystemConfigsController : BaseController
     [EndpointDescription("Get current server time")]
     public ActionResult<DateTime> GetCurrentServerTime()
     {
-        return Ok(DateTime.UtcNow.AddHours(7));
+        return Ok(DateTimeOffset.Now);
     }
 }

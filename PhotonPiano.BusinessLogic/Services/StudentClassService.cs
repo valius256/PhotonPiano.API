@@ -1055,11 +1055,10 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new NotFoundException($"Class with ID {model.ClassId} not found");
             }
 
-            if (classInfo.Status == ClassStatus.Finished)
+            if (classInfo.Status == ClassStatus.NotStarted)
             {
-                throw new BadRequestException("Cannot update scores for a finished class");
+                throw new BadRequestException("Cannot update scores for a class that has not started");
             }
-
             // Get all criteria for validation
             var criteriaIds = model.Scores.Select(s => s.CriteriaId).Distinct().ToList();
             var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => criteriaIds.Contains(c.Id));

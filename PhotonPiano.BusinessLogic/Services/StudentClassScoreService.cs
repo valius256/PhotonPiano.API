@@ -38,8 +38,6 @@ public class StudentClassScoreService : IStudentClassScoreService
         "Scores for class {0} have been published to students.";
 
     private const decimal DefaultPassingGrade = 5.0m;
-    private const int BatchSize = 50;
-
     public StudentClassScoreService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory,
         IServiceProvider serviceProvider, ILogger<ServiceFactory> logger)
     {
@@ -80,14 +78,9 @@ public class StudentClassScoreService : IStudentClassScoreService
             // Execute all database operations in a single transaction
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                // Update class first
                 await _unitOfWork.ClassRepository.UpdateAsync(classInfo);
-
-                // Update student classes and accounts in batches
                 await _unitOfWork.StudentClassRepository.UpdateRangeAsync(studentClasses);
                 await _unitOfWork.AccountRepository.UpdateRangeAsync(studentUpdates);
-                //await UpdateEntitiesInBatches(studentClasses, _unitOfWork.StudentClassRepository.UpdateAsync);
-                //await UpdateEntitiesInBatches(studentUpdates, _unitOfWork.AccountRepository.UpdateAsync);
             });
 
             if (passedStudents.Any())
@@ -96,12 +89,11 @@ public class StudentClassScoreService : IStudentClassScoreService
                 backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId));
             }
             
-
             await SendClassCompletionNotifications(studentClasses, classInfo);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error publishing scores for class {classId}: {ex.Message}");
+            _logger.LogError(ex, "Error publishing scores for class {ClassId}", classId);
             throw;
         }
     }
@@ -701,7 +693,6 @@ public class StudentClassScoreService : IStudentClassScoreService
                 studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
                 studentClassUpdates.Add(studentClass);
                 
-                // Find corresponding student account
                 var student = studentAccounts.FirstOrDefault(a => a.AccountFirebaseId == studentClass.StudentFirebaseId);
                 if (student != null)
                 {

@@ -54,7 +54,7 @@ public class TuitionService : ITuitionService
             TutionId = model.TuitionId,
             TaxRate = currentTaxRate,
             TaxAmount = currentTaxAmount,
-            Amount = paymentTuition!.Amount + currentTaxAmount,
+            Amount = (-1) * (paymentTuition!.Amount + currentTaxAmount),
             CreatedAt = DateTime.UtcNow,
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.TutionFee,

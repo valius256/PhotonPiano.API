@@ -66,7 +66,7 @@ public class LevelService : ILevelService
 
     public async Task<List<LevelModel>> GetAllLevelsAsync()
     {
-        var levels = await _unitOfWork.LevelRepository.FindProjectedAsync<LevelModel>(hasTrackings: false);
+        var levels = await _unitOfWork.LevelRepository.FindProjectedAsync<LevelModel>(hasTrackings: false, ignoreQueryFilters: false);
 
         // Find the root level (the one that no other level references as its NextLevel)
         var rootLevel = levels.FirstOrDefault(l => levels.All(x => x.NextLevelId != l.Id));
@@ -182,43 +182,46 @@ public class LevelService : ILevelService
 
     public async Task<LevelModel> CreateLevelAsync(CreateLevelModel createModel, AccountModel currentAccount)
     {
-        //var nextLevelId = createModel.NextLevelId;
-        //var levels = await GetSortedAllLevels();
-        var newLevel = createModel.Adapt<Level>();
-
-        //newLevel.NextLevelId = null;
-        newLevel.Id = Guid.NewGuid();
-
-        if (createModel.NextLevelId.HasValue)
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var nextLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == createModel.NextLevelId);
-            if (nextLevel is null)
+            var newLevel = createModel.Adapt<Level>();
+            newLevel.Id = Guid.NewGuid();
+
+            // Step 1: Save the new level with null NextLevelId
+            newLevel.NextLevelId = null;
+            await _unitOfWork.LevelRepository.AddAsync(newLevel);
+            await _unitOfWork.SaveChangesAsync(); // Avoid circular dependency during add
+
+            // Step 2: Wire up pointers after the level exists
+            if (createModel.NextLevelId.HasValue)
             {
-                throw new NotFoundException("Level not found");
-            }
-            var prevLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.NextLevelId == nextLevel.Id);
+                var nextLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == createModel.NextLevelId);
+                if (nextLevel is null)
+                    throw new NotFoundException("Next level not found");
 
-            if (prevLevel is not null)
+                var prevLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.NextLevelId == nextLevel.Id);
+                if (prevLevel != null)
+                    prevLevel.NextLevelId = newLevel.Id;
+
+                newLevel.NextLevelId = nextLevel.Id;
+            }
+            else
             {
-                prevLevel.NextLevelId = newLevel.Id;
+                var prevLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.NextLevelId == null);
+                if (prevLevel != null)
+                    prevLevel.NextLevelId = newLevel.Id;
+
+                newLevel.NextLevelId = null;
             }
-        } else
-        {
-            var prevLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.NextLevelId == null);
-            if (prevLevel is not null)
-            {
-                prevLevel.NextLevelId = newLevel.Id;
-            }
-        }
 
-        await _unitOfWork.LevelRepository.AddAsync(newLevel);
-        await _unitOfWork.SaveChangesAsync();
+            // Step 3: Save wiring updates
+            await _unitOfWork.SaveChangesAsync();
+            await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);
 
-        //await UpdateLevels(levels, newLevel, nextLevelId);
-
-        await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);
-        return newLevel.Adapt<LevelModel>();
+            return newLevel.Adapt<LevelModel>();
+        });
     }
+
 
     public async Task UpdateLevelAsync(Guid id, UpdateLevelModel updateModel, AccountModel currentAccount)
     {
@@ -287,7 +290,7 @@ public class LevelService : ILevelService
         }
 
         var affectedAccounts = await _unitOfWork.AccountRepository.FindAsync(a => a.LevelId == level.Id);
-        var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(a => a.LevelId == level.Id);
+        var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(a => a.LevelId == level.Id && a.Status != ClassStatus.Finished);
 
         var nextLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == level.NextLevelId);
         var prevLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.NextLevelId == level.Id);

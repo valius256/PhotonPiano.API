@@ -3,6 +3,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 
 namespace PhotonPiano.DataAccess.EntityTypeConfiguration
 {
@@ -13,6 +14,8 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
             builder.Property(x => x.MinimumPracticalScore).HasDefaultValue(0.0);
 
             builder.Property(x => x.MinimumTheoreticalScore).HasDefaultValue(0.0);
+
+            builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
 
             builder.HasOne(l => l.NextLevel)
                 .WithOne() // No inverse navigation needed

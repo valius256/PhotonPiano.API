@@ -66,7 +66,7 @@ public class LevelService : ILevelService
 
     public async Task<List<LevelModel>> GetAllLevelsAsync()
     {
-        var levels = await _unitOfWork.LevelRepository.FindProjectedAsync<LevelModel>(hasTrackings: false);
+        var levels = await _unitOfWork.LevelRepository.FindProjectedAsync<LevelModel>(hasTrackings: false, ignoreQueryFilters: false);
 
         // Find the root level (the one that no other level references as its NextLevel)
         var rootLevel = levels.FirstOrDefault(l => levels.All(x => x.NextLevelId != l.Id));

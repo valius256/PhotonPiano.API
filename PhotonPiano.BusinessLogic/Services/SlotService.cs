@@ -707,7 +707,7 @@ public class SlotService : ISlotService
         if (slot.Status != SlotStatus.NotStarted)
             throw new BadRequestException("Can only assign teacher to slots that are not started yet!");
 
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             slot.TeacherId = teacherFirebaseId;
             slot.UpdatedAt = DateTime.UtcNow.AddHours(7);

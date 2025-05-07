@@ -1,4 +1,5 @@
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Room;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Enums;
 
@@ -15,7 +16,7 @@ public record SlotModel
     public string? SlotNote { get; init; }
     public string? TeacherId { get; init; }
     public AccountModel? Teacher { get; init; } 
-    
+    public RoomModel? Room { get; init; }
     public int? SlotNo { get; set; }
     public int? SlotTotal { get; set; }
 }

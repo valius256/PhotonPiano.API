@@ -1059,6 +1059,11 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Cannot update scores for a class that has not started");
             }
+
+            if (classInfo.IsScorePublished == true)
+            {
+                throw new BadRequestException("Cannot update scores for a class that has already been published");
+            }
             // Get all criteria for validation
             var criteriaIds = model.Scores.Select(s => s.CriteriaId).Distinct().ToList();
             var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => criteriaIds.Contains(c.Id));

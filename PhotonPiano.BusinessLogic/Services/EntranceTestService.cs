@@ -506,7 +506,7 @@ public class EntranceTestService : IEntranceTestService
             {
                 throw new BadRequestException("Learner is already in test.");
             }
-            
+
             var entranceTestStudent = student.EntranceTestStudents.FirstOrDefault(ets => ets.EntranceTestId == testId);
 
             if (entranceTestStudent is null)
@@ -1308,13 +1308,14 @@ public class EntranceTestService : IEntranceTestService
         List<EntranceTestResult> results = [];
         decimal bandScore = 0;
 
+        var criteriaIds = updateModel.UpdateScoreRequests.Select(s => s.CriteriaId);
+
+        List<Criteria> criterias = [];
+        
         if (updateModel.UpdateScoreRequests.Count > 0)
         {
-            var criteriaIds = updateModel.UpdateScoreRequests.Select(s => s.CriteriaId);
-
-            var criterias =
+            criterias =
                 await _unitOfWork.CriteriaRepository.FindAsync(c => criteriaIds.Contains(c.Id), hasTrackings: false);
-
             if (criterias.Count != criteriaIds.Count())
             {
                 throw new BadRequestException("Some criterias are not found.");
@@ -1368,8 +1369,14 @@ public class EntranceTestService : IEntranceTestService
             {
                 entranceTestStudent.InstructorComment = updateModel.InstructorComment;
                 entranceTestStudent.BandScore = bandScore;
+
+                decimal newPracticalScore = updateModel.UpdateScoreRequests.Aggregate(decimal.Zero, (current, result) =>
+                    current + result.Score * (criterias.FirstOrDefault(c => c.Id == result.CriteriaId)!.Weight / 100)
+                );
+
                 entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
-                    Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
+                    Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), newPracticalScore);
+                
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
                 await _unitOfWork.EntranceTestResultRepository.ExecuteDeleteAsync(etr =>

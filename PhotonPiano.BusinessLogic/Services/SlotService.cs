@@ -200,8 +200,8 @@ public class SlotService : ISlotService
 
             foreach (var firstSlot in firstSlots)
             {
-                var shiftStart = GetShiftStartTime(firstSlot.Shift);
-                if (currentTime >= shiftStart && firstSlot.Status != SlotStatus.Ongoing)
+                var shiftStart = firstSlot.Date.ToDateTime(GetShiftStartTime(firstSlot.Shift));
+                if (vietnamNow >= shiftStart && firstSlot.Status != SlotStatus.Ongoing)
                     if (classStatusMap.TryGetValue(firstSlot.ClassId, out var cls) &&
                         cls.Status != ClassStatus.Ongoing)
                     {
@@ -214,8 +214,8 @@ public class SlotService : ISlotService
 
             foreach (var lastSlot in laSlots)
             {
-                var shiftEnd = GetShiftEndTime(lastSlot.Shift);
-                if (currentTime >= shiftEnd && lastSlot.Status != SlotStatus.Finished)
+                var shiftEnd = lastSlot.Date.ToDateTime(GetShiftEndTime(lastSlot.Shift));
+                if (vietnamNow >= shiftEnd && lastSlot.Status != SlotStatus.Finished)
                     if (classStatusMap.TryGetValue(lastSlot.ClassId, out var cls) &&
                         cls.Status != ClassStatus.Finished)
                     {

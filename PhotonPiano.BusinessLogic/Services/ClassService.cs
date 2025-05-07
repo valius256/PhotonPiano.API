@@ -757,6 +757,19 @@ public class ClassService : IClassService
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == classInfo.LevelId)
            ?? throw new NotFoundException("Level not found or removed!");
 
+        var minSizeConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MinimumStudents);
+        if (minSizeConfig is not null)
+        {
+            if (classDetail.StudentClasses.Count < int.Parse(minSizeConfig.ConfigValue ?? "0"))
+            {
+                throw new BadRequestException("Can't publish the class because the minimum class size is not statisfied");
+            }
+        }
+        if (classDetail.Slots.Count < level.TotalSlots)
+        {
+            throw new BadRequestException("Can't publish the class because the total amount of slots is not statisfied");
+        }
+
         classInfo.IsPublic = true;
         classInfo.UpdateById = accountFirebaseId;
         classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);

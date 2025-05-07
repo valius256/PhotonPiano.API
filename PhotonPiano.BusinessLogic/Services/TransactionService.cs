@@ -43,8 +43,8 @@ public class TransactionService : ITransactionService
     public string GetTransactionCode(TransactionType type, DateTime createDate, Guid? id = default)
     {
         var typeOfTransaction = type == TransactionType.EntranceTestFee
-            ? "THANH TOAN LE PHI THI DAU VAO"
-            : "THANH TOAN PHI DAY HOC";
+            ? "ENTRANCE TEST FEE"
+            : "TUITION FEE";
 
         return id.HasValue ? $"[{typeOfTransaction}] [{createDate.Year}/{createDate.Month}] [{id}]"
                 : $"[{typeOfTransaction}] [{createDate.Year}/{createDate.Month}]";

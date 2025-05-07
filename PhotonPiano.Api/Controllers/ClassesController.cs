@@ -107,11 +107,11 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpDelete("student-class")]
-        [CustomAuthorize(Roles = [Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
         [EndpointDescription("Delete a studentClass")]
         public async Task<ActionResult> DeleteStudentClass([FromQuery] string studentId, [FromQuery] Guid classId, [FromQuery] bool IsExpelled = false)
         {
-            await _serviceFactory.StudentClassService.DeleteStudentClass(studentId, classId, IsExpelled, CurrentUserFirebaseId);
+            await _serviceFactory.StudentClassService.DeleteStudentClass(studentId, classId, IsExpelled, CurrentAccount!);
             return NoContent();
         }
 

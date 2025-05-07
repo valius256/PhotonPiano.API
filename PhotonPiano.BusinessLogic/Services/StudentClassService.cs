@@ -170,30 +170,43 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(oldStudentSlots);
                 await _unitOfWork.SaveChangesAsync();
             });
-            //Notification
+            // Notification
 
-            await _serviceFactory.NotificationService.SendNotificationAsync(changeClassModel.StudentFirebaseId,
-                "Thông tin lớp mới",
-                $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
+            // Notify the student about being added to the new class
+            await _serviceFactory.NotificationService.SendNotificationAsync(
+                changeClassModel.StudentFirebaseId,
+                "New Class Information",
+                $"Congratulations! You have been added to the new class {classInfo.Name}. Please check your updated schedule. Wishing you much success!"
+            );
 
+            // Get Firebase IDs of students and instructor in the new class
             var newClassReceiverIds = classInfo.StudentClasses.Select(c => c.StudentFirebaseId).ToList();
             if (classInfo.InstructorId != null)
             {
                 newClassReceiverIds.Add(classInfo.InstructorId);
             }
 
+            // Get Firebase IDs of students and instructor in the old class
             var oldClassReceiverIds = oldClassInfo.StudentClasses.Select(c => c.StudentFirebaseId).ToList();
             if (oldClassInfo.InstructorId != null)
             {
                 oldClassReceiverIds.Add(oldClassInfo.InstructorId);
             }
 
-            await _serviceFactory.NotificationService.SendNotificationToManyAsync(oldClassReceiverIds,
-                $"Học sinh {student.FullName ?? student.UserName} đã chuyển ra khỏi lớp {oldClassInfo.Name}. Nếu có thắc mắc hoặc báo cáo nhầm lẫn, vui lòng nộp đơn khiếu nại hoặc liên hệ bộ phận hỗ trợ!",
-                student.AvatarUrl ?? "");
-            await _serviceFactory.NotificationService.SendNotificationToManyAsync(newClassReceiverIds,
-                $"Học sinh mới {student.FullName ?? student.UserName} được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ bạn ấy hết mình!",
-                student.AvatarUrl ?? "");
+            // Notify the old class that the student has left
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+                oldClassReceiverIds,
+                $"Student {student.FullName ?? student.UserName} has been transferred out of the class {oldClassInfo.Name}. If you have any questions or believe this is a mistake, please file a complaint or contact the support team!",
+                student.AvatarUrl ?? ""
+            );
+
+            // Notify the new class about the newly added student
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+                newClassReceiverIds,
+                $"New student {student.FullName ?? student.UserName} has been added to the class {classInfo.Name}. Please give them your full support!",
+                student.AvatarUrl ?? ""
+            );
+
         }
 
         public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel,
@@ -358,8 +371,13 @@ namespace PhotonPiano.BusinessLogic.Services
             return result.Adapt<List<StudentClassModel>>();
         }
 
-        public async Task DeleteStudentClass(string studentId, Guid classId, bool isExpelled, string accountFirebaseId)
+        public async Task DeleteStudentClass(string studentId, Guid classId, bool isExpelled, AccountModel accountModel)
         {
+            if (accountModel.Role == Role.Student && studentId != accountModel.AccountFirebaseId)
+            {
+                throw new ForbiddenMethodException("Student can not update other students");
+            }
+
             var student = await _unitOfWork.AccountRepository.FindSingleAsync(a => a.AccountFirebaseId == studentId);
             if (student is null)
             {
@@ -392,7 +410,7 @@ namespace PhotonPiano.BusinessLogic.Services
             student.CurrentClassId = null;
             //Delete studentClass
             studentClass.RecordStatus = RecordStatus.IsDeleted;
-            studentClass.DeletedById = accountFirebaseId;
+            studentClass.DeletedById = accountModel.AccountFirebaseId;
             studentClass.DeletedAt = DateTime.UtcNow.AddHours(7);
 
             //Delete studentClassScore
@@ -411,7 +429,14 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 studentSlot.RecordStatus = RecordStatus.IsDeleted;
                 studentSlot.DeletedAt = DateTime.UtcNow.AddHours(7);
-                studentSlot.DeletedById = accountFirebaseId;
+                studentSlot.DeletedById = accountModel.AccountFirebaseId;
+            }
+
+            //Delete tuition if any
+            var tuitions = await _unitOfWork.TuitionRepository.FindAsync(t => t.StudentClassId == studentClass.Id);  
+            if (accountModel.Role == Role.Student && tuitions.Any(t => t.PaymentStatus == PaymentStatus.Succeed))
+            {
+                throw new BadRequestException("You has paid this class's tuition");
             }
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -420,26 +445,35 @@ namespace PhotonPiano.BusinessLogic.Services
                 await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(studentSlots);
                 await _unitOfWork.StudentClassRepository.UpdateAsync(studentClass);
                 await _unitOfWork.AccountRepository.UpdateAsync(student);
+                await _unitOfWork.TuitionRepository.DeleteRangeAsync(tuitions);
                 await _unitOfWork.SaveChangesAsync();
             });
 
 
-            //Notification
+            // Notification
             if (classInfo.IsPublic)
             {
-                await _serviceFactory.NotificationService.SendNotificationAsync(accountFirebaseId, "Xóa khỏi lớp",
-                    $"Bạn đã bị xóa khỏi lớp {classInfo.Name}. Nếu có thắc mặc hoặc cho rằng đây là sự nhầm lẫn, vui lòng gửi đơn khiếu nại hoặc liên hệ trực tiếp bộ phận hỗ trợ!");
+                // Notify the removed student
+                await _serviceFactory.NotificationService.SendNotificationAsync(
+                    accountModel.AccountFirebaseId,
+                    "Removed from class",
+                    $"You have been removed from the class {classInfo.Name}. If you have any questions or believe this is a mistake, please file a complaint or contact the support team directly!"
+                );
 
+                // Notify the remaining students and instructor
                 var receiverIds = classInfo.StudentClasses.Select(c => c.StudentFirebaseId).ToList();
                 if (classInfo.InstructorId != null)
                 {
                     receiverIds.Add(classInfo.InstructorId);
                 }
 
-                await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
-                    $"Học viên {student.FullName ?? student.UserName} đã bị xóa khỏi lớp {classInfo.Name}. Nếu có thắc mắc hoặc cho rằng đây là sự nhầm lẫn, vui lòng gửi đơn khiếu nại hoặc liên hệ trực tiếp bộ phận hỗ trợ!",
-                    student.AvatarUrl ?? "");
+                await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+                    receiverIds,
+                    $"Student {student.FullName ?? student.UserName} has been removed from the class {classInfo.Name}. If you have any questions or believe this is a mistake, please file a complaint or contact the support team directly!",
+                    student.AvatarUrl ?? ""
+                );
             }
+
         }
 
         //Down excel

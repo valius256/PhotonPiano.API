@@ -14,8 +14,8 @@ namespace PhotonPiano.BusinessLogic.Interfaces
 
         Task ChangeClassOfStudent(ChangeClassModel changeClassModel, AccountModel account);
 
-        Task DeleteStudentClass(string studentId, Guid classId, bool isExpelled, string accountFirebaseId);
-        
+        Task DeleteStudentClass(string studentId, Guid classId, bool isExpelled, AccountModel accountModel);
+
         Task<byte[]> GenerateGradeTemplate(Guid classId);
         Task<bool> ImportScores(Guid classId, Stream excelFileStream, AccountModel account);
 

@@ -159,12 +159,9 @@ public class SlotService : ISlotService
     public async Task CronAutoChangeSlotStatus()
     {
         var vietnamNow = GetVietnamNow();
-        // var currentDate = DateOnly.FromDateTime(vietnamNow);
-        var currentDate = DateOnly.Parse("2025-05-22");
+        var currentDate = DateOnly.FromDateTime(vietnamNow);
 
-        // var currentTime = TimeOnly.FromDateTime(vietnamNow);
-
-        var currentTime = TimeOnly.Parse("18:15:00");
+        var currentTime = TimeOnly.FromDateTime(vietnamNow);
 
 
         // Tập hợp để lưu các ClassId và tuần bị ảnh hưởng
@@ -225,7 +222,7 @@ public class SlotService : ISlotService
                         cls.Status = ClassStatus.Finished;
                         classesToUpdate.Add(cls);
                     }
-            } 
+            }
         }
 
 
@@ -248,21 +245,11 @@ public class SlotService : ISlotService
                     slot.Status = SlotStatus.Ongoing;
             }
 
-        var slotIds = classesToUpdate
-            .Where(x => x.Status == ClassStatus.Finished)
-            .SelectMany(c => affectedClasses.FirstOrDefault(ac => ac.Id == c.Id)?.Slots ?? [])
-            .Select(s => s.Id)
-            .ToList();
-
-        var listUpdatedslotStudent = await _unitOfWork.SlotStudentRepository.FindAsync(ss =>
-            ss.AttendanceStatus == AttendanceStatus.NotYet && slotIds.Contains(ss.SlotId));
-
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await _unitOfWork.ClassRepository.UpdateRangeAsync(classesToUpdate);
             await _unitOfWork.SlotRepository.UpdateRangeAsync([.. pastSlots, .. todaySlots]);
-            await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(listUpdatedslotStudent);
         });
 
         foreach (var (classId, startOfWeek) in affectedClassesAndWeeks)
@@ -772,7 +759,7 @@ public class SlotService : ISlotService
             studentAttendanceResult.TotalSlots = totalSlots;
             studentAttendanceResult.AttendedSlots = attendedSlots;
 
-            if (studentAttendanceResult.AttendancePercentage < attendanceThreshold)
+            if (studentAttendanceResult.AttendancePercentage > attendanceThreshold * 100)
             {
                 studentAttendanceResult.IsPassed = true;
                 studentAttendanceResults.Add(studentAttendanceResult);

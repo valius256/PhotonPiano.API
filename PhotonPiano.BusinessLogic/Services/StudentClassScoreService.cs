@@ -62,6 +62,12 @@ public class StudentClassScoreService : IStudentClassScoreService
             var classInfo = await ValidateAndGetClass(classId);
             var now = DateTime.UtcNow.AddHours(7);
 
+
+            await _unitOfWork.SlotStudentRepository.ExecuteUpdateAsync(
+                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet,
+                calls => calls.SetProperty(x => x.AttendanceStatus, AttendanceStatus.Attended)
+            );
+
             var (studentClasses, studentUpdates, passedStudents) =
                 await PrepareStudentDataForScorePublishing(classId, classInfo, account, now);
 
@@ -89,13 +95,7 @@ public class StudentClassScoreService : IStudentClassScoreService
                 var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
                 backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId));
             }
-
-
-            await _unitOfWork.SlotStudentRepository.ExecuteUpdateAsync(
-                x => x.Slot.ClassId == classId && x.AttendanceStatus == AttendanceStatus.NotYet,
-                calls => calls.SetProperty(x => x.AttendanceStatus, AttendanceStatus.Attended)
-            );
-
+            
 
             await SendClassCompletionNotifications(studentClasses, classInfo);
         }

@@ -158,14 +158,19 @@ public class RoomService : IRoomService
         {
             throw new BadRequestException("Room capacity must be greater than 0.");
         }
-        
-        var roomWithSameName = await _unitOfWork.RoomRepository
-            .FindSingleAsync(r => r.Name == roomEntity.Name);
 
-        if (roomWithSameName is not null)
+        if (!string.IsNullOrEmpty(roomModel.Name))
         {
-            throw new BadRequestException("Room with same name already exists.");
+            var roomWithSameName = await _unitOfWork.RoomRepository
+                .FindSingleAsync(r => r.Name == roomModel.Name);
+
+            if (roomWithSameName is not null)
+            {
+                throw new BadRequestException("Room with same name already exists.");
+            }
+            
         }
+        
 
         roomModel.Adapt(roomEntity);
 

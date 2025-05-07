@@ -113,7 +113,21 @@ public class StudentClassScoreService : IStudentClassScoreService
         {
             throw new NotFoundException("Class not found");
         }
-
+        
+        if (classInfo.LevelId == Guid.Empty)
+        {
+            throw new BadRequestException("Cannot publish scores: The class has no associated level.");
+        }
+        
+        if (classInfo.Level == null)
+        {
+            classInfo.Level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classInfo.LevelId);
+            if (classInfo.Level == null)
+            {
+                throw new NotFoundException($"Level with ID {classInfo.LevelId} not found. Cannot proceed with score publishing.");
+            }
+        }
+        
         switch (classInfo.Status)
         {
             case ClassStatus.Finished:

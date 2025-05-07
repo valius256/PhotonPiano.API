@@ -486,11 +486,11 @@ public class TuitionService : ITuitionService
 
                 if (classDetailModel.Level != null && paidSlotCount > 0)
                 {
-                    // Tính deadline dựa trên buổi học thử cuối cùng nếu chưa dùng
+                    // Tính deadline dựa trên slot thử cuối cùng nếu chưa dùng
                     DateTime deadline;
                     if (!hasUsedTrial && trialSlotCount > 0 && trialSlotCount <= sortedSlots.Count)
                     {
-                        var lastTrialSlot = sortedSlots[trialSlotCount - 1];
+                        var lastTrialSlot = sortedSlots[trialSlotCount - 1]; // Lấy slot thử cuối cùng
                         var trialEndDate = lastTrialSlot.Date.ToDateTime(new TimeOnly(0, 0), DateTimeKind.Utc);
                         deadline = trialEndDate.AddDays(numOfDeadlineDays).AddHours(7);
                     }

@@ -392,7 +392,7 @@ public class ClassService : IClassService
             //Create classes
             await _serviceFactory.ProgressServiceHub.SendProgress(userId, $"Saving Classes...", currentProgress);
             var mappedClasses = classes.Adapt<List<Class>>();
-            var monthDict = new Dictionary<int, int>();
+            var monthLevelDict = new Dictionary<(int Month, int Year, Guid LevelId), int>();
             foreach (var classInfo in mappedClasses)
             {
                 var level = levels.FirstOrDefault(l => l.Id == classInfo.LevelId) ?? throw new NotFoundException("Level not found");
@@ -405,16 +405,18 @@ public class ClassService : IClassService
                 var classesThatMonth = await _unitOfWork.ClassRepository.CountAsync(c => c.StartTime.Month == classInfo.StartTime.Month
                     && c.StartTime.Year == classInfo.StartTime.Year && c.LevelId == level.Id, false, true);
 
-                if (monthDict.ContainsKey(classInfo.StartTime.Month))
+                var key = (classInfo.StartTime.Month, classInfo.StartTime.Year, level.Id);
+
+                if (monthLevelDict.ContainsKey(key))
                 {
-                    monthDict[classInfo.StartTime.Month] += 1;  // Increment the value
+                    monthLevelDict[key] += 1;
                 }
                 else
                 {
-                    monthDict[classInfo.StartTime.Month] = 1;  // Initialize if key doesn't exist
+                    monthLevelDict[key] = 1;
                 }
 
-                classInfo.Name = $"{level.Name.Split('(')[0]}_{classesThatMonth + monthDict[classInfo.StartTime.Month] + 1}_{classInfo.StartTime.Month}/{classInfo.StartTime.Year}";
+                classInfo.Name = $"{level.Name.Split('(')[0]}_{classesThatMonth + monthLevelDict[key]}_{classInfo.StartTime.Month}/{classInfo.StartTime.Year}";
             }
 
             await _unitOfWork.ClassRepository.AddRangeAsync(mappedClasses.Select(c =>

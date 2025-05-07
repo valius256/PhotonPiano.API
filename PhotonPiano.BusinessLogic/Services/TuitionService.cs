@@ -550,8 +550,8 @@ public class TuitionService : ITuitionService
                     emailParam);
 
                 await _serviceFactory.NotificationService.SendNotificationAsync(student.StudentFirebaseId,
-                    $"Học phí của lớp {classDetailModel.Name} đã được tạo. Hạn chót là {result.Deadline:dd/MM/yyyy}",
-                    "Hãy thanh toán học phí để tiếp tục học tập");
+                    $"The tuition fee for class {classDetailModel.Name} has been created. The deadline is {result.Deadline:dd/MM/yyyy}",
+                    "Please pay the tuition fee to continue studying");
             }
         }
     }
@@ -581,14 +581,14 @@ public class TuitionService : ITuitionService
             throw new BadRequestException("You are not allowed to pay this tuition.");
     }
 
-    public async Task CreateTuitionForTestPurpose()
-    {
-        // Get a class ID (maybe from configuration or the first active class)
-        var activeClass = await _unitOfWork.ClassRepository
-            .FindSingleProjectedAsync<ClassDetailModel>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true
-                && c.Id == Guid.Parse("f838e840-e4e5-48ae-aa09-fcb36638a698")
-            );
-
-        if (activeClass != null) await CreateTuitionWhenRegisterClass(activeClass);
-    }
+    // public async Task CreateTuitionForTestPurpose()
+    // {
+    //     // Get a class ID (maybe from configuration or the first active class)
+    //     var activeClass = await _unitOfWork.ClassRepository
+    //         .FindSingleProjectedAsync<ClassDetailModel>(c => c.Status == ClassStatus.Ongoing && c.IsPublic == true
+    //             && c.Id == Guid.Parse("f838e840-e4e5-48ae-aa09-fcb36638a698")
+    //         );
+    //
+    //     if (activeClass != null) await CreateTuitionWhenRegisterClass(activeClass);
+    // }
 }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
+using OfficeOpenXml.DataValidation;
 using OfficeOpenXml.Style;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
@@ -206,7 +207,6 @@ namespace PhotonPiano.BusinessLogic.Services
                 $"New student {student.FullName ?? student.UserName} has been added to the class {classInfo.Name}. Please give them your full support!",
                 student.AvatarUrl ?? ""
             );
-
         }
 
         public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel,
@@ -433,7 +433,7 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             //Delete tuition if any
-            var tuitions = await _unitOfWork.TuitionRepository.FindAsync(t => t.StudentClassId == studentClass.Id);  
+            var tuitions = await _unitOfWork.TuitionRepository.FindAsync(t => t.StudentClassId == studentClass.Id);
             if (accountModel.Role == Role.Student && tuitions.Any(t => t.PaymentStatus == PaymentStatus.Succeed))
             {
                 throw new BadRequestException("You has paid this class's tuition");
@@ -473,7 +473,6 @@ namespace PhotonPiano.BusinessLogic.Services
                     student.AvatarUrl ?? ""
                 );
             }
-
         }
 
         //Down excel
@@ -494,19 +493,25 @@ namespace PhotonPiano.BusinessLogic.Services
             metadataSheet.Hidden = eWorkSheetHidden.Hidden;
             metadataSheet.Cells[1, 1].Value = "ClassId";
             metadataSheet.Cells[1, 2].Value = classId.ToString();
+            metadataSheet.Cells[2, 1].Value = "TemplateVersion";
+            metadataSheet.Cells[2, 2].Value = "1.0";
+            metadataSheet.Cells[3, 1].Value = "GeneratedOn";
+            metadataSheet.Cells[3, 2].Value = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
             // Store criteria IDs for later processing when importing
             for (int i = 0; i < sortedCriteria.Count; i++)
             {
-                metadataSheet.Cells[2, i + 1].Value = "CriteriaId";
-                metadataSheet.Cells[2, i + 2].Value = sortedCriteria[i].Id.ToString();
+                metadataSheet.Cells[4 + i, 1].Value = "CriteriaId";
+                metadataSheet.Cells[4 + i, 2].Value = sortedCriteria[i].Id.ToString();
+                metadataSheet.Cells[4 + i, 3].Value = sortedCriteria[i].Name;
+                metadataSheet.Cells[4 + i, 4].Value = sortedCriteria[i].Weight;
             }
 
             // Add header information
             worksheet.Cells[1, 2, 1, 6].Merge = true;
-            worksheet.Cells[1, 2].Value = "Grade book";
+            worksheet.Cells[1, 2].Value = "GRADE BOOK";
             worksheet.Cells[1, 2].Style.Font.Bold = true;
-            worksheet.Cells[1, 2].Style.Font.Size = 14;
+            worksheet.Cells[1, 2].Style.Font.Size = 16;
             worksheet.Cells[1, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             worksheet.Cells[1, 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
             worksheet.Cells[1, 2].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 242, 204));
@@ -522,34 +527,45 @@ namespace PhotonPiano.BusinessLogic.Services
             var instructorInfo = classDetails.Instructor?.FullName ?? classDetails.Instructor?.UserName;
             worksheet.Cells[3, 2].Value = instructorInfo;
 
-            worksheet.Cells[4, 1].Value = "Assignments";
-            worksheet.Cells[4, 1].Style.Font.Bold = true;
-            worksheet.Cells[4, 1].Style.Font.Color.SetColor(Color.Blue);
-            worksheet.Cells[4, 1].Style.Font.UnderLine = true;
+            worksheet.Cells[5, 1].Value = "INSTRUCTIONS";
+            worksheet.Cells[5, 1].Style.Font.Bold = true;
+            worksheet.Cells[5, 1].Style.Font.Size = 14;
+            worksheet.Cells[5, 1].Style.Font.Color.SetColor(Color.Blue);
 
-            // Empty rows
-            worksheet.Cells[5, 1].Value = "";
-            worksheet.Cells[6, 1].Value = "";
+            worksheet.Cells[6, 1].Value = "1. Do not modify student names";
+            worksheet.Cells[7, 1].Value = "2. Enter scores between 0 and 10 only";
+            worksheet.Cells[8, 1].Value = "3. Empty cells will be ignored during import";
+            var instructionsRange = worksheet.Cells[6, 1, 8, 1];
+            instructionsRange.Style.Font.Bold = true;
+            instructionsRange.Style.Font.Italic = true;
 
             // Student header
-            worksheet.Cells[7, 1].Value = "Student Name";
-            worksheet.Cells[7, 1].Style.Font.Bold = true;
-            worksheet.Cells[7, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
-            worksheet.Cells[7, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(221, 235, 247));
-            worksheet.Cells[7, 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
-            worksheet.Cells[7, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            int headerRow = 10;
+            worksheet.Cells[headerRow, 1].Value = "Student Name";
+            worksheet.Cells[headerRow, 1].Style.Font.Bold = true;
+            worksheet.Cells[headerRow, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            worksheet.Cells[headerRow, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(221, 235, 247));
+            worksheet.Cells[headerRow, 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            worksheet.Cells[headerRow, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            worksheet.Cells[headerRow + 1, 1].Value = "Weight (%)";
+            worksheet.Cells[headerRow + 1, 1].Style.Font.Bold = true;
+            worksheet.Cells[headerRow + 1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            worksheet.Cells[headerRow + 1, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(226, 239, 218));
+            worksheet.Cells[headerRow + 1, 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            worksheet.Cells[headerRow + 1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
             int startCol = 2;
             var assessments = sortedCriteria.Select(c => c.Name).ToArray();
             var weights = sortedCriteria.Select(c => (double)c.Weight).ToArray();
-            Dictionary<string, int> headerCount = new Dictionary<string, int>();
+            Dictionary<string, int> headerCount = [];
 
             // Assessment headers
             for (int i = 0; i < assessments.Length; i++)
             {
                 string assessmentName = assessments[i];
 
-                // Handle duplicates by appending a number (e.g., "Exam (1)", "Exam (2)")
+                // Handle duplicates by appending a number
                 if (headerCount.ContainsKey(assessmentName))
                 {
                     headerCount[assessmentName]++;
@@ -560,7 +576,8 @@ namespace PhotonPiano.BusinessLogic.Services
                     headerCount[assessmentName] = 1;
                 }
 
-                var nameCell = worksheet.Cells[7, startCol + i];
+                // Set column header
+                var nameCell = worksheet.Cells[headerRow, startCol + i];
                 nameCell.Value = assessmentName;
                 nameCell.Style.Font.Bold = true;
                 nameCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
@@ -568,8 +585,11 @@ namespace PhotonPiano.BusinessLogic.Services
                 nameCell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
                 nameCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
-                // Assign weight to row 8
-                var weightCell = worksheet.Cells[8, startCol + i];
+                // Set column width based on content
+                worksheet.Column(startCol + i).Width = Math.Max(15, assessmentName.Length * 1.2);
+
+                // Assign weight to weight row
+                var weightCell = worksheet.Cells[headerRow + 1, startCol + i];
                 weightCell.Value = weights[i];
                 weightCell.Style.Numberformat.Format = "0.0\\%";
                 weightCell.Style.Font.Bold = true;
@@ -577,25 +597,74 @@ namespace PhotonPiano.BusinessLogic.Services
                 weightCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(226, 239, 218));
                 weightCell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
                 weightCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+                // Add data validation for score range (0-10)
+                int totalStudents = classDetails.StudentClasses.Count;
+                var dataValidation = worksheet.DataValidations.AddDecimalValidation(
+                    ExcelCellBase.GetAddress(headerRow + 2, startCol + i, headerRow + 1 + totalStudents, startCol + i));
+                dataValidation.ShowErrorMessage = true;
+                dataValidation.ErrorTitle = "Invalid Score";
+                dataValidation.Error = "Please enter a score between 0 and 10";
+                dataValidation.Operator = ExcelDataValidationOperator.between;
+                dataValidation.Formula.Value = 0;
+                dataValidation.Formula2.Value = 10;
             }
 
             // No need for total and percentage columns
-
-            int studentStartRow = 9;
+            int studentStartRow = headerRow + 2;
             foreach (var studentClass in classDetails.StudentClasses)
             {
                 worksheet.Cells[studentStartRow, 1].Value = studentClass.Student.FullName;
+                worksheet.Cells[studentStartRow, 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                worksheet.Cells[studentStartRow, 1].Style.Locked = true;
                 studentStartRow++;
             }
 
+            // Add conditional formatting for scores
+            // Red for failing scores (< 5)
+            var failingScores = worksheet.ConditionalFormatting.AddLessThan(
+                new ExcelAddress(headerRow + 2, startCol, studentStartRow - 1, startCol + assessments.Length - 1));
+            failingScores.Formula = "5";
+            failingScores.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            failingScores.Style.Fill.BackgroundColor.SetColor(Color.LightPink);
+
+            // Green for passing scores (>= 5)
+            var passingScores = worksheet.ConditionalFormatting.AddGreaterThanOrEqual(
+                new ExcelAddress(headerRow + 2, startCol, studentStartRow - 1, startCol + assessments.Length - 1));
+            passingScores.Formula = "5";
+            passingScores.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            passingScores.Style.Fill.BackgroundColor.SetColor(Color.LightGreen);
+
+            // No conditional formatting for totals as the total column has been removed
+
+            // Protect worksheet
+            worksheet.Protection.IsProtected = true;
+            worksheet.Protection.AllowSelectLockedCells = false;
+            worksheet.Protection.AllowSelectUnlockedCells = true;
+            worksheet.Protection.AllowDeleteColumns = false;
+            worksheet.Protection.AllowDeleteRows = false;
+            worksheet.Protection.AllowInsertColumns = false;
+            worksheet.Protection.AllowInsertRows = false;
+            worksheet.Protection.AllowFormatCells = false;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Locked = true;
+            // Allow editing only the grade cells
+            var gradeRange = worksheet.Cells[headerRow + 2, startCol, studentStartRow - 1,
+                startCol + assessments.Length - 1];
+            gradeRange.Style.Locked = false;
+            // Auto-fit and freeze panes
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-            worksheet.View.FreezePanes(9, 2);
+            worksheet.View.FreezePanes(headerRow + 2, 2);
 
             return await package.GetAsByteArrayAsync();
         }
 
         public async Task<bool> ImportScores(Guid classId, Stream excelFileStream, AccountModel account)
         {
+            if (classId == Guid.Empty)
+            {
+                throw new ArgumentException("Invalid class ID", nameof(classId));
+            }
+
             var classDetails = await _serviceFactory.ClassService.GetClassDetailById(classId);
 
             if (classDetails.IsPublic == false)
@@ -607,11 +676,12 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("The class is not started");
             }
+
             if (classDetails.IsScorePublished)
             {
                 throw new BadRequestException("The scores have been published");
             }
-            
+
             var classCriteria = await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.Class);
 
             if (classCriteria.Count == 0)
@@ -620,22 +690,25 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             using var package = new ExcelPackage(excelFileStream);
-            var worksheet = package.Workbook.Worksheets[0];
+            var worksheet = package.Workbook.Worksheets["Grades"];
+            if (worksheet == null)
+            {
+                throw new BadRequestException("Invalid Excel template: 'Grades' worksheet not found");
+            }
 
-            var criteriaMapping = MapCriteriaToColumns(worksheet, classCriteria);
-
-            //Check valid template
-            ValidateExcelTemplate(worksheet, criteriaMapping.Count);
-
-            //Get metadata sheet 
-            var metaDataSheet = package.Workbook.Worksheets["Metadata"];
-            if (metaDataSheet == null || metaDataSheet.Cells[1, 2].Text != classId.ToString())
+            var metadataSheet = package.Workbook.Worksheets["Metadata"];
+            if (metadataSheet == null || metadataSheet.Cells[1, 2].Text != classId.ToString())
             {
                 throw new BadRequestException("Invalid template: This template is not for the selected class");
             }
 
-            // Starting row for student data
-            int studentStartRow = 9;
+            int headerRow = 10;
+            var criteriaMapping = MapCriteriaToColumns(worksheet, classCriteria, headerRow);
+
+            //Check valid template
+            ValidateExcelTemplate(worksheet, criteriaMapping.Count, headerRow);
+            
+            int studentStartRow = headerRow + 2;
             int rows = worksheet.Dimension.Rows;
             List<string> allValidationErrors = [];
 
@@ -645,14 +718,14 @@ namespace PhotonPiano.BusinessLogic.Services
                 {
                     string studentName = worksheet.Cells[row, 1].Text;
                     if (string.IsNullOrEmpty(studentName))
-                        continue; 
+                        continue;
 
                     var studentClass = classDetails.StudentClasses.FirstOrDefault(sc =>
                         string.Equals(sc.Student.FullName, studentName, StringComparison.OrdinalIgnoreCase));
 
                     if (studentClass == null)
                         continue;
-                    
+
                     try
                     {
                         await UpdateStudentClassScores(studentClass.Id, worksheet, row, criteriaMapping,
@@ -663,12 +736,13 @@ namespace PhotonPiano.BusinessLogic.Services
                         allValidationErrors.Add(ex.Message);
                     }
                 }
-                
+
                 if (allValidationErrors.Any())
                 {
-                    throw new BadRequestException($"Score import failed due to validation errors:\n{string.Join("\n", allValidationErrors)}");
+                    throw new BadRequestException(
+                        $"Score import failed due to validation errors:\n{string.Join("\n", allValidationErrors)}");
                 }
-                
+
                 await _unitOfWork.SaveChangesAsync();
 
                 for (int row = studentStartRow; row <= rows; row++)
@@ -694,41 +768,84 @@ namespace PhotonPiano.BusinessLogic.Services
             });
         }
 
-        private void ValidateExcelTemplate(ExcelWorksheet worksheet, int expectedCriteriaCount)
+        private void ValidateExcelTemplate(ExcelWorksheet worksheet, int expectedCriteriaCount, int headerRow)
         {
             if (worksheet == null)
             {
                 throw new BadRequestException("Invalid Excel template: No worksheet found");
             }
-            if (worksheet.Dimension.Columns < expectedCriteriaCount + 1) 
+
+            if (worksheet.Dimension.Columns < expectedCriteriaCount + 1)
             {
                 throw new BadRequestException("Invalid Excel template: Missing required columns");
             }
-            
-            // Check for student column
-            string studentHeader = worksheet.Cells[7, 1].Text;
+
+            string studentHeader = worksheet.Cells[headerRow, 1].Text;
             if (string.IsNullOrEmpty(studentHeader) ||
                 !studentHeader.Equals("Student Name", StringComparison.OrdinalIgnoreCase))
             {
-                throw new BadRequestException("Invalid Excel template: Student column not found");
+                throw new BadRequestException($"Invalid Excel template: Student column not found in row {headerRow}");
+            }
+    
+            // Verify weights row exists
+            string weightLabel = worksheet.Cells[headerRow + 1, 1].Text;
+            if (string.IsNullOrEmpty(weightLabel) || 
+                !weightLabel.Contains("Weight", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException("Invalid Excel template: Weight row not found");
             }
         }
 
-        private Dictionary<string, (int Column, Guid Id)> MapCriteriaToColumns(ExcelWorksheet worksheet,
-            IEnumerable<Criteria> classCriteria)
+        private Dictionary<string, (int Column, Guid Id)> MapCriteriaToColumns(
+            ExcelWorksheet worksheet,
+            IEnumerable<Criteria> classCriteria,
+            int headerRow)
         {
             int startCol = 2;
             var mapping = new Dictionary<string, (int Column, Guid Id)>(StringComparer.OrdinalIgnoreCase);
-            
+
+            // First, check metadata sheet for criteria IDs if available
+            var metadataSheet = worksheet.Workbook.Worksheets["Metadata"];
+            Dictionary<string, Guid> criteriaIdByName = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+
+            if (metadataSheet != null)
+            {
+                // Try to read criteria IDs from metadata
+                int row = 4; // Criteria IDs start from row 4 in our new template
+                while (!string.IsNullOrEmpty(metadataSheet.Cells[row, 1].Text))
+                {
+                    if (metadataSheet.Cells[row, 1].Text == "CriteriaId" &&
+                        !string.IsNullOrEmpty(metadataSheet.Cells[row, 2].Text) &&
+                        !string.IsNullOrEmpty(metadataSheet.Cells[row, 3].Text))
+                    {
+                        string criteriaName = metadataSheet.Cells[row, 3].Text;
+                        if (Guid.TryParse(metadataSheet.Cells[row, 2].Text, out Guid criteriaId))
+                        {
+                            criteriaIdByName[criteriaName] = criteriaId;
+                        }
+                    }
+
+                    row++;
+                }
+            }
+
+            // Map columns to criteria
             for (int col = startCol; col <= worksheet.Dimension.Columns; col++)
             {
-                string criteriaName = worksheet.Cells[7, col].Text;
+                string criteriaName = worksheet.Cells[headerRow, col].Text;
                 if (!string.IsNullOrEmpty(criteriaName))
                 {
                     // Extract the base criteria name (remove any numbering like " (1)")
                     string baseCriteriaName = Regex.Replace(criteriaName, @"\s*\(\d+\)$", "");
 
-                    // Find matching criteria ID
+                    // First try to get the ID directly from metadata
+                    if (criteriaIdByName.TryGetValue(baseCriteriaName, out Guid criteriaId))
+                    {
+                        mapping[criteriaName] = (col, criteriaId);
+                        continue;
+                    }
+
+                    // If not found in metadata, look up by name
                     var matchingCriteria = classCriteria.FirstOrDefault(c =>
                         string.Equals(c.Name, baseCriteriaName, StringComparison.OrdinalIgnoreCase));
 
@@ -745,15 +862,15 @@ namespace PhotonPiano.BusinessLogic.Services
         private async Task UpdateStudentClassScores(Guid studentClassId, ExcelWorksheet worksheet, int row,
             Dictionary<string, (int Column, Guid Id)> criteriaMapping, string accountFirebaseId)
         {
-            var existingScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
-                scs => scs.StudentClassId == studentClassId);
+            var existingScores =
+                await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == studentClassId);
 
             List<StudentClassScore> scoresToUpdate = [];
             List<StudentClassScore> scoresToAdd = [];
             List<string> validationErrors = [];
 
             string studentName = worksheet.Cells[row, 1].Text;
-            
+
             foreach (var criteriaEntry in criteriaMapping)
             {
                 string criteriaName = criteriaEntry.Key;
@@ -766,16 +883,26 @@ namespace PhotonPiano.BusinessLogic.Services
                 {
                     if (parsedScore < 0 || parsedScore > 10)
                     {
-                        validationErrors.Add($"Student '{studentName}', criterion '{criteriaName}': Score {parsedScore} is outside valid range (0-10).");
-                        continue; 
+                        validationErrors.Add(
+                            $"Student '{studentName}', criterion '{criteriaName}': Score {parsedScore} is outside valid range (0-10).");
+                        continue;
                     }
+
                     score = parsedScore;
+                }
+                else if (string.IsNullOrWhiteSpace(cellValue))
+                {
+                    validationErrors.Add(
+                        $"Student '{studentName}', criterion '{criteriaName}': Score cannot be empty. Please enter a numeric value between 0-10.");
+                    continue;
                 }
                 else
                 {
-                    validationErrors.Add($"Student '{studentName}', criterion '{criteriaName}': Value '{cellValue}' is not a valid number.");
-                    continue; 
+                    validationErrors.Add(
+                        $"Student '{studentName}', criterion '{criteriaName}': Value '{cellValue}' is not a valid number.");
+                    continue;
                 }
+
                 var scoreRecord = existingScores.FirstOrDefault(s => s.CriteriaId == criteriaId);
 
                 if (scoreRecord != null)
@@ -786,7 +913,6 @@ namespace PhotonPiano.BusinessLogic.Services
                 }
                 else
                 {
-                    // Create new score record
                     var newScore = new StudentClassScore
                     {
                         Id = Guid.NewGuid(),
@@ -797,12 +923,12 @@ namespace PhotonPiano.BusinessLogic.Services
                     scoresToAdd.Add(newScore);
                 }
             }
-        
+
             if (validationErrors.Any())
             {
                 throw new BadRequestException($"Invalid scores detected:\n{string.Join("\n", validationErrors)}");
             }
-            
+
             if (scoresToUpdate.Any())
             {
                 await _unitOfWork.StudentClassScoreRepository.UpdateRangeAsync(scoresToUpdate);
@@ -816,10 +942,11 @@ namespace PhotonPiano.BusinessLogic.Services
 
         private async Task UpdateStudentClassGpa(Guid studentClassId, string accountFirebaseId, string className)
         {
-            var studentClassScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
-                scs => scs.StudentClassId == studentClassId
-            );
-
+            var studentClassScores =
+                await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == studentClassId
+                );
+            if (!studentClassScores.Any())
+                return;
             decimal totalWeightedScore = 0;
             decimal totalWeight = 0;
 
@@ -906,7 +1033,6 @@ namespace PhotonPiano.BusinessLogic.Services
 
             // Combine for final sort order
             return baseOrder + subOrder;
-
         }
 
         public async Task<bool> UpdateStudentStatusAsync(string studentFirbaseId, StudentStatus newStatus,
@@ -966,7 +1092,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 _ => false
             };
         }
-        
+
         //Update a specific score for a specific criteria
         public async Task<bool> UpdateStudentScore(UpdateStudentScoreModel model, AccountModel account)
         {
@@ -998,8 +1124,8 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new NotFoundException($"Criteria with ID {model.CriteriaId} not found");
             }
 
-            var score = await _unitOfWork.StudentClassScoreRepository.FindSingleAsync(
-                sc => sc.StudentClassId == studentClass.ClassId && sc.CriteriaId == model.CriteriaId);
+            var score = await _unitOfWork.StudentClassScoreRepository.FindSingleAsync(sc =>
+                sc.StudentClassId == studentClass.ClassId && sc.CriteriaId == model.CriteriaId);
             if (score == null)
             {
                 // Create new score
@@ -1040,8 +1166,8 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             var studentClassIds = model.Scores.Select(s => s.StudentClassId).Distinct().ToList();
-            var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(
-                sc => studentClassIds.Contains(sc.Id) && sc.ClassId == model.ClassId);
+            var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc =>
+                studentClassIds.Contains(sc.Id) && sc.ClassId == model.ClassId);
             if (studentClasses.Count != studentClassIds.Count)
             {
                 throw new BadRequestException(
@@ -1064,6 +1190,7 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("Cannot update scores for a class that has already been published");
             }
+
             // Get all criteria for validation
             var criteriaIds = model.Scores.Select(s => s.CriteriaId).Distinct().ToList();
             var criteria = await _unitOfWork.CriteriaRepository.FindAsync(c => criteriaIds.Contains(c.Id));
@@ -1074,8 +1201,8 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
             // Load all existing scores in one query for better performance
-            var existingScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
-                scs => studentClassIds.Contains(scs.StudentClassId) && criteriaIds.Contains(scs.CriteriaId));
+            var existingScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(scs =>
+                studentClassIds.Contains(scs.StudentClassId) && criteriaIds.Contains(scs.CriteriaId));
 
             // Create a dictionary for quick lookup
             var scoreMap = existingScores.ToDictionary(

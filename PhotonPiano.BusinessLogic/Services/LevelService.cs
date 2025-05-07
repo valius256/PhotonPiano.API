@@ -316,13 +316,15 @@ public class LevelService : ILevelService
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             //var levels = await GetSortedAllLevels();
+            level.RecordStatus = RecordStatus.IsDeleted;
+            level.NextLevelId = null;
+            level.DeletedAt = DateTime.UtcNow.AddHours(7);
 
             //RemoveLevel(levels, level);
             await _unitOfWork.AccountRepository.UpdateRangeAsync(affectedAccounts);
             await _unitOfWork.ClassRepository.UpdateRangeAsync(affectedClasses);
 
-            level.RecordStatus = RecordStatus.IsDeleted;
-            level.DeletedAt = DateTime.UtcNow.AddHours(7);
+            
         });
 
         await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);

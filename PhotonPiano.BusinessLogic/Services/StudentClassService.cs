@@ -602,6 +602,11 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 throw new BadRequestException("The class is not open for scores");
             }
+
+            if (classDetails.Status == ClassStatus.NotStarted)
+            {
+                throw new BadRequestException("The class is not started");
+            }
             if (classDetails.IsScorePublished)
             {
                 throw new BadRequestException("The scores have been published");

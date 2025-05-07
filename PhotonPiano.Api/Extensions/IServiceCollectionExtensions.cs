@@ -131,7 +131,11 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus)
             .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
-
+        
+        TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestDetailResponse>.NewConfig()
+            .Map(dest => dest.Status, src => src.RecordStatus)
+            .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
+        
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
 

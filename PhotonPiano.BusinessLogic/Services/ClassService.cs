@@ -111,7 +111,7 @@ public class ClassService : IClassService
 
         var likeKeyword = queryClass.GetLikeKeyword();
 
-        var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassModel>(
+        var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassWithSlotsModel>(
             page, pageSize, sortColumn, orderByDesc,
             expressions:
             [
@@ -151,7 +151,8 @@ public class ClassService : IClassService
                 IsPublic = q.IsPublic,
                 Level = q.Level.Adapt<LevelModel>(),
                 ScheduleDescription = q.ScheduleDescription,
-                StartTime = q.StartTime,
+                StartTime = q.Slots.Min(s => (DateOnly?)s.Date),
+                EndTime = q.Slots.Max(s => (DateOnly?)s.Date),
                 // Aggregate counts directly in SQL
                 StudentNumber = q.StudentClasses.Count(),
                 TotalSlots = q.Slots.Count(),

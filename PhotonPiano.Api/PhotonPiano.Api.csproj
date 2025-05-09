@@ -44,7 +44,7 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.11.1"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.11.0-beta.2"/>
         <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1"/>
-        <PackageReference Include="Scalar.AspNetCore" Version="2.0.12"/>
+        <PackageReference Include="Scalar.AspNetCore" Version="2.2.7"/>
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
         <PackageReference Include="StackExchange.Redis" Version="2.8.24"/>
     </ItemGroup>

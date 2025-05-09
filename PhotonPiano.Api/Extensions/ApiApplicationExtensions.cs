@@ -4,21 +4,14 @@ public static class ApiApplicationExtensions
 {
     public static WebApplication UseScalarConfig(this WebApplication app)
     {
-        app.MapOpenApi(app.Environment.IsDevelopment()
-            ? "/openapi/{documentName}.json"
-            : "/api/openapi/{documentName}.json");
+        app.MapOpenApi();
 
 
-        app.MapScalarApiReference("/scalar/v1", options =>
+        app.MapScalarApiReference(options =>
         {
             options.WithTitle("PhotonPiano API");
 
-            options.Theme = ScalarTheme.Kepler;
-
-            options.BaseServerUrl = app.Environment.IsDevelopment()
-                ? "https://localhost:7777"
-                : "https://photonpiano.duckdns.org/api";
-
+            options.Theme = ScalarTheme.BluePlanet;
 
             options.Authentication =
                 new ScalarAuthenticationOptions

@@ -119,6 +119,7 @@ sqlConfig.Configure();
 
 app.UseResponseCompression();
 
+
 app.MapSignalRConfig();
 
 app.MapControllers();

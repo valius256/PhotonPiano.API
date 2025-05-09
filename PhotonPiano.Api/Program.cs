@@ -38,8 +38,9 @@ builder.Services.AddOpenTelemetry()
         .AddPrometheusExporter())
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddConsoleExporter());
+        .AddSqlClientInstrumentation()
+        .AddHttpClientInstrumentation());
+// .AddConsoleExporter());
 
 // Add DinkToPdf services
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));

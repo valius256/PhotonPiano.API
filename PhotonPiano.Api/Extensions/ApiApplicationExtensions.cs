@@ -6,14 +6,14 @@ public static class ApiApplicationExtensions
     {
         app.MapOpenApi();
 
-        app.MapScalarApiReference(options =>
+        app.MapScalarApiReference("scalar/v1", options =>
         {
             options.WithTitle("PhotonPiano API");
 
             options.Theme = ScalarTheme.Purple;
 
-            options.BaseServerUrl = "https://photonpiano.duckdns.org/scalar/v1";
-            
+            options.BaseServerUrl = "https://photonpiano.duckdns.org";
+
             options.Authentication =
                 new ScalarAuthenticationOptions
                 {

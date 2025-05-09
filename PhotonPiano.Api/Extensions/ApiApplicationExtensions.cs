@@ -13,7 +13,10 @@ public static class ApiApplicationExtensions
 
             options.Theme = ScalarTheme.Purple;
 
-            options.BaseServerUrl = "https://photonpiano.duckdns.org";
+            options.BaseServerUrl = app.Environment.IsDevelopment()
+                ? "https://localhost:7777"
+                : "https://photonpiano.duckdns.org/api";
+            
 
             options.Authentication =
                 new ScalarAuthenticationOptions

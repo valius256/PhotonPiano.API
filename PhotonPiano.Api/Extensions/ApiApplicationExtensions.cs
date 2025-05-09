@@ -6,7 +6,8 @@ public static class ApiApplicationExtensions
     {
         app.MapOpenApi();
 
-        app.MapScalarApiReference("scalar/v1", options =>
+
+        app.MapScalarApiReference("/scalar/v1", options =>
         {
             options.WithTitle("PhotonPiano API");
 

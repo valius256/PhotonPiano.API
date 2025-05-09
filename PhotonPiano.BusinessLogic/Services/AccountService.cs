@@ -57,7 +57,11 @@ public class AccountService : IAccountService
         var result =
             await _unitOfWork.AccountRepository.FindFirstProjectedAsync<AccountDetailModel>(x =>
                 x.AccountFirebaseId == firebaseId);
-        if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
+        if (result is null)
+        {
+            throw new NotFoundException($"Account with ID: {firebaseId} not found.");
+        }
+        
         return result;
     }
 

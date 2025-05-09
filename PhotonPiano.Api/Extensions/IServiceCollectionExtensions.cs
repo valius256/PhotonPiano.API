@@ -18,6 +18,7 @@ using PhotonPiano.Api.Requests.Application;
 using PhotonPiano.Api.Requests.DayOff;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.Api.Responses.Class;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BackgroundJob;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
@@ -131,11 +132,11 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.RegisterStudents, src => src.EntranceTestStudents.Count)
             .Map(dest => dest.Status, src => src.RecordStatus)
             .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
-        
+
         TypeAdapterConfig<EntranceTestWithInstructorModel, EntranceTestDetailResponse>.NewConfig()
             .Map(dest => dest.Status, src => src.RecordStatus)
             .Map(dest => dest.TestStatus, src => ShiftUtils.GetEntranceTestStatus(src.Date, src.Shift));
-        
+
         TypeAdapterConfig<UpdateEntranceTestResultsRequest, UpdateEntranceTestResultsModel>.NewConfig()
             .IgnoreNullValues(true);
 
@@ -168,6 +169,11 @@ public static class IServiceCollectionExtensions
                 src => src.EndTime.HasValue ? DateTime.SpecifyKind(src.EndTime.Value, DateTimeKind.Utc) : src.EndTime);
 
         TypeAdapterConfig<UpdateDayOffModel, DayOff>.NewConfig().IgnoreNullValues(true);
+
+        TypeAdapterConfig<ClassWithSlotsModel, ClassResponse>
+            .NewConfig()
+            .Map(dest => dest.StartTime, src => src.Slots.Min(s => (DateOnly?)s.Date))
+            .Map(dest => dest.EndTime, src => src.Slots.Max(s => (DateOnly?)s.Date));
 
         return services;
     }

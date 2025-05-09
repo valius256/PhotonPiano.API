@@ -1,6 +1,6 @@
+using PhotonPiano.Api.Responses.Class;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
-using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
 using PhotonPiano.BusinessLogic.BusinessModel.FreeSlot;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.Survey;
@@ -9,7 +9,7 @@ namespace PhotonPiano.Api.Responses.Account;
 
 public record AccountDetailResponse : AccountResponse
 {
-    public ClassModel? CurrentClass { get; init; }
+    public ClassResponse? CurrentClass { get; init; }
 
     public LevelModel? Level { get; init; }
 

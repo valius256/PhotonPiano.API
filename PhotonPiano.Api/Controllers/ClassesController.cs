@@ -23,7 +23,7 @@ namespace PhotonPiano.Api.Controllers
 
         [HttpGet]
         [EndpointDescription("Get Classes with Paging")]
-        public async Task<ActionResult<List<ClassModel>>> GetCriteria(
+        public async Task<ActionResult<List<ClassModel>>> GetClasses(
          [FromQuery] QueryClassRequest request)
         {
             var pagedResult =
@@ -31,7 +31,8 @@ namespace PhotonPiano.Api.Controllers
                     request.Adapt<QueryClassModel>());
 
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
-            return pagedResult.Items.Adapt<List<ClassModel>>();
+                
+            return pagedResult.Items;
         }
 
         [HttpPost("auto-arrangement")]

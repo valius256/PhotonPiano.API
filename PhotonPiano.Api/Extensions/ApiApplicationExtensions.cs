@@ -4,7 +4,9 @@ public static class ApiApplicationExtensions
 {
     public static WebApplication UseScalarConfig(this WebApplication app)
     {
-        app.MapOpenApi();
+        app.MapOpenApi(app.Environment.IsDevelopment()
+            ? "/openapi/{documentName}.json"
+            : "/api/openapi/{documentName}.json");
 
 
         app.MapScalarApiReference("/scalar/v1", options =>

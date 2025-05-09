@@ -7,7 +7,7 @@ public static class ApiApplicationExtensions
         app.MapOpenApi();
 
 
-        app.MapScalarApiReference(options =>
+        app.MapScalarApiReference("scalar/v1", options =>
         {
             options.WithTitle("PhotonPiano API");
 
@@ -18,8 +18,8 @@ public static class ApiApplicationExtensions
                 {
                     PreferredSecurityScheme = "Bearer"
                 };
-
-
+           
+            
             options.DefaultHttpClient =
                 new KeyValuePair<ScalarTarget, ScalarClient>(ScalarTarget.JavaScript, ScalarClient.Axios);
         });

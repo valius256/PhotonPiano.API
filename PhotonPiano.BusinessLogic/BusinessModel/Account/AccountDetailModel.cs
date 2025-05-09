@@ -11,7 +11,7 @@ public record AccountDetailModel : AccountModel
 {
     public List<LearnerSurveyWithAnswersDetailModel> LearnerSurveys { get; set; } = [];
     public List<FreeSlotModel> FreeSlots { get; set; } = [];
-    public ClassModel? CurrentClass { get; init; }
+    public ClassWithSlotsModel? CurrentClass { get; init; }
     public List<StudentClassWithClassModel> StudentClasses { get; set; } = [];
     public List<EntranceTestStudentDetail> EntranceTestStudents { get; init; } = [];
 }

@@ -11,7 +11,8 @@ public record ClassModel
     public string? InstructorId { get; init; }
     public string? InstructorName { get; init; }
     public ClassStatus Status { get; init; } = ClassStatus.NotStarted;
-    public DateOnly StartTime { get; set; }
+    public DateOnly? StartTime { get; init; }
+    public DateOnly? EndTime { get; init; }
     public Guid LevelId { get; init; }
     public bool IsPublic { get; init; }
     public string? ScheduleDescription { get; set; }

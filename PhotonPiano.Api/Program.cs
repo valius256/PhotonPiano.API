@@ -6,7 +6,6 @@ using Hangfire;
 using Mapster;
 using Microsoft.AspNetCore.Mvc.Razor;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using PhotonPiano.Api.Configurations;
@@ -40,7 +39,7 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-        .AddConsoleExporter()); 
+        .AddConsoleExporter());
 
 // Add DinkToPdf services
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
@@ -88,18 +87,20 @@ var app = builder.Build();
 // app.UseHttpMetrics(); // collect HTTP request metrics
 
 
+app.UseStaticFiles();
+
 app.UseRouting();
 
-
-await app.ConfigureDatabaseAsync();
-
-app.UseScalarConfig();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseCors("AllowAll");
 
-// app.MapPrometheusScrapingEndpoint();
-
 app.UseHttpsRedirection();
+
+app.UseExceptionHandler();
+
+app.UseScalarConfig();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
@@ -110,24 +111,14 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     AppPath = "https://photonpiano.duckdns.org/scalar/v1"
 });
 
-app.UseStaticFiles();
 app.MapRazorPages();
 
-// Register and execute PostgresSqlConfiguration
 var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
 sqlConfig.Configure();
 
-// uncomment to active Rate limiter
-// app.UseRateLimiter();
-
-app.UseExceptionHandler();
-
-app.UseAuthorization();
+app.UseResponseCompression();
 
 app.MapSignalRConfig();
-
-
-app.UseResponseCompression();
 
 app.MapControllers();
 
@@ -136,6 +127,7 @@ app.MapPrometheusScrapingEndpoint();
 app.MapHealthChecks("/health");
 
 await app.RunAsync();
+
 
 //This Startup endpoint for Unit Tests
 namespace PhotonPiano.Api

@@ -40,7 +40,8 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-        .AddConsoleExporter()); 
+        .AddSqlClientInstrumentation());
+// .AddConsoleExporter()); 
 
 // Add DinkToPdf services
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));

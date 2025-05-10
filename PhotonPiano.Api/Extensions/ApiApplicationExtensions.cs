@@ -5,9 +5,18 @@ public static class ApiApplicationExtensions
     public static WebApplication UseScalarConfig(this WebApplication app)
     {
         app.MapOpenApi();
-        app.MapScalarApiReference(options =>
+        app.MapScalarApiReference("/scalar/v1", options =>
         {
             options.WithTitle("PhotonPiano API");
+
+            options.OpenApiRoutePattern = "/openapi/v1.json";
+
+            options.WithCdnUrl("https://cdn.jsdelivr.net/npm/@scalar/api-reference");
+            
+            options.Theme = ScalarTheme.BluePlanet;
+
+            if (!app.Environment.IsDevelopment()) options.ProxyUrl = "https://photonpiano.duckdns.org";
+
 
             options.Authentication =
                 new ScalarAuthenticationOptions

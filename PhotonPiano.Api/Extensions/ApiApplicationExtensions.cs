@@ -11,7 +11,7 @@ public static class ApiApplicationExtensions
 
             options.Theme = ScalarTheme.BluePlanet;
 
-            options.ProxyUrl = "https://photonpiano.duckdns.org/scalar/v1";
+            options.ProxyUrl = "https://photonpiano.duckdns.org";
 
             options.Authentication =
                 new ScalarAuthenticationOptions

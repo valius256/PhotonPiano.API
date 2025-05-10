@@ -9,9 +9,12 @@ public static class ApiApplicationExtensions
         {
             options.WithTitle("PhotonPiano API");
 
+            options.OpenApiRoutePattern = "/openapi/v1.json";
+            
             options.Theme = ScalarTheme.BluePlanet;
 
-            options.ProxyUrl = "https://photonpiano.duckdns.org";
+            if (!app.Environment.IsDevelopment()) options.ProxyUrl = "https://photonpiano.duckdns.org";
+
 
             options.Authentication =
                 new ScalarAuthenticationOptions

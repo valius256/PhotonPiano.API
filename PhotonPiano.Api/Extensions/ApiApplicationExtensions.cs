@@ -9,6 +9,8 @@ public static class ApiApplicationExtensions
         {
             options.WithTitle("PhotonPiano API");
 
+            options.Theme = ScalarTheme.BluePlanet;
+
             options.Authentication =
                 new ScalarAuthenticationOptions
                 {

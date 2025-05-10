@@ -51,6 +51,16 @@ public class OpenApiSecuritySchemeTransformer
                 { JwtBearerDefaults.AuthenticationScheme, securitySchema }
             }
         };
+
+        document.Servers = new List<OpenApiServer>
+        {
+            new()
+            {
+                Url = "https://photonpiano.duckdns.org",
+                Description = "Production Server"
+            }
+        };
+        
         return Task.CompletedTask;
     }
 }

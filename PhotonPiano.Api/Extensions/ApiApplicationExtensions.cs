@@ -10,6 +10,8 @@ public static class ApiApplicationExtensions
             options.WithTitle("PhotonPiano API");
 
             options.OpenApiRoutePattern = "/openapi/v1.json";
+
+            options.WithCdnUrl("https://cdn.jsdelivr.net/npm/@scalar/api-reference");
             
             options.Theme = ScalarTheme.BluePlanet;
 

@@ -44,7 +44,7 @@ public class SystemConfigsController : BaseController
     {
         return await _serviceFactory.SystemConfigService.GetConfig(name);
     }
-
+ 
     [HttpGet("attendance-deadline")]
     [EndpointDescription("Get system config by name")]
     public async Task<ActionResult<SystemConfigModel>> GetByAttendance()

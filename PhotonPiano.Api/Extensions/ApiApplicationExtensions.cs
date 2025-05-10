@@ -5,7 +5,7 @@ public static class ApiApplicationExtensions
     public static WebApplication UseScalarConfig(this WebApplication app)
     {
         app.MapOpenApi();
-        app.MapScalarApiReference("api/scalar/v1", options =>
+        app.MapScalarApiReference("/scalar/v1", options =>
         {
             options.WithTitle("PhotonPiano API");
 

@@ -89,6 +89,8 @@ var app = builder.Build();
 // app.UseHttpMetrics(); // collect HTTP request metrics
 
 
+app.UseStaticFiles();
+
 app.UseRouting();
 
 
@@ -111,7 +113,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     AppPath = "https://photonpiano.duckdns.org/scalar/v1"
 });
 
-app.UseStaticFiles();
+
 app.MapRazorPages();
 
 // Register and execute PostgresSqlConfiguration

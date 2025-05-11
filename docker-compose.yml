@@ -49,8 +49,6 @@ services:
       - JWTAUTH__ISSUER=${JWTAUTH_ISSUER}
       - JWTAUTH__AUDIENCE=${JWTAUTH_AUDIENCE}
       - JWTAUTH__DURATIONINDAYS=${JWTAUTH_DURATIONINDAYS}
-      - Logging__LogLevel__Hangfire=Debug
-      - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Information
     volumes:
       - /root/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
       - /root/.aspnet/https:/https:ro

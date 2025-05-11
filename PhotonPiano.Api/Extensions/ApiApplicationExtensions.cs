@@ -15,7 +15,7 @@ public static class ApiApplicationExtensions
 
             options.Theme = ScalarTheme.BluePlanet;
 
-            if (app.Environment.IsProduction()) options.ProxyUrl = "https://photonpiano.duckdns.org";
+            // if (app.Environment.IsProduction()) options.ProxyUrl = "https://photonpiano.duckdns.org";
 
 
             options.Authentication =

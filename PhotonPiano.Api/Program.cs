@@ -6,7 +6,6 @@ using Hangfire;
 using Mapster;
 using Microsoft.AspNetCore.Mvc.Razor;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using PhotonPiano.Api.Configurations;
@@ -99,6 +98,7 @@ app.UseRouting();
 await app.ConfigureDatabaseAsync();
 
 app.UseScalarConfig();
+
 
 app.UseCors("AllowAll");
 

@@ -19,7 +19,7 @@ public static class AppBuilderExtensions
         builder.Services.AddSingleton<INotificationServiceHub, NotificationServiceHub>();
         builder.Services.AddSingleton<IStudentClassScoreServiceHub, StudentClassScoreServiceHub>();
     }
-
+ 
     public static void MapSignalRConfig(this WebApplication app)
     {
         if (app is null)

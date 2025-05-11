@@ -13,7 +13,7 @@ public class OpenApiSecuritySchemeTransformer
     {
         _environment = environment;
     }
-      
+
     public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context,
         CancellationToken cancellationToken)
     {
@@ -60,25 +60,35 @@ public class OpenApiSecuritySchemeTransformer
         };
 
 
-        document.Servers = new List<OpenApiServer>();
+        document.Servers = new List<OpenApiServer>
+        {
+            new()
+            {
+                Url = "https://photonpiano.duckdns.org",
+                Description = "Production Server"
+            },
+
+            new()
+            {
+                Url = "https://localhost:7777",
+                Description = "Development Server"
+            }
+        };
+
 
         if (_environment.IsProduction())
-        {
             document.Servers.Add(new OpenApiServer
             {
                 Url = "https://photonpiano.duckdns.org",
                 Description = "Production Server"
             });
-        }
 
         if (_environment.IsDevelopment())
-        {
             document.Servers.Add(new OpenApiServer
             {
                 Url = "https://localhost:7777",
                 Description = "Development Server"
             });
-        }
 
         return Task.CompletedTask;
     }

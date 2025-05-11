@@ -12,10 +12,10 @@ public static class ApiApplicationExtensions
             options.OpenApiRoutePattern = "/openapi/v1.json";
 
             options.WithCdnUrl("https://cdn.jsdelivr.net/npm/@scalar/api-reference");
-            
+
             options.Theme = ScalarTheme.BluePlanet;
 
-            if (!app.Environment.IsDevelopment()) options.ProxyUrl = "https://photonpiano.duckdns.org";
+            if (app.Environment.IsProduction()) options.ProxyUrl = "https://photonpiano.duckdns.org";
 
 
             options.Authentication =

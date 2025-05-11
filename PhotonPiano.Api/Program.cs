@@ -84,6 +84,8 @@ TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 
+app.MapDefaultEndpoints();
+
 
 // app.UseMetricServer(); // expose Prometheus metrics at /metrics
 // app.UseHttpMetrics(); // collect HTTP request metrics

@@ -50,6 +50,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\PhotonPiano.API.ServiceDefaults\PhotonPiano.API.ServiceDefaults.csproj"/>
         <ProjectReference Include="..\PhotonPiano.BackgroundJob\PhotonPiano.BackgroundJob.csproj"/>
         <ProjectReference Include="..\PhotonPiano.PubSub\PhotonPiano.PubSub.csproj"/>
         <ProjectReference Include="..\PhotonPiano.BusinessLogic\PhotonPiano.BusinessLogic.csproj"/>

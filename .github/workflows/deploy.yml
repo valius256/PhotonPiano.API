@@ -217,7 +217,7 @@ jobs:
             PINATA__GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
             PINATA__DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
             ASPNETCORE_ENVIRONMENT=Production
-#            DOTNET_ENVIRONMENT=Production
+            DOTNET_ENVIRONMENT=Production
             EOF
 
             # Tạo file .env cho frontend

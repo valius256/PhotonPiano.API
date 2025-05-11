@@ -240,7 +240,7 @@ jobs:
             version: "3.8"
             services:
               photonpiano-database:
-                image: postgres:15
+                image: postgres:15-alpine3.20
                 container_name: photonpiano-database
                 environment:
                   POSTGRES_USER: postgres
@@ -278,7 +278,7 @@ jobs:
                 networks:
                   - app-network
               prometheus:
-                image: prom/prometheus:latest
+                image: prom/prometheus:v3.4.0-rc.0
                 container_name: prometheus
                 dns:
                   - 8.8.8.8
@@ -322,7 +322,7 @@ jobs:
                 cap_add:
                   - NET_RAW
               grafana:
-                image: grafana/grafana:latest
+                image: grafana/grafana:latest-ubuntu
                 container_name: grafana
                 ports:
                   - "3001:3000"

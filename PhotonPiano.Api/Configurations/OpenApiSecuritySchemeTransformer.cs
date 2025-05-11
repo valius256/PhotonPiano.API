@@ -7,6 +7,13 @@ namespace PhotonPiano.Api.Configurations;
 public class OpenApiSecuritySchemeTransformer
     : IOpenApiDocumentTransformer
 {
+    private readonly IWebHostEnvironment _environment;
+
+    public OpenApiSecuritySchemeTransformer(IWebHostEnvironment environment)
+    {
+        _environment = environment;
+    }
+      
     public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context,
         CancellationToken cancellationToken)
     {
@@ -52,15 +59,27 @@ public class OpenApiSecuritySchemeTransformer
             }
         };
 
-        document.Servers = new List<OpenApiServer>
+
+        document.Servers = new List<OpenApiServer>();
+
+        if (_environment.IsProduction())
         {
-            new()
+            document.Servers.Add(new OpenApiServer
             {
                 Url = "https://photonpiano.duckdns.org",
                 Description = "Production Server"
-            }
-        };
-        
+            });
+        }
+
+        if (_environment.IsDevelopment())
+        {
+            document.Servers.Add(new OpenApiServer
+            {
+                Url = "https://localhost:7777",
+                Description = "Development Server"
+            });
+        }
+
         return Task.CompletedTask;
     }
 }

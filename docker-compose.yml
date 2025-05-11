@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   photonpiano-database:
-    image: postgres:15
+    image: postgres:15-alpine3.20
     container_name: photonpiano-database
     environment:
       POSTGRES_USER: postgres
@@ -56,7 +56,7 @@ services:
       - /root/.aspnet/https:/https:ro
     networks:
       - app-network
-      
+  
   photonpiano-web:
     image: ghcr.io/minhtrantuan3112/photonpiano-webapp:latest
     container_name: photonpiano-web
@@ -69,7 +69,7 @@ services:
       - app-network
   
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.4.0-rc.0
     container_name: prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -80,7 +80,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:latest-ubuntu
     container_name: grafana
     ports:
       - "3001:3000"

@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0"/>
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsAspireHost>true</IsAspireHost>
+        <UserSecretsId>7f5d81bb-0ca8-4c36-aa09-e0dfdc83ff41</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.Docker" Version="9.2.1-preview.1.25222.1"/>
+        <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.2.1"/>
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.2.1"/>
+        <PackageReference Include="Aspire.Hosting.Redis" Version="9.2.1"/>
+        <PackageReference Include="Aspire.Hosting.Testing" Version="9.2.1"/>
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.2.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\PhotonPiano.Api\PhotonPiano.Api.csproj"/>
+    </ItemGroup>
+
+</Project>

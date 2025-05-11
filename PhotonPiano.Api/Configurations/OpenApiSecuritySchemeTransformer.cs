@@ -58,9 +58,14 @@ public class OpenApiSecuritySchemeTransformer
             {
                 Url = "https://photonpiano.duckdns.org",
                 Description = "Production Server"
+            },
+            new()
+            {
+                Url = "https://localhost:7777",
+                Description = "Development Server"
             }
         };
-        
+
         return Task.CompletedTask;
     }
 }

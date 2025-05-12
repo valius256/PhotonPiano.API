@@ -72,7 +72,9 @@ public class AuthService : IAuthService
         var (email, password) = model;
 
         if (await _unitOfWork.AccountRepository.AnyAsync(a => a.Email == email))
+        {
             throw new ConflictException("Email already exists");
+        }
 
         var account = model.Adapt<Account>();
 
@@ -87,6 +89,16 @@ public class AuthService : IAuthService
 
         account.RefreshToken = refreshToken;
         account.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7).AddDays(30);
+
+        //Skip entrance test if self evaluated level is the lowest level
+        if (account.SelfEvaluatedLevelId.HasValue &&
+            await _serviceFactory.LevelService.IsFirstLevelAsync(account.SelfEvaluatedLevelId.Value))
+        {
+            account.StudentStatus = StudentStatus.WaitingForClass;
+            account.LevelId = account.SelfEvaluatedLevelId.Value;
+            await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
+                $"Learner {account.FullName} is waiting for class arrangement", "", requiresSavingChanges: false);
+        }
 
         await _unitOfWork.AccountRepository.AddAsync(account);
         await _unitOfWork.SaveChangesAsync();

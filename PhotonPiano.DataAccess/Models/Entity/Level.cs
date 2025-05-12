@@ -32,6 +32,8 @@ namespace PhotonPiano.DataAccess.Models.Entity
         public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
 
         public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
+        
+        public virtual ICollection<Account> SelfEvaluatedAccounts { get; set; } = [];
 
         public virtual ICollection<EntranceTestStudent> EntranceTestStudents { get; set; } = new List<EntranceTestStudent>();
 

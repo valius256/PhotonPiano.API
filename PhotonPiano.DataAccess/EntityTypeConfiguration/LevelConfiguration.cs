@@ -31,6 +31,12 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
                .WithOne(a => a.Level)
                .HasForeignKey(a => a.LevelId)
                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
+            
+            builder.HasMany(l => l.SelfEvaluatedAccounts)
+                .WithOne(a => a.SelfEvaluatedLevel)
+                .HasForeignKey(a => a.SelfEvaluatedLevelId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
+
 
             builder.HasMany(l => l.EntranceTestStudents)
                .WithOne(ets => ets.Level)

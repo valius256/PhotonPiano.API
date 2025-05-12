@@ -46,19 +46,32 @@ public class SystemConfigService : ISystemConfigService
             false);
     }
 
-    public async Task<SystemConfigModel> GetConfig(string name)
+    public async Task<SystemConfigModel> GetConfig(string name, bool hasTrackings = true, bool requiresCaching = true)
     {
         var cacheKey = $"SystemConfig-{name}";
+        if (requiresCaching)
+        {
+            var cachedConfig = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigModel>(cacheKey);
 
-        var cachedConfig = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigModel>(cacheKey);
+            if (cachedConfig is not null)
+            {
+                return cachedConfig;
+            }
+        }
 
-        if (cachedConfig is not null)
-            return cachedConfig;
+        var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == name, hasTrackings);
 
-        var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == name);
-        if (config is null) throw new NotFoundException("Config not found");
+        if (config is null)
+        {
+            throw new NotFoundException("Config not found");
+        }
+
         var result = config.Adapt<SystemConfigModel>();
-        await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(1));
+
+        if (requiresCaching)
+        {
+            await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(1));
+        }
 
         return result;
     }

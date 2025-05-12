@@ -340,7 +340,7 @@ public class PianoSurveyServiceTest
             .With(x => x.SurveyAnswers, [])
             .Create();
 
-        _systemConfigServiceMock.Setup(service => service.GetConfig(ConfigNames.EntranceSurvey))
+        _systemConfigServiceMock.Setup(service => service.GetConfig(ConfigNames.EntranceSurvey, false, false))
             .ReturnsAsync(new SystemConfigModel
             {
                 Id = Guid.NewGuid(),

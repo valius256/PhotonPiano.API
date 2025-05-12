@@ -66,7 +66,9 @@ public class LevelService : ILevelService
 
     public async Task<List<LevelModel>> GetAllLevelsAsync()
     {
-        var levels = await _unitOfWork.LevelRepository.FindProjectedAsync<LevelModel>(hasTrackings: false, ignoreQueryFilters: false);
+        var levels =
+            await _unitOfWork.LevelRepository.FindProjectedAsync<LevelModel>(hasTrackings: false,
+                ignoreQueryFilters: false);
 
         // Find the root level (the one that no other level references as its NextLevel)
         var rootLevel = levels.FirstOrDefault(l => levels.All(x => x.NextLevelId != l.Id));
@@ -109,7 +111,7 @@ public class LevelService : ILevelService
 
         return level.Id;
     }
-    
+
     //private async Task UpdateLevels(List<Level> levels, Level newLevel, Guid? nextLevelId)
     //{
     //    if (levels.Count == 0)
@@ -165,19 +167,20 @@ public class LevelService : ILevelService
 
     public async Task UpdateLevelMinimumGpaAsync(Guid id, UpdateLevelMinimumGpaModel model)
     {
-        if(model.MinimumGpa < 0 || model.MinimumGpa > 10)
+        if (model.MinimumGpa < 0 || model.MinimumGpa > 10)
         {
             throw new BadRequestException("Minimum GPA must be between 0 and 10");
         }
+
         var level = await _unitOfWork.LevelRepository.GetByIdAsync(id);
         if (level is null || level.RecordStatus == RecordStatus.IsDeleted)
         {
             throw new NotFoundException($"Level with ID {level!.Id} not found");
         }
-        
-       level.MinimumGPA = model.MinimumGpa;
-       level.UpdatedAt = DateTime.UtcNow.AddHours(7);
-       await _unitOfWork.SaveChangesAsync();
+
+        level.MinimumGPA = model.MinimumGpa;
+        level.UpdatedAt = DateTime.UtcNow.AddHours(7);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task<LevelModel> CreateLevelAsync(CreateLevelModel createModel, AccountModel currentAccount)
@@ -290,14 +293,15 @@ public class LevelService : ILevelService
         }
 
         var affectedAccounts = await _unitOfWork.AccountRepository.FindAsync(a => a.LevelId == level.Id);
-        var affectedClasses = await _unitOfWork.ClassRepository.FindAsync(a => a.LevelId == level.Id && a.Status != ClassStatus.Finished);
+        var affectedClasses =
+            await _unitOfWork.ClassRepository.FindAsync(a => a.LevelId == level.Id && a.Status != ClassStatus.Finished);
 
         var nextLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == level.NextLevelId);
         var prevLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.NextLevelId == level.Id);
 
         if (prevLevel is not null)
         {
-            if (nextLevel is not null) 
+            if (nextLevel is not null)
             {
                 prevLevel.NextLevelId = nextLevel.Id;
             }
@@ -311,6 +315,7 @@ public class LevelService : ILevelService
         {
             classInfo.LevelId = fallBackLevelId;
         }
+
         foreach (var account in affectedAccounts)
         {
             account.LevelId = fallBackLevelId;
@@ -326,8 +331,6 @@ public class LevelService : ILevelService
             //RemoveLevel(levels, level);
             await _unitOfWork.AccountRepository.UpdateRangeAsync(affectedAccounts);
             await _unitOfWork.ClassRepository.UpdateRangeAsync(affectedClasses);
-
-            
         });
 
         await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);
@@ -386,7 +389,8 @@ public class LevelService : ILevelService
             throw new BadRequestException("Provided levels do not match existing levels exactly.");
 
         // Validation: no duplicate NextLevelId targets
-        var nextLevelTargets = updateLevelOrderModel.LevelOrders.Where(lo => lo.NextLevelId != null).Select(lo => lo.NextLevelId!.Value).ToList();
+        var nextLevelTargets = updateLevelOrderModel.LevelOrders.Where(lo => lo.NextLevelId != null)
+            .Select(lo => lo.NextLevelId!.Value).ToList();
         if (nextLevelTargets.GroupBy(x => x).Any(g => g.Count() > 1))
             throw new BadRequestException("Multiple levels cannot point to the same NextLevelId.");
 
@@ -409,4 +413,11 @@ public class LevelService : ILevelService
         await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);
     }
 
+    public async Task<bool> IsFirstLevelAsync(Guid levelId)
+    {
+        var levelPointingTo =
+            await _unitOfWork.LevelRepository.FindFirstAsync(l => l.NextLevelId == levelId, hasTrackings: false);
+
+        return levelPointingTo is null;
+    }
 }

@@ -15,4 +15,6 @@ public interface ILevelService
     Task UpdateLevelMinimumGpaAsync(Guid id, UpdateLevelMinimumGpaModel model);
 
     Task ChangeLevelOrder(UpdateLevelOrderModel updateLevelOrderModel);
+    
+    Task<bool> IsFirstLevelAsync(Guid levelId);
 }

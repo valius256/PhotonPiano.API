@@ -37,12 +37,14 @@ public class Account : BaseEntity
     public Guid? LevelId { get; set; }
     public AccountStatus Status { get; set; } = AccountStatus.Active;
     public StudentStatus? StudentStatus { get; set; }
-    public int? DesiredLevel { get; set; }
+    
+    public Guid? SelfEvaluatedLevelId { get; set; }
+    
     public List<string> DesiredTargets { get; set; } = [];
+    
     public List<string> FavoriteMusicGenres { get; set; } = [];
 
     public List<string> PreferredLearningMethods { get; set; } = [];
-
     public Guid? CurrentClassId { get; set; }
 
     public virtual Level? Level { get; set; }
@@ -53,6 +55,8 @@ public class Account : BaseEntity
     public bool WantToContinue { get; set; } = true;
     // reference 
     // EntranceTest
+
+    public Level? SelfEvaluatedLevel { get; set; }
     public virtual ICollection<EntranceTest> InstructorEntranceTests { get; set; } = new List<EntranceTest>();
     public virtual ICollection<EntranceTest> CreatedEntrancesTest { get; set; } = new List<EntranceTest>();
     public virtual ICollection<EntranceTest> UpdatedEntrancesTest { get; set; } = new List<EntranceTest>();

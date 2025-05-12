@@ -158,6 +158,9 @@ jobs:
               - job_name: 'vps-system'
                 static_configs:
                   - targets: ['node-exporter:9100']
+              - job_name: postgres
+                static_configs:
+                  - targets: ["photonpiano-database:9187"]
               - job_name: 'photonpiano-api-probe'
                 metrics_path: /probe
                 params:

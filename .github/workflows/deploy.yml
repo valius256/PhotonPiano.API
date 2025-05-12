@@ -253,6 +253,11 @@ jobs:
                   - "5432:5432"
                 volumes:
                   - postgres_data:/var/lib/postgresql/data
+                healthcheck:
+                  test: ["CMD", "pg_isready", "-U", "postgres"]
+                  interval: 5s
+                  timeout: 5s
+                  retries: 5
                 restart: unless-stopped
                 networks:
                   - app-network
@@ -337,10 +342,26 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
+              postgres-exporter:
+                image: prom/postgres-exporter:latest
+                container_name: postgres-exporter
+                environment:
+                  - DATA_SOURCE_NAME=postgresql://postgres:${{ secrets.POSTGRES_PASSWORD }}@photonpiano-database:5432/photonpiano?sslmode=disable
+                ports:
+                  - "9187:9187"
+                depends_on:
+                  - prometheus: 
+                    condition: service_healthy
+                  - photonpiano-database
+                    condition: service_healthy
+                restart: unless-stopped
+                networks:
+                  - app-network
             volumes:
               postgres_data:
               prometheus_data:
               grafana_data:
+              postgres_exporter:
             networks:
               app-network:
                 driver: bridge

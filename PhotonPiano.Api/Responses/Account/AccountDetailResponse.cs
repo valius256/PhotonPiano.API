@@ -13,7 +13,7 @@ public record AccountDetailResponse : AccountResponse
 
     public LevelModel? Level { get; init; }
 
-    public List<StudentClassWithClassModel> StudentClasses { get; init; } = [];
+    public List<StudentClassWithClassAndTuitionModel> StudentClasses { get; init; } = [];
 
     public List<LearnerSurveyWithAnswersDetailModel> LearnerSurveys { get; init; } = [];
 

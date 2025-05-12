@@ -64,7 +64,7 @@ namespace PhotonPiano.BusinessLogic.Services
 
             if (dayOff is null)
             {
-                throw new NotFoundException("Day off not found.");
+                throw new NotFoundException("Day off not found."); 
             }
 
             updateModel.Adapt(dayOff);

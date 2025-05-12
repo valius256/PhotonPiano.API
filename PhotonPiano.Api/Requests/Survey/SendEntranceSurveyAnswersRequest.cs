@@ -20,6 +20,8 @@ public record SendEntranceSurveyAnswersRequest
     
     [Required] 
     public required Gender Gender { get; init; }
+    
+    public Guid? SelfEvaluatedLevelId { get; init; }
 
     [Required]
     public required List<CreateLearnerAnswerRequest> SurveyAnswers { get; init; }

@@ -167,14 +167,15 @@ public class NotificationService : INotificationService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task SendNotificationsToAllStaffsAsync(string title, string message)
+    public async Task SendNotificationsToAllStaffsAsync(string title, string message, bool requiresSavingChanges = true)
     {
         var staffs = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Staff,
             hasTrackings: false);
 
         List<Task> pushNotificationTasks = [];
 
-        await SendNotificationToManyAsync(staffs.Select(s => s.AccountFirebaseId).ToList(), title + ": " + message, "");
+        await SendNotificationToManyAsync(staffs.Select(s => s.AccountFirebaseId).ToList(), title + ": " + message, "",
+            requiresSavingChanges);
         //foreach (var staff in staffs)
         //{
         //    pushNotificationTasks.Add((staff.AccountFirebaseId, title, ));

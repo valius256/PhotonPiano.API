@@ -423,7 +423,9 @@ public class PianoSurveyService : IPianoSurveyService
 
     public async Task<PianoSurveyDetailsModel> GetEntranceSurvey()
     {
-        var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey);
+        var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey,
+            hasTrackings: false,
+            requiresCaching: false);
 
         if (entranceSurveyConfig?.ConfigValue is null)
         {
@@ -446,9 +448,11 @@ public class PianoSurveyService : IPianoSurveyService
 
     public async Task<AuthModel> SendEntranceSurveyAnswers(SendEntranceSurveyAnswersModel model)
     {
-        var (email, password, fullName, phone, gender, answers) = model;
+        var (email, password, fullName, phone, gender, answers, selfEvaluatedLevelId) = model;
 
-        var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey);
+        var entranceSurveyConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.EntranceSurvey, 
+            hasTrackings: false,
+            requiresCaching: false);
 
         if (entranceSurveyConfig?.ConfigValue is null)
         {
@@ -464,6 +468,11 @@ public class PianoSurveyService : IPianoSurveyService
         if (survey is null)
         {
             throw new NotFoundException("Entrance survey not found");
+        }
+
+        if (selfEvaluatedLevelId.HasValue && !await _unitOfWork.LevelRepository.AnyAsync(l => l.Id == selfEvaluatedLevelId))
+        {
+            throw new NotFoundException("Self Evaluated Level not found");
         }
 
         var learnerAnswers = new List<LearnerAnswer>();
@@ -491,7 +500,8 @@ public class PianoSurveyService : IPianoSurveyService
             Password = password,
             FullName = fullName,
             Phone = phone,
-            Gender = gender
+            Gender = gender,
+            SelfEvaluatedLevelId = selfEvaluatedLevelId
         });
 
         var learnerSurvey = new LearnerSurvey

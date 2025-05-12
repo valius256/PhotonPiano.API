@@ -32,13 +32,15 @@ public record AccountModel
     public string? ShortDescription { get; init; } = string.Empty;
 
     public Guid? LevelId { get; init; }
+    
+    public Guid? SelfEvaluatedLevelId { get; init; }
 
     public AccountStatus Status { get; init; }
 
     public DateTime? RegistrationDate { get; init; }
     public StudentStatus? StudentStatus { get; init; }
 
-    public string? DesiredLevel { get; init; }
+    public LevelModel? SelfEvaluatedLevel { get; init; }
 
     public List<string> DesiredTargets { get; init; } = [];
 

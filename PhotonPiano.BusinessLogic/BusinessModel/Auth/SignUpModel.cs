@@ -13,6 +13,8 @@ public record SignUpModel
 
     public required Gender Gender { get; init; }
 
+    public Guid? SelfEvaluatedLevelId { get; init; }
+
     public void Deconstruct(out string email, out string password)
     {
         email = Email;

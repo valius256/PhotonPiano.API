@@ -22,4 +22,6 @@ public record AuthModel
     [JsonPropertyName("expiresIn")] public required string ExpiresIn { get; init; }
 
     [JsonPropertyName("role")] public Role Role { get; set; }
+
+    public bool RequiresEntranceTestRegistering { get; set; } = true;
 }

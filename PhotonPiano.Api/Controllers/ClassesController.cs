@@ -4,155 +4,169 @@ using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
-using PhotonPiano.BusinessLogic.BusinessModel.StudentScore;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
 
-namespace PhotonPiano.Api.Controllers
+namespace PhotonPiano.Api.Controllers;
+
+[ApiController]
+[Route("api/classes")]
+public class ClassesController : BaseController
 {
-    [ApiController]
-    [Route("api/classes")]
-    public class ClassesController : BaseController
+    private readonly IServiceFactory _serviceFactory;
+
+    public ClassesController(IServiceFactory serviceFactory)
     {
-        private readonly IServiceFactory _serviceFactory;
+        _serviceFactory = serviceFactory;
+    }
 
-        public ClassesController(IServiceFactory serviceFactory)
-        {
-            _serviceFactory = serviceFactory;
-        }
+    [HttpGet]
+    [EndpointDescription("Get Classes with Paging")]
+    public async Task<ActionResult<List<ClassModel>>> GetClasses(
+        [FromQuery] QueryClassRequest request)
+    {
+        var pagedResult =
+            await _serviceFactory.ClassService.GetPagedClasses(
+                request.Adapt<QueryClassModel>());
 
-        [HttpGet]
-        [EndpointDescription("Get Classes with Paging")]
-        public async Task<ActionResult<List<ClassModel>>> GetClasses(
-         [FromQuery] QueryClassRequest request)
-        {
-            var pagedResult =
-                await _serviceFactory.ClassService.GetPagedClasses(
-                    request.Adapt<QueryClassModel>());
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
-            HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
-                
-            return pagedResult.Items;
-        }
+        return pagedResult.Items;
+    }
 
-        [HttpPost("auto-arrangement")]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Arrange classes to students who are waiting for a class")]
-        public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
-         [FromBody] ArrangeClassModel arrangeClassModel)
-        {
-            return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
-        }
+    [HttpPost("auto-arrangement")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Arrange classes to students who are waiting for a class")]
+    public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
+        [FromBody] ArrangeClassModel arrangeClassModel)
+    {
+        return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
+    }
 
-        [HttpGet("{id}")]
-        [EndpointDescription("Get Class detail by Id")]
-        public async Task<ActionResult<ClassDetailModel>> GetClassDetail(
-         [FromRoute] Guid id)
-        {
-            return await _serviceFactory.ClassService.GetClassDetailById(id);
-        }
+    [HttpGet("{id}")]
+    [EndpointDescription("Get Class detail by Id")]
+    public async Task<ActionResult<ClassDetailModel>> GetClassDetail(
+        [FromRoute] Guid id)
+    {
+        return await _serviceFactory.ClassService.GetClassDetailById(id);
+    }
 
-        [HttpGet("{id}/scoreboard")]
-        [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
-        [EndpointDescription("Get Class scoreboard by Id")]
-        public async Task<ActionResult<ClassScoreboardModel>> GetClassScoreboard(
-         [FromRoute] Guid id)
-        {
-            return await _serviceFactory.ClassService.GetClassScoreboard(id);
-        }
+    [HttpGet("{id}/scoreboard")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Get Class scoreboard by Id")]
+    public async Task<ActionResult<ClassScoreboardModel>> GetClassScoreboard(
+        [FromRoute] Guid id)
+    {
+        return await _serviceFactory.ClassService.GetClassScoreboard(id);
+    }
 
 
-
-        [HttpPost]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Create a class individually")]
-        public async Task<ActionResult<ClassModel>> CreateClass(
+    [HttpPost]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Create a class individually")]
+    public async Task<ActionResult<ClassModel>> CreateClass(
         [FromBody] CreateClassRequest request)
-        {
-            var result =
-                await _serviceFactory.ClassService.CreateClass(
-                    request.Adapt<CreateClassModel>(), CurrentUserFirebaseId);
-            return Created(nameof(CreateClass), result);
-        }
+    {
+        var result =
+            await _serviceFactory.ClassService.CreateClass(
+                request.Adapt<CreateClassModel>(), CurrentUserFirebaseId);
+        return Created(nameof(CreateClass), result);
+    }
 
-        [HttpDelete("{id}")]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Delete a class")]
-        public async Task<ActionResult> DeleteClass([FromRoute] Guid id)
-        {
-            await _serviceFactory.ClassService.DeleteClass(id, CurrentUserFirebaseId);
-            return NoContent();
-        }
+    [HttpDelete("{id}")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Delete a class")]
+    public async Task<ActionResult> DeleteClass([FromRoute] Guid id)
+    {
+        await _serviceFactory.ClassService.DeleteClass(id, CurrentUserFirebaseId);
+        return NoContent();
+    }
 
-        [HttpPut]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Update a class")]
-        public async Task<ActionResult> UpdateClass([FromBody] UpdateClassRequest request)
-        {
-            await _serviceFactory.ClassService.UpdateClass(request.Adapt<UpdateClassModel>(),
-                CurrentUserFirebaseId);
+    [HttpPut]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Update a class")]
+    public async Task<ActionResult> UpdateClass([FromBody] UpdateClassRequest request)
+    {
+        await _serviceFactory.ClassService.UpdateClass(request.Adapt<UpdateClassModel>(),
+            CurrentUserFirebaseId);
 
-            return NoContent();
-        }
+        return NoContent();
+    }
 
-        [HttpPost("student-class")]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Add many students to a class")]
-        public async Task<ActionResult<StudentClassModel>> CreateStudentClass(
+    [HttpPost("student-class")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Add many students to a class")]
+    public async Task<ActionResult<StudentClassModel>> CreateStudentClass(
         [FromBody] CreateStudentClassRequest request)
-        {
-            var result =
-                await _serviceFactory.StudentClassService.CreateStudentClass(
-                    request.Adapt<CreateStudentClassModel>(), CurrentUserFirebaseId);
-            return Created(nameof(CreateStudentClass), result);
-        }
+    {
+        var result =
+            await _serviceFactory.StudentClassService.CreateStudentClass(
+                request.Adapt<CreateStudentClassModel>(), CurrentUserFirebaseId);
+        return Created(nameof(CreateStudentClass), result);
+    }
 
-        [HttpDelete("student-class")]
-        [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
-        [EndpointDescription("Delete a studentClass")]
-        public async Task<ActionResult> DeleteStudentClass([FromQuery] string studentId, [FromQuery] Guid classId, [FromQuery] bool IsExpelled = false)
-        {
-            await _serviceFactory.StudentClassService.DeleteStudentClass(studentId, classId, IsExpelled, CurrentAccount!);
-            return NoContent();
-        }
+    [HttpDelete("student-class")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
+    [EndpointDescription("Delete a studentClass")]
+    public async Task<ActionResult> DeleteStudentClass([FromQuery] string studentId, [FromQuery] Guid classId,
+        [FromQuery] bool IsExpelled = false)
+    {
+        await _serviceFactory.StudentClassService.DeleteStudentClass(studentId, classId, IsExpelled, CurrentAccount!);
+        return NoContent();
+    }
 
-        [HttpPut("student-class")]
-        [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
-        [EndpointDescription("Change class of a student")]
-        public async Task<ActionResult> ChangeClassOfStudent([FromBody] UpdateStudentClassRequest request)
-        {
-            if (CurrentAccount == null) return Unauthorized();
-            await _serviceFactory.StudentClassService.ChangeClassOfStudent(request.Adapt<ChangeClassModel>(),
-                CurrentAccount);
+    [HttpPut("student-class")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
+    [EndpointDescription("Change class of a student")]
+    public async Task<ActionResult> ChangeClassOfStudent([FromBody] UpdateStudentClassRequest request)
+    {
+        if (CurrentAccount == null) return Unauthorized();
+        await _serviceFactory.StudentClassService.ChangeClassOfStudent(request.Adapt<ChangeClassModel>(),
+            CurrentAccount);
 
-            return NoContent();
-        }
+        return NoContent();
+    }
 
-        [HttpPatch("{classId}/publishing")]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Publish a class")]
-        public async Task<ActionResult> PublishClass([FromRoute] Guid classId)
-        {
-            await _serviceFactory.ClassService.PublishClass(classId, CurrentUserFirebaseId);
-            return NoContent();
-        }
+    [HttpPatch("{classId}/publishing")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Publish a class")]
+    public async Task<ActionResult> PublishClass([FromRoute] Guid classId)
+    {
+        await _serviceFactory.ClassService.PublishClass(classId, CurrentUserFirebaseId);
+        return NoContent();
+    }
 
-        [HttpPatch("scheduling")]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Schedule a class based on option")]
-        public async Task<ActionResult> ScheduleClass([FromBody] ScheduleClassRequest scheduleClassRequest)
-        {
-            await _serviceFactory.ClassService.ScheduleClass(scheduleClassRequest.Adapt<ScheduleClassModel>(), CurrentUserFirebaseId);
-            return NoContent();
-        }
+    [HttpPatch("scheduling")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Schedule a class based on option")]
+    public async Task<ActionResult> ScheduleClass([FromBody] ScheduleClassRequest scheduleClassRequest)
+    {
+        await _serviceFactory.ClassService.ScheduleClass(scheduleClassRequest.Adapt<ScheduleClassModel>(),
+            CurrentUserFirebaseId);
+        return NoContent();
+    }
 
-        [HttpDelete("{id}/schedule")]
-        [CustomAuthorize(Roles = [Role.Staff])]
-        [EndpointDescription("Delete entire schedule a class")]
-        public async Task<ActionResult> DeleteClassSchedule([FromRoute] Guid id)
-        {
-            await _serviceFactory.ClassService.ClearClassSchedule(id, CurrentUserFirebaseId);
-            return NoContent();
-        }
+    [HttpDelete("{id}/schedule")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Delete entire schedule a class")]
+    public async Task<ActionResult> DeleteClassSchedule([FromRoute] Guid id)
+    {
+        await _serviceFactory.ClassService.ClearClassSchedule(id, CurrentUserFirebaseId);
+        return NoContent();
+    }
+
+    [HttpGet("get-available-teacher")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Get available teacher")]
+    public async Task<ActionResult<List<TeacherWithSlotModel>>> GetAvailableTeacher(
+        [FromQuery] GetAvailableTeacherForClassRequest request)
+    {
+        var pagedResult =
+            await _serviceFactory.ClassService.GetAvailableTeacher(
+                request.Adapt<GetAvailableTeacherForClassModel>());
+
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
+
+        return pagedResult.Items;
     }
 }

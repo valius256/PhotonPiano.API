@@ -344,9 +344,9 @@ public static class IServiceCollectionExtensions
                 var tuitionOverdueDay =
                     configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
 
-                //recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
-                //    x => x.CronAutoCreateTuition(),
-                //    Cron.Monthly);
+                recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                    x => x.CronAutoCreateTuition(),
+                    Cron.Monthly);
 
                 recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                     x => x.CronForTuitionReminder(),
@@ -414,11 +414,11 @@ public static class IServiceCollectionExtensions
     private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHealthChecks()
-            // .AddRedis(
-            //     configuration.GetConnectionString("RedisConnectionStrings"),
-            //     name: "redis",
-            //     failureStatus: HealthStatus.Degraded,
-            //     tags: new[] { "db", "redis" })
+            .AddRedis(
+                configuration.GetConnectionString("RedisConnectionStrings") ?? string.Empty,
+                "redis",
+                HealthStatus.Degraded,
+                new[] { "db", "redis" })
             .AddNpgSql(
                 GetConnectionString(configuration)!,
                 name: "postgres",

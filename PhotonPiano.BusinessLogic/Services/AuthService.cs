@@ -307,14 +307,14 @@ public class AuthService : IAuthService
         {
             currentUser.Status = AccountStatus.Inactive;
             currentUser.RefreshToken = string.Empty;
-            currentUser.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7);
-            await _unitOfWork.AccountRepository.UpdateAsync(currentUser);
-            await _unitOfWork.SaveChangesAsync();
+            currentUser.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7);          
         }
         else
         {
             currentUser.Status = AccountStatus.Active;
         }
+        await _unitOfWork.AccountRepository.UpdateAsync(currentUser);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     private string HashPassword(string password)

@@ -821,7 +821,7 @@ public class ClassService : IClassService
             page, pageSize, sortColumn, orderByDesc,
             expressions: [q =>
                 q.Role == Role.Instructor 
-                && !q.Teacherslots.Any(s => slotDates.Contains(s.Date) && slotShifts.Contains(s.Shift))
+                && !q.Teacherslots.Any(s => slotDates.Contains(s.Date) && slotShifts.Contains(s.Shift) && s.ClassId != classId)
                 && (keyword == null || EF.Functions.ILike(EF.Functions.Unaccent(q.FullName ?? q.UserName ?? string.Empty),likeKeyword))]
         );
         return result.Adapt<PagedResult<AccountSimpleModel>>();

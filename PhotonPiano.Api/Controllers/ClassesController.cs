@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Class;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -94,14 +95,14 @@ public class ClassesController : BaseController
     }
 
     [HttpPost("student-class")]
-    [CustomAuthorize(Roles = [Role.Staff])]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Add many students to a class")]
     public async Task<ActionResult<StudentClassModel>> CreateStudentClass(
         [FromBody] CreateStudentClassRequest request)
     {
         var result =
             await _serviceFactory.StudentClassService.CreateStudentClass(
-                request.Adapt<CreateStudentClassModel>(), CurrentUserFirebaseId);
+                request.Adapt<CreateStudentClassModel>(), CurrentAccount!);
         return Created(nameof(CreateStudentClass), result);
     }
 
@@ -155,10 +156,10 @@ public class ClassesController : BaseController
         return NoContent();
     }
 
-    [HttpGet("get-available-teacher")]
+    [HttpGet("available-teachers-for-class")]
     [CustomAuthorize(Roles = [Role.Staff])]
-    [EndpointDescription("Get available teacher")]
-    public async Task<ActionResult<List<TeacherWithSlotModel>>> GetAvailableTeacher(
+    [EndpointDescription("Get available teacher to assign to a class")]
+    public async Task<ActionResult<List<AccountSimpleModel>>> GetAvailableTeacher(
         [FromQuery] GetAvailableTeacherForClassRequest request)
     {
         var pagedResult =

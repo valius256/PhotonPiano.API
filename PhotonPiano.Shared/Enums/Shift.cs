@@ -10,4 +10,4 @@ public enum Shift
     Shift6_16h00_17h30,
     Shift7_18h_19h30,
     Shift8_19h45_21h15
-}
+}   

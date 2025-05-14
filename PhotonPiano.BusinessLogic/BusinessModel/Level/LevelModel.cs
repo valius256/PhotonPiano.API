@@ -17,12 +17,20 @@ public record LevelModel : BaseModel
     public decimal MinimumTheoreticalScore { get; init; }
 
     public decimal MinimumPracticalScore { get; init; }
-    
+
     public decimal MinimumGPA { get; set; }
-    
+
     public bool IsGenreDivided { get; init; }
 
     public Guid? NextLevelId { get; init; }
 
     public string? ThemeColor { get; init; }
+
+    public int? EstimateDurationInWeeks { get; init; }
+
+    public decimal? TotalPrice { get; init; }
+
+    public NextLevelModel? NextLevel { get; set; }
+
+    public int? NumberActiveStudentInLevel { get; init; }
 }

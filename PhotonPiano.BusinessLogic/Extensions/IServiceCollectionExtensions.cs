@@ -6,8 +6,8 @@ using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.News;
-using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.Slot;
+using PhotonPiano.BusinessLogic.BusinessModel.Survey;
 using PhotonPiano.BusinessLogic.BusinessModel.SurveyQuestion;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
@@ -75,6 +75,18 @@ public static class ServiceCollectionExtensions
         TypeAdapterConfig<CreateSurveyQuestionModel, SurveyQuestion>.NewConfig().Ignore(dest => dest.Id);
         TypeAdapterConfig<UpdateArticleModel, Article>.NewConfig().IgnoreNullValues(true);
         TypeAdapterConfig<UpdateLevelModel, Level>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<Level, LevelDetailsModel>.NewConfig()
+            .Map(dest => dest.TotalPrice, src => src.PricePerSlot * src.TotalSlots)
+            .Map(dest => dest.NumberActiveStudentInLevel, src => src.Classes.SelectMany(c => c.StudentClasses)
+                .Distinct()
+                .Count())
+            .Map(dest => dest.EstimateDurationInWeeks, src => src.SlotPerWeek * 1.5m) // 1.5 hours per slot
+            ;
+        TypeAdapterConfig<Class, ClassModel>.NewConfig()
+            .Map(dest => dest.Capacity, src => src.StudentClasses.Count > 0 ? src.StudentClasses.Count : 12)
+            .Map(dest => dest.MinimumStudents, src => 8)
+            .Map(dest => dest.StudentNumber, src => src.StudentClasses.Count)
+            ;
         return services;
     }
 }

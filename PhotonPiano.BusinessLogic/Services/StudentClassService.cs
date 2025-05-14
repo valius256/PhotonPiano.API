@@ -209,12 +209,25 @@ namespace PhotonPiano.BusinessLogic.Services
             );
         }
 
-        public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel,
-            string accountFirebaseId)
+        public async Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassesModel, AccountModel account)
         {
             var students = await _unitOfWork.AccountRepository.FindAsync(a =>
                 createStudentClassesModel.StudentFirebaseIds.Contains(a.AccountFirebaseId));
-            if (!students.Any() && !createStudentClassesModel.IsAutoFill)
+
+            if (account.Role == Role.Student)
+            {
+                if (students.Any(s => s.AccountFirebaseId != account.AccountFirebaseId))
+                {
+                    throw new ForbiddenMethodException("You can only add your self to the class");
+                }
+
+                if (createStudentClassesModel.IsAutoFill)
+                {
+                    throw new ForbiddenMethodException("Student can not use auto fill feature");
+                }
+            }
+
+            if (students.Count == 0 && !createStudentClassesModel.IsAutoFill)
             {
                 throw new NotFoundException("No valid students found");
             }
@@ -295,7 +308,7 @@ namespace PhotonPiano.BusinessLogic.Services
                         Id = Guid.NewGuid(),
                         ClassId = classInfo.Id,
                         StudentFirebaseId = student.AccountFirebaseId,
-                        CreatedById = accountFirebaseId,
+                        CreatedById = account.AccountFirebaseId,
                         IsPassed = false
                     };
 
@@ -310,7 +323,7 @@ namespace PhotonPiano.BusinessLogic.Services
 
                     studentSlots.AddRange(classInfo.Slots.Select(s => new SlotStudent
                     {
-                        CreatedById = accountFirebaseId,
+                        CreatedById = account.AccountFirebaseId,
                         SlotId = s.Id,
                         StudentFirebaseId = student.AccountFirebaseId
                     }));

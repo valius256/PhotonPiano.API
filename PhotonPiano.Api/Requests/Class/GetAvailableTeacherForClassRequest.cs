@@ -1,8 +1,10 @@
-﻿using PhotonPiano.Api.Requests.Query;
+﻿using Microsoft.AspNetCore.Mvc;
+using PhotonPiano.Api.Requests.Query;
 
 namespace PhotonPiano.Api.Requests.Class;
 
 public record GetAvailableTeacherForClassRequest : QueryPagedRequest
 {
-    public Guid ClassId { get; init; }
+    [FromQuery(Name = "class-id")] public Guid ClassId { get; init; }
+    [FromQuery(Name = "keyword")] public string? Keyword { get; init; }
 }

@@ -10,7 +10,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces
 {
     public interface IStudentClassService
     {
-        Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassModel, string accountFirebaseId);
+        Task<List<StudentClassModel>> CreateStudentClass(CreateStudentClassModel createStudentClassModel, AccountModel account);
 
         Task ChangeClassOfStudent(ChangeClassModel changeClassModel, AccountModel account);
 

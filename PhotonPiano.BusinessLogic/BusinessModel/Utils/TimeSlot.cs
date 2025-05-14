@@ -9,3 +9,10 @@ public record TimeSlot
 
     public Shift Shift { get; set; }
 }
+
+public record TimeSlotDateOnly
+{
+    public DateOnly Date { get; set; }
+
+    public Shift Shift { get; set; }
+}

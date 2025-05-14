@@ -354,7 +354,7 @@ public class ClassService : IClassService
         await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Saving to database...", currentProgress);
         await Task.Delay(500);
         //3. Now save them to database (40%)
-        var result = await SaveClasses(classes, students, userId, currentProgress, levels);
+        var result = await SaveClasses(classes, userId, currentProgress, levels);
 
 
         return result;
@@ -587,11 +587,11 @@ public class ClassService : IClassService
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(level => level.Id == classInfo.LevelId)
                     ?? throw new NotFoundException("Level not found or removed!");
 
-        var minSizeConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MinimumStudents);
-        if (minSizeConfig is not null)
-            if (classDetail.StudentClasses.Count < int.Parse(minSizeConfig.ConfigValue ?? "0"))
-                throw new BadRequestException(
-                    "Can't publish the class because the minimum class size is not statisfied");
+        //var minSizeConfig = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MinimumStudents);
+        //if (minSizeConfig is not null)
+        //    if (classDetail.StudentClasses.Count < int.Parse(minSizeConfig.ConfigValue ?? "0"))
+        //        throw new BadRequestException(
+        //            "Can't publish the class because the minimum class size is not statisfied");
 
         if (classDetail.Slots.Count < level.TotalSlots)
             throw new BadRequestException(
@@ -751,76 +751,90 @@ public class ClassService : IClassService
         });
     }
 
-    public async Task<PagedResult<TeacherWithSlotModel>> GetAvailableTeacher(GetAvailableTeacherForClassModel model)
+    public async Task<PagedResult<AccountSimpleModel>> GetAvailableTeacher(GetAvailableTeacherForClassModel model)
     {
-        var classEntity = await _unitOfWork.ClassRepository.FindFirstProjectedAsync<Class>(x => x.Id == model.ClassId);
+        var classEntity = await _unitOfWork.ClassRepository
+            .Entities.Include(c => c.Slots).Include(c => c.Instructor).FirstOrDefaultAsync(x => x.Id == model.ClassId);
 
         if (classEntity is null) throw new NotFoundException("Class not found");
 
-        if (!classEntity.Slots.Any()) throw new NotFoundException("Class with no slots can't check conflict");
+        //if (!classEntity.Slots.Any()) throw new NotFoundException("Class with no slots can't check conflict");
 
         var classSlots = classEntity.Slots;
-        var startDate = classSlots.Min(x => x.Date);
-        var endDate = classSlots.Max(x => x.Date);
+        //var startDate = classSlots.Min(x => x.Date);
+        //var endDate = classSlots.Max(x => x.Date);
 
-        var (page, pageSize, sortColumn, orderByDesc) = model;
+        var (page, pageSize, sortColumn, orderByDesc, classId, keyword) = model;
 
-        if (string.IsNullOrEmpty(sortColumn) || sortColumn == "Id") sortColumn = "AccountFirebaseId";
+        if (string.IsNullOrEmpty(sortColumn) || sortColumn == "Id") sortColumn = "FullName";
 
-        // Get all teachers with pagination
-        var teacherQuery = _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsQueryable<AccountSimpleModel>(
+        //// Get all teachers with pagination
+        //var teacherQuery = _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsQueryable<AccountSimpleModel>(
+        //    page, pageSize, sortColumn, orderByDesc,
+        //    expressions: [q => q.Role == Role.Instructor]
+        //);
+
+        //var totalCount = await teacherQuery.CountAsync();
+        //var teachers = await teacherQuery.ToListAsync();
+
+        //// Get all slots in the same time period that have teacher assignments
+        //var occupiedSlots = await _unitOfWork.SlotRepository.FindAsync(x =>
+        //    x.Date >= startDate && x.Date <= endDate && x.TeacherId != null);
+
+        //// Group slots by teacher ID
+        //var slotsByTeacher = occupiedSlots.GroupBy(s => s.TeacherId)
+        //    .ToDictionary(g => g.Key!, g => g.ToList());
+
+        //// Find teachers without conflicts
+        //var result = new TeacherWithSlotModel { TeacherWithSlots = new List<TeacherFitWithSlotModel>() };
+
+        //foreach (var teacher in teachers)
+        //{
+        //    var hasConflict = false;
+
+        //    // Check if teacher has any conflicts with class slots
+        //    if (slotsByTeacher.TryGetValue(teacher.AccountFirebaseId, out var teacherSlots))
+        //        foreach (var classSlot in classSlots)
+        //            if (teacherSlots.Any(ts => ts.Date == classSlot.Date && ts.Shift == classSlot.Shift))
+        //            {
+        //                hasConflict = true;
+        //                break;
+        //            }
+
+        //    // Only add teachers with no conflicts
+        //    if (!hasConflict)
+        //        result.TeacherWithSlots.Add(new TeacherFitWithSlotModel
+        //        {
+        //            TeacherId = teacher.AccountFirebaseId,
+        //            TeacherName = teacher.FullName ?? teacher.UserName,
+        //            Slots = classSlots.Adapt<List<SlotWithInforModel>>(),
+        //            TotalSlots = classSlots.Count
+        //        });
+        //}
+        var likeKeyword = model.GetLikeKeyword();
+
+        // Flatten class slot dates and shifts into primitive comparison sets
+        var slotDates = classSlots.Select(s => s.Date).ToList();
+        var slotShifts = classSlots.Select(s => s.Shift).ToList();
+
+        var result = await _unitOfWork.AccountRepository.GetPaginatedAsync(
             page, pageSize, sortColumn, orderByDesc,
-            expressions: [q => q.Role == Role.Instructor]
+            expressions: [q =>
+                q.Role == Role.Instructor 
+                && !q.Teacherslots.Any(s => slotDates.Contains(s.Date) && slotShifts.Contains(s.Shift))
+                && (keyword == null || EF.Functions.ILike(EF.Functions.Unaccent(q.FullName ?? q.UserName ?? string.Empty),likeKeyword))]
         );
-
-        var totalCount = await teacherQuery.CountAsync();
-        var teachers = await teacherQuery.ToListAsync();
-
-        // Get all slots in the same time period that have teacher assignments
-        var occupiedSlots = await _unitOfWork.SlotRepository.FindAsync(x =>
-            x.Date >= startDate && x.Date <= endDate && x.TeacherId != null);
-
-        // Group slots by teacher ID
-        var slotsByTeacher = occupiedSlots.GroupBy(s => s.TeacherId)
-            .ToDictionary(g => g.Key!, g => g.ToList());
-
-        // Find teachers without conflicts
-        var result = new TeacherWithSlotModel { TeacherWithSlots = new List<TeacherFitWithSlotModel>() };
-
-        foreach (var teacher in teachers)
-        {
-            var hasConflict = false;
-
-            // Check if teacher has any conflicts with class slots
-            if (slotsByTeacher.TryGetValue(teacher.AccountFirebaseId, out var teacherSlots))
-                foreach (var classSlot in classSlots)
-                    if (teacherSlots.Any(ts => ts.Date == classSlot.Date && ts.Shift == classSlot.Shift))
-                    {
-                        hasConflict = true;
-                        break;
-                    }
-
-            // Only add teachers with no conflicts
-            if (!hasConflict)
-                result.TeacherWithSlots.Add(new TeacherFitWithSlotModel
-                {
-                    TeacherId = teacher.AccountFirebaseId,
-                    TeacherName = teacher.FullName ?? teacher.UserName,
-                    Slots = classSlots.Adapt<List<SlotWithInforModel>>(),
-                    TotalSlots = classSlots.Count
-                });
-        }
-
-        return new PagedResult<TeacherWithSlotModel>
-        {
-            Items = [result],
-            Page = model.Page,
-            Limit = model.PageSize,
-            TotalCount = totalCount
-        };
+        return result.Adapt<PagedResult<AccountSimpleModel>>();
+        //return new PagedResult<TeacherWithSlotModel>
+        //{
+        //    Items = [result],
+        //    Page = model.Page,
+        //    Limit = model.PageSize,
+        //    TotalCount = totalCount
+        //};
     }
 
-    private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes, List<Account> students,
+    private async Task<List<ClassModel>> SaveClasses(List<CreateClassAutoModel> classes,
         string userId, double currentProgress, List<Level> levels)
     {
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -862,18 +876,18 @@ public class ClassService : IClassService
             currentProgress += 5;
 
             //Create StudentClasses
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Saving learners of classes...",
-                currentProgress);
-            var studentClasses = new List<StudentClass>();
-            foreach (var c in classes)
-                studentClasses.AddRange(c.StudentIds.Select(s => new StudentClass
-                {
-                    Id = Guid.NewGuid(),
-                    StudentFirebaseId = s,
-                    CreatedById = userId,
-                    ClassId = c.Id
-                }));
-            await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
+            //await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Saving learners of classes...",
+            //    currentProgress);
+            //var studentClasses = new List<StudentClass>();
+            //foreach (var c in classes)
+            //    studentClasses.AddRange(c.StudentIds.Select(s => new StudentClass
+            //    {
+            //        Id = Guid.NewGuid(),
+            //        StudentFirebaseId = s,
+            //        CreatedById = userId,
+            //        ClassId = c.Id
+            //    }));
+            //await _unitOfWork.StudentClassRepository.AddRangeAsync(studentClasses);
             currentProgress += 5;
 
             //Create Slots
@@ -893,46 +907,46 @@ public class ClassService : IClassService
             currentProgress += 5;
 
             //Create studentSlots
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Saving slot data...", currentProgress);
-            var studentSlots = new List<SlotStudent>();
-            foreach (var studentClass in studentClasses)
-            {
-                var classSlots = slots.Where(s => s.ClassId == studentClass.ClassId).ToList();
-                foreach (var slot in classSlots)
-                    studentSlots.Add(new SlotStudent
-                    {
-                        CreatedById = userId,
-                        SlotId = slot.Id,
-                        StudentFirebaseId = studentClass.StudentFirebaseId!,
-                        AttendanceStatus = AttendanceStatus.NotYet
-                    });
-            }
+            //await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Saving slot data...", currentProgress);
+            //var studentSlots = new List<SlotStudent>();
+            //foreach (var studentClass in studentClasses)
+            //{
+            //    var classSlots = slots.Where(s => s.ClassId == studentClass.ClassId).ToList();
+            //    foreach (var slot in classSlots)
+            //        studentSlots.Add(new SlotStudent
+            //        {
+            //            CreatedById = userId,
+            //            SlotId = slot.Id,
+            //            StudentFirebaseId = studentClass.StudentFirebaseId!,
+            //            AttendanceStatus = AttendanceStatus.NotYet
+            //        });
+            //}
 
-            await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
+            //await _unitOfWork.SlotStudentRepository.AddRangeAsync(studentSlots);
             currentProgress += 5;
 
             //Change student status and current class
-            await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Updating status of learners...",
-                currentProgress);
-            var studentToUpdate = await _unitOfWork.AccountRepository.FindAsQueryable(a =>
-                a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass).ToListAsync();
+            //await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Updating status of learners...",
+            //    currentProgress);
+            //var studentToUpdate = await _unitOfWork.AccountRepository.FindAsQueryable(a =>
+            //    a.Role == Role.Student && a.StudentStatus == StudentStatus.WaitingForClass).ToListAsync();
 
-            foreach (var student in studentToUpdate)
-            {
-                var studentClass =
-                    studentClasses.FirstOrDefault(sc => sc.StudentFirebaseId == student.AccountFirebaseId);
-                if (studentClass != null)
-                {
-                    student.StudentStatus = StudentStatus.InClass;
-                    student.CurrentClassId = studentClass.ClassId;
-                }
-            }
+            //foreach (var student in studentToUpdate)
+            //{
+            //    var studentClass =
+            //        studentClasses.FirstOrDefault(sc => sc.StudentFirebaseId == student.AccountFirebaseId);
+            //    if (studentClass != null)
+            //    {
+            //        student.StudentStatus = StudentStatus.InClass;
+            //        student.CurrentClassId = studentClass.ClassId;
+            //    }
+            //}
 
             //    .ExecuteUpdateAsync(setters => setters
             //        .SetProperty(b => b.StudentStatus, StudentStatus.InClass)
             //        .SetProperty(b => b.CurrentClassId, cla);
-            await _unitOfWork.AccountRepository.UpdateRangeAsync(studentToUpdate);
-            currentProgress += 5;
+            //await _unitOfWork.AccountRepository.UpdateRangeAsync(studentToUpdate);
+            //currentProgress += 5;
 
             await _serviceFactory.ProgressServiceHub.SendProgress(userId, "Completing...", currentProgress);
             await _unitOfWork.SaveChangesAsync();
@@ -948,7 +962,7 @@ public class ClassService : IClassService
             return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with
             {
                 Capacity = capacity,
-                StudentNumber = studentClasses.Where(sc => sc.ClassId == item.Id).Count()
+                //StudentNumber = studentClasses.Where(sc => sc.ClassId == item.Id).Count()
             }).ToList();
         });
     }

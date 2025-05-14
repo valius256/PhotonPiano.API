@@ -1,4 +1,5 @@
-﻿using PhotonPiano.BusinessLogic.BusinessModel.Class;
+﻿using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.DataAccess.Models.Paging;
 using Role = PhotonPiano.DataAccess.Models.Enum.Role;
 
@@ -30,5 +31,5 @@ public interface IClassService
 
     Task ClearClassSchedule(Guid classId, string accountFirebaseId);
 
-    Task<PagedResult<TeacherWithSlotModel>> GetAvailableTeacher(GetAvailableTeacherForClassModel model);
+    Task<PagedResult<AccountSimpleModel>> GetAvailableTeacher(GetAvailableTeacherForClassModel model);
 }

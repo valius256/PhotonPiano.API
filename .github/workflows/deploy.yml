@@ -40,7 +40,14 @@ env:
   CONNECTIONSTRINGS__REDISCONNECTIONSTRINGS: ${{ secrets.REDIS_CONNECTION_STRING }}
   PINATA__GATEWAYBASEURL: ${{ secrets.PINATA_GATEWAYBASEURL }}
   PINATA__DEFAULTGROUPID: ${{ secrets.PINATA_DEFAULTGROUPID }}
-  
+  Hangfire__Username: ${{ secrets.HANGFIRE_USERNAME }}
+  Hangfire__Password: ${{ secrets.HANGFIRE_PASSWORD }}
+  SmtpAppSetting__SmtpHost: ${{ secrets.SMTP_HOST }}
+  SmtpAppSetting__SmtpPort: ${{ secrets.SMTP_PORT }}
+  SmtpAppSetting__SmtpUserName: ${{ secrets.SMTP_USERNAME }}
+  SmtpAppSetting__SmtpPassword: ${{ secrets.SMTP_PASSWORD }}
+  SmtpAppSetting__EnableSsl: ${{ secrets.EnableSsl }}
+  SmtpAppSetting__AppVerify: ${{ secrets.AppVerify }}
   Logging__LogLevel__Hangfire: Debug
   Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
   GITHUB_ACTIONS: "true"
@@ -192,6 +199,8 @@ jobs:
 
             # Tạo file .env cho backend
             cat > .env <<EOF
+            ASPNETCORE_ENVIRONMENT=Production
+            DOTNET_ENVIRONMENT=Production
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
             FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}
@@ -216,8 +225,14 @@ jobs:
             PINATA__JWTTOKEN=${{ secrets.PINATA_JWTTOKEN }}
             PINATA__GATEWAYBASEURL=${{ secrets.PINATA_GATEWAYBASEURL }}
             PINATA__DEFAULTGROUPID=${{ secrets.PINATA_DEFAULTGROUPID }}
-            ASPNETCORE_ENVIRONMENT=Production
-            DOTNET_ENVIRONMENT=Production
+            SmtpAppSetting__SmtpHost=${{ secrets.SMTP_HOST }}
+            SmtpAppSetting__SmtpPort=${{ secrets.SMTP_PORT }}
+            SmtpAppSetting__SmtpUserName=${{ secrets.SMTP_USERNAME }}
+            SmtpAppSetting__SmtpPassword=${{ secrets.SMTP_PASSWORD }}
+            SmtpAppSetting__EnableSsl=${{ secrets.EnableSsl }}
+            SmtpAppSetting__AppVerify=${{ secrets.AppVerify }}
+            Hangfire__Username=${{ secrets.HANGFIRE_USERNAME }}
+            Hangfire__Password=${{ secrets.HANGFIRE_PASSWORD }}
             EOF
 
             # Tạo file .env cho frontend

@@ -111,7 +111,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     DashboardTitle = "PhotonPiano Dashboard",
     DarkModeEnabled = true,
     IsReadOnlyFunc = _ => false,
-    Authorization = new[] { new HangfireAuthorizationFilter() },
+    Authorization = new[] { new HangfireAuthorizationFilter(configuration) },
     AppPath = "https://photonpiano.duckdns.org/scalar/v1"
 });
 

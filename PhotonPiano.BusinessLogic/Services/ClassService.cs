@@ -124,7 +124,8 @@ public class ClassService : IClassService
                 q => isPublic == null || q.IsPublic == isPublic,
                 q =>
                     string.IsNullOrEmpty(keyword) ||
-                    EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword)
+                    EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword) ||
+                    (q.ScheduleDescription != null && EF.Functions.ILike(EF.Functions.Unaccent(q.ScheduleDescription), likeKeyword))
             ]
         );
         // Fetch the class capacity

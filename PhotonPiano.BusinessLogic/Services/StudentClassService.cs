@@ -330,6 +330,7 @@ namespace PhotonPiano.BusinessLogic.Services
                                 es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId))
                         .ToList();
 
+                    existedSlotStudents.AddRange(existedSlots);
                     foreach (var slot in existedSlotStudents)
                     {
                         slot.RecordStatus = RecordStatus.IsActive;
@@ -346,7 +347,6 @@ namespace PhotonPiano.BusinessLogic.Services
                         }));
                     }
 
-                    existedSlotStudents.AddRange(existedSlots);
                     receiverIds.Add(student.AccountFirebaseId);
 
                     studentClass.Student = student;

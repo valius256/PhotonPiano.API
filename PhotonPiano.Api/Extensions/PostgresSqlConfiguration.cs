@@ -28,6 +28,16 @@ public class PostgresSqlConfiguration
                $"WHERE \"Password\" = ''";
     }
 
+    private string GetStudentLevelMappingQuery()
+    {
+        return @"UPDATE ""Account""
+             SET ""LevelId"" = c.""LevelId""
+             FROM ""Class"" c
+             WHERE ""Account"".""CurrentClassId"" = c.""Id""
+             AND ""Account"".""Role"" = 1
+             AND (""Account"".""LevelId"" IS NULL OR ""Account"".""LevelId"" != c.""LevelId"")";
+    }
+
     public void Configure()
     {
         using (var scope = _serviceScopeFactory.CreateScope())
@@ -66,7 +76,7 @@ public class PostgresSqlConfiguration
                     context.Database.ExecuteSqlRaw(GetLevelUpdateQuery(Guid.Parse("55974743-7c93-47ab-877e-eda4cb9f96c5"), 8.0m, 8.0m));
                     
                     context.Database.ExecuteSqlRaw(GetAccountUpdateQuery());
-                    
+                    context.Database.ExecuteSqlRaw(GetStudentLevelMappingQuery());
                     // update teacherId for each slot
                     context.Database.ExecuteSqlRaw(
                         "UPDATE \"Slot\" " +

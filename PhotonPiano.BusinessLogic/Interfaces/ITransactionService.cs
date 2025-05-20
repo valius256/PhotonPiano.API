@@ -10,4 +10,9 @@ public interface ITransactionService
     Task<PagedResult<TransactionModel>> GetPagedTransactions(QueryPagedTransactionsModel queryModel, AccountModel currentAccount);
 
     string GetTransactionCode(TransactionType type, DateTime createDate, Guid? id = default);
+
+    Task<TransactionsWithStatisticsModel> GetTransactionsWithStatisticsAsync(
+        QueryPagedTransactionsModel queryModel,
+        AccountModel currentAccount);
+
 }

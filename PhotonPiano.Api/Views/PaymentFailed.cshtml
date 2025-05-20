@@ -1,0 +1,137 @@
+﻿@{
+    var customerName = Model["customerName"];
+    var transactionId = Model["transactionId"];
+    var amount = Model["amount"];
+    var orderId = Model["orderId"];
+    var paymentMethod = Model["paymentMethod"];
+    var transactionDate = Model["transactionDate"];
+    var errorCode = Model["errorCode"];
+    var errorMessage = Model["errorMessage"];
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .email-container {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 20px auto;
+            width: 600px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .email-header {
+            background-color: #D32F2F;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .email-content {
+            margin: 20px 0;
+            font-size: 16px;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+            .details-table th, .details-table td {
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #ddd;
+            }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 20px;
+            color: #777;
+        }
+
+            .footer a {
+                color: #D32F2F;
+                text-decoration: none;
+            }
+
+            .footer p {
+                margin: 10px 0;
+            }
+            
+        .error-message {
+            background-color: #FFEBEE;
+            border-left: 4px solid #D32F2F;
+            padding: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            Payment Failed Notification
+        </div>
+
+        <div class="email-content">
+            <p>Hello @customerName,</p>
+
+            <p>We regret to inform you that your payment was not successful. Below are the details of the failed transaction:</p>
+
+            <table class="details-table">
+                <tr>
+                    <th>Transaction ID</th>
+                    <td>@transactionId</td>
+                </tr>
+                <tr>
+                    <th>Order ID</th>
+                    <td>@orderId</td>
+                </tr>
+                <tr>
+                    <th>Amount</th>
+                    <td>@amount VND</td>
+                </tr>
+                <tr>
+                    <th>Payment Method</th>
+                    <td>@paymentMethod</td>
+                </tr>
+                <tr>
+                    <th>Transaction Date</th>
+                    <td>@transactionDate</td>
+                </tr>
+                <tr>
+                    <th>Error Code</th>
+                    <td>@errorCode</td>
+                </tr>
+            </table>
+            
+            <div class="error-message">
+                <p>@errorMessage</p>
+            </div>
+
+            <p>If you continue to experience issues, please contact our support team for assistance.</p>
+        </div>
+
+        <div class="footer">
+            <p>
+                For help resolving this issue, please contact our support team at <a href="mailto:support@photonpiano.com">support@photonpiano.com</a>.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

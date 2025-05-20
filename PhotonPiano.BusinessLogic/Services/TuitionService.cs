@@ -54,7 +54,7 @@ public class TuitionService : ITuitionService
             TutionId = model.TuitionId,
             TaxRate = currentTaxRate,
             TaxAmount = currentTaxAmount,
-            Amount = (-1) * (paymentTuition!.Amount + currentTaxAmount),
+            Amount = -1 * (paymentTuition!.Amount + currentTaxAmount),
             CreatedAt = DateTime.UtcNow,
             CreatedById = currentAccount.AccountFirebaseId,
             TransactionType = TransactionType.TutionFee,
@@ -96,7 +96,7 @@ public class TuitionService : ITuitionService
             callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
         transaction.TransactionCode = callbackModel.VnpTransactionNo;
         transaction.UpdatedAt = DateTime.UtcNow;
-
+        
         if (transaction.PaymentStatus == PaymentStatus.Succeed)
         {
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -135,19 +135,35 @@ public class TuitionService : ITuitionService
         {
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
+                var tuitionEntity =
+                    await _unitOfWork.TuitionRepository.FindFirstAsync(x => x.Id == transaction.TutionId);
+
+                if (tuitionEntity is null)
+                    throw new NotFoundException($"Tuition with ID {transaction.TutionId} not found");
                 await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
             });
+
+            var emailParam = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "customerName", account.Email },
+                { "transactionId", transaction.TransactionCode },
+                { "amount", Math.Abs(transaction.Amount).ToString(CultureInfo.InvariantCulture) },
+                { "orderId", transaction.TutionId.ToString() },
+                { "paymentMethod", transaction.PaymentMethod.ToString() },
+                { "transactionDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") },
+                { "errorCode", callbackModel.VnpResponseCode },
+                { "errorMessage", "Your payment was not successful. Please try again or contact support." }
+            };
+
+            await _serviceFactory.EmailService.SendAsync("PaymentFailed",
+                new List<string> { account.Email },
+                null, emailParam);
+
+            await _serviceFactory.NotificationService.SendNotificationAsync(account.AccountFirebaseId,
+                "Tuition Payment Failed",
+                "Your tuition payment was not successful. Please try again or contact support.");
 
             throw new BadRequestException("Payment has failed.");
-        }
-        else
-        {
-            await _unitOfWork.ExecuteInTransactionAsync(async () =>
-            {
-                await _unitOfWork.TransactionRepository.UpdateAsync(transaction);
-            });
-
-            throw new BadRequestException("Unknown payment status.");
         }
     }
 

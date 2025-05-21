@@ -27,7 +27,6 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [CustomAuthorize(Roles = [Role.Staff, Role.Administrator])]
         [EndpointDescription("Get level by id")]
         public async Task<ActionResult<LevelDetailsModel>> GetLevel([FromRoute] Guid id)
         {

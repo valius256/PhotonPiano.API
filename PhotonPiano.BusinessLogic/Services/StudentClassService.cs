@@ -242,10 +242,7 @@ namespace PhotonPiano.BusinessLogic.Services
             }
 
 
-            var classInfo = await _unitOfWork.ClassRepository.Entities
-                .Include(c => c.StudentClasses)
-                .Include(c => c.Slots)
-                .FirstOrDefaultAsync(c => c.Id == createStudentClassesModel.ClassId);
+            var classInfo = await _serviceFactory.ClassService.GetClassDetailById(createStudentClassesModel.ClassId);
             if (classInfo is null)
             {
                 throw new NotFoundException("Class not found");
@@ -309,7 +306,7 @@ namespace PhotonPiano.BusinessLogic.Services
                         ClassId = classInfo.Id,
                         StudentFirebaseId = student.AccountFirebaseId,
                         CreatedById = account.AccountFirebaseId,
-                        IsPassed = false
+                        IsPassed = false,
                     };
 
                     student.StudentStatus = StudentStatus.InClass;
@@ -333,6 +330,7 @@ namespace PhotonPiano.BusinessLogic.Services
                                 es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId))
                         .ToList();
 
+                    existedSlotStudents.AddRange(existedSlots);
                     foreach (var slot in existedSlotStudents)
                     {
                         slot.RecordStatus = RecordStatus.IsActive;
@@ -349,8 +347,10 @@ namespace PhotonPiano.BusinessLogic.Services
                         }));
                     }
 
-                    existedSlotStudents.AddRange(existedSlots);
                     receiverIds.Add(student.AccountFirebaseId);
+
+                    studentClass.Student = student;
+                    classInfo.StudentClasses.Add(studentClass.Adapt<StudentClassModel>());
                 }
 
                 await _unitOfWork.StudentClassRepository.AddRangeAsync(addedStudentClasses);
@@ -363,6 +363,13 @@ namespace PhotonPiano.BusinessLogic.Services
                 return addedStudentClasses;
             });
 
+            //Create tuition
+            if (classInfo.IsPublic)
+            {
+                classInfo.StudentClasses = [.. classInfo.StudentClasses.Where(sc => createStudentClassesModel.StudentFirebaseIds.Contains(sc.StudentFirebaseId))];
+                await _serviceFactory.TuitionService.CreateTuitionWhenRegisterClass(classInfo);
+            }
+            
             if (classInfo.IsPublic)
             {
                 var classReceiverIds = new List<string>();

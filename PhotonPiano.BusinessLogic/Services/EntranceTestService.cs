@@ -794,7 +794,7 @@ public class EntranceTestService : IEntranceTestService
     private async Task<(List<EntranceTest> newEntranceTests, List<EntranceTestWithStudentsModel> existingEntranceTests)>
         CreateAndAssignStudentsToEntranceTests(
             List<AccountDetailModel> students,
-            DateTime startDate, DateTime endDate,
+            DateTime startDate, DateTime? endDate,
             string staffAccountId, List<EntranceTestStudent> entranceTestStudents, params List<Shift> shiftOptions
         )
     {
@@ -807,7 +807,8 @@ public class EntranceTestService : IEntranceTestService
         // var addingEntranceTestStudents = new List<EntranceTestStudent>();
 
         var existingTests = await _unitOfWork.EntranceTestRepository.FindProjectedAsync<EntranceTestWithStudentsModel>(
-            e => e.Date >= DateOnly.FromDateTime(startDate) && e.Date <= DateOnly.FromDateTime(endDate),
+            e => e.Date >= DateOnly.FromDateTime(startDate)
+                 && (!endDate.HasValue || e.Date <= DateOnly.FromDateTime(endDate.Value)),
             hasTrackings: false
         );
 
@@ -963,7 +964,8 @@ public class EntranceTestService : IEntranceTestService
         }
 
         var existingEntranceTests = await _unitOfWork.EntranceTestRepository
-            .FindAsync(e => e.Date >= DateOnly.FromDateTime(startDate) && e.Date <= DateOnly.FromDateTime(endDate),
+            .FindAsync(e => e.Date >= DateOnly.FromDateTime(startDate)
+                            && (!endDate.HasValue || e.Date <= DateOnly.FromDateTime(endDate.Value)),
                 hasTrackings: false);
 
         var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository.FindAsync(ets =>
@@ -1311,7 +1313,7 @@ public class EntranceTestService : IEntranceTestService
         var criteriaIds = updateModel.UpdateScoreRequests.Select(s => s.CriteriaId);
 
         List<Criteria> criterias = [];
-        
+
         if (updateModel.UpdateScoreRequests.Count > 0)
         {
             criterias =
@@ -1376,7 +1378,7 @@ public class EntranceTestService : IEntranceTestService
 
                 entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
                     Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), newPracticalScore);
-                
+
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => a.AccountFirebaseId == studentId,
                     setter => setter.SetProperty(s => s.LevelId, entranceTestStudent.LevelId));
                 await _unitOfWork.EntranceTestResultRepository.ExecuteDeleteAsync(etr =>

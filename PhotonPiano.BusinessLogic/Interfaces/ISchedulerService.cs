@@ -9,11 +9,11 @@ public interface ISchedulerService
 {
     Graph<EntranceTest> BuildEntranceTestsConflictGraph(List<EntranceTest> entranceTests);
 
-    Task<List<TimeSlot>> GenerateValidTimeSlots(List<EntranceTest> existingTests, DateTime startDate, DateTime endDate,
+    Task<List<TimeSlot>> GenerateValidTimeSlots(List<EntranceTest> existingTests, DateTime startDate, DateTime? endDate,
         List<DateTime> holidays, params List<Shift> shiftOptions);
 
     Task<List<EntranceTest>> AssignTimeSlotsToEntranceTests(List<EntranceTest> assigningEntranceTests, Graph<EntranceTest> graph,
-        DateTime startDate, DateTime endDate,
+        DateTime startDate, DateTime? endDate,
         List<TimeSlot> validSlots, List<EntranceTest> existingEntranceTests);
 
     Task<List<EntranceTest>> AssignInstructorsToEntranceTests(List<EntranceTest> assigningEntranceTests,

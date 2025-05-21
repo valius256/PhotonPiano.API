@@ -75,6 +75,7 @@ public static class ServiceCollectionExtensions
         TypeAdapterConfig<CreateSurveyQuestionModel, SurveyQuestion>.NewConfig().Ignore(dest => dest.Id);
         TypeAdapterConfig<UpdateArticleModel, Article>.NewConfig().IgnoreNullValues(true);
         TypeAdapterConfig<UpdateLevelModel, Level>.NewConfig().IgnoreNullValues(true);
+        TypeAdapterConfig<AccountModel, Account>.NewConfig().IgnoreNullValues(true);
         TypeAdapterConfig<Level, LevelDetailsModel>.NewConfig()
             .Map(dest => dest.TotalPrice, src => src.PricePerSlot * src.TotalSlots)
             .Map(dest => dest.NumberActiveStudentInLevel, src => src.Classes.SelectMany(c => c.StudentClasses)

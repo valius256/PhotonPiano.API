@@ -7,61 +7,20 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
-using PuppeteerSharp;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
 public class LevelService : ILevelService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly string _cacheKey = "levels";
 
     private readonly IServiceFactory _serviceFactory;
-
-    private readonly string _cacheKey = "levels";
+    private readonly IUnitOfWork _unitOfWork;
 
     public LevelService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
         _unitOfWork = unitOfWork;
         _serviceFactory = serviceFactory;
-    }
-
-
-    private async Task<List<Level>> GetSortedAllLevels()
-    {
-        var levels = await _unitOfWork.LevelRepository.GetAllAsync(hasTrackings: false);
-
-        var levelDict = levels.ToDictionary(l => l.Id);
-        var nextIdSet = new HashSet<Guid>(levels
-            .Where(l => l.NextLevelId.HasValue)
-            .Select(l => l.NextLevelId!.Value));
-
-        var rootLevel = levels.FirstOrDefault(l => !nextIdSet.Contains(l.Id));
-
-        if (rootLevel is null)
-        {
-            throw new BadRequestException("No root level found. The level chain might be broken or circular.");
-        }
-
-        var sortedLevels = new List<Level>();
-        var visited = new HashSet<Guid>();
-
-        var current = rootLevel;
-
-        while (current != null)
-        {
-            if (!visited.Add(current.Id))
-            {
-                throw new BadRequestException("Circular reference detected in level chain.");
-            }
-
-            sortedLevels.Add(current);
-
-            current = current.NextLevelId is { } nextId && levelDict.TryGetValue(nextId, out var next)
-                ? next
-                : null;
-        }
-
-        return sortedLevels;
     }
 
     public async Task<List<LevelModel>> GetAllLevelsAsync()
@@ -88,14 +47,11 @@ public class LevelService : ILevelService
     {
         var cachedLevels = await _serviceFactory.RedisCacheService.GetAsync<List<LevelModel>>(_cacheKey);
 
-        if (cachedLevels is not null && cachedLevels.Count > 0)
-        {
-            return cachedLevels;
-        }
+        if (cachedLevels is not null && cachedLevels.Count > 0) return cachedLevels;
 
         var levels = await GetAllLevelsAsync();
 
-        await _serviceFactory.RedisCacheService.SaveAsync(key: _cacheKey, value: levels, expiry: TimeSpan.FromDays(1));
+        await _serviceFactory.RedisCacheService.SaveAsync(_cacheKey, levels, TimeSpan.FromDays(1));
 
         return levels;
     }
@@ -104,10 +60,7 @@ public class LevelService : ILevelService
     {
         var level = await _unitOfWork.LevelRepository.GetLevelByScoresAsync(theoreticalScore, practicalScore);
 
-        if (level is null)
-        {
-            throw new BadRequestException("Invalid score");
-        }
+        if (level is null) throw new BadRequestException("Invalid score");
 
         return level.Id;
     }
@@ -168,15 +121,11 @@ public class LevelService : ILevelService
     public async Task UpdateLevelMinimumGpaAsync(Guid id, UpdateLevelMinimumGpaModel model)
     {
         if (model.MinimumGpa < 0 || model.MinimumGpa > 10)
-        {
             throw new BadRequestException("Minimum GPA must be between 0 and 10");
-        }
 
         var level = await _unitOfWork.LevelRepository.GetByIdAsync(id);
         if (level is null || level.RecordStatus == RecordStatus.IsDeleted)
-        {
             throw new NotFoundException($"Level with ID {level!.Id} not found");
-        }
 
         level.MinimumGPA = model.MinimumGpa;
         level.UpdatedAt = DateTime.UtcNow.AddHours(7);
@@ -230,10 +179,7 @@ public class LevelService : ILevelService
     {
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == id);
 
-        if (level is null)
-        {
-            throw new NotFoundException("Level not found.");
-        }
+        if (level is null) throw new NotFoundException("Level not found.");
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -280,17 +226,11 @@ public class LevelService : ILevelService
     {
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == id);
 
-        if (level is null)
-        {
-            throw new NotFoundException("Level not found.");
-        }
+        if (level is null) throw new NotFoundException("Level not found.");
 
         var fallbackLevel = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == fallBackLevelId);
 
-        if (fallbackLevel is null)
-        {
-            throw new NotFoundException("Fallback level not found.");
-        }
+        if (fallbackLevel is null) throw new NotFoundException("Fallback level not found.");
 
         var affectedAccounts = await _unitOfWork.AccountRepository.FindAsync(a => a.LevelId == level.Id);
         var affectedClasses =
@@ -302,24 +242,14 @@ public class LevelService : ILevelService
         if (prevLevel is not null)
         {
             if (nextLevel is not null)
-            {
                 prevLevel.NextLevelId = nextLevel.Id;
-            }
             else
-            {
                 prevLevel.NextLevelId = null;
-            }
         }
 
-        foreach (var classInfo in affectedClasses)
-        {
-            classInfo.LevelId = fallBackLevelId;
-        }
+        foreach (var classInfo in affectedClasses) classInfo.LevelId = fallBackLevelId;
 
-        foreach (var account in affectedAccounts)
-        {
-            account.LevelId = fallBackLevelId;
-        }
+        foreach (var account in affectedAccounts) account.LevelId = fallBackLevelId;
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -339,14 +269,83 @@ public class LevelService : ILevelService
     public async Task<LevelDetailsModel> GetLevelDetailsAsync(Guid levelId)
     {
         var level = await _unitOfWork.LevelRepository.FindSingleProjectedAsync<LevelDetailsModel>(l => l.Id == levelId,
-            hasTrackings: false);
+            false);
 
-        if (level is null)
-        {
-            throw new NotFoundException("Level not found");
-        }
-        
+        if (level is null) throw new NotFoundException("Level not found");
+
         return level;
+    }
+
+    public async Task ChangeLevelOrder(UpdateLevelOrderModel updateLevelOrderModel)
+    {
+        // Validation: all levels are included
+        var allLevelIds = await _unitOfWork.LevelRepository.Entities.Select(l => l.Id).ToListAsync();
+        var providedIds = updateLevelOrderModel.LevelOrders.Select(lo => lo.Id).ToList();
+
+        if (allLevelIds.Except(providedIds).Any() || providedIds.Except(allLevelIds).Any())
+            throw new BadRequestException("Provided levels do not match existing levels exactly.");
+
+        // Validation: no duplicate NextLevelId targets
+        var nextLevelTargets = updateLevelOrderModel.LevelOrders.Where(lo => lo.NextLevelId != null)
+            .Select(lo => lo.NextLevelId!.Value).ToList();
+        if (nextLevelTargets.GroupBy(x => x).Any(g => g.Count() > 1))
+            throw new BadRequestException("Multiple levels cannot point to the same NextLevelId.");
+
+        // Validation: no cycles
+        if (HasCycle(updateLevelOrderModel.LevelOrders))
+            throw new BadRequestException("Level chain has a cycle.");
+
+        // All validations passed → apply updates
+        var levels = await _unitOfWork.LevelRepository.Entities.ToDictionaryAsync(l => l.Id);
+
+        foreach (var orderModel in updateLevelOrderModel.LevelOrders)
+            if (levels.TryGetValue(orderModel.Id, out var level))
+                level.NextLevelId = orderModel.NextLevelId;
+
+        await _unitOfWork.SaveChangesAsync();
+        await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);
+    }
+
+    public async Task<bool> IsFirstLevelAsync(Guid levelId)
+    {
+        var levelPointingTo =
+            await _unitOfWork.LevelRepository.FindFirstAsync(l => l.NextLevelId == levelId, false);
+
+        return levelPointingTo is null;
+    }
+
+
+    private async Task<List<Level>> GetSortedAllLevels()
+    {
+        var levels = await _unitOfWork.LevelRepository.GetAllAsync(false);
+
+        var levelDict = levels.ToDictionary(l => l.Id);
+        var nextIdSet = new HashSet<Guid>(levels
+            .Where(l => l.NextLevelId.HasValue)
+            .Select(l => l.NextLevelId!.Value));
+
+        var rootLevel = levels.FirstOrDefault(l => !nextIdSet.Contains(l.Id));
+
+        if (rootLevel is null)
+            throw new BadRequestException("No root level found. The level chain might be broken or circular.");
+
+        var sortedLevels = new List<Level>();
+        var visited = new HashSet<Guid>();
+
+        var current = rootLevel;
+
+        while (current != null)
+        {
+            if (!visited.Add(current.Id)) throw new BadRequestException("Circular reference detected in level chain.");
+
+            sortedLevels.Add(current);
+
+            current = current.NextLevelId is { } nextId && levelDict.TryGetValue(nextId, out var next)
+                ? next
+                : null;
+        }
+
+        return sortedLevels;
     }
 
     private bool HasCycle(List<LevelOrderModel> levels)
@@ -377,47 +376,5 @@ public class LevelService : ILevelService
 
         // Ensure all levels are connected
         return visited.Count != levels.Count;
-    }
-
-    public async Task ChangeLevelOrder(UpdateLevelOrderModel updateLevelOrderModel)
-    {
-        // Validation: all levels are included
-        var allLevelIds = await _unitOfWork.LevelRepository.Entities.Select(l => l.Id).ToListAsync();
-        var providedIds = updateLevelOrderModel.LevelOrders.Select(lo => lo.Id).ToList();
-
-        if (allLevelIds.Except(providedIds).Any() || providedIds.Except(allLevelIds).Any())
-            throw new BadRequestException("Provided levels do not match existing levels exactly.");
-
-        // Validation: no duplicate NextLevelId targets
-        var nextLevelTargets = updateLevelOrderModel.LevelOrders.Where(lo => lo.NextLevelId != null)
-            .Select(lo => lo.NextLevelId!.Value).ToList();
-        if (nextLevelTargets.GroupBy(x => x).Any(g => g.Count() > 1))
-            throw new BadRequestException("Multiple levels cannot point to the same NextLevelId.");
-
-        // Validation: no cycles
-        if (HasCycle(updateLevelOrderModel.LevelOrders))
-            throw new BadRequestException("Level chain has a cycle.");
-
-        // All validations passed → apply updates
-        var levels = await _unitOfWork.LevelRepository.Entities.ToDictionaryAsync(l => l.Id);
-
-        foreach (var orderModel in updateLevelOrderModel.LevelOrders)
-        {
-            if (levels.TryGetValue(orderModel.Id, out var level))
-            {
-                level.NextLevelId = orderModel.NextLevelId;
-            }
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-        await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);
-    }
-
-    public async Task<bool> IsFirstLevelAsync(Guid levelId)
-    {
-        var levelPointingTo =
-            await _unitOfWork.LevelRepository.FindFirstAsync(l => l.NextLevelId == levelId, hasTrackings: false);
-
-        return levelPointingTo is null;
     }
 }

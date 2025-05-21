@@ -145,7 +145,7 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>.NewConfig()
             .Map(dest => dest.StartDate, src => DateTime.SpecifyKind(src.StartDate, DateTimeKind.Unspecified))
-            .Map(dest => dest.EndDate, src => DateTime.SpecifyKind(src.EndDate, DateTimeKind.Unspecified));
+            .Map(dest => dest.EndDate, src => src.EndDate.HasValue ? DateTime.SpecifyKind(src.EndDate.Value, DateTimeKind.Unspecified) : src.EndDate);
 
         TypeAdapterConfig<CreatePianoSurveyRequest, CreatePianoSurveyModel>.NewConfig()
             .Map(dest => dest.CreateQuestionRequests, src => src.Questions);
@@ -255,8 +255,11 @@ public static class IServiceCollectionExtensions
                     TimeSpan.FromSeconds(30),
                     null);
             });
-            options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
-            options.EnableDetailedErrors();
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
+                options.EnableDetailedErrors();
+            }
         });
 
         return services;
@@ -270,7 +273,7 @@ public static class IServiceCollectionExtensions
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver
                 {
-                    NamingStrategy = new CamelCaseNamingStrategy()                       
+                    NamingStrategy = new CamelCaseNamingStrategy()
                 };
             });
 

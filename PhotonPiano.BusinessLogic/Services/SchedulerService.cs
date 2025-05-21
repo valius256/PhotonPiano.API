@@ -54,13 +54,15 @@ public class SchedulerService : ISchedulerService
     }
 
     public async Task<List<TimeSlot>> GenerateValidTimeSlots(List<EntranceTest> existingTests, DateTime startDate,
-        DateTime endDate, List<DateTime> holidays,
+        DateTime? endDate, List<DateTime> holidays,
         params List<Shift> shiftOptions)
     {
         List<TimeSlot> validSlots = [];
         DateTime currentDate = startDate;
 
         var shifts = shiftOptions.Count > 0 ? shiftOptions : Enum.GetValues<Shift>().ToList();
+
+        endDate ??= startDate;
 
         while (currentDate <= endDate)
         {
@@ -88,7 +90,7 @@ public class SchedulerService : ISchedulerService
 
     public async Task<List<EntranceTest>> AssignTimeSlotsToEntranceTests(List<EntranceTest> assigningEntranceTests,
         Graph<EntranceTest> graph,
-        DateTime startDate, DateTime endDate,
+        DateTime startDate, DateTime? endDate,
         List<TimeSlot> validSlots,
         List<EntranceTest> existingEntranceTests)
     {

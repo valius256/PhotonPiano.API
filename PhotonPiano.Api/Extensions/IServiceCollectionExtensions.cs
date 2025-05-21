@@ -255,8 +255,11 @@ public static class IServiceCollectionExtensions
                     TimeSpan.FromSeconds(30),
                     null);
             });
-            options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
-            options.EnableDetailedErrors();
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                options.EnableSensitiveDataLogging().LogTo(Console.WriteLine, LogLevel.Information);
+                options.EnableDetailedErrors();
+            }
         });
 
         return services;
@@ -270,7 +273,7 @@ public static class IServiceCollectionExtensions
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver
                 {
-                    NamingStrategy = new CamelCaseNamingStrategy()                       
+                    NamingStrategy = new CamelCaseNamingStrategy()
                 };
             });
 
@@ -344,9 +347,9 @@ public static class IServiceCollectionExtensions
                 var tuitionOverdueDay =
                     configService.GetConfig(ConfigNames.TuitionPaymentDeadline).Result?.ConfigValue ?? "28";
 
-                recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
-                    x => x.CronAutoCreateTuition(),
-                    Cron.Monthly);
+                // recurringJobManager.AddOrUpdate<TuitionService>("AutoCreateTuitionInStartOfMonth",
+                //     x => x.CronAutoCreateTuition(),
+                //     Cron.Monthly);
 
                 recurringJobManager.AddOrUpdate<TuitionService>("TuitionReminder",
                     x => x.CronForTuitionReminder(),

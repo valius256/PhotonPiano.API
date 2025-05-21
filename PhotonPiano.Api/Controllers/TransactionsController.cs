@@ -21,7 +21,7 @@ namespace PhotonPiano.Api.Controllers
         }
 
         [HttpGet]
-        [CustomAuthorize(Roles = [Role.Student, Role.Staff])]
+        [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Administrator])]
         [EndpointDescription("Get transactions with paging")]
         public async Task<ActionResult<List<TransactionModel>>> GetPagedTransactions([FromQuery] QueryPagedTransactionsRequest request)
         {
@@ -32,6 +32,21 @@ namespace PhotonPiano.Api.Controllers
             HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
             return pagedResult.Items;
+        }
+        
+        [HttpGet("statistics")]
+        [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Administrator])]
+        [EndpointDescription("Get transaction statistics")]
+        public async Task<ActionResult<TransactionsWithStatisticsModel>> GetTransactionsWithStatistics(
+            [FromQuery] QueryPagedTransactionsRequest request)
+        {
+            var queryModel = request.Adapt<QueryPagedTransactionsModel>();
+    
+            var result = await _serviceFactory.TransactionService.GetTransactionsWithStatisticsAsync(
+                queryModel, 
+                base.CurrentAccount!);
+    
+            return Ok(result);
         }
     }
 }

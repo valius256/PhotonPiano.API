@@ -45,9 +45,9 @@ public class TuitionController : BaseController
         var url = await _serviceFactory.TuitionService.PayTuition(CurrentAccount!, paymentModel);
 
         return Ok(new PaymentUrlResponse
-        {
-            Url = url
-        }
+            {
+                Url = url
+            }
         );
     }
 
@@ -56,14 +56,34 @@ public class TuitionController : BaseController
     public async Task<ActionResult> HandleEnrollmentPaymentCallback(
         [FromQuery] VnPayReturnRequest request,
         [FromRoute(Name = "account-id")] string accountId,
-        [FromQuery(Name = "url")] string clientRedirectUrl = "https://default-url.com")
+        [FromQuery(Name = "url")] string clientRedirectUrl)
     {
-        await _serviceFactory.TuitionService.HandleTuitionPaymentCallback(
-            request.Adapt<VnPayCallbackModel>(), accountId);
+        try
+        {
+            await _serviceFactory.TuitionService.HandleTuitionPaymentCallback(
+                request.Adapt<VnPayCallbackModel>(), accountId);
 
-        return Redirect(clientRedirectUrl);
+            var status = request.VnpResponseCode == "00" ? "success" : "failed";
+            var redirectUrl = AppendQueryParameter(clientRedirectUrl, "status", status);
+
+            return Redirect(redirectUrl);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing payment callback");
+            var redirectUrl = AppendQueryParameter(clientRedirectUrl, "status", "error");
+            redirectUrl = AppendQueryParameter(redirectUrl, "message", Uri.EscapeDataString(ex.Message));
+
+            return Redirect(redirectUrl);
+        }
     }
- 
+
+    private string AppendQueryParameter(string url, string key, string value)
+    {
+        var separator = url.Contains("?") ? "&" : "?";
+        return $"{url}{separator}{key}={value}";
+    }
+
     [HttpGet]
     [CustomAuthorize(Roles = [Role.Student, Role.Staff])]
     [EndpointDescription("Get Tuition with paging")]

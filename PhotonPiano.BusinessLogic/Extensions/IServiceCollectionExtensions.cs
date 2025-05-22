@@ -87,6 +87,7 @@ public static class ServiceCollectionExtensions
             .Map(dest => dest.Capacity, src => src.StudentClasses.Count > 0 ? src.StudentClasses.Count : 12)
             .Map(dest => dest.MinimumStudents, src => 8)
             .Map(dest => dest.StudentNumber, src => src.StudentClasses.Count)
+            .Map(dest => dest.EndTime, src => src.Slots.Max(s => (DateOnly?)s.Date))
             ;
         return services;
     }

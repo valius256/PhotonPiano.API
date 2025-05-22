@@ -1,4 +1,3 @@
-using System;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -13,6 +12,8 @@ public record ClassModel
     public ClassStatus Status { get; init; } = ClassStatus.NotStarted;
     public DateOnly? StartTime { get; init; }
     public DateOnly? EndTime { get; init; }
+    public string? ClassTime { get; set; }
+    public string? ClassDays { get; set; }
     public Guid LevelId { get; init; }
     public bool IsPublic { get; init; }
     public string? ScheduleDescription { get; set; }

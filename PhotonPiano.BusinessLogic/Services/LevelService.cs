@@ -1,7 +1,9 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
+using PhotonPiano.BusinessLogic.Extensions;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
@@ -273,7 +275,30 @@ public class LevelService : ILevelService
 
         if (level is null) throw new NotFoundException("Level not found");
 
+
+        // khong load bang mapping vi issue take time so long
+        await LoadAndSetClassTimesAsync(level.Classes.ToList());
+
+        
         return level;
+    }
+
+    private async Task LoadAndSetClassTimesAsync(List<ClassModel> classModels)
+    {
+        var classIds = classModels.Select(c => c.Id).ToList();
+
+        var classWithSlots = await _unitOfWork.ClassRepository
+            .FindProjectedAsync<Class>(c => classIds.Contains(c.Id), false);
+
+        foreach (var classModel in classModels)
+        {
+            var matchedClass = classWithSlots.FirstOrDefault(c => c.Id == classModel.Id);
+            if (matchedClass != null)
+            {
+                classModel.ClassTime = DateExtensions.FormatTime(matchedClass.Slots);
+                classModel.ClassDays = DateExtensions.FormatDays(matchedClass.Slots);
+            }
+        }
     }
 
     public async Task ChangeLevelOrder(UpdateLevelOrderModel updateLevelOrderModel)

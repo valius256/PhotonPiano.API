@@ -88,6 +88,8 @@ public static class ServiceCollectionExtensions
             .Map(dest => dest.MinimumStudents, src => 8)
             .Map(dest => dest.StudentNumber, src => src.StudentClasses.Count)
             .Map(dest => dest.EndTime, src => src.Slots.Max(s => (DateOnly?)s.Date))
+            // .Map(dest => dest.ClassTime, src => DateExtensions.FormatTime(src.Slots))
+            // .Map(dest => dest.ClassDays, src => DateExtensions.FormatDays(src.Slots));
             ;
         return services;
     }

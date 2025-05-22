@@ -1,0 +1,54 @@
+﻿using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.Shared.Enums;
+
+namespace PhotonPiano.BusinessLogic.Extensions;
+
+public static class DateExtensions
+{
+    private static readonly Dictionary<Shift, (TimeSpan Start, TimeSpan End)> ShiftTimes = new()
+    {
+        { Shift.Shift1_7h_8h30, (new TimeSpan(7, 0, 0), new TimeSpan(8, 30, 0)) },
+        { Shift.Shift2_8h45_10h15, (new TimeSpan(8, 45, 0), new TimeSpan(10, 15, 0)) },
+        { Shift.Shift3_10h45_12h, (new TimeSpan(10, 45, 0), new TimeSpan(12, 0, 0)) },
+        { Shift.Shift4_12h30_14h00, (new TimeSpan(12, 30, 0), new TimeSpan(14, 0, 0)) },
+        { Shift.Shift5_14h15_15h45, (new TimeSpan(14, 15, 0), new TimeSpan(15, 45, 0)) },
+        { Shift.Shift6_16h00_17h30, (new TimeSpan(16, 0, 0), new TimeSpan(17, 30, 0)) },
+        { Shift.Shift7_18h_19h30, (new TimeSpan(18, 0, 0), new TimeSpan(19, 30, 0)) },
+        { Shift.Shift8_19h45_21h15, (new TimeSpan(19, 45, 0), new TimeSpan(21, 15, 0)) }
+    };
+
+    public static string FormatDays(ICollection<Slot> slots)
+    {
+        var days = slots
+            .Select(s => (int)s.Date.DayOfWeek)
+            .Select(d => d == 0 ? 8 : d + 1) // Convert Sunday (0) to 8
+            .Distinct()
+            .OrderBy(d => d)
+            .Select(d =>
+            {
+                if (d == 0) return "CN"; // Chủ Nhật
+                return d + 1 + ""; // Thứ 2 -> 2, Thứ 3 -> 3, ..., Thứ 7 -> 7
+            })
+            .ToList();
+
+
+        return $"Thứ {string.Join("/", days)}";
+    }
+
+    public static string FormatTime(ICollection<Slot> slots)
+    {
+        var shiftTimes = slots
+            .Where(s => ShiftTimes.ContainsKey(s.Shift))
+            .Select(s => ShiftTimes[s.Shift])
+            .Distinct()
+            .OrderBy(t => t.Start)
+            .ToList();
+
+        if (!shiftTimes.Any()) return string.Empty;
+
+        var earliest = shiftTimes.First().Start;
+        var latest = shiftTimes.Last().End;
+
+        return $"{earliest:hh\\:mm} - {latest:hh\\:mm}";
+    }
+}

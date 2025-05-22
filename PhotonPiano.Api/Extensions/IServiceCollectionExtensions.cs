@@ -145,7 +145,10 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<AutoArrangeEntranceTestsRequest, AutoArrangeEntranceTestsModel>.NewConfig()
             .Map(dest => dest.StartDate, src => DateTime.SpecifyKind(src.StartDate, DateTimeKind.Unspecified))
-            .Map(dest => dest.EndDate, src => src.EndDate.HasValue ? DateTime.SpecifyKind(src.EndDate.Value, DateTimeKind.Unspecified) : src.EndDate);
+            .Map(dest => dest.EndDate,
+                src => src.EndDate.HasValue
+                    ? DateTime.SpecifyKind(src.EndDate.Value, DateTimeKind.Unspecified)
+                    : src.EndDate);
 
         TypeAdapterConfig<CreatePianoSurveyRequest, CreatePianoSurveyModel>.NewConfig()
             .Map(dest => dest.CreateQuestionRequests, src => src.Questions);
@@ -244,7 +247,9 @@ public static class IServiceCollectionExtensions
         IConfiguration configuration)
     {
         var connectionString = GetConnectionString(configuration) +
-                               ";Maximum Pool Size=40;Minimum Pool Size=5;Connection Lifetime=60;Pooling=true";
+                               ";Maximum Pool Size=40;Minimum Pool Size=5;Connection Lifetime=60;Pooling=true" +
+                               ";Timeout=60;CommandTimeout=60"
+            ;
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {

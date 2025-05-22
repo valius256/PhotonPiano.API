@@ -116,13 +116,10 @@ public class SlotService : ISlotService
                     s.Date <= slotModel.EndTime
                 );
 
-                // Lấy tổng số slot của lớp
                 var totalSlots = await _unitOfWork.SlotRepository.CountAsync(s => s.ClassId == classId);
 
-                // Cập nhật SlotNo và SlotTotal cho mỗi slot
                 foreach (var slot in slots)
                 {
-                    // Lấy số thứ tự của slot trong lớp
                     var slotNo =
                         await _unitOfWork.SlotRepository.CountAsync(s => s.ClassId == classId && s.Date <= slot.Date
                         );
@@ -707,7 +704,7 @@ public class SlotService : ISlotService
         if (slot.Status != SlotStatus.NotStarted)
             throw new BadRequestException("Can only assign teacher to slots that are not started yet!");
 
-            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             slot.TeacherId = teacherFirebaseId;
             slot.UpdatedAt = DateTime.UtcNow.AddHours(7);

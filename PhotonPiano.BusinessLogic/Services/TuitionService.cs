@@ -130,6 +130,10 @@ public class TuitionService : ITuitionService
             await _serviceFactory.EmailService.SendAsync("PaymentSuccess",
                 new List<string> { account.Email },
                 null, emailParam);
+
+            await _serviceFactory.NotificationService.SendNotificationAsync(account.AccountFirebaseId,
+                "Tuition Payment Success",
+                "Your tuition payment was successful and has been processed. Thank you for your payment.");
         }
         else if (transaction.PaymentStatus == PaymentStatus.Failed)
         {

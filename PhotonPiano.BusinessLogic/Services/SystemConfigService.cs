@@ -117,15 +117,10 @@ public class SystemConfigService : ISystemConfigService
 
     public async Task<SystemConfigModel?> GetTaxesRateConfig(int year)
     {
-        while (year >= 2000)
-        {
-            var config =
-                await _unitOfWork.SystemConfigRepository.FindFirstAsync(x => x.ConfigName == $"Thuế suất năm {year}");
+        var config =
+            await _unitOfWork.SystemConfigRepository.FindFirstAsync(x => x.ConfigName == $"Thuế suất năm {year}");
 
-            if (config != null) return config.Adapt<SystemConfigModel>();
-
-            year--;
-        }
+        if (config != null) return config.Adapt<SystemConfigModel>();
 
         return null;
     }

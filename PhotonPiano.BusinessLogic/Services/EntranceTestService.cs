@@ -312,6 +312,13 @@ public class EntranceTestService : IEntranceTestService
             throw new NotFoundException("This EntranceTest not found.");
         }
 
+        var testStatus = ShiftUtils.GetEntranceTestStatus(entranceTest.Date, entranceTest.Shift);
+
+        if (testStatus == EntranceTestStatus.Ended)
+        {
+            throw new BadRequestException("Can't update since test has already ended.");
+        }
+
         updateModel.Adapt(entranceTest);
 
         if (updateModel.Date.HasValue || updateModel.RoomId.HasValue || updateModel.Shift.HasValue)
@@ -373,44 +380,6 @@ public class EntranceTestService : IEntranceTestService
             entranceTest.RoomName = room.Name;
         }
 
-        if (updateModel.IsAnnouncedScore.HasValue)
-        {
-            bool isFullScoreUpdated = true;
-            var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository
-                .FindProjectedAsync<EntranceTestStudentWithResultsModel>(
-                    ets => ets.EntranceTestId == id,
-                    hasTrackings: false);
-
-            foreach (var entranceTestStudent in entranceTestStudents)
-            {
-                if (entranceTestStudent.EntranceTestResults.Count == 0 ||
-                    !entranceTestStudent.TheoraticalScore.HasValue)
-                {
-                    isFullScoreUpdated = false;
-                }
-            }
-
-            if (!isFullScoreUpdated)
-            {
-                throw new BadRequestException("Can't publish the score of this entrance test");
-            }
-
-            if (updateModel.IsAnnouncedScore.Value)
-            {
-                var studentIds = entranceTestStudents.Select(x => x.StudentFirebaseId);
-
-                await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(ets => ets.EntranceTestId == id,
-                    setter => setter.SetProperty(x => x.IsScoreAnnounced,
-                        updateModel.IsAnnouncedScore.Value));
-
-                await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
-                    setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
-
-                await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
-                    "Your entrance test results have been published!", "");
-            }
-        }
-
         entranceTest.Name = GetEntranceTestName(entranceTest);
 
         entranceTest.UpdateById = currentUserFirebaseId;
@@ -420,6 +389,54 @@ public class EntranceTestService : IEntranceTestService
         await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTest,
             TimeSpan.FromHours(5));
         await InvalidateEntranceTestCache(id);
+    }
+
+    public async Task UpdateEntranceTestScoreAnnouncementStatus(Guid id, bool isAnnounced, AccountModel currentAccount)
+    {
+        var test = await _unitOfWork.EntranceTestRepository.FindSingleAsync(e => e.Id == id);
+        if (test is null)
+        {
+            throw new NotFoundException("This EntranceTest not found.");
+        }
+
+        bool isFullScoreUpdated = true;
+        var entranceTestStudents = await _unitOfWork.EntranceTestStudentRepository
+            .FindProjectedAsync<EntranceTestStudentWithResultsModel>(
+                ets => ets.EntranceTestId == id,
+                hasTrackings: false);
+
+        foreach (var entranceTestStudent in entranceTestStudents)
+        {
+            if (entranceTestStudent.EntranceTestResults.Count == 0 ||
+                !entranceTestStudent.TheoraticalScore.HasValue)
+            {
+                isFullScoreUpdated = false;
+            }
+        }
+
+        if (!isFullScoreUpdated)
+        {
+            throw new BadRequestException(
+                "Can't publish the score of this entrance test since not all learner test results are updated.");
+        }
+
+        var studentIds = entranceTestStudents.Select(x => x.StudentFirebaseId);
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            test.IsAnnouncedScore = isAnnounced;
+            await _unitOfWork.EntranceTestStudentRepository.ExecuteUpdateAsync(ets => ets.EntranceTestId == id,
+                setter => setter.SetProperty(x => x.IsScoreAnnounced,
+                    isAnnounced));
+
+            await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
+                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
+
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
+                isAnnounced
+                    ? $"Your entrance test ({test.Name}) results have been published!"
+                    : $"Your entrance test ({test.Name}) results have been unpublished!", "", requiresSavingChanges: false);
+        });
     }
 
     public async Task<PagedResult<EntranceTestStudentDetail>> GetPagedEntranceTestStudent(QueryPagedModel query,

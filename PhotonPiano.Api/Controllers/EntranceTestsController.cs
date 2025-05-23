@@ -88,6 +88,18 @@ public class EntranceTestsController : BaseController
         return NoContent();
     }
 
+    [HttpPut("{id}/score-announcement-status")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Update an entrance test score announcement status")]
+    public async Task<ActionResult> UpdateEntranceTestScoreAnnouncedStatus([FromRoute] Guid id,
+        [FromBody] UpdateEntranceTestScoreAnnouncementRequest request)
+    {
+        await _serviceFactory.EntranceTestService.UpdateEntranceTestScoreAnnouncementStatus(id,
+            request.IsAnnounced, base.CurrentAccount!);
+        
+        return NoContent();
+    }
+
     [HttpGet("{id}/students")]
     [CustomAuthorize(Roles = [Role.Staff, Role.Student])]
     [EndpointDescription("Get entrance tests students")]

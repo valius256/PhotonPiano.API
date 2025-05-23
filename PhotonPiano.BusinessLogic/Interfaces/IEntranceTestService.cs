@@ -21,6 +21,8 @@ public interface IEntranceTestService
 
     Task UpdateEntranceTest(Guid id, UpdateEntranceTestModel updateModel,
         string? currentUserFirebaseId = default);
+    
+    Task UpdateEntranceTestScoreAnnouncementStatus(Guid id, bool isAnnounced, AccountModel currentAccount);
 
     Task<PagedResult<EntranceTestStudentDetail>>
         GetPagedEntranceTestStudent(QueryPagedModel query, Guid entranceTestId, AccountModel currentAccount);

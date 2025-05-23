@@ -106,8 +106,7 @@ public class SlotService : ISlotService
             var cacheKey = GenerateCacheKey(classId, slotModel.StartTime, accountModel.Role);
 
             var slots = await _serviceFactory.RedisCacheService.GetAsync<List<SlotDetailModel>>(cacheKey);
-
-            slots = null;
+            
             if (slots == null)
             {
                 slots = await _unitOfWork.SlotRepository.FindProjectedAsync<SlotDetailModel>(s =>

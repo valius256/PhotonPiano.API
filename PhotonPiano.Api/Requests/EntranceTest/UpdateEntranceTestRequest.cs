@@ -11,7 +11,5 @@ public record UpdateEntranceTestRequest
     
     public DateOnly? Date { get; init; }
     
-    public bool? IsAnnouncedScore { get; init; } 
-    
     public string? InstructorId { get; init; }
 }

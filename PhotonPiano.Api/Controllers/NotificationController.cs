@@ -42,7 +42,7 @@ public class NotificationController : BaseController
     [HttpPost("send")]
     public async Task<IActionResult> SendNotification(NotificationRequest request)
     {
-        await _notificationServiceHub.SendNotificationAsync(CurrentUserFirebaseId, request.UserName, request.Title,
+        await _notificationServiceHub.SendNotificationAsync(CurrentAccountId, request.UserName, request.Title,
             request.Message);
         return Ok();
     }

@@ -60,7 +60,7 @@ public class CriteriasController : BaseController
     {
         var result =
             await _serviceFactory.CriteriaService.CreateCriteria(
-                request.Adapt<CreateCriteriaModel>(), CurrentUserFirebaseId);
+                request.Adapt<CreateCriteriaModel>(), CurrentAccountId);
         return Created(nameof(CreateCriteria), result);
     }
 
@@ -69,7 +69,7 @@ public class CriteriasController : BaseController
     [EndpointDescription("Delete a criteria")]
     public async Task<ActionResult> DeleteCriteria([FromRoute] Guid id)
     {
-        await _serviceFactory.CriteriaService.DeleteCriteria(id, CurrentUserFirebaseId);
+        await _serviceFactory.CriteriaService.DeleteCriteria(id, CurrentAccountId);
         return NoContent();
     }
 
@@ -79,7 +79,7 @@ public class CriteriasController : BaseController
     public async Task<ActionResult> UpdateCriteria([FromBody] BulkUpdateCriteriaRequest request)
     {
         await _serviceFactory.CriteriaService.UpdateCriteria(request.Adapt<BulkUpdateCriteriaModel>(),
-            CurrentUserFirebaseId);
+            CurrentAccountId);
 
         return NoContent();
     }

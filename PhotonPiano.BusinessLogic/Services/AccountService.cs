@@ -129,7 +129,7 @@ public class AccountService : IAccountService
                 GetAccountsFilterExpression(currentAccount.Role),
                 a => roles.Count == 0 || roles.Contains(a.Role),
                 a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
-                a => levels.Count == 0 || !a.LevelId.HasValue || levels.Contains(a.LevelId.Value),
+                a => levels.Count == 0 || (a.LevelId.HasValue && levels.Contains(a.LevelId.Value)),
                 a => studentStatuses.Count == 0 ||
                      (a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)),
                 a => accountStatuses.Count == 0 || accountStatuses.Contains(a.Status)

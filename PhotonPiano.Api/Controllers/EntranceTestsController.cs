@@ -72,7 +72,7 @@ public class EntranceTestsController : BaseController
     [EndpointDescription("Delete an entrance test")]
     public async Task<ActionResult> DeleteEntranceTest([FromRoute] Guid id)
     {
-        await _serviceFactory.EntranceTestService.DeleteEntranceTest(id, CurrentUserFirebaseId);
+        await _serviceFactory.EntranceTestService.DeleteEntranceTest(id, CurrentAccountId);
         return NoContent();
     }
 
@@ -83,7 +83,7 @@ public class EntranceTestsController : BaseController
         [FromBody] UpdateEntranceTestRequest request)
     {
         await _serviceFactory.EntranceTestService.UpdateEntranceTest(id, request.Adapt<UpdateEntranceTestModel>(),
-            CurrentUserFirebaseId);
+            CurrentAccountId);
 
         return NoContent();
     }

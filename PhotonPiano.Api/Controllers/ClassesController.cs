@@ -28,7 +28,7 @@ public class ClassesController : BaseController
     {
         var pagedResult =
             await _serviceFactory.ClassService.GetPagedClasses(
-                request.Adapt<QueryClassModel>(), CurrentAccount);
+                request.Adapt<QueryClassModel>(), base.CurrentAccountId);
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
@@ -41,7 +41,7 @@ public class ClassesController : BaseController
     public async Task<ActionResult<List<ClassModel>>> ArrangeClasses(
         [FromBody] ArrangeClassModel arrangeClassModel)
     {
-        return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentUserFirebaseId);
+        return await _serviceFactory.ClassService.AutoArrangeClasses(arrangeClassModel, CurrentAccountId);
     }
 
     [HttpGet("{id}")]
@@ -70,7 +70,7 @@ public class ClassesController : BaseController
     {
         var result =
             await _serviceFactory.ClassService.CreateClass(
-                request.Adapt<CreateClassModel>(), CurrentUserFirebaseId);
+                request.Adapt<CreateClassModel>(), CurrentAccountId);
         return Created(nameof(CreateClass), result);
     }
 
@@ -79,7 +79,7 @@ public class ClassesController : BaseController
     [EndpointDescription("Delete a class")]
     public async Task<ActionResult> DeleteClass([FromRoute] Guid id)
     {
-        await _serviceFactory.ClassService.DeleteClass(id, CurrentUserFirebaseId);
+        await _serviceFactory.ClassService.DeleteClass(id, CurrentAccountId);
         return NoContent();
     }
 
@@ -89,7 +89,7 @@ public class ClassesController : BaseController
     public async Task<ActionResult> UpdateClass([FromBody] UpdateClassRequest request)
     {
         await _serviceFactory.ClassService.UpdateClass(request.Adapt<UpdateClassModel>(),
-            CurrentUserFirebaseId);
+            CurrentAccountId);
 
         return NoContent();
     }
@@ -133,7 +133,7 @@ public class ClassesController : BaseController
     [EndpointDescription("Publish a class")]
     public async Task<ActionResult> PublishClass([FromRoute] Guid classId)
     {
-        await _serviceFactory.ClassService.PublishClass(classId, CurrentUserFirebaseId);
+        await _serviceFactory.ClassService.PublishClass(classId, CurrentAccountId);
         return NoContent();
     }
 
@@ -143,7 +143,7 @@ public class ClassesController : BaseController
     public async Task<ActionResult> ScheduleClass([FromBody] ScheduleClassRequest scheduleClassRequest)
     {
         await _serviceFactory.ClassService.ScheduleClass(scheduleClassRequest.Adapt<ScheduleClassModel>(),
-            CurrentUserFirebaseId);
+            CurrentAccountId);
         return NoContent();
     }
 
@@ -152,7 +152,7 @@ public class ClassesController : BaseController
     [EndpointDescription("Delete entire schedule a class")]
     public async Task<ActionResult> DeleteClassSchedule([FromRoute] Guid id)
     {
-        await _serviceFactory.ClassService.ClearClassSchedule(id, CurrentUserFirebaseId);
+        await _serviceFactory.ClassService.ClearClassSchedule(id, CurrentAccountId);
         return NoContent();
     }
 

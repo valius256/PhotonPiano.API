@@ -106,15 +106,25 @@ public class ClassService : IClassService
 
 
     public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass,
-        AccountModel? currentAccountModel)
+        string? currentAccountId)
     {
         var (page, pageSize, sortColumn, orderByDesc,
             classStatus, queryLevels, keyword, isScorePublished, teacherId, studentId, isPublic) = queryClass;
 
         var likeKeyword = queryClass.GetLikeKeyword();
 
-        if (currentAccountModel is { Role: Role.Student })
-            queryLevels = currentAccountModel.LevelId.HasValue ? [currentAccountModel.LevelId.Value] : null;
+        if (!string.IsNullOrEmpty(currentAccountId))
+        {
+            var currentAccount = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a =>
+                a.AccountFirebaseId == currentAccountId, hasTrackings: false);
+
+            if (currentAccount is null)
+            {
+                throw new BadRequestException("Account not found");
+            }
+
+            queryLevels = currentAccount.LevelId.HasValue ? [currentAccount.LevelId.Value] : null;
+        }
 
         var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassWithSlotsModel>(
             page, pageSize, sortColumn, orderByDesc,
@@ -122,7 +132,7 @@ public class ClassService : IClassService
             expressions:
             [
                 q => classStatus.Count == 0 || classStatus.Contains(q.Status),
-                q => queryLevels.Count == 0 || queryLevels.Contains(q.LevelId),
+                q => queryLevels == null || queryLevels.Count == 0 || queryLevels.Contains(q.LevelId),
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
                 q => teacherId == null || q.InstructorId == teacherId,
                 q => studentId == null || (q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId) && q.IsPublic),

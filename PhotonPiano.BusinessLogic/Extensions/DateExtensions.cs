@@ -20,19 +20,13 @@ public static class DateExtensions
     public static string FormatDays(ICollection<Slot> slots)
     {
         var days = slots
-            .Select(s => (int)s.Date.DayOfWeek)
-            .Select(d => d == 0 ? 8 : d + 1) // Convert Sunday (0) to 8
+            .Select(s => s.Date.DayOfWeek)
             .Distinct()
             .OrderBy(d => d)
-            .Select(d =>
-            {
-                if (d == 0) return "CN"; // Chủ Nhật
-                return d + 1 + ""; // Thứ 2 -> 2, Thứ 3 -> 3, ..., Thứ 7 -> 7
-            })
+            .Select(d => d.ToString().Substring(0, 3)) // Get English name of the day
             .ToList();
 
-
-        return $"Thứ {string.Join("/", days)}";
+        return string.Join("/", days); 
     }
 
     public static List<string> FormatTime(ICollection<Slot> slots)

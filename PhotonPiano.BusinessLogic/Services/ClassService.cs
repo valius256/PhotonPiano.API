@@ -114,6 +114,7 @@ public class ClassService : IClassService
 
         var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassWithSlotsModel>(
             page, pageSize, sortColumn, orderByDesc,
+            option: TrackingOption.IdentityResolution,
             expressions:
             [
                 q => classStatus.Count == 0 || classStatus.Contains(q.Status),

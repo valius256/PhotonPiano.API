@@ -71,7 +71,7 @@ public class SchedulerController : BaseController
     {
         var result = await _serviceFactory.SlotStudentService.UpdateAttentStudent(
             request.Adapt<UpdateAttentdanceModel>(),
-            CurrentUserFirebaseId);
+            CurrentAccountId);
 
 
         return OkAsync(result, PubSubTopic.SCHEDULER_ATTENDANCE_GET_LIST);
@@ -85,7 +85,7 @@ public class SchedulerController : BaseController
     {
         var result =
             await _serviceFactory.SlotService.CreateSlot(
-                request.Adapt<CreateSlotModel>(), CurrentUserFirebaseId);
+                request.Adapt<CreateSlotModel>(), CurrentAccountId);
         return Created(nameof(CreateSlot), result.Adapt<GetSlotResponses>());
     }
 
@@ -94,7 +94,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Delete a slot")]
     public async Task<ActionResult> DeleteSlot([FromRoute] Guid id)
     {
-        await _serviceFactory.SlotService.DeleteSlot(id, CurrentUserFirebaseId);
+        await _serviceFactory.SlotService.DeleteSlot(id, CurrentAccountId);
         return NoContent();
     }
 
@@ -104,7 +104,7 @@ public class SchedulerController : BaseController
     public async Task<ActionResult> UpdateSlot([FromBody] UpdateSlotRequest request)
     {
         await _serviceFactory.SlotService.UpdateSlot(request.Adapt<UpdateSlotModel>(),
-            CurrentUserFirebaseId);
+            CurrentAccountId);
 
         return NoContent();
     }
@@ -123,7 +123,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Cancel a slot")]
     public async Task<ActionResult> CancelSlot([FromBody] CancelSlotRequest request)
     {
-        await _serviceFactory.SlotService.CancelSlot(request.Adapt<CancelSlotModel>(), CurrentUserFirebaseId);
+        await _serviceFactory.SlotService.CancelSlot(request.Adapt<CancelSlotModel>(), CurrentAccountId);
         return NoContent();
     }
 
@@ -132,7 +132,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Public a new slot")]
     public async Task<ActionResult> PublicNewSlot([FromBody] PublicNewSlotRequest request)
     {
-        var result = await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentUserFirebaseId);
+        var result = await _serviceFactory.SlotService.PublicNewSlot(request.Adapt<PublicNewSlotModel>(), CurrentAccountId);
         return Ok(result);
     }
     
@@ -141,7 +141,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Get All teacher can be assigned to this slot")]
     public async Task<ActionResult> GetAllTeacherCanBeAssignedToThisSlot([FromRoute] Guid slotId)
     {
-        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToSlot(slotId, CurrentUserFirebaseId);
+        var result = await _serviceFactory.SlotService.GetAllTeacherCanBeAssignedToSlot(slotId, CurrentAccountId);
         return Ok(result.Adapt<List<AccountSimpleModel>>());
     }
     
@@ -150,7 +150,7 @@ public class SchedulerController : BaseController
     [EndpointDescription("Assign a teacher to a slot")]
     public async Task<ActionResult> AssignTeacherToSlot([FromBody] AssignTeacherToSlotRequest request)
     {
-        return Ok(await _serviceFactory.SlotService.AssignTeacherToSlot(request.SlotId, request.TeacherFirebaseId, request.Reason ,CurrentUserFirebaseId));
+        return Ok(await _serviceFactory.SlotService.AssignTeacherToSlot(request.SlotId, request.TeacherFirebaseId, request.Reason ,CurrentAccountId));
     }
     
     [HttpGet("class-attendance/{classId}")]

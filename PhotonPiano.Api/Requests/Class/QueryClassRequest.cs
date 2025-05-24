@@ -8,7 +8,7 @@ namespace PhotonPiano.Api.Requests.Class
     {
         [FromQuery(Name = "statuses")] public List<ClassStatus> ClassStatus { get; init; } = [];
 
-        [FromQuery(Name = "levels")] public List<Guid> Level { get; init; } = [];
+        [FromQuery(Name = "levels")] public List<Guid> Levels { get; init; } = [];
 
         [FromQuery(Name = "keyword")] public string? Keyword { get; init; }
 

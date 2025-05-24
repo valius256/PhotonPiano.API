@@ -47,7 +47,7 @@ public class RoomsController : BaseController
     {
         var result =
             await _serviceFactory.RoomService.CreateRoom(
-                request.Adapt<RoomModel>(), CurrentUserFirebaseId);
+                request.Adapt<RoomModel>(), CurrentAccountId);
         return Created(nameof(CreateRoom), result);
     }
 
@@ -56,7 +56,7 @@ public class RoomsController : BaseController
     [EndpointDescription("Delete a room")]
     public async Task<ActionResult> DeleteRoom([FromRoute] Guid id)
     {
-        await _serviceFactory.RoomService.DeleteRoom(id, CurrentUserFirebaseId);
+        await _serviceFactory.RoomService.DeleteRoom(id, CurrentAccountId);
         return Ok();
     }
 
@@ -65,7 +65,7 @@ public class RoomsController : BaseController
     [EndpointDescription("Update a room")]
     public async Task<ActionResult> UpdateRoom([FromRoute] Guid id, [FromBody] UpdateRoomRequest request)
     {
-        await _serviceFactory.RoomService.UpdateRoom(id, request.Adapt<UpdateRoomModel>(), CurrentUserFirebaseId);
+        await _serviceFactory.RoomService.UpdateRoom(id, request.Adapt<UpdateRoomModel>(), CurrentAccountId);
 
         return NoContent();
     }

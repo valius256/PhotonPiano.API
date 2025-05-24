@@ -35,7 +35,7 @@ namespace PhotonPiano.Api.Controllers
         [EndpointDescription("Get free slots of a student")]
         public async Task<ActionResult<List<FreeSlotModel>>> GetFreeSlot()
         {
-            return await _serviceFactory.FreeSlotService.GetFreeSlots(CurrentUserFirebaseId);
+            return await _serviceFactory.FreeSlotService.GetFreeSlots(CurrentAccountId);
         }
 
         [HttpPost]
@@ -43,7 +43,7 @@ namespace PhotonPiano.Api.Controllers
         [EndpointDescription("Upsert student's free slot")]
         public async Task<IActionResult> UpsertFreeSlots([FromBody] CreateFreeSlotRequest request)
         {
-            await _serviceFactory.FreeSlotService.UpsertFreeSlots(request.CreateFreeSlotModels,CurrentUserFirebaseId);
+            await _serviceFactory.FreeSlotService.UpsertFreeSlots(request.CreateFreeSlotModels,CurrentAccountId);
             return Ok();
         }
     }

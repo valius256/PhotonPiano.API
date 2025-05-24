@@ -47,7 +47,7 @@ public class ArticleService : IArticleService
         return await _unitOfWork.ArticleRepository.GetPaginatedWithProjectionAsync<ArticleModel>(page, size, column,
             desc, expressions:
             [
-                a => currentAccount != null && currentAccount.Role == Role.Staff || a.IsPublished == true,
+                a => !queryModel.IsPublished.HasValue || a.IsPublished == queryModel.IsPublished.Value,
                 a => string.IsNullOrEmpty(keyword) || 
                      EF.Functions.ILike(EF.Functions.Unaccent(a.Title), likeKeyword) ||
                      EF.Functions.ILike(EF.Functions.Unaccent(a.Content), likeKeyword)

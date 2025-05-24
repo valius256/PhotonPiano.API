@@ -6,6 +6,8 @@ public record QueryPagedArticlesModel : QueryPagedModel
 {
     public string? Keyword { get; init; }
     
+    public bool? IsPublished { get; init; }
+    
     public string GetLikeKeyword()
     {
         return string.IsNullOrEmpty(Keyword) ? string.Empty : $"%{Keyword}%";

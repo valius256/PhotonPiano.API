@@ -7,7 +7,6 @@ using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.DataAccess.Models.Paging;
 using PhotonPiano.Shared.Exceptions;
-using System.Linq.Expressions;
 
 namespace PhotonPiano.DataAccess.Repositories;
 
@@ -277,9 +276,10 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         int pageSize, string sortColumn, bool desc,
         bool hasTrackings = false,
         bool ignoreQueryFilters = false,
+        TrackingOption option = TrackingOption.Default,
         params List<Expression<Func<T, bool>>?> expressions)
     {
-        var query = GetPaginatedWithProjectionAsQueryable<TProjectTo>(pageNumber, pageSize, sortColumn, desc, hasTrackings, ignoreQueryFilters, expressions);
+        var query = GetPaginatedWithProjectionAsQueryable<TProjectTo>(pageNumber, pageSize, sortColumn, desc, hasTrackings, ignoreQueryFilters, option, expressions);
 
         // Paginate and return results
         return new PagedResult<TProjectTo>
@@ -296,6 +296,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         int pageSize, string sortColumn, bool desc,
         bool hasTrackings = false,
         bool ignoreQueryFilters = false,
+        TrackingOption option = TrackingOption.Default,
         params List<Expression<Func<T, bool>>?> expressions)
     {
         // Validate the sortColumn
@@ -306,7 +307,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         // Base query with optional tracking and filtering
         var query = hasTrackings
             ? _context.Set<T>()
-            : _context.Set<T>().AsNoTracking();
+            : (option == TrackingOption.Default ? _context.Set<T>().AsNoTracking() : _context.Set<T>().AsNoTrackingWithIdentityResolution());
 
         query = ignoreQueryFilters ? query.IgnoreQueryFilters() : query;
 

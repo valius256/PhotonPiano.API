@@ -72,12 +72,13 @@ public interface IGenericRepository<T> where T : BaseEntity
     Task<PagedResult<TProjectTo>> GetPaginatedWithProjectionAsync<TProjectTo>
     (int pageNumber, int pageSize, string sortColumn, bool desc, bool hasTrackings = false,
         bool ignoreQueryFilters = false,
+        TrackingOption option = TrackingOption.Default,
         params List<Expression<Func<T, bool>>?> expressions);
 
     IQueryable<T> GetPaginatedWithProjectionAsQueryable<TProjectTo>(int pageNumber,
         int pageSize, string sortColumn, bool desc,
         bool hasTrackings = false,
-        bool ignoreQueryFilters = false,
+        bool ignoreQueryFilters = false, TrackingOption option = TrackingOption.Default,
         params List<Expression<Func<T, bool>>?> expressions);
 
     void Detach(T entity);

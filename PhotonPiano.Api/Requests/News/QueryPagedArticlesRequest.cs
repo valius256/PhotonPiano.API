@@ -7,4 +7,7 @@ public record QueryPagedArticlesRequest : QueryPagedRequest
 {
     [FromQuery(Name = "q")]
     public string? Keyword { get; init; }
+
+    [FromQuery(Name = "published")]
+    public bool? IsPublished { get; init; }
 }

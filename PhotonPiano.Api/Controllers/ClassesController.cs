@@ -28,7 +28,7 @@ public class ClassesController : BaseController
     {
         var pagedResult =
             await _serviceFactory.ClassService.GetPagedClasses(
-                request.Adapt<QueryClassModel>());
+                request.Adapt<QueryClassModel>(), CurrentAccount);
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 

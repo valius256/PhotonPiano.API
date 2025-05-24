@@ -105,12 +105,16 @@ public class ClassService : IClassService
     }
 
 
-    public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass)
+    public async Task<PagedResult<ClassModel>> GetPagedClasses(QueryClassModel queryClass,
+        AccountModel? currentAccountModel)
     {
         var (page, pageSize, sortColumn, orderByDesc,
-            classStatus, level, keyword, isScorePublished, teacherId, studentId, isPublic) = queryClass;
+            classStatus, queryLevels, keyword, isScorePublished, teacherId, studentId, isPublic) = queryClass;
 
         var likeKeyword = queryClass.GetLikeKeyword();
+
+        if (currentAccountModel is { Role: Role.Student })
+            queryLevels = currentAccountModel.LevelId.HasValue ? [currentAccountModel.LevelId.Value] : null;
 
         var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassWithSlotsModel>(
             page, pageSize, sortColumn, orderByDesc,
@@ -118,7 +122,7 @@ public class ClassService : IClassService
             expressions:
             [
                 q => classStatus.Count == 0 || classStatus.Contains(q.Status),
-                q => level.Count == 0 || level.Contains(q.LevelId),
+                q => queryLevels.Count == 0 || queryLevels.Contains(q.LevelId),
                 q => !isScorePublished.HasValue || q.IsScorePublished == isScorePublished,
                 q => teacherId == null || q.InstructorId == teacherId,
                 q => studentId == null || (q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId) && q.IsPublic),
@@ -126,7 +130,8 @@ public class ClassService : IClassService
                 q =>
                     string.IsNullOrEmpty(keyword) ||
                     EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword) ||
-                    (q.ScheduleDescription != null && EF.Functions.ILike(EF.Functions.Unaccent(q.ScheduleDescription), likeKeyword))
+                    (q.ScheduleDescription != null &&
+                     EF.Functions.ILike(EF.Functions.Unaccent(q.ScheduleDescription), likeKeyword))
             ]
         );
         // Fetch the class capacity
@@ -821,10 +826,16 @@ public class ClassService : IClassService
 
         var result = await _unitOfWork.AccountRepository.GetPaginatedAsync(
             page, pageSize, sortColumn, orderByDesc,
-            expressions: [q =>
-                q.Role == Role.Instructor 
-                && !q.Teacherslots.Any(s => slotDates.Contains(s.Date) && slotShifts.Contains(s.Shift) && s.ClassId != classId)
-                && (keyword == null || EF.Functions.ILike(EF.Functions.Unaccent(q.FullName ?? q.UserName ?? string.Empty),likeKeyword))]
+            expressions:
+            [
+                q =>
+                    q.Role == Role.Instructor
+                    && !q.Teacherslots.Any(s =>
+                        slotDates.Contains(s.Date) && slotShifts.Contains(s.Shift) && s.ClassId != classId)
+                    && (keyword == null ||
+                        EF.Functions.ILike(EF.Functions.Unaccent(q.FullName ?? q.UserName ?? string.Empty),
+                            likeKeyword))
+            ]
         );
         return result.Adapt<PagedResult<AccountSimpleModel>>();
         //return new PagedResult<TeacherWithSlotModel>
@@ -963,7 +974,7 @@ public class ClassService : IClassService
 
             return mappedClasses.Adapt<List<ClassModel>>().Select(item => item with
             {
-                Capacity = capacity,
+                Capacity = capacity
                 //StudentNumber = studentClasses.Where(sc => sc.ClassId == item.Id).Count()
             }).ToList();
         });

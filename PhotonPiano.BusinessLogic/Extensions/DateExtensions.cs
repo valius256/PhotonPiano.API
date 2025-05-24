@@ -35,7 +35,7 @@ public static class DateExtensions
         return $"Thứ {string.Join("/", days)}";
     }
 
-    public static string FormatTime(ICollection<Slot> slots)
+    public static List<string> FormatTime(ICollection<Slot> slots)
     {
         var shiftTimes = slots
             .Where(s => ShiftTimes.ContainsKey(s.Shift))
@@ -44,11 +44,8 @@ public static class DateExtensions
             .OrderBy(t => t.Start)
             .ToList();
 
-        if (!shiftTimes.Any()) return string.Empty;
-
-        var earliest = shiftTimes.First().Start;
-        var latest = shiftTimes.Last().End;
-
-        return $"{earliest:hh\\:mm} - {latest:hh\\:mm}";
+        var result = new List<string>();
+        foreach (var shift in shiftTimes) result.Add($"{shift.Start:hh\\:mm} - {shift.End:hh\\:mm}");
+        return result;
     }
 }

@@ -286,7 +286,7 @@ public class LevelService : ILevelService
     private async Task LoadAndSetClassTimesAsync(List<ClassModel> classModels)
     {
         var classIds = classModels.Select(c => c.Id).ToList();
-
+        // && c.Status == ClassStatus.NotStarted
         var classWithSlots = await _unitOfWork.ClassRepository
             .FindProjectedAsync<Class>(c => classIds.Contains(c.Id), false);
 

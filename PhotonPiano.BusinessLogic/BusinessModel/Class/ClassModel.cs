@@ -12,7 +12,7 @@ public record ClassModel
     public ClassStatus Status { get; init; } = ClassStatus.NotStarted;
     public DateOnly? StartTime { get; init; }
     public DateOnly? EndTime { get; init; }
-    public string? ClassTime { get; set; }
+    public List<string> ClassTime { get; set; } = [];
     public string? ClassDays { get; set; }
     public Guid LevelId { get; init; }
     public bool IsPublic { get; init; }

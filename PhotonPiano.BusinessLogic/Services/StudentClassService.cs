@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
+﻿using System.Drawing;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
@@ -381,11 +376,16 @@ namespace PhotonPiano.BusinessLogic.Services
                 classReceiverIds = classInfo.StudentClasses.Select(sc => sc.StudentFirebaseId).ToList();
 
                 await _serviceFactory.NotificationService.SendNotificationToManyAsync(
-                    students.Select(s => s.AccountFirebaseId).ToList(), "Thông tin lớp mới",
-                    $"Chúc mừng bạn đã được thêm vào lớp mới {classInfo.Name}. Vui lòng kiểm tra lại lịch học. Chúc các bạn gặt hái được nhiều thành công!");
-                await _serviceFactory.NotificationService.SendNotificationToManyAsync(classReceiverIds,
-                    $"{students.Count} học sinh mới đã được thêm vào lớp {classInfo.Name}. Hãy giúp đỡ các bạn ấy hết mình!",
-                    "");
+                    students.Select(s => s.AccountFirebaseId).ToList(),
+                    "New Class Information",
+                    $"Congratulations! You have been added to the new class {classInfo.Name}. Please check your schedule. Wishing you much success!"
+                );
+
+                await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+                    classReceiverIds,
+                    $"{students.Count} new students have been added to the class {classInfo.Name}. Please support them wholeheartedly!",
+                    ""
+                );
             }
 
             return result.Adapt<List<StudentClassModel>>();

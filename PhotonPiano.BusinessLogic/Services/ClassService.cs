@@ -113,16 +113,12 @@ public class ClassService : IClassService
 
         var likeKeyword = queryClass.GetLikeKeyword();
 
-        if (!string.IsNullOrEmpty(currentAccountId))
+        var currentAccount = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a =>
+            a.AccountFirebaseId == currentAccountId, hasTrackings: false);
+        
+        if (!string.IsNullOrEmpty(currentAccountId) && currentAccount is not null &&
+            currentAccount.Role == Role.Student)
         {
-            var currentAccount = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a =>
-                a.AccountFirebaseId == currentAccountId, hasTrackings: false);
-
-            if (currentAccount is null)
-            {
-                throw new BadRequestException("Account not found");
-            }
-
             queryLevels = currentAccount.LevelId.HasValue ? [currentAccount.LevelId.Value] : null;
         }
 

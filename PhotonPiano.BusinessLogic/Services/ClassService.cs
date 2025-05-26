@@ -116,10 +116,19 @@ public class ClassService : IClassService
         var currentAccount = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a =>
             a.AccountFirebaseId == currentAccountId, hasTrackings: false);
         
+        ClassWithSlotsModel? classInfo = null;
         if (!string.IsNullOrEmpty(currentAccountId) && currentAccount is not null &&
             currentAccount.Role == Role.Student)
         {
             queryLevels = currentAccount.LevelId.HasValue ? [currentAccount.LevelId.Value] : null;
+            if (currentAccount.CurrentClassId != null)
+            {
+                classInfo = await _unitOfWork.ClassRepository.FindFirstProjectedAsync<ClassWithSlotsModel>(s => s.Id == currentAccount.CurrentClassId);
+                if (classInfo != null && classInfo.Status == ClassStatus.Ongoing)
+                {
+                    classStatus = [ClassStatus.Ongoing, ClassStatus.NotStarted];
+                }
+            }
         }
 
         var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassWithSlotsModel>(
@@ -133,6 +142,7 @@ public class ClassService : IClassService
                 q => teacherId == null || q.InstructorId == teacherId,
                 q => studentId == null || (q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId) && q.IsPublic),
                 q => isPublic == null || q.IsPublic == isPublic,
+                q => classInfo == null  || classInfo.Status != ClassStatus.Ongoing || (classInfo.Status == ClassStatus.Ongoing && classInfo.Slots.Count(c => c.Status == SlotStatus.NotStarted) == q.Slots.Count(s => s.Status == SlotStatus.NotStarted)),
                 q =>
                     string.IsNullOrEmpty(keyword) ||
                     EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword) ||

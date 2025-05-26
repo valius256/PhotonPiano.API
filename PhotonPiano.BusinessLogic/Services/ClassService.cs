@@ -1066,4 +1066,43 @@ public class ClassService : IClassService
             })
         ], daysFrame);
     }
+
+    public async Task ShiftClassSchedule(ShiftClassScheduleModel shiftClassScheduleModel, string accountFirebaseId)
+    {
+        var classDetail = await GetClassDetailById(shiftClassScheduleModel.ClassId);
+        if (classDetail.Status != ClassStatus.NotStarted)
+        {
+            throw new BadRequestException("This class has started");
+        }
+
+        var updatedSlots = classDetail.Slots
+           .Select(slot => slot with { Date = slot.Date.AddDays(shiftClassScheduleModel.Weeks * 7), Room = null })
+           .ToList();
+
+        var firstSlots = updatedSlots.OrderBy(s => s.Date).ThenBy(s => s.Shift).FirstOrDefault();
+        var adjustedStartDate = firstSlots?.Date ?? DateOnly.MaxValue;
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.SlotRepository.UpdateRangeAsync(updatedSlots.Adapt<List<Slot>>());
+            await _unitOfWork.ClassRepository.ExecuteUpdateAsync(
+                    c => c.Id == classDetail.Id,
+                    set => set.SetProperty(c => c.StartTime, adjustedStartDate)
+                );
+        });
+
+        if (classDetail.IsPublic)
+        {
+            var receiverIds = classDetail.StudentClasses.Select(sc => sc.StudentFirebaseId).ToList();
+            if (classDetail.InstructorId != null)
+            {
+                receiverIds.Add(classDetail.InstructorId);
+            }
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+                    receiverIds,
+                    $"Your class {classDetail.Name} have been delayed it's schedule for about {shiftClassScheduleModel.Weeks} week(s). Please double-check your schedule. Wish you all a success work!",
+                    string.Empty
+                );
+        }
+    }
 }

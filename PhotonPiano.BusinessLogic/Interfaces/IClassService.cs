@@ -32,4 +32,6 @@ public interface IClassService
     Task ClearClassSchedule(Guid classId, string accountFirebaseId);
 
     Task<PagedResult<AccountSimpleModel>> GetAvailableTeacher(GetAvailableTeacherForClassModel model);
+
+    Task ShiftClassSchedule(ShiftClassScheduleModel shiftClassScheduleModel, string accountFirebaseId);
 }

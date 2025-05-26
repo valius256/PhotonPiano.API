@@ -118,7 +118,7 @@ namespace PhotonPiano.BusinessLogic.Services
             var classSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
             var existedStudentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss =>
                 ss.StudentFirebaseId == changeClassModel.StudentFirebaseId
-                && classSlotIds.Contains(ss.SlotId), false, true);
+                && classSlotIds.Contains(ss.SlotId), false, false);
             var studentSlots = classInfo.Slots.Select(s => new SlotStudent
             {
                 CreatedById = account.AccountFirebaseId,

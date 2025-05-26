@@ -118,7 +118,9 @@ public class AccountService : IAccountService
     public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {
         var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses) = model;
-
+        
+        var likeKeyword = model.GetLikeKeyword();
+        
         var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
             page,
             size,
@@ -127,8 +129,11 @@ public class AccountService : IAccountService
             expressions:
             [
                 GetAccountsFilterExpression(currentAccount.Role),
+                a => string.IsNullOrEmpty(q) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.Email), likeKeyword) || 
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.FullName ?? string.Empty), likeKeyword) || 
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.UserName ?? string.Empty), likeKeyword),
                 a => roles.Count == 0 || roles.Contains(a.Role),
-                a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
                 a => levels.Count == 0 || (a.LevelId.HasValue && levels.Contains(a.LevelId.Value)),
                 a => studentStatuses.Count == 0 ||
                      (a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)),

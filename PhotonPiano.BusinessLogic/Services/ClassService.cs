@@ -120,7 +120,10 @@ public class ClassService : IClassService
         if (!string.IsNullOrEmpty(currentAccountId) && currentAccount is not null &&
             currentAccount.Role == Role.Student)
         {
-            queryLevels = currentAccount.LevelId.HasValue ? [currentAccount.LevelId.Value] : null;
+            if (forClassChanging)
+            {
+                queryLevels = currentAccount.LevelId.HasValue ? [currentAccount.LevelId.Value] : null;
+            }
             if (currentAccount.CurrentClassId != null)
             {
                 classInfo = await _unitOfWork.ClassRepository.FindFirstProjectedAsync<ClassWithSlotsModel>(s => s.Id == currentAccount.CurrentClassId);

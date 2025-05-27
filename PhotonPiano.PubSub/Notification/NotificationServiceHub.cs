@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 
 namespace PhotonPiano.PubSub.Notification;
@@ -16,20 +15,15 @@ public class NotificationServiceHub : INotificationServiceHub
     {
         await _hubContext.Clients.Group(userFirebaseId).SendAsync("ReceiveNotification",
             new { UserName = userName, Title = title, Message = message });
-
     }
-    
+
     public async Task SendNotificationToUserAsync(string userId, string eventName, object message)
     {
         if (string.IsNullOrEmpty(userId))
-        {
             throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
-        }
 
         if (string.IsNullOrEmpty(eventName))
-        {
             throw new ArgumentException("Event name cannot be null or empty", nameof(eventName));
-        }
 
         try
         {

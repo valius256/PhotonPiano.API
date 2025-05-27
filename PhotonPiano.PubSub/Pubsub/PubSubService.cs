@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 
 namespace PhotonPiano.PubSub.Pubsub;
@@ -23,19 +20,14 @@ public class PubSubService : IPubSubService
 
         foreach (var topic in topics)
         {
-            // Ensure per-message debouncing
             lock (_lastMessageSent)
             {
-                if (_lastMessageSent.TryGetValue(topic, out var lastSent) && now - lastSent < _debounceInterval)
-                {
-                    // Console.WriteLine($"[PubSub] Skipping duplicate message for topic: {topic}");
-                    continue;
-                }
+                if (_lastMessageSent.TryGetValue(topic, out var lastSent) &&
+                    now - lastSent < _debounceInterval) continue;
 
                 _lastMessageSent[topic] = now;
             }
 
-            // Send message asynchronously and collect tasks
             tasks.Add(_hub.Clients.All.PubSub(new PubSubMessage(topics, message)));
         }
 

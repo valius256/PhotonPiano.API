@@ -170,4 +170,16 @@ public class ClassesController : BaseController
 
         return pagedResult.Items;
     }
+
+    [HttpPut("schedule-shifting")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Delay the schedule for a class")]
+    public async Task<IActionResult> ShiftClassSchedule([FromBody] ShiftClassScheduleRequest request)
+    {
+        await _serviceFactory.ClassService.ShiftClassSchedule(request.Adapt<ShiftClassScheduleModel>(),
+            CurrentAccountId);
+
+        return NoContent();
+    }
+
 }

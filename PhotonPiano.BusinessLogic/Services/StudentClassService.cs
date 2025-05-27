@@ -77,6 +77,7 @@ namespace PhotonPiano.BusinessLogic.Services
                 .Include(c => c.StudentClasses)
                 .Include(c => c.Slots)
                 .FirstOrDefaultAsync(c => c.Id == changeClassModel.NewClassId);
+
             if (classInfo is null)
             {
                 throw new NotFoundException("Class not found");
@@ -100,6 +101,16 @@ namespace PhotonPiano.BusinessLogic.Services
                 throw new BadRequestException("Class is finished");
             }
 
+            if (classInfo.Status == ClassStatus.Ongoing)
+            {
+                var oldSlotsRemaining = oldClassInfo.Slots.Count(s => s.Status == SlotStatus.NotStarted);
+                var newSlotsRemaining = classInfo.Slots.Count(s => s.Status == SlotStatus.NotStarted);
+                if (oldSlotsRemaining != newSlotsRemaining)
+                {
+                    throw new BadRequestException("Can not to change to this class because the amount of not started slots is not equal");
+                }
+            }
+
             if (classInfo.LevelId != student.LevelId)
             {
                 throw new BadRequestException("Student is not in the same level as the class");
@@ -118,7 +129,7 @@ namespace PhotonPiano.BusinessLogic.Services
             var classSlotIds = classInfo.Slots.Select(s => s.Id).ToList();
             var existedStudentSlots = await _unitOfWork.SlotStudentRepository.FindAsync(ss =>
                 ss.StudentFirebaseId == changeClassModel.StudentFirebaseId
-                && classSlotIds.Contains(ss.SlotId), false, true);
+                && classSlotIds.Contains(ss.SlotId), false, false);
             var studentSlots = classInfo.Slots.Select(s => new SlotStudent
             {
                 CreatedById = account.AccountFirebaseId,
@@ -126,10 +137,9 @@ namespace PhotonPiano.BusinessLogic.Services
                 StudentFirebaseId = changeClassModel.StudentFirebaseId
             });
 
-            studentSlots = studentSlots.Where(ss =>
+            studentSlots = [.. studentSlots.Where(ss =>
                     !existedStudentSlots.Any(es =>
-                        es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId))
-                .ToList();
+                        es.SlotId == ss.SlotId && ss.StudentFirebaseId == es.StudentFirebaseId))];
 
 
             foreach (var slot in existedStudentSlots)
@@ -147,7 +157,7 @@ namespace PhotonPiano.BusinessLogic.Services
             //Delete old studentSlots
             var oldSlotIds = oldClassInfo.Slots.Select(s => s.Id).ToList();
             var oldStudentSlots =
-                await _unitOfWork.SlotStudentRepository.FindAsync(ss => oldSlotIds.Contains(ss.SlotId));
+                await _unitOfWork.SlotStudentRepository.FindAsync(ss => oldSlotIds.Contains(ss.SlotId) && ss.StudentFirebaseId == changeClassModel.StudentFirebaseId, false);
             foreach (var oldStudentSlot in oldStudentSlots)
             {
                 oldStudentSlot.RecordStatus = RecordStatus.IsDeleted;

@@ -116,10 +116,19 @@ public class ClassService : IClassService
         var currentAccount = await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountModel>(a =>
             a.AccountFirebaseId == currentAccountId, hasTrackings: false);
         
+        ClassWithSlotsModel? classInfo = null;
         if (!string.IsNullOrEmpty(currentAccountId) && currentAccount is not null &&
             currentAccount.Role == Role.Student)
         {
             queryLevels = currentAccount.LevelId.HasValue ? [currentAccount.LevelId.Value] : null;
+            if (currentAccount.CurrentClassId != null)
+            {
+                classInfo = await _unitOfWork.ClassRepository.FindFirstProjectedAsync<ClassWithSlotsModel>(s => s.Id == currentAccount.CurrentClassId);
+                if (classInfo != null && classInfo.Status == ClassStatus.Ongoing)
+                {
+                    classStatus = [ClassStatus.Ongoing, ClassStatus.NotStarted];
+                }
+            }
         }
 
         var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassWithSlotsModel>(
@@ -133,6 +142,7 @@ public class ClassService : IClassService
                 q => teacherId == null || q.InstructorId == teacherId,
                 q => studentId == null || (q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId) && q.IsPublic),
                 q => isPublic == null || q.IsPublic == isPublic,
+                q => classInfo == null  || classInfo.Status != ClassStatus.Ongoing || (classInfo.Status == ClassStatus.Ongoing && classInfo.Slots.Count(c => c.Status == SlotStatus.NotStarted) == q.Slots.Count(s => s.Status == SlotStatus.NotStarted)),
                 q =>
                     string.IsNullOrEmpty(keyword) ||
                     EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword) ||
@@ -1065,5 +1075,44 @@ public class ClassService : IClassService
                 RoomId = room.Id
             })
         ], daysFrame);
+    }
+
+    public async Task ShiftClassSchedule(ShiftClassScheduleModel shiftClassScheduleModel, string accountFirebaseId)
+    {
+        var classDetail = await GetClassDetailById(shiftClassScheduleModel.ClassId);
+        if (classDetail.Status != ClassStatus.NotStarted)
+        {
+            throw new BadRequestException("This class has started");
+        }
+
+        var updatedSlots = classDetail.Slots
+           .Select(slot => slot with { Date = slot.Date.AddDays(shiftClassScheduleModel.Weeks * 7), Room = null })
+           .ToList();
+
+        var firstSlots = updatedSlots.OrderBy(s => s.Date).ThenBy(s => s.Shift).FirstOrDefault();
+        var adjustedStartDate = firstSlots?.Date ?? DateOnly.MaxValue;
+
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.SlotRepository.UpdateRangeAsync(updatedSlots.Adapt<List<Slot>>());
+            await _unitOfWork.ClassRepository.ExecuteUpdateAsync(
+                    c => c.Id == classDetail.Id,
+                    set => set.SetProperty(c => c.StartTime, adjustedStartDate)
+                );
+        });
+
+        if (classDetail.IsPublic)
+        {
+            var receiverIds = classDetail.StudentClasses.Select(sc => sc.StudentFirebaseId).ToList();
+            if (classDetail.InstructorId != null)
+            {
+                receiverIds.Add(classDetail.InstructorId);
+            }
+            await _serviceFactory.NotificationService.SendNotificationToManyAsync(
+                    receiverIds,
+                    $"Your class {classDetail.Name} have been delayed it's schedule for about {shiftClassScheduleModel.Weeks} week(s). Please double-check your schedule. Wish you all a success work!",
+                    string.Empty
+                );
+        }
     }
 }

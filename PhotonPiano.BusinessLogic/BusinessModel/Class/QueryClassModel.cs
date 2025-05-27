@@ -20,6 +20,8 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 
         public string? StudentId { get; init; }
 
+        public bool ForClassChanging { get; init; } = false;
+
         public string GetLikeKeyword()
         {
             return string.IsNullOrEmpty(Keyword) ? string.Empty : $"%{Keyword}%";
@@ -27,7 +29,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
 
         public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc,
             out List<ClassStatus> classStatus, out List<Guid> levels, out string? keyword, out bool? isScorePublished,
-            out string? teacherId, out string? studentId, out bool? isPublic)
+            out string? teacherId, out string? studentId, out bool? isPublic, out bool forClassChanging)
         {
             page = Page;
             pageSize = PageSize;
@@ -40,6 +42,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.Class
             teacherId = TeacherId;
             studentId = StudentId;
             isPublic = IsPublic;
+            forClassChanging = ForClassChanging;
         }
     }
 }

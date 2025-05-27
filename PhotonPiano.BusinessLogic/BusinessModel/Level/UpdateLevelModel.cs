@@ -19,6 +19,8 @@ public record UpdateLevelModel
     public decimal? MinimumPracticalScore { get; init; }
 
     public bool? IsGenreDivided { get; init; }
+    
+    public bool? RequiresEntranceTest { get; init; }
 
     // public Guid? NextLevelId { get; init; }
 

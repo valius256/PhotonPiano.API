@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -15,6 +13,8 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
 
             builder.Property(x => x.MinimumTheoreticalScore).HasDefaultValue(0.0);
 
+            builder.Property(x => x.RequiresEntranceTest).HasDefaultValue(false);
+
             builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);
 
             builder.HasOne(l => l.NextLevel)
@@ -28,10 +28,10 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
                 .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
 
             builder.HasMany(l => l.Accounts)
-               .WithOne(a => a.Level)
-               .HasForeignKey(a => a.LevelId)
-               .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
-            
+                .WithOne(a => a.Level)
+                .HasForeignKey(a => a.LevelId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
+
             builder.HasMany(l => l.SelfEvaluatedAccounts)
                 .WithOne(a => a.SelfEvaluatedLevel)
                 .HasForeignKey(a => a.SelfEvaluatedLevelId)
@@ -39,9 +39,9 @@ namespace PhotonPiano.DataAccess.EntityTypeConfiguration
 
 
             builder.HasMany(l => l.EntranceTestStudents)
-               .WithOne(ets => ets.Level)
-               .HasForeignKey(ets => ets.LevelId)
-               .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
+                .WithOne(ets => ets.Level)
+                .HasForeignKey(ets => ets.LevelId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
         }
     }
 }

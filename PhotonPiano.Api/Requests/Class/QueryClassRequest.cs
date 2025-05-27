@@ -19,5 +19,7 @@ namespace PhotonPiano.Api.Requests.Class
         [FromQuery(Name = "teacher-id")] public string? TeacherId { get; init; }
 
         [FromQuery(Name = "student-id")] public string? StudentId { get; init; }
+
+        [FromQuery(Name = "for-class-changing")] public bool ForClassChanging { get; init; }
     }
 }

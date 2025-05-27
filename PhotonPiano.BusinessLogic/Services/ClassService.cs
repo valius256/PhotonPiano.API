@@ -109,7 +109,7 @@ public class ClassService : IClassService
         string? currentAccountId)
     {
         var (page, pageSize, sortColumn, orderByDesc,
-            classStatus, queryLevels, keyword, isScorePublished, teacherId, studentId, isPublic) = queryClass;
+            classStatus, queryLevels, keyword, isScorePublished, teacherId, studentId, isPublic, forClassChanging) = queryClass;
 
         var likeKeyword = queryClass.GetLikeKeyword();
 
@@ -131,6 +131,9 @@ public class ClassService : IClassService
             }
         }
 
+        var currentClassSlotCount = classInfo?.Slots.Count(c => c.Status == SlotStatus.NotStarted) ?? 0;
+
+
         var query = _unitOfWork.ClassRepository.GetPaginatedWithProjectionAsQueryable<ClassWithSlotsModel>(
             page, pageSize, sortColumn, orderByDesc,
             option: TrackingOption.IdentityResolution,
@@ -142,7 +145,7 @@ public class ClassService : IClassService
                 q => teacherId == null || q.InstructorId == teacherId,
                 q => studentId == null || (q.StudentClasses.Any(sc => sc.StudentFirebaseId == studentId) && q.IsPublic),
                 q => isPublic == null || q.IsPublic == isPublic,
-                q => classInfo == null  || classInfo.Status != ClassStatus.Ongoing || (classInfo.Status == ClassStatus.Ongoing && classInfo.Slots.Count(c => c.Status == SlotStatus.NotStarted) == q.Slots.Count(s => s.Status == SlotStatus.NotStarted)),
+                q => !forClassChanging || (classInfo == null  || classInfo.Status != ClassStatus.Ongoing || (classInfo.Status == ClassStatus.Ongoing && currentClassSlotCount == q.Slots.Count(s => s.Status == SlotStatus.NotStarted))),
                 q =>
                     string.IsNullOrEmpty(keyword) ||
                     EF.Functions.ILike(EF.Functions.Unaccent(q.Name), likeKeyword) ||

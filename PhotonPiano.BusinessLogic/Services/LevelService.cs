@@ -181,7 +181,10 @@ public class LevelService : ILevelService
     {
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == id);
 
-        if (level is null) throw new NotFoundException("Level not found.");
+        if (level is null)
+        {
+            throw new NotFoundException("Level not found.");
+        }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

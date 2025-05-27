@@ -92,18 +92,20 @@ public class AuthService : IAuthService
 
         bool requiresEntranceTestRegistering = true;
 
-        //Skip entrance test if self evaluated level is the lowest level
+        //Skip entrance test if self evaluated level doesn't requires entrance test participation
         if (account.SelfEvaluatedLevelId.HasValue)
         {
-            bool isFirstLevel =
-                await _serviceFactory.LevelService.IsFirstLevelAsync(account.SelfEvaluatedLevelId.Value);
+            var selfEvaluatedLevel =
+                await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == account.SelfEvaluatedLevelId.Value,
+                    hasTrackings: false);
 
-            if (isFirstLevel)
+            if (selfEvaluatedLevel?.RequiresEntranceTest == false)
             {
                 account.StudentStatus = StudentStatus.WaitingForClass;
                 account.LevelId = account.SelfEvaluatedLevelId.Value;
                 await _serviceFactory.NotificationService.SendNotificationsToAllStaffsAsync(
-                    $"Learner {account.FullName} is waiting for class arrangement", "", requiresSavingChanges: false);
+                    $"Learner {account.FullName} is waiting for {selfEvaluatedLevel.Name.ToUpper()} level class arrangement",
+                    "", requiresSavingChanges: false);
                 requiresEntranceTestRegistering = false;
             }
         }
@@ -307,12 +309,13 @@ public class AuthService : IAuthService
         {
             currentUser.Status = AccountStatus.Inactive;
             currentUser.RefreshToken = string.Empty;
-            currentUser.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7);          
+            currentUser.RefreshTokenExpiryDate = DateTime.UtcNow.AddHours(7);
         }
         else
         {
             currentUser.Status = AccountStatus.Active;
         }
+
         await _unitOfWork.AccountRepository.UpdateAsync(currentUser);
         await _unitOfWork.SaveChangesAsync();
     }

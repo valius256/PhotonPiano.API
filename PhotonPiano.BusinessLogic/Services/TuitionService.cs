@@ -96,7 +96,7 @@ public class TuitionService : ITuitionService
             callbackModel.VnpResponseCode == "00" ? PaymentStatus.Succeed : PaymentStatus.Failed;
         transaction.TransactionCode = callbackModel.VnpTransactionNo;
         transaction.UpdatedAt = DateTime.UtcNow;
-        
+
         if (transaction.PaymentStatus == PaymentStatus.Succeed)
         {
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -421,7 +421,6 @@ public class TuitionService : ITuitionService
         var (page, pageSize, sortColumn, orderByDesc, studentClassIds, startDate, endDate, paymentStatuses) =
             queryTuitionModel;
 
-        // Convert DateOnly to DateTime (UTC) for filtering
         var startDateTimeUtc = startDate.HasValue
             ? DateTime.SpecifyKind(startDate.Value.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc)
             : (DateTime?)null;
@@ -429,6 +428,8 @@ public class TuitionService : ITuitionService
         var endDateTimeUtc = endDate.HasValue
             ? DateTime.SpecifyKind(endDate.Value.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc)
             : (DateTime?)null;
+
+        var test = await _unitOfWork.TuitionRepository.GetAllAsync();
 
         var result = await _unitOfWork.TuitionRepository.GetPaginatedWithProjectionAsync<TuitionWithStudentClassModel>(
             page, pageSize, sortColumn, orderByDesc,
@@ -448,8 +449,6 @@ public class TuitionService : ITuitionService
         var currentTaxRateConfig = await _serviceFactory.SystemConfigService.GetTaxesRateConfig(currentYear);
 
         var currentTaxRate = double.TryParse(currentTaxRateConfig?.ConfigValue, out var taxRate) ? taxRate : 0;
-
-        // var currentTaxAmount = paymentTuition!.Amount * (decimal)currentTaxRate;
 
         foreach (var tuitionWithStudentClassModel in result.Items)
         {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -71,9 +67,7 @@ public class PubSubAttribute : ActionFilterAttribute
 
                 if (m_topics.Any())
                 {
-                    // Console.WriteLine($"[PubSub] Topics to trigger: {string.Join(", ", m_topics)}");
                     var uniqueTopics = m_topics.Distinct().ToList();
-                    // Console.WriteLine($"[PubSub] Sending unique topics: {string.Join(", ", uniqueTopics)}");
                     var pubSubService =
                         context.HttpContext.RequestServices.GetService(typeof(IPubSubService)) as IPubSubService;
                     pubSubService?.SendToAll(m_topics, "changed");
@@ -81,8 +75,6 @@ public class PubSubAttribute : ActionFilterAttribute
             }
             else if (Topic.Any())
             {
-                // Console.WriteLine($"[PubSub] Triggering SignalR for topics: {string.Join(", ", Topic)}");
-
                 var pubSubService =
                     context.HttpContext.RequestServices.GetService(typeof(IPubSubService)) as IPubSubService;
                 pubSubService?.SendToAll(Topic, "changed");

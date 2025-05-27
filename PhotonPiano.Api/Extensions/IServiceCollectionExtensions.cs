@@ -392,8 +392,8 @@ public static class IServiceCollectionExtensions
                 return RateLimitPartition.GetFixedWindowLimiter(ipAddress,
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 100, // 100 requests per window
-                        Window = TimeSpan.FromMinutes(1), // Per 1 minute window
+                        PermitLimit = 500, // 100 requests per window
+                        Window = TimeSpan.FromSeconds(30), // Per 1 minute window
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
                     });

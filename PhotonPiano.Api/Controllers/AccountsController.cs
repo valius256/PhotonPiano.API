@@ -66,26 +66,26 @@ public class AccountsController : BaseController
         return Created(nameof(CreateAccount), result);
     }
 
-    [HttpGet("{firebase-id}")]
+    [HttpGet("{id}")]
     [CustomAuthorize]
     [EndpointDescription("Get Account details by id")]
     public async Task<ActionResult<AccountDetailResponse>> GetAccountById(
-        [FromRoute(Name = "firebase-id")] string accountFirebaseId)
+        [FromRoute] string id)
     {
-        var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
+        var result = await _serviceFactory.AccountService.GetAccountById(id);
         
         return result.Adapt<AccountDetailResponse>();
     }
 
-    [HttpGet("{firebase-id}/teacher")]
+    [HttpGet("{id}/teacher")]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor, Role.Student])]
     [EndpointDescription("Get teacher detail by id")]
     public async Task<ActionResult<TeacherDetailModel>> GetTeacherDetailById(
-        [FromRoute(Name = "firebase-id")] string accountFirebaseId)
+        [FromRoute] string id)
     {
-        var result = await _serviceFactory.AccountService.GetTeacherDetailById(accountFirebaseId);
+        var result = await _serviceFactory.AccountService.GetTeacherDetailById(id);
 
-        return Ok(result);
+        return result;
     }
 
     [HttpPut]

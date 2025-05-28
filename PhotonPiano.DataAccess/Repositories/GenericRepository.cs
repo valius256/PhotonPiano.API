@@ -171,7 +171,8 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     public async Task<TProjectTo?> FindSingleProjectedAsync<TProjectTo>(Expression<Func<T, bool>> expression,
         bool hasTrackings = true,
         bool ignoreQueryFilters = false,
-        TrackingOption option = TrackingOption.Default)
+        TrackingOption option = TrackingOption.Default,
+        bool hasSplitQuery = false)
     {
         IQueryable<T> query = _context.Set<T>();
 
@@ -183,6 +184,11 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             };
 
         query = ignoreQueryFilters ? query.IgnoreQueryFilters() : query;
+
+        if (hasSplitQuery)
+        {
+            query = query.AsSplitQuery();
+        }
 
         return await query.Where(expression).ProjectToType<TProjectTo>().SingleOrDefaultAsync();
     }

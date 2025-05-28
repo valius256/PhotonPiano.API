@@ -282,13 +282,16 @@ public class LevelService : ILevelService
         // khong load bang mapping vi issue take time so long
         await LoadAndSetClassTimesAsync(level.Classes.ToList());
 
-        
+
         return level;
     }
 
     private async Task LoadAndSetClassTimesAsync(List<ClassModel> classModels)
     {
-        var classIds = classModels.Select(c => c.Id).ToList();
+        var classIds = classModels
+            .Where(c => c is { IsPublic: true, Status: ClassStatus.NotStarted })
+            .Select(c => c.Id)
+            .ToList();
         // && c.Status == ClassStatus.NotStarted
         var classWithSlots = await _unitOfWork.ClassRepository
             .FindProjectedAsync<Class>(c => classIds.Contains(c.Id), false);

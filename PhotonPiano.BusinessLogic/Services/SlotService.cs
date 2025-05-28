@@ -443,6 +443,8 @@ public class SlotService : ISlotService
             }
         }
 
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
+
         return updatedSlot.Adapt<SlotModel>();
     }
 

@@ -69,12 +69,12 @@ public class AccountsController : BaseController
     [HttpGet("{firebase-id}")]
     [CustomAuthorize]
     [EndpointDescription("Get Account details by id")]
-    public async Task<ActionResult<AccountDetailModel>> GetAccountById(
+    public async Task<ActionResult<AccountDetailResponse>> GetAccountById(
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)
     {
         var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
         
-        return Ok(result);
+        return result.Adapt<AccountDetailResponse>();
     }
 
     [HttpGet("{firebase-id}/teacher")]

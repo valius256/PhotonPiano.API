@@ -9,6 +9,7 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
 {
     public void Configure(EntityTypeBuilder<Account> builder)
     {
+        builder.HasIndex(x => x.AccountFirebaseId);
         builder.HasKey(x => x.AccountFirebaseId);
 
         builder.HasQueryFilter(q => q.RecordStatus != RecordStatus.IsDeleted);

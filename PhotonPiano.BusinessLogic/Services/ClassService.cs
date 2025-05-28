@@ -720,7 +720,7 @@ public class ClassService : IClassService
         foreach (var timeSlot in finalFrames)
             scheduleDescription +=
                 $"{Constants.VietnameseDaysOfTheWeek[(int)timeSlot.Item1]} Shift {(int)timeSlot.Item2 + 1} ({Constants.Shifts[(int)timeSlot.Item2]}); ";
-        var classStartDate = classDetail.Slots.Count > 0 ? classDetail.Slots.First().Date : DateOnly.MaxValue;
+        var classStartDate = mappedSlots.Count > 0 ? mappedSlots.First().Date : DateOnly.MaxValue;
         //Save change
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

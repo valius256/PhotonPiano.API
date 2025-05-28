@@ -69,12 +69,12 @@ public class AccountsController : BaseController
     [HttpGet("{firebase-id}")]
     [CustomAuthorize]
     [EndpointDescription("Get Account details by id")]
-    public async Task<ActionResult<AccountDetailResponse>> GetAccountById(
+    public async Task<ActionResult<AccountDetailModel>> GetAccountById(
         [FromRoute(Name = "firebase-id")] string accountFirebaseId)
     {
         var result = await _serviceFactory.AccountService.GetAccountById(accountFirebaseId);
         
-        return result.Adapt<AccountDetailResponse>();
+        return Ok(result);
     }
 
     [HttpGet("{firebase-id}/teacher")]
@@ -85,7 +85,7 @@ public class AccountsController : BaseController
     {
         var result = await _serviceFactory.AccountService.GetTeacherDetailById(accountFirebaseId);
 
-        return Ok(result.Adapt<TeacherDetailModel>());
+        return Ok(result);
     }
 
     [HttpPut]

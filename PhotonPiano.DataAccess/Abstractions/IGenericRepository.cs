@@ -37,7 +37,8 @@ public interface IGenericRepository<T> where T : BaseEntity
     Task<TProjectTo?> FindSingleProjectedAsync<TProjectTo>(Expression<Func<T, bool>> expression,
         bool hasTrackings = true,
         bool ignoreQueryFilters = false,
-        TrackingOption option = TrackingOption.Default);
+        TrackingOption option = TrackingOption.Default,
+        bool hasSplitQuery = false);
 
     Task<T?> GetByIdAsync(Guid id);
 
@@ -84,7 +85,7 @@ public interface IGenericRepository<T> where T : BaseEntity
     void Detach(T entity);
 
     void ClearChangeTracker();
-    
+
     void Attach(T entity);
 
     void MarkAsModified(T entity);

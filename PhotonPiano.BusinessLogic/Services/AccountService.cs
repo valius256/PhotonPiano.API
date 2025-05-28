@@ -56,8 +56,11 @@ public class AccountService : IAccountService
     {
         var result =
             await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountDetailModel>(x =>
-                x.AccountFirebaseId == accountId, hasTrackings: false, option: TrackingOption.IdentityResolution);
-        
+                    x.AccountFirebaseId == accountId,
+                hasTrackings: false,
+                option: TrackingOption.IdentityResolution,
+                hasSplitQuery: true);
+
         if (result is null)
         {
             throw new NotFoundException($"Account with ID: {accountId} not found.");

@@ -133,7 +133,7 @@ public class TuitionServiceTest
 
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
-                TrackingOption.Default))
+                TrackingOption.Default, false))
             .ReturnsAsync(tuition);
 
         _systemConfigServiceMock.Setup(service => service.GetTaxesRateConfig(It.IsAny<int>()))
@@ -185,7 +185,7 @@ public class TuitionServiceTest
         _tuitionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
-                TrackingOption.Default))
+                TrackingOption.Default, false))
             .ReturnsAsync(tuition);
 
         _systemConfigServiceMock
@@ -228,7 +228,7 @@ public class TuitionServiceTest
         _tuitionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<DataAccess.Models.Entity.Tuition>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(), false, false,
-                TrackingOption.Default))
+                TrackingOption.Default, false))
             .ReturnsAsync(tuition);
 
         _systemConfigServiceMock
@@ -298,7 +298,7 @@ public class TuitionServiceTest
             .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
-                It.IsAny<TrackingOption>()))
+                It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(transaction);
 
         _accountRepositoryMock
@@ -382,7 +382,7 @@ public class TuitionServiceTest
 
         _transactionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<Transaction>(
                 It.IsAny<Expression<Func<Transaction, bool>>>(), It.IsAny<bool>(), It.IsAny<bool>(),
-                It.IsAny<TrackingOption>()))
+                It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(transaction);
 
         _accountRepositoryMock.Setup(repo => repo.FindSingleAsync(
@@ -426,7 +426,7 @@ public class TuitionServiceTest
 
         _transactionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(), false,
-                false, TrackingOption.Default))
+                false, TrackingOption.Default, false))
             .ReturnsAsync((Transaction)null);
 
         // Act & Assert
@@ -470,7 +470,7 @@ public class TuitionServiceTest
 
         _transactionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(),
-                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(transaction);
 
         _accountRepositoryMock
@@ -524,7 +524,7 @@ public class TuitionServiceTest
 
         _transactionRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<Transaction>(It.IsAny<Expression<Func<Transaction, bool>>>(),
-                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(transaction);
 
         _accountRepositoryMock
@@ -769,7 +769,7 @@ public class TuitionServiceTest
 
         _levelRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<Level>(It.IsAny<Expression<Func<Level, bool>>>(), It.IsAny<bool>(),
-                It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(level);
 
         // Setup transaction execution
@@ -879,7 +879,7 @@ public class TuitionServiceTest
         _studentClassRepositoryMock
             .Setup(r => r.FindSingleProjectedAsync<StudentClass>(It.IsAny<Expression<Func<StudentClass, bool>>>(),
                 It.IsAny<bool>(),
-                It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(studentClass);
 
         // Act
@@ -921,7 +921,7 @@ public class TuitionServiceTest
 
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
-                false, false, TrackingOption.Default))
+                false, false, TrackingOption.Default, false))
             .ReturnsAsync(new TuitionWithStudentClassModel
             {
                 Id = tuitionId,
@@ -943,7 +943,7 @@ public class TuitionServiceTest
         Assert.Equal(tuitionId, result.Id);
         _tuitionRepositoryMock.Verify(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
             It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
-            It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()), Times.Once);
+            It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>(), false), Times.Once);
     }
 
     [Fact]
@@ -958,7 +958,7 @@ public class TuitionServiceTest
 
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
-                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(new TuitionWithStudentClassModel
             {
                 Id = tuitionId,
@@ -997,7 +997,7 @@ public class TuitionServiceTest
 
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
-                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(new TuitionWithStudentClassModel
             {
                 Id = tuitionId,
@@ -1026,7 +1026,7 @@ public class TuitionServiceTest
 
         _tuitionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<TuitionWithStudentClassModel>(
                 It.IsAny<Expression<Func<DataAccess.Models.Entity.Tuition, bool>>>(),
-                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>()))
+                It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<TrackingOption>(), false))
             .ReturnsAsync((TuitionWithStudentClassModel)null);
 
         // Act & Assert

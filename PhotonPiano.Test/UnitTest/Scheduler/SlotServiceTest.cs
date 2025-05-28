@@ -161,7 +161,7 @@ public class SlotServiceTest
                 It.IsAny<Expression<Func<Slot, bool>>>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
-                It.IsAny<TrackingOption>()))
+                It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(expectedSlot);
 
         // Act
@@ -183,7 +183,7 @@ public class SlotServiceTest
                 It.IsAny<Expression<Func<Slot, bool>>>(),
                 false,
                 false,
-                TrackingOption.Default))
+                TrackingOption.Default, false))
             .ReturnsAsync((SlotDetailModel)null);
 
         // Act & Assert
@@ -548,7 +548,7 @@ public class SlotServiceTest
                 It.IsAny<Expression<Func<Slot, bool>>>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
-                It.IsAny<TrackingOption>()))
+                It.IsAny<TrackingOption>(), false))
             .ReturnsAsync(slot);
 
         // Act
@@ -574,7 +574,7 @@ public class SlotServiceTest
                 It.IsAny<Expression<Func<Slot, bool>>>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
-                It.IsAny<TrackingOption>()))
+                It.IsAny<TrackingOption>(), false))
             .ReturnsAsync((Slot)null);
 
         // Act & Assert

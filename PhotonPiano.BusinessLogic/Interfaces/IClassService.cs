@@ -34,4 +34,5 @@ public interface IClassService
     Task<PagedResult<AccountSimpleModel>> GetAvailableTeacher(GetAvailableTeacherForClassModel model);
 
     Task ShiftClassSchedule(ShiftClassScheduleModel shiftClassScheduleModel, string accountFirebaseId);
+    Task MergeClass(MergeClassModel shiftClassScheduleModel, string accountFirebaseId);
 }

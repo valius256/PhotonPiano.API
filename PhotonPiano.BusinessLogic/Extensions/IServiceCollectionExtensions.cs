@@ -91,6 +91,9 @@ public static class ServiceCollectionExtensions
             // .Map(dest => dest.ClassTime, src => DateExtensions.FormatTime(src.Slots))
             // .Map(dest => dest.ClassDays, src => DateExtensions.FormatDays(src.Slots));
             ;
+
+        TypeAdapterConfig<Account, TeacherDetailModel>.NewConfig()
+            .Map(dest => dest.InstructorClasses, src => src.InstructorClasses.Where(c => c.IsPublic));
         return services;
     }
 }

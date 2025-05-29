@@ -40,6 +40,8 @@ public record AccountResponse
     
     public Guid? SelfEvaluatedLevelId { get; init; }
 
+    public LevelModel? Level { get; init; }
+
     public LevelModel? SelfEvaluatedLevel { get; init; }
 
     public List<string> DesiredTargets { get; init; } = [];
@@ -53,4 +55,5 @@ public record AccountResponse
     public bool HasUsedTrial { get; init; } 
     
     public bool WantToContinue { get; set; } = true;
+    public TuitionStatus TuitionStatus { get; set; }
 }

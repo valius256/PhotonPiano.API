@@ -12,5 +12,7 @@ public record QueryPagedAccountsRequest : QueryPagedRequest
 
     [FromQuery(Name = "student-statuses")] public List<StudentStatus> StudentStatuses { get; init; } = [];
 
+    [FromQuery(Name = "tuition-statuses")] public List<TuitionStatus> TuitionStatuses { get; init; } = [];
+
     [FromQuery(Name = "roles")] public List<Role> Roles { get; init; } = [];
 }

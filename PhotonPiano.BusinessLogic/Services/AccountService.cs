@@ -127,17 +127,18 @@ public class AccountService : IAccountService
     }
 
 
-    public async Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
+    public async Task<PagedResult<AccountWithTuitionModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model)
     {
-        var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses) = model;
+        var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses, tuitionStatuses) = model;
 
         var likeKeyword = model.GetLikeKeyword();
 
-        var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
+        var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountWithTuitionModel>(
             page,
             size,
             column == "Id" ? "AccountFirebaseId" : column,
             desc,
+            hasSplitQuery: true,
             expressions:
             [
                 GetAccountsFilterExpression(currentAccount.Role),
@@ -149,7 +150,12 @@ public class AccountService : IAccountService
                 a => levels.Count == 0 || (a.LevelId.HasValue && levels.Contains(a.LevelId.Value)),
                 a => studentStatuses.Count == 0 ||
                      (a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)),
-                a => accountStatuses.Count == 0 || accountStatuses.Contains(a.Status)
+                a => accountStatuses.Count == 0 || accountStatuses.Contains(a.Status),
+                a => tuitionStatuses.Count == 0 ||
+                    (tuitionStatuses.Contains(TuitionStatus.NoTuition) && a.StudentClasses.Count == 0) ||
+                    (tuitionStatuses.Contains(TuitionStatus.FullyPaid) && a.StudentClasses.Count > 0  && a.StudentClasses.All(sc => sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed))) || 
+                    (tuitionStatuses.Contains(TuitionStatus.InDebt) && a.StudentClasses.Count > 0 && a.StudentClasses.Any(sc => !sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed)))
+                    
             ]
         );
 
@@ -158,7 +164,7 @@ public class AccountService : IAccountService
 
     public async Task<PagedResult<AccountModel>> GetTeachers(QueryPagedAccountsModel model)
     {
-        var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses) = model;
+        var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses, tuitionStatuses) = model;
 
         var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
             page,

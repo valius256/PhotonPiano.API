@@ -20,7 +20,7 @@ public record ClassModel
     public required string Name { get; init; }
     public required string CreatedById { get; init; }
     public bool IsScorePublished { get; init; }
-    public int Capacity { get; init; }
+    public int Capacity { get; set; }
     public int MinimumStudents { get; init; }
     public int RequiredSlots { get; init; }
     public int TotalSlots { get; init; }

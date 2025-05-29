@@ -1092,7 +1092,7 @@ public class ClassService : IClassService
         }
 
         var updatedSlots = classDetail.Slots
-           .Select(slot => slot with { Date = slot.Date.AddDays(shiftClassScheduleModel.Weeks * 7), Room = null })
+           .Select(slot => slot with { Date = slot.Date.AddDays(shiftClassScheduleModel.Weeks * 7), Room = null, Teacher = null })
            .ToList();
 
         var firstSlots = updatedSlots.OrderBy(s => s.Date).ThenBy(s => s.Shift).FirstOrDefault();

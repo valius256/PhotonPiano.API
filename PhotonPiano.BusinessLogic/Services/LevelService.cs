@@ -9,6 +9,7 @@ using PhotonPiano.DataAccess.Abstractions;
 using PhotonPiano.DataAccess.Models.Entity;
 using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Exceptions;
+using PhotonPiano.Shared.Utils;
 
 namespace PhotonPiano.BusinessLogic.Services;
 
@@ -296,6 +297,8 @@ public class LevelService : ILevelService
         var classWithSlots = await _unitOfWork.ClassRepository
             .FindProjectedAsync<Class>(c => classIds.Contains(c.Id), false);
 
+        var capacity = await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents);
+
         foreach (var classModel in classModels)
         {
             var matchedClass = classWithSlots.FirstOrDefault(c => c.Id == classModel.Id);
@@ -303,6 +306,7 @@ public class LevelService : ILevelService
             {
                 classModel.ClassTime = DateExtensions.FormatTime(matchedClass.Slots);
                 classModel.ClassDays = DateExtensions.FormatDays(matchedClass.Slots);
+                classModel.Capacity = int.Parse(capacity?.ConfigValue ?? "1");
             }
         }
     }

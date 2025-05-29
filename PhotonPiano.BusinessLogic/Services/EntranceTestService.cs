@@ -162,7 +162,7 @@ public class EntranceTestService : IEntranceTestService
         }
 
         var entranceTestId = Guid.NewGuid();
-        // var entranceTestStudents = new List<EntranceTestStudent>();
+        var entranceTestStudents = new List<EntranceTestStudent>();
 
         if (createModel.StudentIds.Count > 0)
         {
@@ -188,15 +188,15 @@ public class EntranceTestService : IEntranceTestService
                 }
             }
 
-            // entranceTestStudents = createModel.StudentIds.Select(studentId =>
-            //     new EntranceTestStudent
-            //     {
-            //         Id = Guid.NewGuid(),
-            //         StudentFirebaseId = studentId,
-            //         EntranceTestId = entranceTestId,
-            //         CreatedAt = DateTime.UtcNow.AddHours(7),
-            //         CreatedById = currentAccount.AccountFirebaseId,
-            //     }).ToList();
+            entranceTestStudents = createModel.StudentIds.Select(studentId =>
+                new EntranceTestStudent
+                {
+                    Id = Guid.NewGuid(),
+                    StudentFirebaseId = studentId,
+                    EntranceTestId = entranceTestId,
+                    CreatedAt = DateTime.UtcNow.AddHours(7),
+                    CreatedById = currentAccount.AccountFirebaseId,
+                }).ToList();
         }
 
         var entranceTest = createModel.Adapt<EntranceTest>();
@@ -255,7 +255,7 @@ public class EntranceTestService : IEntranceTestService
 
             if (createModel.StudentIds.Count > 0)
             {
-                // await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(entranceTestStudents);
+                await _unitOfWork.EntranceTestStudentRepository.AddRangeAsync(entranceTestStudents);
 
                 await _unitOfWork.AccountRepository.ExecuteUpdateAsync(
                     a => createModel.StudentIds.Contains(a.AccountFirebaseId),

@@ -123,7 +123,7 @@ var sqlConfig = app.Services.GetRequiredService<PostgresSqlConfiguration>();
 sqlConfig.Configure();
 
 // uncomment to active Rate limiter
-// app.UseRateLimiter();
+app.UseRateLimiter();
 
 app.UseExceptionHandler();
 

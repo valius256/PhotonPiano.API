@@ -104,7 +104,7 @@ public class SurveyQuestionServiceTest
 
         _surveyQuestionRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<SurveyQuestionDetailsModel>(
             It.IsAny<Expression<Func<SurveyQuestion, bool>>>(), false, false, TrackingOption.IdentityResolution
-        )).ReturnsAsync((SurveyQuestionDetailsModel?)null);
+            , false)).ReturnsAsync((SurveyQuestionDetailsModel?)null);
 
         //Act
         var record = await Record.ExceptionAsync(() => _surveyQuestionService.GetSurveyQuestionDetails(id));

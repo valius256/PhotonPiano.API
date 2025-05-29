@@ -28,4 +28,6 @@ public record CreateLevelRequest
     public Guid? NextLevelId { get; init; }
 
     public string? ThemeColor { get; init; }
+
+    public bool RequiresEntranceTest { get; init; } = true;
 }

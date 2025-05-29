@@ -443,6 +443,8 @@ public class SlotService : ISlotService
             }
         }
 
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
+
         return updatedSlot.Adapt<SlotModel>();
     }
 
@@ -826,7 +828,7 @@ public class SlotService : ISlotService
 
         await _serviceFactory.RedisCacheService.DeleteByPatternAsync("schedule:*");
     }
-
+ 
     private async Task<bool> IsConflict(Shift shift, DateOnly date, Guid? roomId)
     {
         if (roomId is null) return false;

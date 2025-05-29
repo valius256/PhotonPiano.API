@@ -26,6 +26,8 @@ namespace PhotonPiano.DataAccess.Models.Entity
         public Guid? NextLevelId { get; set; }
 
         public string? ThemeColor { get; set; }
+        
+        public bool RequiresEntranceTest { get; set; }
 
         public virtual Level? NextLevel { get; set; } // Navigation property
 

@@ -235,7 +235,7 @@ public class PianoSurveyServiceTest
 
         _pianoSurveyRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<PianoSurveyDetailsModel>(
             It.IsAny<Expression<Func<PianoSurvey, bool>>>(), false, false,
-            TrackingOption.Default
+            TrackingOption.Default, false
         )).ReturnsAsync((PianoSurveyDetailsModel?)null);
 
         //Act
@@ -254,7 +254,7 @@ public class PianoSurveyServiceTest
 
         _pianoSurveyRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<PianoSurveyDetailsModel>(
             It.IsAny<Expression<Func<PianoSurvey, bool>>>(), false, false,
-            TrackingOption.Default
+            TrackingOption.Default, false
         )).ReturnsAsync(new PianoSurveyDetailsModel
         {
             Id = id,
@@ -350,7 +350,7 @@ public class PianoSurveyServiceTest
 
         _pianoSurveyRepositoryMock.Setup(repo => repo.FindSingleProjectedAsync<PianoSurveyWithQuestionsModel>(
             It.IsAny<Expression<Func<PianoSurvey, bool>>>(), false, false, TrackingOption.Default
-        )).ReturnsAsync(new PianoSurveyWithQuestionsModel
+            , false)).ReturnsAsync(new PianoSurveyWithQuestionsModel
         {
             Id = Guid.NewGuid(),
             Name = "Test",

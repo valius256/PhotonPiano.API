@@ -17,6 +17,8 @@ public record UpdateLevelRequest
     public decimal? MinimumTheoreticalScore { get; init; }
 
     public decimal? MinimumPracticalScore { get; init; }
+    
+    public bool? RequiresEntranceTest { get; init; }
 
     // public decimal? MinimumGPA { get; init; }
 

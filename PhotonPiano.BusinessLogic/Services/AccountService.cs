@@ -52,25 +52,37 @@ public class AccountService : IAccountService
         return newAccount.Adapt<AccountModel>();
     }
 
-    public async Task<AccountDetailModel> GetAccountById(string firebaseId)
+    public async Task<AccountDetailModel> GetAccountById(string accountId)
     {
         var result =
-            await _unitOfWork.AccountRepository.FindFirstProjectedAsync<AccountDetailModel>(x =>
-                x.AccountFirebaseId == firebaseId, option: TrackingOption.IdentityResolution);
+            await _unitOfWork.AccountRepository.FindSingleProjectedAsync<AccountDetailModel>(x =>
+                    x.AccountFirebaseId == accountId,
+                hasTrackings: false,
+                option: TrackingOption.IdentityResolution,
+                hasSplitQuery: true);
+
         if (result is null)
         {
-            throw new NotFoundException($"Account with ID: {firebaseId} not found.");
+            throw new NotFoundException($"Account with ID: {accountId} not found.");
         }
-        
+
         return result;
     }
 
-    public async Task<TeacherDetailModel> GetTeacherDetailById(string firebaseId)
+    public async Task<TeacherDetailModel> GetTeacherDetailById(string accountId)
     {
         var result =
             await _unitOfWork.AccountRepository.FindSingleProjectedAsync<TeacherDetailModel>(x =>
-                x.AccountFirebaseId == firebaseId);
-        if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
+                    x.AccountFirebaseId == accountId,
+                hasTrackings: false,
+                option: TrackingOption.IdentityResolution,
+                hasSplitQuery: true);
+
+        if (result is null)
+        {
+            throw new NotFoundException($"Account with ID: {accountId} not found.");
+        }
+
         return result;
     }
 
@@ -119,6 +131,8 @@ public class AccountService : IAccountService
     {
         var (page, size, column, desc, q, roles, levels, studentStatuses, accountStatuses) = model;
 
+        var likeKeyword = model.GetLikeKeyword();
+
         var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedWithProjectionAsync<AccountModel>(
             page,
             size,
@@ -127,8 +141,11 @@ public class AccountService : IAccountService
             expressions:
             [
                 GetAccountsFilterExpression(currentAccount.Role),
+                a => string.IsNullOrEmpty(q) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.Email), likeKeyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.FullName ?? string.Empty), likeKeyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.UserName ?? string.Empty), likeKeyword),
                 a => roles.Count == 0 || roles.Contains(a.Role),
-                a => string.IsNullOrEmpty(q) || a.Email.ToLower().Contains(q.ToLower()),
                 a => levels.Count == 0 || (a.LevelId.HasValue && levels.Contains(a.LevelId.Value)),
                 a => studentStatuses.Count == 0 ||
                      (a.StudentStatus != null && studentStatuses.Contains(a.StudentStatus.Value)),
@@ -244,7 +261,6 @@ public class AccountService : IAccountService
     public async Task<AccountModel> CreateNewStaff(CreateSystemAccountModel createSystemAccountModel)
     {
         return await CreateSystemAccount(createSystemAccountModel, Role.Staff);
-
     }
 
     public async Task<AccountModel> CreateNewTeacher(CreateSystemAccountModel createSystemAccountModel)
@@ -279,20 +295,20 @@ public class AccountService : IAccountService
         return createAccount.Adapt<AccountModel>();
     }
 
-    
 
     public async Task<AccountModel> UpdateContinuingLearningStatus(string firebaseId, bool wantToContinue)
     {
-        var account = await _unitOfWork.AccountRepository.FindSingleAsync(a => 
+        var account = await _unitOfWork.AccountRepository.FindSingleAsync(a =>
             a.AccountFirebaseId == firebaseId && a.Role == Role.Student);
-    
+
         if (account is null)
         {
             throw new NotFoundException($"Student account with ID: {firebaseId} not found.");
         }
+
         account.WantToContinue = wantToContinue;
         StudentStatus? targetStatus = null;
-        
+
         if (wantToContinue)
         {
             if (account.StudentStatus == StudentStatus.Leave)
@@ -302,21 +318,25 @@ public class AccountService : IAccountService
         }
         else
         {
-            if (account.StudentStatus == StudentStatus.WaitingForClass || 
+            if (account.StudentStatus == StudentStatus.WaitingForClass ||
                 account.StudentStatus == StudentStatus.InClass)
             {
-               targetStatus = StudentStatus.Leave;
+                targetStatus = StudentStatus.Leave;
             }
         }
-        
+
         if (targetStatus.HasValue && account.StudentStatus != targetStatus.Value)
         {
-            if (!_serviceFactory.StudentClassService.IsValidStatusTransition(account.StudentStatus!.Value, targetStatus.Value))
+            if (!_serviceFactory.StudentClassService.IsValidStatusTransition(account.StudentStatus!.Value,
+                    targetStatus.Value))
             {
-                throw new BadRequestException($"Invalid status transition from {account.StudentStatus} to {targetStatus}");
+                throw new BadRequestException(
+                    $"Invalid status transition from {account.StudentStatus} to {targetStatus}");
             }
+
             account.StudentStatus = targetStatus.Value;
         }
+
         await _unitOfWork.SaveChangesAsync();
         return account.Adapt<AccountModel>();
     }

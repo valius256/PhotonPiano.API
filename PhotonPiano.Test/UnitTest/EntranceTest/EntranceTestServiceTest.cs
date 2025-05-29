@@ -105,7 +105,7 @@ public class EntranceTestServiceTest
         var entranceTestId = Guid.NewGuid();
         _entranceTestRepositoryMock.Setup(e => e.FindSingleProjectedAsync<EntranceTestDetailModel>(
             x => x.Id == entranceTestId, false,
-            false, TrackingOption.IdentityResolution)).ReturnsAsync((EntranceTestDetailModel?)null);
+            false, TrackingOption.IdentityResolution, false)).ReturnsAsync((EntranceTestDetailModel?)null);
 
         //Act
         var result = await Record.ExceptionAsync(() =>
@@ -129,7 +129,7 @@ public class EntranceTestServiceTest
 
         _entranceTestRepositoryMock.Setup(e => e.FindSingleProjectedAsync<EntranceTestDetailModel>(
             x => x.Id == entranceTestId, false,
-            true, TrackingOption.IdentityResolution)).ReturnsAsync(entranceTest);
+            true, TrackingOption.IdentityResolution, false)).ReturnsAsync(entranceTest);
 
         //Act
         var result = await Record.ExceptionAsync(() =>

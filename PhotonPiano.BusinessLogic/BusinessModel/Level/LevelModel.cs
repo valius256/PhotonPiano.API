@@ -33,4 +33,6 @@ public record LevelModel : BaseModel
     public NextLevelModel? NextLevel { get; set; }
 
     public int? NumberActiveStudentInLevel { get; init; }
+    
+    public bool RequiresEntranceTest { get; init; }
 }

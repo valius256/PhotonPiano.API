@@ -21,9 +21,9 @@ public interface IAccountService
 
     Task<AccountModel> CreateAccount(string firebaseUId, string email);
 
-    Task<AccountDetailModel> GetAccountById(string firebaseId);
+    Task<AccountDetailModel> GetAccountById(string accountId);
 
-    Task<TeacherDetailModel> GetTeacherDetailById(string firebaseId);
+    Task<TeacherDetailModel> GetTeacherDetailById(string accountId);
 
     Task<bool> IsAccountExist(string firebaseId);
 

@@ -27,7 +27,7 @@ public class AccountsController : BaseController
     [HttpGet]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator, Role.Instructor])]
     [EndpointDescription("Get accounts with paging")]
-    public async Task<ActionResult<List<AccountModel>>> GetAccounts([FromQuery] QueryPagedAccountsRequest request)
+    public async Task<ActionResult<List<AccountResponse>>> GetAccounts([FromQuery] QueryPagedAccountsRequest request)
     {
         var pagedResult =
             await _serviceFactory.AccountService.GetAccounts(base.CurrentAccount!,
@@ -35,7 +35,7 @@ public class AccountsController : BaseController
 
         HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResult);
 
-        return pagedResult.Items;
+        return pagedResult.Items.Adapt<List<AccountResponse>>();
     }
 
     [HttpGet("teachers")]

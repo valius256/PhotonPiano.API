@@ -355,7 +355,7 @@ namespace PhotonPiano.BusinessLogic.Services
                     receiverIds.Add(student.AccountFirebaseId);
 
                     studentClass.Student = student;
-                    classInfo.StudentClasses.Add(studentClass.Adapt<StudentClassModel>());
+                    classInfo.StudentClasses.Add(studentClass.Adapt<StudentClassWithClassAndTuitionModel>());
                 }
 
                 await _unitOfWork.StudentClassRepository.AddRangeAsync(addedStudentClasses);

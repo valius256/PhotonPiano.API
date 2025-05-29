@@ -7,7 +7,7 @@ namespace PhotonPiano.BusinessLogic.Interfaces;
 
 public interface IAccountService
 {
-    Task<PagedResult<AccountModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model);
+    Task<PagedResult<AccountWithTuitionModel>> GetAccounts(AccountModel currentAccount, QueryPagedAccountsModel model);
 
     Task<PagedResult<AccountModel>> GetTeachers(QueryPagedAccountsModel model);
 

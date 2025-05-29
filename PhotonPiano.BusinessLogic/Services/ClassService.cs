@@ -38,7 +38,7 @@ public class ClassService : IClassService
                       "0");
 
 
-        var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id);
+        var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id, hasSplitQuery: true);
         if (classDetail is null) throw new NotFoundException("Class not found");
 
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classDetail.LevelId)
@@ -1120,5 +1120,115 @@ public class ClassService : IClassService
                     string.Empty
                 );
         }
+    }
+
+    public async Task MergeClass(MergeClassModel mergeClassModel, string accountFirebaseId)
+    {
+        var sourceClass = await _serviceFactory.ClassService.GetClassDetailById(mergeClassModel.SourceClassId);
+
+        if (sourceClass.Status == ClassStatus.Finished)
+        {
+            throw new BadRequestException("Source class is finished");
+        }
+
+        var destClass = await _serviceFactory.ClassService.GetClassDetailById(mergeClassModel.SourceClassId);
+
+        if (destClass.Status == ClassStatus.Finished)
+        {
+            throw new BadRequestException("Source class is finished");
+        }
+
+        if (destClass.Slots.Count(s => s.Status == SlotStatus.NotStarted) != sourceClass.Slots.Count(s => s.Status == SlotStatus.NotStarted))
+        {
+            throw new BadRequestException("Can not merge into this class since total not started slots is not equal");
+        }
+
+        var maximumStudents = int.Parse((await _serviceFactory.SystemConfigService.GetConfig(ConfigNames.MaximumStudents))?.ConfigValue ?? "0");
+
+        if (destClass.StudentClasses.Count + sourceClass.StudentClasses.Count > maximumStudents)
+        {
+            throw new BadRequestException("Can not merge because the number of students will exceed the maximum");
+        }
+
+        //sort both class slots
+        var sortedDestSlots = destClass.Slots.OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList();
+        var sortedSourceSlots = sourceClass.Slots.OrderBy(s => s.Date).ThenBy(s => s.Shift).ToList();
+
+        //Get slotIds and studentIds
+        var oldSlotIds = sourceClass.Slots.Select(s => s.Id).ToList();
+        var oldSlotStudents = await _unitOfWork.SlotStudentRepository.FindAsync(ss => oldSlotIds.Contains(ss.SlotId), hasTrackings: false);
+        var oldStudentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == sourceClass.Id, hasTrackings: false);
+        var oldSlots = await _unitOfWork.SlotRepository.FindAsync(s => s.ClassId == sourceClass.Id, hasTrackings: false);
+
+        //Create new slot students
+        var newSlotStudents = new List<SlotStudent>();
+        foreach (var student in destClass.StudentClasses) {
+
+            for (var i = 0; i < destClass.Slots.Count; i++)
+            {
+                var oldSlotStudent = i < sortedSourceSlots.Count ? oldSlotStudents.FirstOrDefault(ss => ss.SlotId == sortedSourceSlots[i].Id && ss.StudentFirebaseId == student.StudentFirebaseId) : null;
+                newSlotStudents.Add(new SlotStudent
+                {
+                    CreatedById = accountFirebaseId,
+                    SlotId = sortedDestSlots[i].Id,
+                    StudentFirebaseId = student.StudentFirebaseId,
+                    AttendanceComment = oldSlotStudent?.AttendanceComment,
+                    FingerNoteComment = oldSlotStudent?.FingerNoteComment,
+                    GestureComment = oldSlotStudent?.GestureComment,
+                    GestureUrl = oldSlotStudent?.GestureUrl,
+                    PedalComment = oldSlotStudent?.PedalComment,
+                });
+            }
+        }
+        //Delete old stot and student slot
+        foreach (var slot in oldSlots)
+        {
+            slot.RecordStatus = RecordStatus.IsDeleted;
+            slot.DeletedAt = DateTime.UtcNow.AddHours(7);
+        }
+        foreach (var slotStudent in oldSlotStudents)
+        {
+            slotStudent.RecordStatus = RecordStatus.IsDeleted;
+            slotStudent.DeletedAt = DateTime.UtcNow.AddHours(7);
+            slotStudent.DeletedById = accountFirebaseId;
+        }
+
+        //Update studentClass
+        foreach (var studentClass in oldStudentClasses)
+        {
+            studentClass.ClassId = destClass.Id;
+        }
+
+        //Delete the old class
+        var oldClass = await _unitOfWork.ClassRepository.GetByIdAsync(sourceClass.Id) ?? throw new NotFoundException("Class not found");
+        oldClass.RecordStatus = RecordStatus.IsDeleted;
+        oldClass.DeletedAt = DateTime.UtcNow.AddHours(7);
+        oldClass.DeletedById = accountFirebaseId;
+
+        //Save changes
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await _unitOfWork.SlotRepository.UpdateRangeAsync(oldSlots);
+            await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(oldSlotStudents);
+            await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(newSlotStudents);
+            await _unitOfWork.StudentClassRepository.UpdateRangeAsync(oldStudentClasses);
+            await _unitOfWork.ClassRepository.UpdateAsync(oldClass);
+        });
+
+        //Notification
+        var receiverIds = oldStudentClasses.Select(sc => sc.StudentFirebaseId).ToList();
+        receiverIds.AddRange(destClass.StudentClasses.Select(sc => sc.StudentFirebaseId));
+
+        if (sourceClass.InstructorId != null) 
+        {
+            receiverIds.Add(sourceClass.InstructorId);
+        }
+        if (oldClass.InstructorId != null)
+        {
+            receiverIds.Add(oldClass.InstructorId);
+        }
+
+        await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
+            $"$Class {sourceClass.Name} has been merged into {destClass.Name} to ensure number of students. Please recheck your schedule. No problem, unity is strength!",string.Empty);
     }
 }

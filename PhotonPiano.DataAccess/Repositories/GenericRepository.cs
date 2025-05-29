@@ -283,9 +283,10 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         bool hasTrackings = false,
         bool ignoreQueryFilters = false,
         TrackingOption option = TrackingOption.Default,
+        bool hasSplitQuery = false,
         params List<Expression<Func<T, bool>>?> expressions)
     {
-        var query = GetPaginatedWithProjectionAsQueryable<TProjectTo>(pageNumber, pageSize, sortColumn, desc, hasTrackings, ignoreQueryFilters, option, expressions);
+        var query = GetPaginatedWithProjectionAsQueryable<TProjectTo>(pageNumber, pageSize, sortColumn, desc, hasTrackings, ignoreQueryFilters, option, hasSplitQuery, expressions);
 
         // Paginate and return results
         return new PagedResult<TProjectTo>
@@ -303,6 +304,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         bool hasTrackings = false,
         bool ignoreQueryFilters = false,
         TrackingOption option = TrackingOption.Default,
+        bool hasSplitQuery = false,
         params List<Expression<Func<T, bool>>?> expressions)
     {
         // Validate the sortColumn
@@ -316,6 +318,8 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             : (option == TrackingOption.Default ? _context.Set<T>().AsNoTracking() : _context.Set<T>().AsNoTrackingWithIdentityResolution());
 
         query = ignoreQueryFilters ? query.IgnoreQueryFilters() : query;
+
+        query = hasSplitQuery ? query.AsSplitQuery() : query;
 
         //Filter
         if (expressions.Count != 0)

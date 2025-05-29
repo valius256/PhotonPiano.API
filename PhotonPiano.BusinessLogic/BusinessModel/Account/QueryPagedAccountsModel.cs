@@ -10,6 +10,7 @@ public record QueryPagedAccountsModel : QueryPagedModel
     public List<Guid> Levels { get; init; } = [];
     public List<AccountStatus> Statuses { get; init; } = [];
     public List<StudentStatus> StudentStatuses { get; init; } = [];
+    public List<TuitionStatus> TuitionStatuses { get; init; } = [];
     
     public string GetLikeKeyword()
     {
@@ -24,7 +25,7 @@ public record QueryPagedAccountsModel : QueryPagedModel
     }
 
     public void Deconstruct(out int page, out int pageSize, out string sortColumn, out bool orderByDesc, out string? keyword, out List<Role> roles,
-        out List<Guid> levels, out List<StudentStatus> studentStatuses, out List<AccountStatus> accountStatuses)
+        out List<Guid> levels, out List<StudentStatus> studentStatuses, out List<AccountStatus> accountStatuses, out List<TuitionStatus> tuitionStatuses)
     {
         page = Page;
         pageSize = PageSize;
@@ -35,5 +36,6 @@ public record QueryPagedAccountsModel : QueryPagedModel
         levels = Levels;
         studentStatuses = StudentStatuses;
         accountStatuses = Statuses;
+        tuitionStatuses = TuitionStatuses;
     }
 }

@@ -18,9 +18,11 @@ using PhotonPiano.Api.Requests.Application;
 using PhotonPiano.Api.Requests.DayOff;
 using PhotonPiano.Api.Requests.EntranceTest;
 using PhotonPiano.Api.Requests.Survey;
+using PhotonPiano.Api.Responses.Account;
 using PhotonPiano.Api.Responses.Class;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.BackgroundJob;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Application;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
@@ -33,6 +35,7 @@ using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.BusinessLogic.Services;
 using PhotonPiano.DataAccess.Models;
 using PhotonPiano.DataAccess.Models.Entity;
+using PhotonPiano.DataAccess.Models.Enum;
 using PhotonPiano.Shared.Utils;
 using StackExchange.Redis;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
@@ -178,6 +181,9 @@ public static class IServiceCollectionExtensions
             .Map(dest => dest.StartTime, src => src.Slots.Min(s => (DateOnly?)s.Date))
             .Map(dest => dest.EndTime, src => src.Slots.Max(s => (DateOnly?)s.Date));
 
+        TypeAdapterConfig<AccountWithTuitionModel, AccountResponse>.NewConfig()
+            .Map(dest => dest.TuitionStatus, src => src.StudentClasses.Count > 0 && src.StudentClasses.All(sc => sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed)) ?
+                TuitionStatus.FullyPaid : (src.StudentClasses.Count > 0  && src.StudentClasses.Any(sc => !sc.Tutions.Any(sc => sc.PaymentStatus == PaymentStatus.Succeed)) ? TuitionStatus.InDebt : TuitionStatus.NoTuition));
         return services;
     }
 

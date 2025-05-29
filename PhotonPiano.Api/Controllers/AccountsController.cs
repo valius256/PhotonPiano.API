@@ -80,12 +80,12 @@ public class AccountsController : BaseController
     [HttpGet("{id}/teacher")]
     [CustomAuthorize(Roles = [Role.Staff, Role.Administrator,Role.Instructor, Role.Student])]
     [EndpointDescription("Get teacher detail by id")]
-    public async Task<ActionResult<TeacherDetailModel>> GetTeacherDetailById(
+    public async Task<ActionResult<TeacherDetailsResponse>> GetTeacherDetailById(
         [FromRoute] string id)
     {
         var result = await _serviceFactory.AccountService.GetTeacherDetailById(id);
 
-        return result;
+        return result.Adapt<TeacherDetailsResponse>();
     }
 
     [HttpPut]

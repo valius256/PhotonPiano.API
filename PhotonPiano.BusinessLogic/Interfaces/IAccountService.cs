@@ -23,7 +23,7 @@ public interface IAccountService
 
     Task<AccountDetailModel> GetAccountById(string accountId);
 
-    Task<TeacherDetailModel> GetTeacherDetailById(string firebaseId);
+    Task<TeacherDetailModel> GetTeacherDetailById(string accountId);
 
     Task<bool> IsAccountExist(string firebaseId);
 

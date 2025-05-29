@@ -69,12 +69,20 @@ public class AccountService : IAccountService
         return result;
     }
 
-    public async Task<TeacherDetailModel> GetTeacherDetailById(string firebaseId)
+    public async Task<TeacherDetailModel> GetTeacherDetailById(string accountId)
     {
         var result =
             await _unitOfWork.AccountRepository.FindSingleProjectedAsync<TeacherDetailModel>(x =>
-                x.AccountFirebaseId == firebaseId);
-        if (result is null) throw new NotFoundException($"Account with ID: {firebaseId} not found.");
+                    x.AccountFirebaseId == accountId,
+                hasTrackings: false,
+                option: TrackingOption.IdentityResolution,
+                hasSplitQuery: true);
+
+        if (result is null)
+        {
+            throw new NotFoundException($"Account with ID: {accountId} not found.");
+        }
+
         return result;
     }
 

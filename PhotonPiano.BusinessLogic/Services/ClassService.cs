@@ -38,7 +38,7 @@ public class ClassService : IClassService
                       "0");
 
 
-        var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id, hasSplitQuery: true);
+        var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id, hasSplitQuery: true, hasTrackings: false);
         if (classDetail is null) throw new NotFoundException("Class not found");
 
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classDetail.LevelId)
@@ -1131,7 +1131,7 @@ public class ClassService : IClassService
             throw new BadRequestException("Source class is finished");
         }
 
-        var destClass = await _serviceFactory.ClassService.GetClassDetailById(mergeClassModel.SourceClassId);
+        var destClass = await _serviceFactory.ClassService.GetClassDetailById(mergeClassModel.TargetClassId);
 
         if (destClass.Status == ClassStatus.Finished)
         {
@@ -1162,7 +1162,7 @@ public class ClassService : IClassService
 
         //Create new slot students
         var newSlotStudents = new List<SlotStudent>();
-        foreach (var student in destClass.StudentClasses) {
+        foreach (var student in sourceClass.StudentClasses) {
 
             for (var i = 0; i < destClass.Slots.Count; i++)
             {
@@ -1210,7 +1210,7 @@ public class ClassService : IClassService
         {
             await _unitOfWork.SlotRepository.UpdateRangeAsync(oldSlots);
             await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(oldSlotStudents);
-            await _unitOfWork.SlotStudentRepository.UpdateRangeAsync(newSlotStudents);
+            await _unitOfWork.SlotStudentRepository.AddRangeAsync(newSlotStudents);
             await _unitOfWork.StudentClassRepository.UpdateRangeAsync(oldStudentClasses);
             await _unitOfWork.ClassRepository.UpdateAsync(oldClass);
         });
@@ -1230,5 +1230,26 @@ public class ClassService : IClassService
 
         await _serviceFactory.NotificationService.SendNotificationToManyAsync(receiverIds,
             $"$Class {sourceClass.Name} has been merged into {destClass.Name} to ensure number of students. Please recheck your schedule. No problem, unity is strength!",string.Empty);
+    }
+
+    public async Task<List<ClassWithSlotsModel>> GetMergableClass(Guid classId)
+    {
+        var sourceClass = await _serviceFactory.ClassService.GetClassDetailById(classId);
+
+        if (sourceClass.Status == ClassStatus.Finished)
+        {
+            throw new BadRequestException("This class is finished");
+        }
+
+        int notStartedSlots = sourceClass.Slots.Count(s => s.Status == SlotStatus.NotStarted);
+
+        var results = await _unitOfWork.ClassRepository.FindProjectedAsync<ClassWithSlotsModel>(
+            q => q.LevelId == sourceClass.LevelId && q.IsPublic && 
+                q.Id != sourceClass.Id &&
+                q.Slots.Count(s => s.Status == SlotStatus.NotStarted) == notStartedSlots
+        );
+
+        return results;
+    
     }
 }

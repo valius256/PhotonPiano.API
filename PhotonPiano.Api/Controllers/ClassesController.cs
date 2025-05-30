@@ -182,4 +182,23 @@ public class ClassesController : BaseController
         return NoContent();
     }
 
+    [HttpPut("merging")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Mege this class to another class")]
+    public async Task<IActionResult> MergeClass([FromBody] MergeClassRequest request)
+    {
+        await _serviceFactory.ClassService.MergeClass(request.Adapt<MergeClassModel>(),
+            CurrentAccountId);
+
+        return NoContent();
+    }
+
+    [HttpGet("{id}/merging")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Get mergable class for a class")]
+    public async Task<ActionResult<List<ClassWithSlotsModel>>> GetMergableClass(
+        [FromRoute] Guid id)
+    {
+        return await _serviceFactory.ClassService.GetMergableClass(id);
+    }
 }

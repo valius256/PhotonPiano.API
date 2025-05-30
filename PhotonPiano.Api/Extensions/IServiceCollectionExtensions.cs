@@ -183,7 +183,7 @@ public static class IServiceCollectionExtensions
 
         TypeAdapterConfig<AccountWithTuitionModel, AccountResponse>.NewConfig()
             .Map(dest => dest.TuitionStatus, src => src.StudentClasses.Count > 0 && src.StudentClasses.All(sc => sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed)) ?
-                TuitionStatus.FullyPaid : (src.StudentClasses.Count > 0  && src.StudentClasses.Any(sc => !sc.Tutions.Any(sc => sc.PaymentStatus == PaymentStatus.Succeed)) ? TuitionStatus.InDebt : TuitionStatus.NoTuition));
+                TuitionStatus.FullyPaid : (src.StudentClasses.Count > 0  && src.StudentClasses.Any(sc => sc.Tutions.Count > 0 && !sc.Tutions.Any(sc => sc.PaymentStatus == PaymentStatus.Succeed)) ? TuitionStatus.InDebt : TuitionStatus.NoTuition));
         return services;
     }
 

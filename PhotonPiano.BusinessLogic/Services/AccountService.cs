@@ -153,8 +153,8 @@ public class AccountService : IAccountService
                 a => accountStatuses.Count == 0 || accountStatuses.Contains(a.Status),
                 a => tuitionStatuses.Count == 0 ||
                     (tuitionStatuses.Contains(TuitionStatus.NoTuition) && a.StudentClasses.Count == 0) ||
-                    (tuitionStatuses.Contains(TuitionStatus.FullyPaid) && a.StudentClasses.Count > 0  && a.StudentClasses.All(sc => sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed))) || 
-                    (tuitionStatuses.Contains(TuitionStatus.InDebt) && a.StudentClasses.Count > 0 && a.StudentClasses.Any(sc => !sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed)))
+                    (tuitionStatuses.Contains(TuitionStatus.FullyPaid) && a.StudentClasses.Count > 0  && a.StudentClasses.All(sc =>  sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed))) || 
+                    (tuitionStatuses.Contains(TuitionStatus.InDebt) && a.StudentClasses.Count > 0 && a.StudentClasses.Any(sc => sc.Tutions.Count > 0 && !sc.Tutions.Any(t => t.PaymentStatus == PaymentStatus.Succeed)))
                     
             ]
         );

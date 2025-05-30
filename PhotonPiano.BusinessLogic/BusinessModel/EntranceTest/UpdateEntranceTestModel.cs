@@ -5,6 +5,7 @@ namespace PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 
 public record UpdateEntranceTestModel
 {
+    public string? Name { get; init; }
     public Guid? RoomId { get; init; }
     
     public Shift? Shift { get; init; }

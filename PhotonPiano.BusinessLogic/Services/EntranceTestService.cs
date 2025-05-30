@@ -314,9 +314,10 @@ public class EntranceTestService : IEntranceTestService
 
         var testStatus = ShiftUtils.GetEntranceTestStatus(entranceTest.Date, entranceTest.Shift);
 
-        if (testStatus == EntranceTestStatus.Ended)
+        if (testStatus is EntranceTestStatus.OnGoing or EntranceTestStatus.Ended)
         {
-            throw new BadRequestException("Can't update since test has already ended.");
+            throw new BadRequestException(
+                $"Can't update since test is already {(testStatus == EntranceTestStatus.OnGoing ? "started" : "ended")}.");
         }
 
         updateModel.Adapt(entranceTest);
@@ -325,7 +326,8 @@ public class EntranceTestService : IEntranceTestService
         {
             if (await _unitOfWork.EntranceTestRepository.AnyAsync(t => t.Date == updateModel.Date
                                                                        && t.RoomId == updateModel.RoomId
-                                                                       && t.Shift == updateModel.Shift))
+                                                                       && t.Shift == updateModel.Shift
+                                                                       && t.Id != entranceTest.Id))
             {
                 throw new ConflictException("There is already an entrance test with the same date, shift and room.");
             }
@@ -380,15 +382,37 @@ public class EntranceTestService : IEntranceTestService
             entranceTest.RoomName = room.Name;
         }
 
-        entranceTest.Name = GetEntranceTestName(entranceTest);
+        if (!string.IsNullOrEmpty(updateModel.Name))
+        {
+            if (await _unitOfWork.EntranceTestRepository.AnyAsync(e => e.Name == updateModel.Name))
+            {
+                throw new ConflictException("Test name already exists.");
+            }
+
+            entranceTest.Name = updateModel.Name;
+        }
+        else
+        {
+            entranceTest.Name = GetEntranceTestName(entranceTest);
+        }
 
         entranceTest.UpdateById = currentUserFirebaseId;
         entranceTest.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
+        List<string> accountsToPushNoti =
+        [
+            ..entranceTest.EntranceTestStudents.Select(ets => ets.StudentFirebaseId).ToList(),
+            entranceTest.InstructorId ?? string.Empty
+        ];
+
+        await _serviceFactory.NotificationService.SendNotificationToManyAsync(accountsToPushNoti,
+            message: $"Test {entranceTest.Name} information has been updated!",
+            "", requiresSavingChanges: false);
+
         await _unitOfWork.SaveChangesAsync();
-        await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTest,
-            TimeSpan.FromHours(5));
-        await InvalidateEntranceTestCache(id);
+        // await _serviceFactory.RedisCacheService.SaveAsync($"entranceTest_{id}", entranceTest,
+        //     TimeSpan.FromHours(5));
+        // await InvalidateEntranceTestCache(id);
     }
 
     public async Task UpdateEntranceTestScoreAnnouncementStatus(Guid id, bool isAnnounced, AccountModel currentAccount)
@@ -435,7 +459,8 @@ public class EntranceTestService : IEntranceTestService
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
                 isAnnounced
                     ? $"Your entrance test ({test.Name}) results have been published!"
-                    : $"Your entrance test ({test.Name}) results have been unpublished!", "", requiresSavingChanges: false);
+                    : $"Your entrance test ({test.Name}) results have been unpublished!", "",
+                requiresSavingChanges: false);
         });
     }
 

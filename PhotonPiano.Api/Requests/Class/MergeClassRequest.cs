@@ -1,8 +1,6 @@
-﻿
-
-namespace PhotonPiano.BusinessLogic.BusinessModel.Class
+﻿namespace PhotonPiano.Api.Requests.Class
 {
-    public record MergeClassModel
+    public record MergeClassRequest
     {
         public Guid SourceClassId { get; init; }
         public Guid TargetClassId { get; init; }

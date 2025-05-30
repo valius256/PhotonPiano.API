@@ -35,4 +35,5 @@ public interface IClassService
 
     Task ShiftClassSchedule(ShiftClassScheduleModel shiftClassScheduleModel, string accountFirebaseId);
     Task MergeClass(MergeClassModel shiftClassScheduleModel, string accountFirebaseId);
+    Task<List<ClassWithSlotsModel>> GetMergableClass(Guid classId);
 }

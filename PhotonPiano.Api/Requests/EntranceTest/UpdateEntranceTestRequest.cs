@@ -5,6 +5,8 @@ namespace PhotonPiano.Api.Requests.EntranceTest;
 
 public record UpdateEntranceTestRequest : IValidatableObject
 {
+    public string? Name { get; init; }
+    
     public Guid? RoomId { get; init; }
 
     public Shift? Shift { get; init; }

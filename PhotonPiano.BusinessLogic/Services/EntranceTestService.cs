@@ -326,7 +326,8 @@ public class EntranceTestService : IEntranceTestService
         {
             if (await _unitOfWork.EntranceTestRepository.AnyAsync(t => t.Date == updateModel.Date
                                                                        && t.RoomId == updateModel.RoomId
-                                                                       && t.Shift == updateModel.Shift))
+                                                                       && t.Shift == updateModel.Shift
+                                                                       && t.Id != entranceTest.Id))
             {
                 throw new ConflictException("There is already an entrance test with the same date, shift and room.");
             }
@@ -381,7 +382,19 @@ public class EntranceTestService : IEntranceTestService
             entranceTest.RoomName = room.Name;
         }
 
-        entranceTest.Name = GetEntranceTestName(entranceTest);
+        if (!string.IsNullOrEmpty(updateModel.Name))
+        {
+            if (await _unitOfWork.EntranceTestRepository.AnyAsync(e => e.Name == updateModel.Name))
+            {
+                throw new ConflictException("Test name already exists.");
+            }
+
+            entranceTest.Name = updateModel.Name;
+        }
+        else
+        {
+            entranceTest.Name = GetEntranceTestName(entranceTest);
+        }
 
         entranceTest.UpdateById = currentUserFirebaseId;
         entranceTest.UpdatedAt = DateTime.UtcNow.AddHours(7);

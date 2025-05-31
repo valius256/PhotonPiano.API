@@ -142,6 +142,7 @@ public class ApplicationService : IApplicationService
                     set => set
                         .SetProperty(account => account.CurrentClassId, (Guid?)null)
                         .SetProperty(account => account.StudentStatus, StudentStatus.Leave)
+                        .SetProperty(account => account.WantToContinue, false)
                 );
 
                 createdApplication = await _unitOfWork.ApplicationRepository.AddAsync(application);

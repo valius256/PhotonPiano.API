@@ -346,4 +346,23 @@ public class AccountService : IAccountService
         await _unitOfWork.SaveChangesAsync();
         return account.Adapt<AccountModel>();
     }
+
+    public async Task RevertDropoutStatus(Guid accountId)
+    {
+        var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+        if (account is null)
+        {
+            throw new NotFoundException("Account not found");
+        }
+        if (account.Role != Role.Student)
+        {
+            throw new BadRequestException("This feature is applied with students only");
+        }
+        if (account.StudentStatus != StudentStatus.DropOut)
+        {
+            throw new BadRequestException("This student is not dropped out yet!");
+        }
+        account.StudentStatus = StudentStatus.WaitingForClass;
+        await _unitOfWork.SaveChangesAsync();
+    }
 }

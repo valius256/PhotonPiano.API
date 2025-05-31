@@ -537,9 +537,10 @@ public class ClassService : IClassService
         var classDetail = await GetClassDetailById(classId);
         if (classDetail is null) throw new NotFoundException("Class not found");
 
-        if (classDetail.Status != ClassStatus.NotStarted)
-            throw new BadRequestException("Cannot delete classes that are started");
-        if (classDetail.IsPublic) throw new BadRequestException("Cannot delete classes that are announced");
+        if (classDetail.Status == ClassStatus.Finished)
+            throw new BadRequestException("Cannot delete classes that are finished");
+
+        if (classDetail.StudentClasses.Count > 0) throw new BadRequestException("Cannot delete classes that have more than 1 student");
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -596,12 +597,12 @@ public class ClassService : IClassService
             await _unitOfWork.SaveChangesAsync();
         });
 
-        //if (classDetail.InstructorId != null)
-        //{
-        //    //send noti to teacher
-        //    var message = $"Lớp học {classDetail.Name} của bạn đã bị xóa!";
-        //    await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, message, "");
-        //}
+        if (classDetail.IsPublic && classDetail.InstructorId != null)
+        {
+            //send noti to teacher
+            var message = $"Lớp học {classDetail.Name} của bạn đã bị xóa!";
+            await _serviceFactory.NotificationService.SendNotificationAsync(classDetail.InstructorId, message, "");
+        }
     }
 
     public async Task PublishClass(Guid classId, string accountFirebaseId)

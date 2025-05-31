@@ -136,7 +136,14 @@ public class AccountsController : BaseController
         return Ok(result);
     }
 
-
+    [HttpPut("{studentId}/drop-out-removal")]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
+    [EndpointDescription("Revert drop out status of a learner")]
+    public async Task<IActionResult> RevertDropOut([FromRoute] Guid studentId)
+    {
+        await _serviceFactory.AccountService.RevertDropoutStatus(studentId);
+        return NoContent();
+    }
     //[HttpGet("{account-id}/attempt-stats")]
     //[FirebaseAuthorize]
     //public async Task<ActionResult> GetAttemptsStats([FromRoute(UserName = "account-id")] string accountId)

@@ -45,7 +45,9 @@ public class StatisticService : IStatisticService
         }
 
 
-        Expression<Func<Class, bool>> classFilter = c => !start.HasValue || (c.CreatedAt >= start && c.CreatedAt < end);
+        Expression<Func<Class, bool>> classFilter = !start.HasValue
+            ? c => c.IsPublic
+            : c => c.IsPublic && c.CreatedAt >= start && c.CreatedAt <= end;
         Expression<Func<Account, bool>> learnerFilter = a => a.Role == Role.Student &&
                                                              (!start.HasValue || (a.CreatedAt >= start &&
                                                                  a.CreatedAt < end));
@@ -76,7 +78,7 @@ public class StatisticService : IStatisticService
             var previousEnd = start.Value;
 
             compareClassCount = await _unitOfWork.ClassRepository.CountAsync(
-                c => c.CreatedAt >= previousStart && c.CreatedAt < previousEnd, hasTrackings: false);
+                c => c.IsPublic && c.CreatedAt >= previousStart && c.CreatedAt < previousEnd, hasTrackings: false);
 
             compareLearnerCount = await _unitOfWork.AccountRepository.CountAsync(
                 a => a.Role == Role.Student &&
@@ -213,13 +215,13 @@ public class StatisticService : IStatisticService
         }
 
         var learners = await _unitOfWork.AccountRepository.FindAsync(a => a.Role == Role.Student
-            && a.LevelId != null, hasTrackings: false);
-        
+                                                                          && a.LevelId != null, hasTrackings: false);
+
         var totalLearners = learners.Count;
-        
+
         var learnersCountByLevel = learners.GroupBy(l => l.LevelId ?? Guid.NewGuid())
             .ToDictionary(g => g.Key, g => g.Count());
-        
+
         var learnerStats = levels.Select(level =>
         {
             learnersCountByLevel.TryGetValue(level.Id, out var classCount);

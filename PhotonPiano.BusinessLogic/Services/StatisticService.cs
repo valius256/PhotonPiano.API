@@ -131,9 +131,9 @@ public class StatisticService : IStatisticService
             new StatModel
             {
                 Name = "TotalRevenue",
-                Value = currentRevenue,
+                Value = currentRevenue * (-1),
                 Unit = StatUnit.Count,
-                ValueCompareToLastMonth = currentRevenue - compareRevenue,
+                ValueCompareToLastMonth = (currentRevenue - compareRevenue) * (-1),
                 Month = month,
                 Year = year,
             }
@@ -174,7 +174,7 @@ public class StatisticService : IStatisticService
             revenueStats.Add(new StatModel
             {
                 Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month).Substring(0, 3),
-                Value = totalRevenue,
+                Value = totalRevenue * (-1),
                 Unit = StatUnit.Count,
                 Month = month,
                 Year = year,

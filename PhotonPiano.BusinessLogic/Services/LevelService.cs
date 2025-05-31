@@ -123,16 +123,22 @@ public class LevelService : ILevelService
 
     public async Task UpdateLevelMinimumGpaAsync(Guid id, UpdateLevelMinimumGpaModel model)
     {
-        if (model.MinimumGpa < 0 || model.MinimumGpa > 10)
+        if (model.MinimumGpa is < 0 or > 10)
+        {
             throw new BadRequestException("Minimum GPA must be between 0 and 10");
+        }
 
         var level = await _unitOfWork.LevelRepository.GetByIdAsync(id);
-        if (level is null || level.RecordStatus == RecordStatus.IsDeleted)
-            throw new NotFoundException($"Level with ID {level!.Id} not found");
+        
+        if (level is null)
+        {
+            throw new NotFoundException($"Level with ID {id} not found");
+        }
 
         level.MinimumGPA = model.MinimumGpa;
         level.UpdatedAt = DateTime.UtcNow.AddHours(7);
         await _unitOfWork.SaveChangesAsync();
+        await _serviceFactory.RedisCacheService.DeleteAsync(_cacheKey);
     }
 
     public async Task<LevelModel> CreateLevelAsync(CreateLevelModel createModel, AccountModel currentAccount)

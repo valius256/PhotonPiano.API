@@ -7,6 +7,7 @@ using PhotonPiano.Api.Requests.Payment;
 using PhotonPiano.Api.Requests.Query;
 using PhotonPiano.Api.Responses.EntranceTest;
 using PhotonPiano.Api.Responses.Payment;
+using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTest;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestResult;
 using PhotonPiano.BusinessLogic.BusinessModel.EntranceTestStudent;
@@ -55,6 +56,20 @@ public class EntranceTestsController : BaseController
         return entranceTest.Adapt<EntranceTestDetailResponse>();
     }
 
+    [HttpGet("{id}/available-teachers")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Get all available teachers for entrance test")]
+    public async Task<ActionResult<List<AccountModel>>> GetAvailableTeachersForTest([FromRoute] Guid id,
+        [FromQuery] QueryPagedRequestWithKeyword request)
+    {
+        var pagedResults = await _serviceFactory.EntranceTestService.GetPagedAvailableTeachersForTest(
+            request.Adapt<QueryPagedModelWithKeyword>(), id, base.CurrentAccount!);
+        
+        HttpContext.Response.Headers.AppendPagedResultMetaData(pagedResults);
+
+        return pagedResults.Items;
+    }
+
     [HttpPost]
     [CustomAuthorize(Roles = [Role.Staff])]
     [EndpointDescription("Create an entrance test")]
@@ -96,7 +111,7 @@ public class EntranceTestsController : BaseController
     {
         await _serviceFactory.EntranceTestService.UpdateEntranceTestScoreAnnouncementStatus(id,
             request.IsAnnounced, base.CurrentAccount!);
-        
+
         return NoContent();
     }
 

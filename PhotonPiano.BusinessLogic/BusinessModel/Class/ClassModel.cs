@@ -23,7 +23,7 @@ public record ClassModel
     public int Capacity { get; set; }
     public int MinimumStudents { get; init; }
     public int RequiredSlots { get; init; }
-    public int TotalSlots { get; init; }
+    public int TotalSlots { get; set; }
     public int StudentNumber { get; init; }
     public string? UpdateById { get; init; }
     public string? DeletedById { get; init; }

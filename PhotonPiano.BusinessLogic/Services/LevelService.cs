@@ -306,6 +306,7 @@ public class LevelService : ILevelService
             {
                 classModel.ClassTime = DateExtensions.FormatTime(matchedClass.Slots);
                 classModel.ClassDays = DateExtensions.FormatDays(matchedClass.Slots);
+                classModel.TotalSlots = matchedClass.Slots.Count;
                 classModel.Capacity = int.Parse(capacity?.ConfigValue ?? "1");
             }
         }

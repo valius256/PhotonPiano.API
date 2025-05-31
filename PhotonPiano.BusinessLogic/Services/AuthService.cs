@@ -132,7 +132,7 @@ public class AuthService : IAuthService
     {
         var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.RefreshToken == refreshToken);
 
-        if (account is null) throw new UnauthorizedException("Wrong refresh token");
+        if (account is null) throw new BadRequestException("Wrong refresh token");
 
         if (account.RefreshToken == string.Empty || account.RefreshTokenExpiryDate < DateTime.UtcNow.AddHours(7))
             throw new BadRequestException("Invalid refresh token or refresh token is expired");

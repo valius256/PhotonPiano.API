@@ -167,7 +167,7 @@ public class StatisticService : IStatisticService
                 .Where(t => t.CreatedAt >= start && t.CreatedAt < end);
 
             decimal totalRevenue = monthlyTransactions.Sum(t =>
-                t.TransactionType == TransactionType.Refund ? t.Amount : -t.Amount);
+                t.TransactionType == TransactionType.Refund ? -t.Amount : t.Amount);
 
             revenueStats.Add(new StatModel
             {

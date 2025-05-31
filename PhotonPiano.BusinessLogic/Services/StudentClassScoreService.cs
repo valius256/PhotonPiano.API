@@ -258,8 +258,9 @@ public class StudentClassScoreService : IStudentClassScoreService
                 studentClass.IsPassed = true;
                 studentClass.UpdateById = account.AccountFirebaseId;
                 studentClass.UpdatedAt = updateTime;
-                studentClassUpdates.Add(studentClass);
             }
+            studentClassUpdates.Add(studentClass);
+
 
             passedStudents.Add(studentClass);
 
@@ -286,38 +287,50 @@ public class StudentClassScoreService : IStudentClassScoreService
 
     private async Task SendClassCompletionNotifications(List<StudentClass> studentClasses, Class classInfo)
     {
-        var notifications = new List<(string recipientId, string title, string content)>();
+        //var notifications = new List<(string recipientId, string title, string content)>();
 
-        foreach (var studentClass in studentClasses.Where(sc => sc.GPA.HasValue))
+        //foreach (var studentClass in studentClasses.Where(sc => sc.GPA.HasValue))
+        //{
+        //    bool isPassed = studentClass.IsPassed;
+        //    var title = isPassed ? "Class Completion Notification" : "Class End Notification";
+        //    var content = isPassed
+        //        ? string.Format(PassedNotificationTemplate, classInfo.Name)
+        //        : string.Format(FailedNotificationTemplate, classInfo.Name);
+
+        //    notifications.Add((studentClass.StudentFirebaseId, title, content));
+        //}
+
+        //// Add instructor notification if an instructor exists
+        //if (!string.IsNullOrEmpty(classInfo.InstructorId))
+        //{
+        //    notifications.Add((
+        //        classInfo.InstructorId,
+        //        "Scores have been published",
+        //        string.Format(InstructorNotificationTemplate, classInfo.Name)
+        //    ));
+        //}
+
+        //int batchSize = 5;
+        //for (int i = 0; i < notifications.Count; i += batchSize)
+        //{
+        //    var batch = notifications.Skip(i).Take(batchSize).ToList();
+        //    foreach (var (recipientId, title, content) in batch)
+        //    {
+        //        await _serviceFactory.NotificationService.SendNotificationAsync(recipientId, title, content);
+        //    }
+        //}
+
+        await _serviceFactory.NotificationService.SendNotificationToManyAsync([.. studentClasses.Where(sc => sc.IsPassed).Select(sc => sc.StudentFirebaseId)],
+            $"[Class Completion Notification] " + string.Format(PassedNotificationTemplate, classInfo.Name), string.Empty);
+
+        await _serviceFactory.NotificationService.SendNotificationToManyAsync([.. studentClasses.Where(sc => !sc.IsPassed).Select(sc => sc.StudentFirebaseId)],
+            $"[Class End Notification] " + string.Format(FailedNotificationTemplate, classInfo.Name), string.Empty);
+        if (classInfo.InstructorId is not null)
         {
-            bool isPassed = studentClass.IsPassed;
-            var title = isPassed ? "Class Completion Notification" : "Class End Notification";
-            var content = isPassed
-                ? string.Format(PassedNotificationTemplate, classInfo.Name)
-                : string.Format(FailedNotificationTemplate, classInfo.Name);
-
-            notifications.Add((studentClass.StudentFirebaseId, title, content));
+            await _serviceFactory.NotificationService.SendNotificationAsync(classInfo.InstructorId,
+            $"[Class Completion Notification] ",string.Format(InstructorNotificationTemplate, classInfo.Name));
         }
-
-        // Add instructor notification if an instructor exists
-        if (!string.IsNullOrEmpty(classInfo.InstructorId))
-        {
-            notifications.Add((
-                classInfo.InstructorId,
-                "Scores have been published",
-                string.Format(InstructorNotificationTemplate, classInfo.Name)
-            ));
-        }
-
-        int batchSize = 5;
-        for (int i = 0; i < notifications.Count; i += batchSize)
-        {
-            var batch = notifications.Skip(i).Take(batchSize).ToList();
-            foreach (var (recipientId, title, content) in batch)
-            {
-                await _serviceFactory.NotificationService.SendNotificationAsync(recipientId, title, content);
-            }
-        }
+        
     }
 
     public async Task<ClassScoreViewModel> GetClassScoresWithCriteria(Guid classId)

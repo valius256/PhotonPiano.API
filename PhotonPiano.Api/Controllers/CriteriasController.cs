@@ -2,10 +2,8 @@ using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
-using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.Criteria;
 using PhotonPiano.Api.Responses.Criteria;
-using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.BusinessModel.Criteria;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -20,7 +18,7 @@ public class CriteriasController : BaseController
 
     public CriteriasController(IServiceFactory serviceFactory)
     {
-        _serviceFactory = serviceFactory;
+        _serviceFactory = serviceFactory; 
     }
 
     [HttpGet("all-minimal")]

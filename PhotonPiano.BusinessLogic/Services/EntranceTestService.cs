@@ -130,6 +130,36 @@ public class EntranceTestService : IEntranceTestService
         return entranceTest;
     }
 
+    public async Task<PagedResult<AccountModel>> GetPagedAvailableTeachersForTest(QueryPagedModelWithKeyword queryModel,
+        Guid testId, AccountModel currentAccount)
+    {
+        var (page, size, column, desc, keyword) = queryModel;
+
+        var likeKeyword = queryModel.GetLikeKeyword();
+
+        var test = await _unitOfWork.EntranceTestRepository.FindSingleAsync(t => t.Id == testId, hasTrackings: false);
+
+        if (test is null)
+        {
+            throw new NotFoundException("Test not found.");
+        }
+
+        var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedAsync(
+            page, size, column == "Id" ? "AccountFirebaseId" : column, desc, expressions:
+            [
+                a => a.Role == Role.Instructor && !a.Teacherslots.Any(s =>
+                         s.Date == test.Date && s.Shift == test.Shift) &&
+                     !a.InstructorEntranceTests.Any(t => t.Date == test.Date && t.Shift == test.Shift)
+                     && a.AccountFirebaseId != test.InstructorId,
+                a => string.IsNullOrEmpty(keyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.Email), likeKeyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.FullName ?? string.Empty), likeKeyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.UserName ?? string.Empty), likeKeyword)
+            ]);
+
+        return pagedResult.Adapt<PagedResult<AccountModel>>();
+    }
+
     public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel createModel,
         AccountModel currentAccount)
     {
@@ -454,12 +484,15 @@ public class EntranceTestService : IEntranceTestService
                     isAnnounced));
 
             await _unitOfWork.AccountRepository.ExecuteUpdateAsync(a => studentIds.Contains(a.AccountFirebaseId),
-                setter => setter.SetProperty(x => x.StudentStatus, StudentStatus.WaitingForClass));
+                setter => setter.SetProperty(x => x.StudentStatus, isAnnounced
+                    ? StudentStatus.WaitingForClass
+                    : StudentStatus.AttemptingEntranceTest));
 
             await _serviceFactory.NotificationService.SendNotificationToManyAsync(studentIds.ToList(),
                 isAnnounced
                     ? $"Your entrance test ({test.Name}) results have been published!"
-                    : $"Your entrance test ({test.Name}) results have been unpublished!", "",
+                    : $"Your entrance test ({test.Name}) results have been unpublished and are being adjusted, please be patient and always check your notification status for updates!",
+                "",
                 requiresSavingChanges: false);
         });
     }
@@ -1201,7 +1234,9 @@ public class EntranceTestService : IEntranceTestService
             throw new BadRequestException("Some students are not valid to be updated.");
         }
 
-        var criterias =
+        var (theoryPercentage, practicalPercentage) = await GetScorePercentagesAsync();
+
+        var criteriaList =
             await _unitOfWork.CriteriaRepository.FindAsync(c => c.For == CriteriaFor.EntranceTest, hasTrackings: false);
 
         List<EntranceTestResult> entranceTestResultsToAdd = [];
@@ -1233,7 +1268,7 @@ public class EntranceTestService : IEntranceTestService
 
             foreach (var result in requestModel.Scores)
             {
-                var criteria = criterias.FirstOrDefault(c => c.Id == result.CriteriaId);
+                var criteria = criteriaList.FirstOrDefault(c => c.Id == result.CriteriaId);
 
                 if (criteria is null)
                 {
@@ -1256,12 +1291,12 @@ public class EntranceTestService : IEntranceTestService
                 entranceTestStudent.EntranceTestResults.Add(resultToAdd);
 
                 practicalScore += result.Score * (criteria.Weight / 100);
-
-                entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
-                    Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
             }
 
-            entranceTestStudent.BandScore = ((decimal)theoryScore + practicalScore) / 2;
+            entranceTestStudent.BandScore = ((decimal)theoryScore * theoryPercentage / 100 +
+                                             practicalScore * practicalPercentage / 100);
+            entranceTestStudent.LevelId = await _serviceFactory.LevelService.GetLevelIdFromScores(
+                Convert.ToDecimal(entranceTestStudent.TheoraticalScore ?? 0), practicalScore);
         }
 
         await _unitOfWork.ExecuteInTransactionAsync(async () =>

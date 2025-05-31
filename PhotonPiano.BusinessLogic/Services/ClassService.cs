@@ -38,7 +38,7 @@ public class ClassService : IClassService
                       "0");
 
 
-        var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id, hasSplitQuery: true, hasTrackings: false);
+        var classDetail = await _unitOfWork.ClassRepository.FindSingleProjectedAsync<ClassDetailModel>(c => c.Id == id, hasSplitQuery: true, hasTrackings: false, option: TrackingOption.IdentityResolution);
         if (classDetail is null) throw new NotFoundException("Class not found");
 
         var level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classDetail.LevelId)

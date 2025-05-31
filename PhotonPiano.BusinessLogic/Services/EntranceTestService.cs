@@ -130,6 +130,36 @@ public class EntranceTestService : IEntranceTestService
         return entranceTest;
     }
 
+    public async Task<PagedResult<AccountModel>> GetPagedAvailableTeachersForTest(QueryPagedModelWithKeyword queryModel,
+        Guid testId, AccountModel currentAccount)
+    {
+        var (page, size, column, desc, keyword) = queryModel;
+
+        var likeKeyword = queryModel.GetLikeKeyword();
+
+        var test = await _unitOfWork.EntranceTestRepository.FindSingleAsync(t => t.Id == testId, hasTrackings: false);
+
+        if (test is null)
+        {
+            throw new NotFoundException("Test not found.");
+        }
+
+        var pagedResult = await _unitOfWork.AccountRepository.GetPaginatedAsync(
+            page, size, column == "Id" ? "AccountFirebaseId" : column, desc, expressions:
+            [
+                a => a.Role == Role.Instructor && !a.Teacherslots.Any(s =>
+                         s.Date == test.Date && s.Shift == test.Shift) &&
+                     !a.InstructorEntranceTests.Any(t => t.Date == test.Date && t.Shift == test.Shift)
+                     && a.AccountFirebaseId != test.InstructorId,
+                a => string.IsNullOrEmpty(keyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.Email), likeKeyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.FullName ?? string.Empty), likeKeyword) ||
+                     EF.Functions.ILike(EF.Functions.Unaccent(a.UserName ?? string.Empty), likeKeyword)
+            ]);
+
+        return pagedResult.Adapt<PagedResult<AccountModel>>();
+    }
+
     public async Task<EntranceTestDetailModel> CreateEntranceTest(CreateEntranceTestModel createModel,
         AccountModel currentAccount)
     {

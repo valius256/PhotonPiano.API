@@ -76,7 +76,7 @@ public class SystemConfigService : ISystemConfigService
         await _unitOfWork.SystemConfigRepository.UpdateAsync(config.Adapt<SystemConfig>());
         await _unitOfWork.SaveChangesAsync();
 
-        await _serviceFactory.RedisCacheService.DeleteByPatternAsync(
+        await _serviceFactory.RedisCacheService.DeleteAsync(
             $"SystemConfig:{updateSystemConfigModel.ConfigName}");
     }
 

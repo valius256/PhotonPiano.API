@@ -24,6 +24,8 @@ public class SystemConfigService : ISystemConfigService
         ConfigNames.TestFee, ConfigNames.TheoryPercentage, ConfigNames.PracticePercentage
     ];
 
+    private readonly IServiceFactory _serviceFactory;
+
     private readonly List<string> _surveyConfigNames =
     [
         ConfigNames.InstrumentName, ConfigNames.InstrumentFrequencyInResponse, ConfigNames.MaxQuestionsPerSurvey,
@@ -31,7 +33,6 @@ public class SystemConfigService : ISystemConfigService
     ];
 
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IServiceFactory _serviceFactory;
 
     public SystemConfigService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory)
     {
@@ -53,25 +54,16 @@ public class SystemConfigService : ISystemConfigService
         {
             var cachedConfig = await _serviceFactory.RedisCacheService.GetAsync<SystemConfigModel>(cacheKey);
 
-            if (cachedConfig is not null)
-            {
-                return cachedConfig;
-            }
+            if (cachedConfig is not null) return cachedConfig;
         }
 
         var config = await _unitOfWork.SystemConfigRepository.FindFirstAsync(c => c.ConfigName == name, hasTrackings);
 
-        if (config is null)
-        {
-            throw new NotFoundException("Config not found");
-        }
+        if (config is null) throw new NotFoundException("Config not found");
 
         var result = config.Adapt<SystemConfigModel>();
 
-        if (requiresCaching)
-        {
-            await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(1));
-        }
+        if (requiresCaching) await _serviceFactory.RedisCacheService.SaveAsync(cacheKey, result, TimeSpan.FromDays(1));
 
         return result;
     }
@@ -83,6 +75,8 @@ public class SystemConfigService : ISystemConfigService
 
         await _unitOfWork.SystemConfigRepository.UpdateAsync(config.Adapt<SystemConfig>());
         await _unitOfWork.SaveChangesAsync();
+
+        await _serviceFactory.RedisCacheService.DeleteByPatternAsync("SystemConfig*");
     }
 
     [Obsolete]

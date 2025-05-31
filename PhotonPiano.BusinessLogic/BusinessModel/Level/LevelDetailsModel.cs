@@ -7,5 +7,5 @@ public record LevelDetailsModel : LevelModel
 {
     public ICollection<ClassModel> Classes { get; set; } = [];
 
-    public ICollection<AccountModel> Accounts { get; set; } = [];
+    public ICollection<AccountWithTuitionModel> Accounts { get; set; } = [];
 }

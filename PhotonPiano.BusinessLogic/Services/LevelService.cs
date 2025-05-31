@@ -279,7 +279,7 @@ public class LevelService : ILevelService
 
         if (level is null) throw new NotFoundException("Level not found");
 
-
+            
         // khong load bang mapping vi issue take time so long
         await LoadAndSetClassTimesAsync(level.Classes.ToList());
 
@@ -290,7 +290,7 @@ public class LevelService : ILevelService
     private async Task LoadAndSetClassTimesAsync(List<ClassModel> classModels)
     {
         var classIds = classModels
-            .Where(c => c is { IsPublic: true, Status: ClassStatus.NotStarted })
+            //.Where(c => c is { IsPublic: true, Status: ClassStatus.NotStarted })
             .Select(c => c.Id)
             .ToList();
         // && c.Status == ClassStatus.NotStarted

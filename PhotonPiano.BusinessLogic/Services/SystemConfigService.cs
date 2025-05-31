@@ -67,7 +67,7 @@ public class SystemConfigService : ISystemConfigService
 
         return result;
     }
-
+ 
     public async Task SetConfigValue(UpdateSystemConfigModel updateSystemConfigModel)
     {
         var config = await GetConfig(updateSystemConfigModel.ConfigName);

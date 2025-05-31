@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Class;
+using PhotonPiano.Api.Requests.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
@@ -200,5 +201,123 @@ public class ClassesController : BaseController
         [FromRoute] Guid id)
     {
         return await _serviceFactory.ClassService.GetMergableClass(id);
+    }
+
+    // Student Score Publishing (fixed)
+    [HttpPost("{id}/score-publishing-status")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Publish Scores for a Class")]
+    public async Task<IActionResult> PublishClassScores([FromRoute] Guid id)
+    {
+        await _serviceFactory.StudentClassScoreService.PublishScore(id, CurrentAccount!);
+        return NoContent();
+    }
+
+    // Grade Template Download (fixed)
+    [HttpGet("{id}/grade-template")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Download Grade Template Excel")]
+    public async Task<IActionResult> DownloadClassGradeTemplate([FromRoute] Guid id)
+    {
+        var templateBytes = await _serviceFactory.StudentClassService.GenerateGradeTemplate(id);
+        return File(templateBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "grade_template.xlsx");
+    }
+
+    // Import Scores (fixed)
+    [HttpPost("{classId}/student-scores")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Import student scores from an Excel file")]
+    public async Task<ActionResult> ImportStudentScores([FromRoute] Guid classId, IFormFile file)
+    {
+        using var stream = file.OpenReadStream();
+        var success = await _serviceFactory.StudentClassService.ImportScores(classId, stream, CurrentAccount!);
+        return success ? NoContent() : NotFound();
+    }
+
+    // Update Student Status (fixed)
+    [HttpPut("{id}/students/{student-id}/status")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Change Student Status in Class")]
+    public async Task<IActionResult> UpdateStudentClassStatus(
+        [FromRoute] Guid id,
+        [FromRoute(Name = "student-id")] string studentId,
+        [FromBody] ChangeStudentStatusRequest request)
+    {
+        // Ensure the class ID in the route matches the one in the request
+        if (id != request.ClassId)
+        {
+            return BadRequest("ClassId in route must match ClassId in request body");
+        }
+
+        var success = await _serviceFactory.StudentClassService.UpdateStudentStatusAsync(
+            studentId, request.NewStatus, CurrentAccount!, id);
+        return success ? NoContent() : BadRequest("Failed to change student status");
+    }
+
+    // Update Student Score
+    // [HttpPut("{classId}/student/scores")]
+    // [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    // [EndpointDescription("Update a student's score for a specific criteria")]
+    // public async Task<IActionResult> UpdateStudentScore(
+    //     [FromRoute] Guid classId,
+    //     [FromBody] UpdateStudentScoreRequest request)
+    // {
+    //     var model = new UpdateStudentScoreModel
+    //     {
+    //         StudentClassId = request.StudentClassId,
+    //         CriteriaId = request.CriteriaId,
+    //         Score = request.Score
+    //     };
+    //
+    //     var success = await _serviceFactory.StudentClassService.UpdateStudentScore(model, CurrentAccount!);
+    //     return success ? NoContent() : BadRequest("Failed to update student score");
+    // }
+
+    // Batch Update Scores (fixed)
+    [HttpPut("{id}/student-scores")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Update scores for multiple students and criteria in a batch")]
+    public async Task<IActionResult> UpdateBatchStudentScores(
+        [FromRoute] Guid id,
+        [FromBody] UpdateBatchStudentScoreRequest request)
+    {
+        var success = await _serviceFactory.StudentClassService.UpdateBatchStudentClassScores(
+            request.Adapt<UpdateBatchStudentClassScoreModel>(), CurrentAccount!);
+        return success
+            ? NoContent()
+            : BadRequest("Failed to update batch student scores");
+    }
+
+    // Get Class Scores (fixed)
+    [HttpGet("{id}/student-scores")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Get scores for all students in a class with criteria details")]
+    public async Task<IActionResult> GetAllStudentScores([FromRoute] Guid id)
+    {
+        var classScores = await _serviceFactory.StudentClassScoreService.GetClassScoresWithCriteria(id);
+        return Ok(classScores);
+    }
+
+    // Get Student Detailed Scores (need to fix)
+    [HttpGet("{id}/students/{student-id}/detailed-scores")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor, Role.Student])]
+    [EndpointDescription("Get detailed scores for a specific student in a class")]
+    public async Task<IActionResult> GetStudentDetailedScores(
+        [FromRoute] Guid id,
+        [FromRoute(Name = "student-id")] string studentId)
+    {
+        var detailedScores = await _serviceFactory.StudentClassScoreService.GetStudentDetailedScores(id, studentId);
+        return Ok(detailedScores);
+    }
+
+    // Rollback Published Scores
+    [HttpPost("{id}/scores/rollback-publish")]
+    [CustomAuthorize(Roles = [Role.Staff])]
+    [EndpointDescription("Rollback Published Scores")]
+    public async Task<IActionResult> RollbackClassScorePublish([FromRoute] Guid id)
+    {
+        await _serviceFactory.StudentClassScoreService.RollbackPublishScores(id, CurrentAccount!);
+        return NoContent();
     }
 }

@@ -38,6 +38,7 @@ public class StudentClassScoreService : IStudentClassScoreService
         "Scores for class {0} have been published to students.";
 
     private const decimal DefaultPassingGrade = 5.0m;
+
     public StudentClassScoreService(IUnitOfWork unitOfWork, IServiceFactory serviceFactory,
         IServiceProvider serviceProvider, ILogger<ServiceFactory> logger)
     {
@@ -88,7 +89,7 @@ public class StudentClassScoreService : IStudentClassScoreService
                 var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
                 backgroundJobClient.Enqueue<CertificateService>(x => x.AutoGenerateCertificatesAsync(classId));
             }
-            
+
             await SendClassCompletionNotifications(studentClasses, classInfo);
         }
         catch (Exception ex)
@@ -105,21 +106,22 @@ public class StudentClassScoreService : IStudentClassScoreService
         {
             throw new NotFoundException("Class not found");
         }
-        
+
         if (classInfo.LevelId == Guid.Empty)
         {
             throw new BadRequestException("Cannot publish scores: The class has no associated level.");
         }
-        
+
         if (classInfo.Level == null)
         {
             classInfo.Level = await _unitOfWork.LevelRepository.FindSingleAsync(l => l.Id == classInfo.LevelId);
             if (classInfo.Level == null)
             {
-                throw new NotFoundException($"Level with ID {classInfo.LevelId} not found. Cannot proceed with score publishing.");
+                throw new NotFoundException(
+                    $"Level with ID {classInfo.LevelId} not found. Cannot proceed with score publishing.");
             }
         }
-        
+
         switch (classInfo.Status)
         {
             case ClassStatus.Finished:
@@ -225,8 +227,8 @@ public class StudentClassScoreService : IStudentClassScoreService
         var studentUpdates = new List<Account>();
         var passedStudents = new List<StudentClass>();
         var studentAttendanceResults = await _serviceFactory.SlotService.GetAllAttendanceResultByClassId(classId);
-        
-        
+
+
         decimal minimumGpa = classInfo.Level?.MinimumGPA ?? DefaultPassingGrade;
         foreach (var studentClass in studentClasses)
         {
@@ -242,15 +244,15 @@ public class StudentClassScoreService : IStudentClassScoreService
                 studentAttendanceResults.FirstOrDefault(x => x.StudentId == student.AccountFirebaseId);
             if (studentAttendanceResult == null)
             {
-                _logger.LogWarning("No attendance data found for student {StudentId} in class {ClassId}", 
+                _logger.LogWarning("No attendance data found for student {StudentId} in class {ClassId}",
                     student.AccountFirebaseId, classId);
             }
 
             var isPassed = false;
 
-            if (studentAttendanceResult != null && 
-                studentAttendanceResult.IsPassed && 
-                studentClass.GPA.HasValue && 
+            if (studentAttendanceResult != null &&
+                studentAttendanceResult.IsPassed &&
+                studentClass.GPA.HasValue &&
                 studentClass.GPA.Value >= minimumGpa)
             {
                 studentClass.IsPassed = true;
@@ -274,10 +276,10 @@ public class StudentClassScoreService : IStudentClassScoreService
                 student.StudentStatus = StudentStatus.WaitingForClass;
                 student.UpdatedAt = updateTime;
             }
+
             studentUpdates.Add(student);
         }
-        
-      
+
 
         return (studentClassUpdates, studentUpdates, passedStudents);
     }
@@ -362,8 +364,9 @@ public class StudentClassScoreService : IStudentClassScoreService
 
             // Get all scores in one query
             var studentClassIds = studentClasses.Select(sc => sc.Id).ToList();
-            var allScores = await _unitOfWork.StudentClassScoreRepository.FindAsync(
-                scs => studentClassIds.Contains(scs.StudentClassId));
+            var allScores =
+                await _unitOfWork.StudentClassScoreRepository.FindAsync(scs =>
+                    studentClassIds.Contains(scs.StudentClassId));
 
             // Get all criteria in one query
             var criteriaIds = allScores.Select(scs => scs.CriteriaId).Distinct().ToList();
@@ -450,39 +453,39 @@ public class StudentClassScoreService : IStudentClassScoreService
         }
     }
 
-    public async Task<StudentDetailedScoreViewModel> GetStudentDetailedScores(Guid studentClassId)
+    public async Task<StudentDetailedScoreViewModel> GetStudentDetailedScores(Guid classId, string studentId)
     {
         // Validate input
-        if (studentClassId == Guid.Empty)
-        {
-            throw new ArgumentException("Invalid student class ID", nameof(studentClassId));
-        }
+        if (classId == Guid.Empty) throw new ArgumentException("Invalid class ID", nameof(classId));
 
+        if (string.IsNullOrEmpty(studentId)) throw new ArgumentException("Invalid student ID", nameof(studentId));
+        
         // Get student class information
-        var studentClass = await _unitOfWork.StudentClassRepository.GetByIdAsync(studentClassId);
+        var studentClass = await _unitOfWork.StudentClassRepository.FindFirstAsync(sc =>
+            sc.ClassId == classId && sc.StudentFirebaseId == studentId);
+
         if (studentClass == null)
         {
-            throw new NotFoundException($"Student class with ID {studentClassId} not found");
+            throw new NotFoundException($"Student with ID {studentId} not found in class {classId}");
         }
 
         // Get class information
-        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(studentClass.ClassId);
+        var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
         if (classInfo == null)
         {
-            throw new NotFoundException($"Class with ID {studentClass.ClassId} not found");
+            throw new NotFoundException($"Class with ID {classId} not found");
         }
-
         // Get student information
         var student = await _unitOfWork.AccountRepository.FindFirstAsync(a =>
-            a.AccountFirebaseId == studentClass.StudentFirebaseId);
+            a.AccountFirebaseId == studentId);
         if (student == null)
         {
-            throw new NotFoundException($"Student with ID {studentClass.StudentFirebaseId} not found");
+            throw new NotFoundException($"Student with ID {studentId} not found");
         }
 
-        // Get all scores for this student in the class
+        // Get all scores for this student in the class using the StudentClass ID
         var scores =
-            await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == studentClassId);
+            await _unitOfWork.StudentClassScoreRepository.FindAsync(scs => scs.StudentClassId == studentClass.Id);
 
         // Get all criteria IDs from the scores
         var criteriaIds = scores.Select(s => s.CriteriaId).Distinct().ToList();
@@ -524,10 +527,10 @@ public class StudentClassScoreService : IStudentClassScoreService
         // Create and return the view model
         return new StudentDetailedScoreViewModel
         {
-            StudentId = studentClass.StudentFirebaseId,
+            StudentId = studentId,
             StudentName = student.FullName ?? student.UserName ?? "Unknown Student",
-            StudentClassId = studentClassId,
-            ClassId = studentClass.ClassId,
+            StudentClassId = studentClass.Id,
+            ClassId = classId,
             ClassName = classInfo.Name,
             Gpa = studentClass.GPA,
             IsPassed = studentClass.IsPassed,
@@ -637,13 +640,14 @@ public class StudentClassScoreService : IStudentClassScoreService
         // Combine for final sort order
         return baseOrder + subOrder;
     }
-    
+
     public async Task RollbackPublishScores(Guid classId, AccountModel account)
     {
         if (classId == Guid.Empty)
         {
             throw new ArgumentException("Invalid class ID", nameof(classId));
         }
+
         try
         {
             var classInfo = await _unitOfWork.ClassRepository.FindSingleAsync(c => c.Id == classId);
@@ -651,7 +655,7 @@ public class StudentClassScoreService : IStudentClassScoreService
             {
                 throw new NotFoundException("Class not found");
             }
-            
+
             if (!classInfo.IsScorePublished)
             {
                 throw new BadRequestException("Cannot rollback: The class scores have not been published yet.");
@@ -665,35 +669,37 @@ public class StudentClassScoreService : IStudentClassScoreService
                     throw new NotFoundException("Level not found");
                 }
             }
+
             var studentClasses = await _unitOfWork.StudentClassRepository.FindAsync(sc => sc.ClassId == classId);
             if (!studentClasses.Any())
             {
                 throw new NotFoundException("No students enrolled in this class.");
             }
-            
+
             // Get all student accounts
             var studentFirebaseIds = studentClasses.Select(sc => sc.StudentFirebaseId).Distinct().ToList();
             var studentAccounts = await _unitOfWork.AccountRepository
                 .FindAsync(a => studentFirebaseIds.Contains(a.AccountFirebaseId));
-        
+
             classInfo.IsScorePublished = false;
             classInfo.UpdateById = account.AccountFirebaseId;
             classInfo.UpdatedAt = DateTime.UtcNow.AddHours(7);
-            
+
             var studentClassUpdates = new List<StudentClass>();
             var studentAccountUpdates = new List<Account>();
 
             foreach (var studentClass in studentClasses)
             {
                 studentClass.IsPassed = false;
-                studentClass.CertificateUrl = null;       
-                studentClass.CertificateHtml = null;      
-                studentClass.HasCertificateHtml = false;  
+                studentClass.CertificateUrl = null;
+                studentClass.CertificateHtml = null;
+                studentClass.HasCertificateHtml = false;
                 studentClass.UpdateById = account.AccountFirebaseId;
                 studentClass.UpdatedAt = DateTime.UtcNow.AddHours(7);
                 studentClassUpdates.Add(studentClass);
-                
-                var student = studentAccounts.FirstOrDefault(a => a.AccountFirebaseId == studentClass.StudentFirebaseId);
+
+                var student =
+                    studentAccounts.FirstOrDefault(a => a.AccountFirebaseId == studentClass.StudentFirebaseId);
                 if (student != null)
                 {
                     // Only reset level for students who passed and were advanced to next level
@@ -705,14 +711,14 @@ public class StudentClassScoreService : IStudentClassScoreService
                             student.LevelId = classInfo.LevelId;
                         }
                     }
-                
+
                     // Reset status back to InClass for all students
                     student.StudentStatus = StudentStatus.InClass;
                     student.UpdatedAt = DateTime.UtcNow.AddHours(7);
                     studentAccountUpdates.Add(student);
                 }
             }
-            
+
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 // Update class first
@@ -731,10 +737,10 @@ public class StudentClassScoreService : IStudentClassScoreService
             throw;
         }
     }
-    
+
     private async Task SendScoreRollbackNotifications(List<StudentClass> studentClasses, Class classInfo)
     {
-        const string RollbackNotificationTemplate = 
+        const string RollbackNotificationTemplate =
             "The music center has identified some issues with the scoring process for class {0}. As a result, the published scores have been temporarily rolled back while we resolve these concerns. We apologize for any inconvenience and will notify you once the corrected scores are available.";
 
         var notifications = new List<(string recipientId, string title, string content)>();

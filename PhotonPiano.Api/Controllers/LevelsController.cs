@@ -2,6 +2,7 @@ using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using PhotonPiano.Api.Attributes;
 using PhotonPiano.Api.Requests.Level;
+using PhotonPiano.Api.Responses.Level;
 using PhotonPiano.BusinessLogic.BusinessModel.Level;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -28,9 +29,10 @@ namespace PhotonPiano.Api.Controllers
 
         [HttpGet("{id}")]
         [EndpointDescription("Get level by id")]
-        public async Task<ActionResult<LevelDetailsModel>> GetLevel([FromRoute] Guid id)
+        public async Task<ActionResult<LevelDetailsResponse>> GetLevel([FromRoute] Guid id)
         {
-            return await _serviceFactory.LevelService.GetLevelDetailsAsync(id);
+            var result = await _serviceFactory.LevelService.GetLevelDetailsAsync(id);
+            return result.Adapt<LevelDetailsResponse>();
         }
 
         [HttpPost]

@@ -136,7 +136,9 @@ app.UseResponseCompression();
 
 app.MapControllers();
 
-app.MapPrometheusScrapingEndpoint();
+// app.MapPrometheusScrapingEndpoint();
+
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.MapHealthChecks("/health");
 

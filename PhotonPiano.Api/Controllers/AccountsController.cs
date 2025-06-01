@@ -139,7 +139,7 @@ public class AccountsController : BaseController
     [HttpPut("{studentId}/drop-out-removal")]
     [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
     [EndpointDescription("Revert drop out status of a learner")]
-    public async Task<IActionResult> RevertDropOut([FromRoute] Guid studentId)
+    public async Task<IActionResult> RevertDropOut([FromRoute] string studentId)
     {
         await _serviceFactory.AccountService.RevertDropoutStatus(studentId);
         return NoContent();

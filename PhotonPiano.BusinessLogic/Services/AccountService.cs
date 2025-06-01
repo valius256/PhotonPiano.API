@@ -347,9 +347,9 @@ public class AccountService : IAccountService
         return account.Adapt<AccountModel>();
     }
 
-    public async Task RevertDropoutStatus(Guid accountId)
+    public async Task RevertDropoutStatus(string accountId)
     {
-        var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+        var account = await _unitOfWork.AccountRepository.FindFirstAsync(a => a.AccountFirebaseId == accountId);
         if (account is null)
         {
             throw new NotFoundException("Account not found");
@@ -364,5 +364,8 @@ public class AccountService : IAccountService
         }
         account.StudentStatus = StudentStatus.WaitingForClass;
         await _unitOfWork.SaveChangesAsync();
+
+        await _serviceFactory.NotificationService.SendNotificationAsync(accountId,
+            "[Revert Dropout Status] Your learner account's DropOut status has been removed. You can now register classes again! Thank you for using our service!", "");
     }
 }

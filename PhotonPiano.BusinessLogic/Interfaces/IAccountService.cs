@@ -34,5 +34,5 @@ public interface IAccountService
     Task<AccountModel> CreateNewStaff(CreateSystemAccountModel createSystemAccountModel);
     Task<AccountModel> CreateNewTeacher(CreateSystemAccountModel createSystemAccountModel);
     Task<AccountModel> UpdateContinuingLearningStatus(string firebaseId, bool wantToContinue);
-    Task RevertDropoutStatus(Guid accountId);
+    Task RevertDropoutStatus(string accountId);
 }

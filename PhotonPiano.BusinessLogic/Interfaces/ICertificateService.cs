@@ -14,5 +14,9 @@ public interface ICertificateService
     Task<CertificateInfoModel> GetCertificateByIdAsync(Guid studentClassId);
 
     Task AutoGenerateCertificatesAsync(Guid classId);
+
+    Task<string> GenerateCertificateAsync(Guid classId, string studentFirebaseId);
+
+    Task<CertificateInfoModel> GetCertificateByClassAndStudentAsync(Guid classId, string studentFirebaseId);
     // Task<CertificateEligibilityResultModel> CheckCertificateEligibilityAsync(Guid studentClassId);
 }

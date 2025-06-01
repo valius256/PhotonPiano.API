@@ -5,6 +5,7 @@ using PhotonPiano.Api.Extensions;
 using PhotonPiano.Api.Requests.Class;
 using PhotonPiano.Api.Requests.StudentScore;
 using PhotonPiano.BusinessLogic.BusinessModel.Account;
+using PhotonPiano.BusinessLogic.BusinessModel.Certificate;
 using PhotonPiano.BusinessLogic.BusinessModel.Class;
 using PhotonPiano.BusinessLogic.Interfaces;
 using PhotonPiano.DataAccess.Models.Enum;
@@ -319,5 +320,48 @@ public class ClassesController : BaseController
     {
         await _serviceFactory.StudentClassScoreService.RollbackPublishScores(id, CurrentAccount!);
         return NoContent();
+    }
+
+    [HttpPost("{id}/students/{student-id}/certificate")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Generate a certificate for a specific student in a class")]
+    public async Task<IActionResult> GenerateStudentCertificate(
+        [FromRoute] Guid id,
+        [FromRoute(Name = "student-id")] string studentId)
+    {
+        var certificateUrl = await _serviceFactory.CertificateService.GenerateCertificateAsync(id, studentId);
+        return Ok(new { url = certificateUrl });
+    }
+
+    // Generate Certificates for All Students in Class
+    [HttpPost("{id}/certificates")]
+    [CustomAuthorize(Roles = [Role.Staff, Role.Instructor])]
+    [EndpointDescription("Generate certificates for all eligible students in a class")]
+    public async Task<ActionResult<Dictionary<string, string>>> GenerateCertificatesForClass([FromRoute] Guid id)
+    {
+        var certificates = await _serviceFactory.CertificateService.GenerateCertificatesForClassAsync(id);
+        return Ok(certificates);
+    }
+
+    // Get Certificate for Specific Student in Class
+    [HttpGet("{id}/students/{student-id}/certificate")]
+    [CustomAuthorize(Roles = [Role.Student, Role.Staff, Role.Instructor])]
+    [EndpointDescription("Get certificate information for a specific student in a class")]
+    public async Task<ActionResult<CertificateInfoModel>> GetStudentCertificate(
+        [FromRoute] Guid id,
+        [FromRoute(Name = "student-id")] string studentId)
+    {
+        var certificate = await _serviceFactory.CertificateService.GetCertificateByClassAndStudentAsync(id, studentId);
+        return Ok(certificate);
+    }
+
+    // Get All Certificates for Current Student 
+    [HttpGet("my-certificates")]
+    [CustomAuthorize(Roles = [Role.Student])]
+    [EndpointDescription("Get all certificates for the current student across all classes")]
+    public async Task<ActionResult<List<CertificateInfoModel>>> GetMyStudentCertificates()
+    {
+        var certificates = await _serviceFactory.CertificateService.GetStudentCertificatesAsync(CurrentAccount!);
+        return Ok(certificates);
     }
 }

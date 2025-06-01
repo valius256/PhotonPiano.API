@@ -485,8 +485,8 @@ namespace PhotonPiano.BusinessLogic.Services
             {
                 // Notify the removed student
                 await _serviceFactory.NotificationService.SendNotificationAsync(
-                    accountModel.AccountFirebaseId,
-                    "Removed from class",
+                    studentId,
+                    "[Removed from class]",
                     $"You have been removed from the class {classInfo.Name}. If you have any questions or believe this is a mistake, please file a complaint or contact the support team directly!"
                 );
 

@@ -177,6 +177,8 @@ public class CertificateService : ICertificateService
         return studentClass.Select(sc => new CertificateInfoModel
         {
             StudentClassId = sc.Id,
+            ClassId = sc.ClassId,
+            StudentId = sc.StudentFirebaseId,
             ClassName = sc.Class.Name,
             LevelName = sc.Class.Level.Name,
             CompletionDate = sc.UpdatedAt ?? sc.CreatedAt,
@@ -248,5 +250,40 @@ public class CertificateService : ICertificateService
         };
     }
 
+    public async Task<string> GenerateCertificateAsync(Guid classId, string studentFirebaseId)
+    {
+        var studentClass = await _unitOfWork.StudentClassRepository.FindFirstAsync(sc =>
+            sc.ClassId == classId && sc.StudentFirebaseId == studentFirebaseId);
+
+        if (studentClass == null)
+        {
+            throw new NotFoundException($"Student with ID {studentFirebaseId} not found in class {classId}");
+        }
+
+        var result = await GenerateCertificateAsync(studentClass.Id);
+        return result.certificateUrl ?? string.Empty;
+    }
+
+    public async Task<CertificateInfoModel> GetCertificateByClassAndStudentAsync(Guid classId, string studentFirebaseId)
+    {
+        // Find the StudentClass record using classId and studentFirebaseId
+        var studentClass = await _unitOfWork.StudentClassRepository.FindFirstAsync(sc => 
+            sc.ClassId == classId && sc.StudentFirebaseId == studentFirebaseId);
+
+        if (studentClass == null)
+        {
+            throw new NotFoundException($"Student with ID {studentFirebaseId} not found in class {classId}");
+        }
+
+        // Get the certificate info
+        var certificateInfo = await GetCertificateByIdAsync(studentClass.Id);
+    
+        // Populate the new properties
+        certificateInfo.ClassId = classId;
+        certificateInfo.StudentId = studentFirebaseId;
+    
+        return certificateInfo;
+
+    }
     
 }

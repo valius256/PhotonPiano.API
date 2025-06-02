@@ -67,7 +67,7 @@ public class AuthController : BaseController
         [FromQuery] GoogleAuthCallbackRequest request)
     {
         var (code, redirectUrl) = request;
-        return await _serviceFactory.AuthService.HandleGoogleAuthCallback(code, redirectUrl);
+        return await _serviceFactory.AuthService.HandleGoogleAuthCallback(code, redirectUrl); 
     }
 
     [HttpPut("change-password")]

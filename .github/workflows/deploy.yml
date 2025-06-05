@@ -207,7 +207,7 @@ jobs:
             table_manager:
               retention_deletes_enabled: true
               retention_period: 168h
-              EOF
+            EOF
             
             mkdir -p /etc/promtail
             cat > /etc/promtail/promtail.yaml <<EOF
@@ -229,7 +229,7 @@ jobs:
                     labels:
                       job: varlogs
                       __path__: /var/log/*.log
-              EOF
+            EOF
   
   
 

@@ -210,7 +210,7 @@ jobs:
               EOF
   
   
-          # Tạo file .env cho backend
+
             cat > .env <<EOF
             ASPNETCORE_ENVIRONMENT=Production
             DOTNET_ENVIRONMENT=Production

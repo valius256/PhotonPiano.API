@@ -208,8 +208,8 @@ jobs:
               retention_deletes_enabled: true
               retention_period: 168h
               EOF
+            
             mkdir -p /etc/promtail
-  
             cat > /etc/promtail/promtail.yaml <<EOF
             server:
               http_listen_port: 9080
@@ -303,7 +303,6 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-            
               photonpiano-api:
                 image: ${{ env.IMAGE_NAME_API }}:latest
                 container_name: photonpiano-api
@@ -316,7 +315,6 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-            
               photonpiano-web:
                 image: ${{ env.IMAGE_NAME_WEB }}:latest
                 container_name: photonpiano-web
@@ -329,7 +327,6 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-            
               prometheus:
                 image: prom/prometheus:v3.4.0-rc.0
                 container_name: prometheus
@@ -344,7 +341,6 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-            
               node-exporter:
                 image: prom/node-exporter:latest
                 container_name: node-exporter
@@ -361,7 +357,6 @@ jobs:
                   - '--path.procfs=/host/proc'
                   - '--path.sysfs=/host/sys'
                   - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
-            
               blackbox-exporter:
                 image: prom/blackbox-exporter:latest
                 container_name: blackbox-exporter
@@ -376,7 +371,6 @@ jobs:
                   - app-network
                 cap_add:
                   - NET_RAW
-            
               grafana:
                 image: grafana/grafana:latest-ubuntu
                 container_name: grafana
@@ -390,7 +384,6 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-            
               loki:
                 image: grafana/loki:2.9.4
                 container_name: loki
@@ -403,7 +396,6 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-    
               promtail:
                 image: grafana/promtail:2.9.4
                 container_name: promtail
@@ -414,7 +406,6 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - app-network
-      
             volumes:
               postgres_data:
               prometheus_data:

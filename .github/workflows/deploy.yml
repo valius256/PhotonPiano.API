@@ -390,6 +390,7 @@ jobs:
                 volumes:
                   - ./loki-config.yaml:/etc/loki/local-config.yaml
                   - ./loki-data:/loki
+                  - ./loki-wal: /wal
                 ports:
                   - "3100:3100"
                 command: -config.file=/etc/loki/local-config.yaml

@@ -160,8 +160,86 @@ jobs:
                   - target_label: __address__
                     replacement: blackbox-exporter:9115
             EOF
+            
+            cat > loki-config.yaml <<EOF
+            auth_enabled: false
+            
+            server:
+              http_listen_port: 3100
+              grpc_listen_port: 9096
+            
+            ingester:
+              lifecycler:
+                ring:
+                  kvstore:
+                    store: inmemory
+                  replication_factor: 1
+              chunk_idle_period: 5m
+              chunk_retain_period: 30s
+              max_transfer_retries: 0
+              wal:
+                enabled: true
+                dir: /wal
+            
+            schema_config:
+              configs:
+                - from: 2025-06-01
+                  store: boltdb-shipper
+                  object_store: filesystem
+                  schema: v11
+                  index:
+                    prefix: index_
+                    period: 24h
+            
+            storage_config:
+              boltdb_shipper:
+                active_index_directory: /loki/index
+                cache_location: /loki/cache
+                shared_store: filesystem
+              filesystem:
+                directory: /loki/chunks
+            
+            limits_config:
+              enforce_metric_name: false
+              reject_old_samples: true
+              reject_old_samples_max_age: 168h
+            
+            chunk_store_config:
+              max_look_back_period: 0s
+            
+            compactor:
+              working_directory: /loki/compactor
+              shared_store: filesystem
+            
+            table_manager:
+              retention_deletes_enabled: true
+              retention_period: 168h
+            EOF
+            
+            mkdir -p /etc/promtail
+            cat > /etc/promtail/promtail.yaml <<EOF
+            server:
+              http_listen_port: 9080
+              grpc_listen_port: 0
+            
+            positions:
+              filename: /tmp/positions.yaml
+            
+            clients:
+              - url: http://loki:3100/loki/api/v1/push
+            
+            scrape_configs:
+              - job_name: system
+                static_configs:
+                  - targets:
+                      - localhost
+                    labels:
+                      job: varlogs
+                      __path__: /var/log/*.log
+            EOF
+  
+  
 
-            # Tạo file .env cho backend
             cat > .env <<EOF
             ASPNETCORE_ENVIRONMENT=Production
             DOTNET_ENVIRONMENT=Production
@@ -310,6 +388,29 @@ jobs:
                 environment:
                   - GF_SECURITY_ADMIN_USER=admin
                   - GF_SECURITY_ADMIN_PASSWORD=admin
+                restart: unless-stopped
+                networks:
+                  - app-network
+              loki:
+                image: grafana/loki:2.9.4
+                container_name: loki
+                volumes:
+                  - ./loki-config.yaml:/etc/loki/local-config.yaml
+                  - ./loki-data:/loki
+                  - ./loki-wal:/wal
+                ports:
+                  - "3100:3100"
+                command: -config.file=/etc/loki/local-config.yaml
+                restart: unless-stopped
+                networks:
+                  - app-network
+              promtail:
+                image: grafana/promtail:2.9.4
+                container_name: promtail
+                volumes:
+                  - /var/log:/var/log
+                  - /etc/promtail:/etc/promtail
+                command: -config.file=/etc/promtail/promtail.yaml
                 restart: unless-stopped
                 networks:
                   - app-network
